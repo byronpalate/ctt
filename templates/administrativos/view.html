@@ -1,0 +1,216 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+        });
+
+        $(function() {
+            busqueda = function(tipo){
+                var term = '';
+
+                term = $("#searchinput").val().trim().toUpperCase();
+
+                if (term.length>0){
+                    location.href = "/administrativos?s="+term;
+                } else {
+                    location.href = "/administrativos";
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda(1);
+            });
+
+            $('.busqueda').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    if ( $(this).hasClass('searchinput')){
+                        busqueda(1);
+                    } else {
+                        busqueda(2);
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class='col-12 col-md-6 mb-2'>
+            {% if perms.ctt.puede_modificar_administrativos %}
+                <a href="javascript:;" nhref="/administrativos?action=add" class='btn btn-success btn-sm formmodal'><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="searchinput" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/administrativos" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr class="autoheight">
+                    <th style="width: 300px;">Nombre</th>
+                    <th style="width: 80px;">Usuario</th>
+                    <th style="width: 80px;">Identificaci&oacute;n</th>
+                    <th>Grupos</th>
+                    <th style="width: 100px;">Sede</th>
+                    <th style="width: 250px;">Email/Tel&eacute;fono</th>
+                    <th style="width: 30px; text-align: center;">
+                        <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" badge-height="90" style="white-space: nowrap;">Perfil de usuario</span></div>
+                    </th>
+                    <th style="width: 30px; text-align: center;">
+                        <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" style="white-space: nowrap;">User</span></div>
+                    </th>
+                    <th style="width: 30px; text-align: center;">
+                        <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" style="white-space: nowrap;">Foto</span></div>
+                    </th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for administrativo in administrativos %}
+                    <tr>
+                        <td>{{ administrativo.persona }}</td>
+                        <td>{{ administrativo.persona.usuario }}</td>
+                        <td>
+                            {% for identificacion in administrativo.persona.lista_identificaciones %}
+                                {{ identificacion }}{% if not forloop.last %}<br/>{% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for grupo in administrativo.persona.grupos %}
+                                <div class="btn-group" style="margin-right: 3px; margin-bottom: 2px; margin-left: 0; float: left">
+                                    <a class="btn btn-usm btn-outline-secondary">{{ grupo }}</a>
+                                    {% if perms.ctt.puede_modificar_administrativos %}
+                                        {% if not grupo.id == grupo_docentes and not grupo.id == grupo_estudiantes and not grupo.id == grupo_empleadores  and not grupo.id == grupo_administrativo %}
+                                            <a href="javascript:;" nhref="/administrativos?action=delgrupo&id={{ administrativo.id }}&idg={{ grupo.id }}" class="btn confirmacionmodal btn-usm btn-danger"><i class="icon-minus"></i></a>
+                                        {% endif%}
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </td>
+                        <td>{{ administrativo.sede|default_if_none:'' }}</td>
+                        <td>
+                            {% if administrativo.persona.emails %}
+                                <a href="mailto:{{ administrativo.persona.emails }}">{{ administrativo.persona.emails }}</a><br>
+                            {% endif %}
+                            {% for telefono in administrativo.persona.telefonos %}
+                                {{ telefono }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if administrativo.activo %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Perfil">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Perfil">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if administrativo.persona.activo %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Usuario">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Usuario">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if administrativo.persona.tiene_foto %}
+                                <a href="{{ administrativo.persona.foto.foto.url }}" class="fancybox"><i class="icon-camera"></i></a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if perms.ctt.puede_modificar_administrativos %}
+                                <div class="btn-group dropdown">
+                                    <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                        <li class="smaller"><a href="javascript:;" nhref='/administrativos?action=edit&id={{ administrativo.id }}' class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
+
+                                        <li class="smaller"><a href="javascript:;" nhref='/administrativos?action=addgrupo&id={{ administrativo.id }}' class="formmodal dropdown-item"><i class="icon-group"></i> Adicionar a grupo</a></li>
+
+                                        <li class="smaller"><a href="javascript:;" nhref='/administrativos?action=asignarsede&id={{ administrativo.id }}' class="formmodal dropdown-item"><i class="icon-home"></i> Asignar sede</a></li>
+                                        {% if not administrativo.persona.id == persona.id %}
+                                            <li class="dropdown smaller dropstart">
+                                                <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Acceso al sistema</a>
+                                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                                    {% if not administrativo.persona.es_profesor %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/administrativos?action=addprofesor&id={{ administrativo.id }}'><i class="icon-user"></i> Crear profesor</a></li>
+                                                    {% endif %}
+                                                    {% if not administrativo.persona.es_estudiante %}
+                                                        <li class="smaller"><a href="javascript:;" nhref='/administrativos?action=addestudiante&id={{ administrativo.id }}' class="formmodal dropdown-item"><i class="icon-user"></i> Crear estudiante</a></li>
+                                                    {% endif %}
+                                                    <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/administrativos?action=resetear&id={{ administrativo.id }}"><i class="icon-key"></i> Resetear clave usuario</a></li>
+                                                    {% if administrativo.activo %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/administrativos?action=desactivarperfil&id={{ administrativo.id }}"><i class="icon-remove"></i> Desactivar perfil</a></li>
+                                                    {% else %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/administrativos?action=activarperfil&id={{ administrativo.id }}"><i class="icon-ok"></i> Activar perfil</a></li>
+                                                    {% endif %}
+                                                    {% if administrativo.persona.usuario.is_active %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/administrativos?action=desactivar&id={{ administrativo.id }}"><i class="icon-remove"></i> Desactivar usuario</a></li>
+                                                    {% else %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/administrativos?action=activar&id={{ administrativo.id }}"><i class="icon-ok"></i> Activar usuario</a></li>
+                                                    {% endif %}
+                                                </ul>
+                                            </li>
+                                        {% endif %}
+                                        {% if entrar_como_usuario and not administrativo.persona.usuario.is_superuser %}
+                                            <li class="smaller"><a class="changeuser dropdown-item" href="javascript:;" idu="{{ administrativo.persona.usuario.id }}"><i class='icon-user'></i> Entrar como este usuario</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item"><a href="/administrativos?{% if search %}s={{ search }}&{% endif %}page=1" class="page-link">1</a></li>
+                            <li class="page-item"><a href="/administrativos?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="page-link">...</a></li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/administrativos?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item"><a href="/administrativos?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="page-link">...</a></li>
+                            <li class="page-item"><a href="/administrativos?{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}" class="page-link">{{ paging.num_pages }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/administrativos?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

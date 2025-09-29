@@ -1,0 +1,605 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% load homologacion_tags %}
+{% block heading %}
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+        });
+
+        $(function() {
+            busqueda = function(tipo){
+                var term = '';
+
+                term = $("#searchinput").val().trim().toUpperCase();
+
+                if (term.length>0){
+                    location.href = "/inscripciones?s="+term;
+                } else {
+                    location.href = "/inscripciones";
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda(1);
+            });
+
+            $('.busqueda').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    if ( $(this).hasClass('searchinput')){
+                        busqueda(1);
+                    } else {
+                        busqueda(1);
+                    }
+                }
+            }).focus();
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class='col-12 col-md-6 mb-2'>
+            {% if perms.ctt.puede_modificar_inscripciones and not PERSONA_ADMINS_ACADEMICO_ID and not admisiones %}
+                <a href="javascript:;" nhref="/inscripciones?action=add" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+            {% if perms.ctt.puede_importar_inscripciones and not PERSONA_ADMINS_ACADEMICO_ID and not admisiones %}
+                <a href="javascript:;" nhref="/inscripciones?action=importar" class='btn btn-sm btn-success formmodal'><i class="icon-link"></i> Importar</a>
+            {% endif %}
+            {% if perms.ctt.puede_modificar_parametros_de_la_institucion and not PERSONA_ADMINS_ACADEMICO_ID %}
+                <a href="javascript:;" nhref="/inscripciones?action=importarcanvas" class='btn btn-sm btn-info formmodal'><i class="icon-check"></i> ID´s CANVAS</a>
+            {% endif %}
+          
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="searchinput" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/inscripciones" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    
+    </div>
+{% endblock %}
+{% block canvas %}
+           
+                
+     <div class="row-fluid">
+    <div class="col-12 responsive">
+        <div class="card shadow-sm border-0" style="border-radius: 16px;">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead style="background: #3A1467; color: #fff;">
+                <tr>
+                    <th>Nombre</th>
+                    <th style="width: 100px;">Nivel/Matrícula</th>
+                    <th style="width: 80px;">Usuario</th>
+                    <th style="width: 80px;">Identificaci&oacute;n</th>
+                    <th style="width: 160px;">Email/Tel&eacute;fonos</th>
+                    <th style="width: 250px;">Carrera</th>
+                    <th style="width: 30px; text-align: center;">Doc.</th>
+                    <th style="width: 30px; text-align: center;">Ex.C</th>
+                    <th style="width: 30px; text-align: center;">H.E.</th>
+                    <th style="width: 30px; text-align: center;">H.M.</th>
+                    <th style="width: 30px; text-align: center;">H.C.M.</th>
+                    <th style="width: 30px; text-align: center;">Hom.</th>
+                    <th style="width: 30px; text-align: center;">Plataf.</th>
+                    <th style="width: 30px; text-align: center;">Perfil</th>
+                    <th style="width: 30px; text-align: center;">User</th>
+                    <th style="width: 30px; text-align: center">Foto</th>
+                    <th style="width: 60px;"> </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for inscripcion in inscripciones %}
+                    {% with matriculado=inscripcion.matriculado matricula=inscripcion|args:periodo|call:"matricula_periodo" egresado=inscripcion.egresado graduado=inscripcion.graduado retirocarrera=inscripcion.retiro_carrera malla=inscripcion.mi_malla %}
+                        <tr class="
+                        {% if malla.carrera.posgrado %} table-info {% endif %}
+                        {% if inscripcion.coordinacion.id == 22 or inscripcion.coordinacion.id == 23 or inscripcion.coordinacion.id == 28 %} table-primary {% endif %}">
+                            <td>
+                                {{ inscripcion.persona }}{% if inscripcion.orientacion %}
+                                    - <span class="badge text-bg-warning tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Orientación Vocacional Profesional">OVP</span>
+                                {% endif %} <br/>
+                                <span class="badge text-bg-info tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Nivel academico actual">{{ inscripcion.mi_nivel.nivel }}</span>&nbsp;<span class="label tl" data-bs-toggle="tooltip" data-bs-placement="top" title="Paralelo">{{ matricula.paraleloprincipal }}</span><br>
+                                {% if inscripcion.tipoinscripcion %}
+                                    <span class="badge {% if inscripcion.es_regular %}text-bg-success{% else %}text-bg-danger{% endif %} tr" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ inscripcion.tipoinscripcion }}">{{ inscripcion.tipoinscripcion.alias }}</span>
+                                {% endif %}
+                                {% if inscripcion.tipogratuidad %}
+                                    <span class="badge {% if inscripcion.es_gratuidad_total %}text-bg-success{% elif inscripcion.es_gratuidad_parcial %}text-bg-warning{% else %}text-bg-danger{% endif %} tr" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ inscripcion.tipogratuidad }}">{{ inscripcion.tipogratuidad.alias }}</span>
+                                {% endif %}
+                                <!-- DATOS INCOMPLETOS -->
+                                {% if inscripcion.persona.datos_incompletos %}
+                                    <span class="badge text-bg-danger tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Datos Incompletos">DI</span>
+                                {% endif %}
+                                <!-- EGRESADO O GRADUADO -->
+                                {% if egresado %}
+                                    {% if graduado %}
+                                        <span class="badge text-bg-warning tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Graduados"><i class="fa-solid fa-graduation-cap"></i></span>
+                                    {% else %}
+                                        <span class="badge text-bg-info tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Egresado">E</span>
+                                    {% endif %}
+                                {% endif %}
+                                <!-- RETIRO DE CARRERA -->
+                                {% if retirocarrera %}
+                                    <span class="badge text-bg-warning tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Retiro de Carrera">RC</span>
+                                {% endif %}
+                                <!-- BECA ASIGNADA -->
+                                {% if matricula.becado %}
+                                    <span class="badge text-bg-success tr" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ matricula.tipobeca.nombre }}">BECARIO</span>
+                                {% endif %}
+                                <!-- MALLA DEL ESTUDIANTE -->
+                                {% if not inscripcion.tiene_malla %}
+                                    <span class="badge text-bg-info tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Sin malla asignada">SM</span>
+                                {% endif %}
+                                <!-- CONDICIONADO -->
+                                {% if inscripcion.condicionado %}
+                                    <span class="badge text-bg-info tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Condicionado">C</span>
+                                {% endif %}
+                                <!-- PRESTAMOS EN BIBLIOTECA DEL ESTUDIANTE -->
+                                {% if inscripcion.persona.documentos_sin_entregar %}
+                                    <span class="badge text-bg-danger tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Libro Pendiente de Entrega">LPE</span>
+                                {% endif %}
+                                <!-- CONVENIO MOVILIDAD ACADÉMICA -->
+                                {% if inscripcion.intercambio %}
+                                    <span class="badge text-bg-dark tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Movilidad Academica">M</span>
+                                {% endif %}
+                                {% if inscripcion.es_reingreso %}
+                                    <span class="badge text-bg-warning tr" data-bs-toggle="tooltip" data-bs-placement="top" title="REINGRESO">REINGRESO</span>
+                                {% endif %}
+
+                                <br>
+                                {% if inscripcion.documentos_entregados.homologar %}
+                                    {% with paso=inscripcion.paso_homologacion %}
+                                        {% if paso %}
+    <div class="mt-1">
+        <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+                {% barra_homologacion paso %}
+            </div>
+        </div>
+
+        {% with data=inscripcion.homologacion_validacion_creditos_nivel %}
+            {% if data.nivel %}
+                <div class="text-muted small mt-1">
+                    ✔ Homologado: {{ data.creditos }} créditos, Nivel {{ data.nivel }}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+{% endif %}
+
+
+{% endwith %}
+
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if matricula %}
+                                    {% if matricula.retirado %}
+                                        <span class="badge text-bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Retirado">RETIRADO</span>
+                                    {% else %}
+                                     <span class="badge text-bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Matriculado en el periodo. Nivel: {{ matricula.nivelmalla }}">MATRICULADO - {{ matricula.nivelmalla }}</span>
+                                        {% if matricula.formalizada %}
+                                            <span class="badge text-bg-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="MATRÍCULA FORMALIZADA">F</span>
+                                        {% endif %}
+                                        {% if matricula.inscripcion.tiene_deuda_vencida %}
+                                            <span class='badge text-bg-danger'>CON DEUDA</span>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if matricula.inscripcion.tipoinscripcion %}
+                                        <span class="badge {% if inscripcion.es_regular %}text-bg-success{% else %}text-bg-danger{% endif %} tr" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ inscripcion.tipoinscripcion }}">{{ inscripcion.tipoinscripcion.alias }}</span>
+                                    {% endif %}
+                                   
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ inscripcion.persona.usuario }}
+                            </td>
+                            <td>
+                                {% for identificacion in inscripcion.persona.lista_identificaciones %}
+                                    {{ identificacion }}{% if not forloop.last %}<br/>{% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if perms.ctt.puede_ver_informacion_inscritos or not inscripcion.mi_nivel.nivel.id == 1  %}
+                                    {% for email in inscripcion.persona.lista_emails %}
+                                        <a href="mailto:{{ email }}">{{ email }}</a><br/>
+                                    {% endfor %} {{ inscripcion.persona.email }}
+                                    {% for telefono in inscripcion.persona.telefonos %}
+                                        {{ telefono }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}{{ inscripcion.id }}
+                                    {% if inscripcion.identificador %}
+                                        <br/><span class="badge text-bg-info">{{ inscripcion.identificador }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if perms.ctt.puede_ver_informacion_inscritos or not inscripcion.mi_nivel.nivel.id == 1 %}
+                                    {{ inscripcion.coordinacion.nombre }} - {{ malla.carrera.nombre }}
+                                    {% if malla.carrera.mencion %}
+                                        ({{ malla.carrera.mencion }})
+                                    {% endif %}
+                                    - {{ malla.inicio.year }}<br>
+                                    {{ malla.modalidad }} - {{ inscripcion.mi_itinerario }} <br>
+                                    {{ inscripcion.sesion.nombre }}, {{ inscripcion.sede }}
+                                    {% if inscripcion.periodo %}{{ inscripcion.periodo.nombre }}{% endif %}
+                                {% endif %}<br>
+                                <span class="badge text-bg-primary">idmalla: {{ inscripcion.mi_malla.id }}</span>
+
+                            </td>
+
+                            <td style="text-align: center;">
+                                {% if inscripcion.tiene_documentacion %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Documentos">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Documentos">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if inscripcion.registro_examen_complexivo %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Examen complexivo">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Examen complexivo">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if inscripcion.habilitadoexamen %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitado examen">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitado examen">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if inscripcion.habilitadomatricula %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitado matricula">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitado matricula">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if inscripcion.habilitadocambiomodalidad %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitado cambio modalidad">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Deshabilitado cambio modalidad">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if inscripcion.documentos_entregados.homologar %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Homologo materias">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Homologo materias">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if inscripcion.persona.id_canvas %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Id Plataforma {{ inscripcion.persona.id_canvas }}">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Id Plataforma">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if inscripcion.activo %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Perfil">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Perfil">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if inscripcion.persona.activo %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Usuario">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Usuario">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if inscripcion.persona.tiene_foto %}
+                                    <a href="{{ inscripcion.persona.foto.foto.url }}" class="fancybox"><i class="icon-camera"></i></a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group dropdown">
+                                    <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                        {% if perms.ctt.puede_ver_informacion_inscritos or not inscripcion.mi_nivel.nivel.id == 1 %}
+                                            <li class="smaller"><a href="javascript:;" nhref='/inscripciones?action=edit&id={{ inscripcion.id }}' class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
+                                        {% endif %}
+
+                                        <li class="smaller"><a href="/inscripciones?action=record&id={{ inscripcion.id }}" class="btn-form dropdown-item"><i class="icon-flag"></i> Record Acad&eacute;mico</a></li>
+                                        <li class="smaller"><a class="mensajecorreomodal dropdown-item" href="javascript:;" nhref="{{ inscripcion.persona.id }}"><i class="icon-envelope"></i> Mensaje</a></li>
+                                        {% if inscripcion.tiene_proyecto_grado %}
+                                            {% with proyecto=inscripcion.mi_proyecto_grado %}
+                                                <li class="smaller"><a href="/adm_proyectosgrado?action=defensaproyecto&id={{ proyecto.id }}&i={{ inscripcion.id }}&md=i" class="dropdown-item"><i class="icon-group"></i> Defensa del Proyecto</a></li>
+                                            {% endwith %}
+                                        {% endif %}
+                                        {% if perms.ctt.puede_modificar_inscripciones %}
+                                            <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=adicionarotracarrera&id={{ inscripcion.id }}" class="formmodal dropdown-item"><i class="icon-retweet"></i> Inscribir otra carrera</a></li>
+                                            {% if not graduado %}
+                                                {% if not inscripcion.habilitadoexamen %}
+                                                    <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=habilitarexamen&id={{ inscripcion.id }}"><i class="icon-unlock"></i> Habilitar para exámen</a></li>
+                                                {% else %}
+                                                    {% if not inscripcion.tiene_examenes_asignados and not inscripcion.tiene_entrevistas_asignadas %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=deshabilitarexamen&id={{ inscripcion.id }}"><i class="icon-lock"></i> Deshabilitar para exámen</a></li>
+                                                    {% endif %}
+                                                {% endif %}
+                                                {% if inscripcion.carrera.posgrado %}
+                                                    {% if perms.ctt.puede_habilitar_inscripcion_para_matricula %}
+                                                        {% if not inscripcion.habilitadomatricula %}
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=habilitarmatricula&id={{ inscripcion.id }}"><i class="icon-unlock"></i> Habilitar para matr&iacute;culas</a></li>
+                                                        {% else %}
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=deshabilitarmatricula&id={{ inscripcion.id }}"><i class="icon-lock"></i> Deshabilitar para matr&iacute;culas</a></li>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% else %}
+                                                    {% if not inscripcion.habilitadomatricula %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=habilitarmatricula&id={{ inscripcion.id }}"><i class="icon-unlock"></i> Habilitar para matr&iacute;culas</a></li>
+                                                    {% else %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=deshabilitarmatricula&id={{ inscripcion.id }}"><i class="icon-lock"></i> Deshabilitar para matr&iacute;culas</a></li>
+                                                    {% endif %}
+                                                {% endif %}
+                                                {% if coordinacion %}
+                                                    {% if not inscripcion.habilitadocambiomodalidad %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=habilitarcambiomodalidad&id={{ inscripcion.id }}"><i class="icon-lock"></i> Habilitar para cambio de modalidad</a></li>
+                                                    {% else %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=deshabilitarcambiomodalidad&id={{ inscripcion.id }}"><i class="icon-unlock"></i> Deshabilitar para cambio de modalidad</a></li>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if inscripcion.tiene_preinscripcion %}
+                                                {% if not inscripcion.mi_preinscripcion.homologar %}
+                                                    <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=habilitarhomologacion&id={{ inscripcion.id }}"><i class="icon-unlock"></i> Habilitar para homologación</a></li>
+                                                {% else %}
+                                                    <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=deshabilitarhomologacion&id={{ inscripcion.id }}"><i class="icon-lock"></i> Deshabilitar para homologación</a></li>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if not inscripcion.tiene_matriculas and not inscripcion.tiene_record %}
+                                                <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=cambiodatoscarrera&id={{ inscripcion.id }}" class="formmodal dropdown-item"><i class="icon-retweet"></i> Cambio datos carrera</a></li>
+                                            {% endif %}
+                                            {% if inscripcion.intercambio %}
+                                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delmovilidad&id={{ inscripcion.id }}'><i class="icon-home"></i> Eliminar Movilidad</a></li>
+                                            {% else %}
+                                                <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=movilidad&id={{ inscripcion.id }}" class="formmodal dropdown-item"><i class="icon-plane"></i> Movilidad</a></li>
+                                            {% endif %}
+                                        {% endif %}
+                                        <li class="smaller"><a href="/inscripciones?action=examenesadmision&id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-list"></i> Exámenes y Entrevistas</a></li>
+                                        <li class="smaller"><a href="/inscripciones?action=estudio&id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-list"></i> Estudios, Idiomas, Trabajo</a></li>
+                                        <li class="smaller"><a href="/inscripciones?action=cursos&id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-list"></i> Cursos o escuelas</a></li>
+                                        <li class="smaller"><a href="/inscripciones?action=proyectos&id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-list"></i> Proyectos vinculaci&oacute;n</a></li>
+                                        <li class="smaller"><a href="/inscripciones?action=reconocimientoestudios&id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-list"></i> Reconocimiento Estudios</a></li>
+                                        <li class="smaller"><a class="dropdown-item" href="/inscripciones?action=solicitudnoadeudar&id={{ inscripcion.id }}&op=1"><i class="icon-money"></i> Solicitud No Adeudar</a></li>
+                                        {% with puede_acceder=persona|args:inscripcion.coordinacion|call:"puede_acceder_matricula" %}
+                                            {% if matricula and puede_acceder %}
+                                                {% if inscripcion.coordinacion == coordinacionseleccionada %}
+                                                    <li class="dropdown smaller dropstart">
+                                                        <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Matricula</a>
+                                                        <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                                            <li class="smaller"><a href="/matriculas?action=matricula&id={{ matricula.nivel.id }}&idm={{ matricula.id }}&ret={{ request.get_full_path }}" class="dropdown-item"><i class="icon-bell"></i> Matr&iacute;cula</a></li>
+                                                            <li class="smaller"><a href="/matriculas?action=materias&id={{ matricula.id }}&ret={{ request.get_full_path }}" class="dropdown-item"><i class="icon-th-list"></i> Materias</a></li>
+                                                            <li class="smaller"><a href="/adm_asistencias?id={{ matricula.id }}&ret={{ request.get_full_path }}" class="btn-form dropdown-item"><i class="icon-ok-sign"></i> Asistencias</a></li>
+                                                            <li class="smaller"><a href="/inscripciones?action=horario&id={{ matricula.id }}" class="dropdown-item"><i class="icon-calendar"></i> Horario</a></li>
+                                                            <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=cambionivelmatricula&id={{ matricula.id }}"><i class="icon-refresh"></i> Cambiar nivel</a></li>
+                                                            {% if perms.ctt.puede_modificar_informacion_academica_restringida %}
+                                                                {% if matricula.cerrada  %}
+                                                                    <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=abrirmatricula&id={{ matricula.id }}&iid={{ inscripcion.id }}" ><i class="icon-unlock"></i> Abrir matrícula</a></li>
+                                                                {% endif %}
+                                                            {% endif %}
+                                                        </ul>
+                                                    </li>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endwith %}
+                                        <li class="smaller"><a href="/dobe?id={{ inscripcion.persona.id }}&ret={{ request.get_full_path }}" class="dropdown-item"><i class="icon-folder-open"></i> Bienestar Estudiantil</a></li>
+                                        {% if perms.ctt.puede_modificar_inscripciones and not control_unico_credenciales %}
+                                            <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=cargarfoto&id={{ inscripcion.id }}" class="formmodal dropdown-item"><i class="icon-camera"></i> Subir Foto</a></li>
+                                        {% endif %}
+                                        <li class="smaller"><a href="/adm_entregadocumentos?id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-folder-open"></i> Documentos</a></li>
+                                        {% if inscripcion.documentos_entregados.homologar %}
+                                            <li class="smaller"><a href="/inscripciones?action=infohomolacion&id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-folder-open"></i> Info. Homologacion</a></li>
+                                        {% endif %}
+                                        <li class="smaller"><a href="/inscripciones?action=otrosrequisitosmalla&id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-folder-open"></i> Otros Requisitos</a></li>
+                                        <li class="dropdown smaller dropstart">
+                                            <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-print"></i> Impresión</a>
+                                            <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                                {% if reporte_0 %}
+                                                    <li class="smaller"><a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&inscripcion={{ inscripcion.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Ficha inscripci&oacute;n</a></li>
+                                                {% endif %}
+                                                {% if reporte_1 %}
+                                                    <li class="smaller"><a href="javascript:;" tipos="{{ reporte_1.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_1.nombre }}&inscripcion={{ inscripcion.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Record academico</a></li>
+                                                {% endif %}
+                                                {% if matricula and reporte_2 %}
+                                                    <li class="smaller"><a href="javascript:;" tipos="{{ reporte_2.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_2.nombre }}&matricula={{ matricula.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Registro de matr&iacute;cula</a></li>
+                                                {% endif %}
+                                                {% if matricula and reporte_3 %}
+                                                    <li class="smaller"><a href="javascript:;" tipos="{{ reporte_3.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_3.nombre }}&matricula={{ matricula.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certificado de matr&iacute;cula</a></li>
+                                                {% endif %}
+                                                {% if matricula.cerrada and reporte_4 %}
+                                                    <li class="smaller"><a href="javascript:;" tipos="{{ reporte_4.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_4.nombre }}&inscripcion={{ inscripcion.id }}&periodo={{ periodo.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certificado de promoción</a></li>
+                                                {% endif %}
+                                                {% if matricula.cerrada and reporte_5 %}
+                                                    <li class="smaller"><a href="javascript:;" tipos="{{ reporte_5.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_5.nombre }}&matricula={{ matricula.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certificado de promoción Inglés</a></li>
+                                                {% endif %}
+                                                {% if reporte_7 %}
+                                                    <li class="smaller"><a href="javascript:;" tipos="{{ reporte_7.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_7.nombre }}&matricula={{ matricula.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Seguimiento al Sílabo</a></li>
+                                                {% endif %}
+                                                {% if inscripcion.certificadoaprobadosecretaria and inscripcion.certificadoaprobadocolecturia and inscripcion.certificadoaprobadobiblioteca %}
+                                                    <li class="smaller"><a href="javascript:;" tipos="{{ reporte_8.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_8.nombre }}&inscripcion={{ inscripcion.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certificado No Adeudar</a></li>
+                                                {% endif %}
+                                            </ul>
+                                        </li>
+                                        <li class="dropdown smaller dropstart">
+                                            <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Carrera y malla</a>
+                                            <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                                {% if not egresado and not graduado and perms.ctt.puede_modificar_inscripciones and not retirocarrera %}
+                                                    {% if not matriculado %}
+                                                        {% if not retirocarrera and not PERSONA_ADMINS_ACADEMICO_ID%}
+                                                            <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=retirocarrera&id={{ inscripcion.id }}" class="formmodal dropdown-item"><i class="icon-remove"></i> Retiro de carrera</a></li>
+                                                        {% endif %}
+                                                        {% if not inscripcion.tiene_record %}
+                                                            <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=cambiomalla&id={{ inscripcion.id }}"><i class="icon-refresh"></i> Cambiar malla</a></li>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=cambioitinerario&id={{ inscripcion.id }}"><i class="icon-refresh"></i> Cambiar itinerario</a></li>
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=cambionivel&id={{ inscripcion.id }}"><i class="icon-refresh"></i> Cambiar nivel</a></li>
+                                                {% endif %}
+                                                <li class="smaller"><a href="/inscripciones?action=alumalla&id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-th"></i> Su malla</a></li>
+                                                {% if perms.ctt.puede_modificar_inscripciones %}
+                                                {% endif %}
+                                            </ul>
+                                        </li>
+                                        <li class="dropdown smaller dropstart">
+                                            <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Titulación</a>
+                                            <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                                {% if not inscripcion.notatitulacion %}
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=tipotrabajotitulacion&id={{ inscripcion.id }}'><i class="icon-certificate"></i> Trabajo titulación</a></li>{% endif %}
+                                                {% if inscripcion.tipotrabajotitulacion %}
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=notatrabajotitulacion&id={{ inscripcion.id }}'><i class="icon-edit"></i> Nota de Titulación</a></li>
+                                                    <li class="smaller"><a href="javascript:;" tipos="{{ reporte_6.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_6.nombre }}&matricula={{ inscripcion.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Imprimir</a></li>{% endif %}
+                                            </ul>
+                                        </li>
+                                        {% if inscripcion.carrera.posgrado %}
+                                            <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=cambiocohorte&id={{ inscripcion.id }}"><i class="icon-refresh"></i> Cambiar Cohorte</a></li>
+                                        {% endif %}
+                                        {% if not retirocarrera %}
+                                            {% if not egresado and not graduado %}
+                                                {% if perms.ctt.puede_modificar_inscripciones and perms.ctt.puede_modificar_egresado %}
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/adm_egresados?action=egresar&id={{ inscripcion.id }}&ret={{ request.get_full_path }}"><i class="icon-plus"></i> Egresar</a></li>
+                                                {% endif %}
+                                            {% else %}
+                                                {% if graduado %}
+                                                    <li class="smaller"><a href='/adm_graduados?inscripcionid={{ inscripcion.id }}&ret={{ request.get_full_path }}' class="dropdown-item"><i class='icon-bell'></i> Graduado</a></li>
+                                                {% elif egresado %}
+                                                    <li class="smaller"><a href='/adm_egresados?inscripcionid={{ inscripcion.id }}&ret={{ request.get_full_path }}' class="dropdown-item"><i class='icon-bell'></i> Egresado</a></li>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endif %}
+                                        <li class="smaller"><a href="/finanzas?action=rubros&id={{ inscripcion.id }}&ret=inscripciones&ret={{ request.get_full_path }}" class="dashboard dropdown-item"><i class="icon-money"></i> Finanzas</a></li>
+                                        {% if not inscripcion.periodo %}
+                                            <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=darperiodo&id={{ inscripcion.id }}"><i class="icon-calendar"></i> Asignar Período</a></li>
+                                        {% endif %}
+                                        {% if perms.ctt.puede_registar_solicitudes %}
+                                            <li class="smaller"><a href="javascript:;" nhref="/adm_solicitudes?action=adicionar&id={{ inscripcion.id }}&ret={{ request.get_full_path }}" class="formmodal dropdown-item"><i class="icon-paper-clip"></i> Nueva solicitud</a></li>
+                                        {% endif %}
+                                        <li class="dropdown smaller dropstart">
+                                            <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Acceso al sistema</a>
+                                            <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                                {% if not inscripcion.persona.es_administrativo and perms.ctt.puede_modificar_administrativos %}
+                                                    <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=addadministrativo&id={{ inscripcion.id }}"><i class="icon-user"></i> Crear administrativo</a></li>
+                                                {% endif %}
+                                                {% if not inscripcion.persona.es_profesor and perms.ctt.puede_modificar_profesores %}
+                                                    <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=adddocente&id={{ inscripcion.id }}"><i class="icon-user"></i> Crear docente</a></li>
+                                                {% endif %}
+                                                <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=asignarcanvas&id={{ inscripcion.id }}"><i class="icon-info-sign"></i> Asignar CANVAS</a></li>
+                                                {% if perms.ctt.puede_modificar_inscripciones %}
+                                                    {% if not centro %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=resetear&id={{ inscripcion.id }}"><i class="icon-key"></i> Resetear Clave usuario</a></li>
+                                                        {% if inscripcion.activo %}
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=desactivarperfil&id={{ inscripcion.id }}"><i class="icon-remove"></i> Desactivar perfil</a></li>
+                                                        {% else %}
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=activarperfil&id={{ inscripcion.id }}"><i class="icon-ok"></i> Activar perfil</a></li>
+                                                        {% endif %}
+                                                        {% if inscripcion.persona.usuario.is_active %}
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=desactivar&id={{ inscripcion.id }}"><i class="icon-remove"></i> Desactivar usuario</a></li>
+                                                        {% else %}
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=activar&id={{ inscripcion.id }}"><i class="icon-ok"></i> Activar usuario</a></li>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </ul>
+                                        </li>
+                                        {% if admisiones or sistemas %}
+                                            <li class="smaller"><a href="javascript:;" nhref='/inscripciones?action=idsalesforce&id={{ inscripcion.id }}' class="dropdown-item tu formmodal"><b>SF</b> {{ inscripcion.idsalesforcei }}</a></li>
+                                        {% endif %}
+                                        <li class="dropdown-divider"></li>
+                                        {% if perms.ctt.puede_modificar_informacion_academica_restringida or perms.ctt.puede_generar_rubros_completo_posgrado or perms.ctt.puede_modificar_inscripciones and not centro %}
+                                            <li class="smaller"><a href="javascript:;" nhref='/inscripciones?action=delete&id={{ inscripcion.id }}' class="dropdown-item tu eliminacionmodal"><i class="icon-trash"></i> Eliminar</a></li>
+                                        {% endif %}
+
+                                        <li class="dropdown-divider"></li>
+                                        {% if entrar_como_usuario %}
+                                            <li class="smaller"><a class="changeuser dropdown-item" href="javascript:;" idu="{{ inscripcion.persona.usuario.id }}"><i class='icon-user'></i> Entrar como este usuario</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endwith %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div></div></div>
+   {# ═════════ PAGINADOR COMPLETO ═════════ #}
+{% if paging.num_pages > 1 %}
+  <div class="d-flex justify-content-center mt-5">
+    <nav aria-label="Navegación de páginas">
+      <ul class="pagination pagination-lg shadow-sm">
+        {# ─── Botón «Primera» + elipsis izquierda ─── #}
+        {% if paging.num_pages > 20 and paging.primera_pagina %}
+          <li class="page-item">
+            <a class="page-link"
+               href="/inscripciones?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page=1"
+               title="Primera página">
+               <i class="fa fa-step-backward"></i></a>
+          </li>
+          <li class="page-item">
+            <a class="page-link"
+               href="/inscripciones?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page={{ paging.ellipsis_izquierda }}"
+               title="Anterior">…</a>
+          </li>
+        {% endif %}
+
+        {# ─── Números de página ─── #}
+        {% if paging.num_pages > 20 %}
+            {% for pagenumber in paging.paginas %}
+              <li class="page-item {% if pagenumber == page.number %}active{% endif %}">
+                <a class="page-link"
+                   href="/inscripciones?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page={{ pagenumber }}">
+                   {{ pagenumber }}</a>
+              </li>
+            {% endfor %}
+        {% else %}
+            {% for pagenumber in paging.page_range %}
+              <li class="page-item {% if pagenumber == page.number %}active{% endif %}">
+                <a class="page-link"
+                   href="/inscripciones?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page={{ pagenumber }}">
+                   {{ pagenumber }}</a>
+              </li>
+            {% endfor %}
+        {% endif %}
+
+        {# ─── elipsis derecha + «Última» ─── #}
+        {% if paging.num_pages > 20 and paging.ultima_pagina %}
+          <li class="page-item">
+            <a class="page-link"
+               href="/inscripciones?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page={{ paging.ellipsis_derecha }}"
+               title="Siguiente">…</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link"
+               href="/inscripciones?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page={{ paging.num_pages }}"
+               title="Última página">
+               <i class="fa fa-step-forward"></i></a>
+          </li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+{% endif %} 
+    <div class="d-flex justify-content-center mt-5">
+    <div class="mt-2">
+      <span class="badge bg-info text-uppercase me-1">* Posgrado</span>
+      <span class="badge bg-primary text-uppercase me-1">* Educación Continua y Virtual</span>
+      <span class="badge bg-secondary text-uppercase">* Pregrado</span>
+    </div></div>
+{% endblock %}

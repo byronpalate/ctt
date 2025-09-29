@@ -1,0 +1,471 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    {# Font Awesome (si ya lo cargas en base, puedes quitar esta línea) #}
+
+    <style>
+        /* Botones de formato: cajitas cuadradas y centradas */
+        .format-btn {
+            width: 30px; height: 35px; padding: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 20px; line-height: 1;
+        }
+        /* Deshabilitados con opacidad y sin click */
+        a[disabled], a[disabled]:hover, a[disabled]:focus {
+            pointer-events: none !important; opacity: .35; filter: grayscale(1);
+        }
+        /* Un poco de respiro en la lista */
+        .reporte-row { height: 15px; }
+        .reporte-titulo { text-align: left; margin: 0; }
+        /* Botón ejecutar con spinner alineado */
+        .btn-ejecutar .fa { margin-right: .4rem; }
+    </style>
+
+    <script type="text/javascript">
+        reportes = {
+            {% for categoria in categorias %}
+                {% for reporte in categoria.reportes %}
+                    '{{ reporte.id }}': {
+                        "nombre": "{{ reporte.nombre }}",
+                        "descripcion": "{{ reporte.descripcion }}",
+                        "parametros": [{% for parametro in reporte.parametros %}{"key": "{{ parametro.nombre }}",
+                                "desc": "{{ parametro.descripcion }}",
+                                "tipo":{{ parametro.tipo }},
+                                "extra": '{{ parametro.extra|safe }}'},{% endfor %}]
+                    },
+                {% endfor %}
+            {% endfor %}
+        };
+        parametros = [];
+
+        validanumero = function () {
+            $(".valnumero").blur(function () {
+                numerico($(this), 0, 0, 0);
+                $("#this").modal('hide');
+            });
+        };
+
+        validamoneda = function () {
+            $(".valnumero").blur(function () {
+                numerico($(this), 0, 0, 2);
+                $("#this").modal('hide');
+            });
+        };
+
+        contenidolista = function (id, model, tipolista) {
+            var a = "";
+            if (parseInt(tipolista) === 1) {
+                $.ajax({
+                    type: "POST",
+                    url: "/api",
+                    data: {'a': 'data', 'model': model, 'csrfmiddlewaretoken': csrftoken},
+                    success: function (data) {
+                        if (data.result === 'ok') {
+                            for (var i in data.data) {
+                                var dato = data.data[i];
+                                a += "<option value='" + dato.id + "'>" + dato.name + "</option>";
+                            }
+                            $("#parametrospanel").find("#" + id).append(a);
+                        } else {
+                            smoke.alert(data.mensaje || "No se pudo cargar la lista.");
+                        }
+                    },
+                    dataType: "json"
+                });
+            } else {
+                $.each(JSON.parse(model), function (idx, obj) {
+                    a += "<option value='" + obj.id + "'>" + obj.nombre + "</option>";
+                });
+                $("#parametrospanel").find("#" + id).append(a);
+            }
+        };
+
+        function absolutize(u) {
+            if (!u) return u;
+            if (/^https?:\/\//i.test(u)) return u;               // ya es absoluta
+            return location.origin + (u.startsWith('/') ? u : '/' + u);
+        }
+        function safeUrl(u) {
+            return encodeURI(absolutize(u));                     // codifica espacios/ñ, etc.
+        }
+
+        $(function () {
+            // Tooltips (Bootstrap)
+            if (typeof $().tooltip === 'function') {
+                $('[data-bs-toggle="tooltip"]').tooltip();
+            }
+
+            busqueda = function () {
+                var term = $("#busqueda").val().trim().toUpperCase();
+                if (term.length > 0) {
+                    location.href = "/reportes?s=" + term;
+                } else {
+                    $("#busqueda").focus();
+                }
+            };
+
+            $("#search").click(function () { busqueda(); });
+
+            $('#busqueda').keyup(function (e) {
+                if (e.keyCode === 13) { busqueda(); }
+            }).focus();
+
+            $(".btn-cerrar").click(function () {
+                $("#parametrospanel").modal('hide');
+            });
+
+            // Si el modal se oculta, aseguramos que el overlay no quede pegado
+            $('#parametrospanel').on('hidden.bs.modal', function () {
+                try { hideWaiting(); } catch (e) {}
+                // restaurar botón ejecutar si quedó en modo spinner
+                var $btn = $(".btn-ejecutar");
+                if ($btn.data('oldHtml')) {
+                    $btn.html($btn.data('oldHtml')).prop('disabled', false).removeClass('disabled');
+                    $btn.removeData('oldHtml');
+                }
+            });
+
+            alertIncompleteData = function () {
+                $("#parametrospanelpanelalert").html("<div class='alert alert-danger'>Complete todos los parámetros</div>");
+            };
+
+            $(".btn-ejecutar").click(function () {
+                var i, paramVal, tipo, paramKey;
+                var completed = true;
+                var rid = $(this).attr("rid");
+                var rt = $(this).attr('rt');
+                var cmdParams = {};
+
+                // Spinner/disable en el propio botón
+                var $btn = $(this);
+                if (!$btn.data('oldHtml')) {
+                    $btn.data('oldHtml', $btn.html());
+                }
+                $btn.html('<i class="fa fa-spinner fa-spin"></i> Generando...')
+                    .prop('disabled', true).addClass('disabled');
+
+                for (i in parametros) {
+                    paramKey = parametros[i].key;
+                    tipo = parametros[i].type;
+                    if (tipo == 5) {
+                        paramVal = $("#" + paramKey).attr("myval");
+                    } else if (tipo == 4) {
+                        paramVal = $("#" + paramKey).is(':checked');
+                    } else {
+                        paramVal = $("#" + paramKey).val();
+                    }
+                    if (!paramVal && tipo != 4) {
+                        alertIncompleteData();
+                        completed = false;
+                    } else {
+                        cmdParams[paramKey] = paramVal;
+                    }
+                }
+
+                if (!completed) {
+                    // restaurar botón
+                    $btn.html($btn.data('oldHtml')).prop('disabled', false).removeClass('disabled');
+                    return;
+                }
+
+                if (parametros.length > 0) {
+                    $("#parametrospanel").modal("hide");
+                }
+
+                cmdParams['action'] = 'run';
+                cmdParams['rid'] = rid;
+                cmdParams['rt'] = rt;
+                cmdParams['csrfmiddlewaretoken'] = csrftoken;
+
+                showWaiting("Generando Reporte", "Espere unos segundos por favor...");
+                $.ajax({
+                    type: "GET",
+                    url: "/reportes",
+                    data: cmdParams,
+                    success: function (data) {
+                        if (data.result === 'ok') {
+                            var url = safeUrl(data.reportfile || data.archivo);
+                            if (rt === 'pdf') {
+                                openwindow_reporte(url, 800, 500);
+                            } else {
+                                location.href = url;
+                            }
+                        } else {
+                            smoke.alert(data.mensaje || "Error al generar el reporte.");
+                        }
+                    },
+                    error: function () {
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    complete: function () {
+                        try { hideWaiting(); } catch (e) {}
+                        // restaurar botón
+                        $btn.html($btn.data('oldHtml')).prop('disabled', false).removeClass('disabled');
+                        $btn.removeData('oldHtml');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            var timeout;
+
+            crearTypeAhead = function (pk, pe, obj) {
+                obj.find("#" + pk).typeahead({
+                    source: function (query, process) {
+                        if (timeout) clearTimeout(timeout);
+                        timeout = setTimeout(function () {
+                            $.ajax({
+                                type: "POST",
+                                url: "/api",
+                                data: {
+                                    'a': 'data',
+                                    'model': pe,
+                                    'p': 1,
+                                    'q': query,
+                                    's': 10,
+                                    'csrfmiddlewaretoken': csrftoken
+                                },
+                                success: function (data) {
+                                    if (data.result === 'ok') {
+                                        $("#" + pk).get(0).results = data.data;
+                                        var listing = [];
+                                        for (i in data.data) {
+                                            var dato = data.data[i];
+                                            listing.push(dato.name);
+                                        }
+                                        process(listing);
+                                    } else {
+                                        smoke.alert(data.mensaje || "No se pudieron cargar las sugerencias.");
+                                    }
+                                },
+                                dataType: "json"
+                            });
+                        }, 500);
+                    },
+                    updater: function (item) {
+                        var results = $("#" + pk).get(0).results;
+                        for (var i in results) {
+                            var datos = results[i];
+                            if (item == datos.name) {
+                                $("#" + pk).attr("myval", datos.id);
+                            }
+                        }
+                        return item;
+                    }
+                });
+            };
+
+            $(".runjr").click(function () {
+                var nowF, mt, dt, now, param;
+                var rid = $(this).attr('rid');
+                var rt = $(this).attr('rt');
+                var repData = reportes[rid];
+
+                if (repData.parametros.length > 0) {
+                    $('#parametrospanel').modal({keyboard: false, backdrop: 'static', width: '700'});
+                    $("#parametrospanelpaneltitle").html(repData.descripcion);
+                    $("#parametrospanelpanelbody").html("Seleccione parámetros del reporte");
+                    $("#parametrospanelpanelalert").empty();
+                    $("#parametrospanelpanelcanvas").empty();
+                    $("#parametrospanel").find(".btn-ejecutar").attr({"rid": rid, "rt": rt});
+                    parametros = [];
+                    for (var i in repData.parametros) {
+                        param = repData.parametros[i];
+                        if (param.tipo == 1) {
+                            $("#parametrospanel").find("#parametrospanelpanelcanvas").append(
+                                "<tr class='reporte-row'><td>"+ param.desc +"</td><td><input type='text' class='form-control' id='"+ param.key +"'/></td></tr>");
+                        } else if (param.tipo == 2) {
+                            $("#parametrospanel").find("#parametrospanelpanelcanvas").append(
+                                "<tr class='reporte-row'><td>"+ param.desc +"</td><td><input type='text' class='valnumero form-control' id='"+ param.key +"'/></td></tr>");
+                            validanumero();
+                        } else if (param.tipo == 3) {
+                            $("#parametrospanel").find("#parametrospanelpanelcanvas").append(
+                                "<tr class='reporte-row'><td>"+ param.desc +"</td><td><input type='text' class='valmoneda form-control' id='"+ param.key +"'/></td></tr>");
+                            validamoneda();
+                        } else if (param.tipo == 7) {
+                            $("#parametrospanel").find("#parametrospanelpanelcanvas").append(
+                                "<tr class='reporte-row'><td>"+ param.desc +"</td><td><select class='input-block-level form-control' id='"+ param.key +"'></select></td></tr>");
+                            contenidolista(param.key, param.extra, 1);
+                        } else if (param.tipo == 8) {
+                            $("#parametrospanel").find("#parametrospanelpanelcanvas").append(
+                                "<tr class='reporte-row'><td>"+ param.desc +"</td><td><select class='input-block-level form-control' id='"+ param.key +"'></select></td></tr>");
+                            contenidolista(param.key, param.extra, 0);
+                        } else if (param.tipo == 6) {
+                            now = new Date();
+                            dt = now.getDate();
+                            mt = now.getMonth() + 1;
+                            nowF = ((dt <= 9) ? "0" : "") + (dt) + "-" + ((mt <= 9) ? "0" : "") + (mt) + "-" + now.getFullYear();
+                            $("#parametrospanel").find("#parametrospanelpanelcanvas").append(
+                                "<tr class='reporte-row'><td>"+ param.desc +"</td><td><input type='text' class='form-control' id='"+ param.key +"' value='"+ nowF +"'/></td></tr>");
+                            $("#parametrospanel").find("#parametrospanelpanelcanvas").find("#" + param.key)
+                                .addClass('selectorfecha').datepicker({format: "dd-mm-yyyy"});
+                        } else if (param.tipo == 4) {
+                            $("#parametrospanel").find("#parametrospanelpanelcanvas").append(
+                                "<tr class='reporte-row'><td>"+ param.desc +"</td><td><input type='checkbox' id='"+ param.key +"'/></td></tr>");
+                        } else if (param.tipo == 5) {
+                            $("#parametrospanel").find("#parametrospanelpanelcanvas").append(
+                                "<tr class='reporte-row'><td>"+ param.desc +"</td><td><input class='input-block-level form-control' autocomplete='off' id='"+ param.key +"'/></td></tr>");
+                            crearTypeAhead(param.key, param.extra, $("#parametrospanelpanelcanvas"));
+                        }
+                        parametros.push({key: param.key, type: param.tipo});
+                    }
+                    $('#parametrospanel').modal('show');
+                } else {
+                    showWaiting("Generando Reporte", "Espere unos segundos por favor...");
+                    $.ajax({
+                        type: "GET",
+                        url: "/reportes",
+                        data: {'action': 'run', 'rid': rid, 'rt': rt, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            if (data.result === 'ok') {
+                                var url = safeUrl(data.reportfile || data.archivo);
+                                if (rt === 'pdf') {
+                                    openwindow_reporte(url, 800, 500);
+                                } else {
+                                    location.href = url;
+                                }
+                            } else {
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        complete: function () {
+                            try { hideWaiting(); } catch (e) {}
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class='col-12 col-md-6 mb-2'></div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="busqueda" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search' data-bs-toggle="tooltip" title="Buscar">
+                    <i class="fa fa-search"></i>
+                </a>
+                {% if search or ids %}
+                    <a href="/reportes" class="btn btn-sm btn-outline-secondary" type="button" id='allresults' data-bs-toggle="tooltip" title="Ver todo">
+                        <i class="fa fa-refresh"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <div class="tabbable col-12">
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    {% for categoria in categorias %}
+                        <li class="nav-item {% if forloop.first %}active{% endif %}" role="presentation">
+                            <button class="nav-link {% if forloop.first %}active{% endif %}"
+                                    id="tabb{{ forloop.counter }}" data-bs-toggle="tab"
+                                    data-bs-target="#tabb-{{ forloop.counter }}"
+                                    type="button" role="tab" aria-controls="tabb-{{ forloop.counter }}"
+                                    aria-selected="true">
+                                {{ categoria.nombre }}
+                            </button>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="tab-content" id="myTabContent">
+                    {% for categoria in categorias %}
+                        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+                             id="tabb-{{ forloop.counter }}" role="tabpanel"
+                             aria-labelledby="tab{{ forloop.counter }}">
+                            <div class="col-12 mb-2">
+                                <table class="table-responsive-lg">
+                                    {% for reporte in categoria.reportes %}
+                                        <tr class="reporte-row">
+                                            <td rowspan="2" style="height: 30px;">
+                                                <a href='javascript:;'
+                                                   {% if not reporte.formatopdf %}disabled="disabled"{% endif %}
+                                                   class="{% if reporte.formatopdf %}runjr{% endif %} btn btn-outline-secondary format-btn"
+                                                   style=""
+                                                   rid="{{ reporte.id }}" rt='pdf'
+                                                   title="Abrir PDF" data-bs-toggle="tooltip">
+                                                    {% if reporte.formatopdf %}<i class="fa fa-file-pdf-o" aria-hidden="true"></i>{% endif %}
+                                                </a>
+                                                <a href='javascript:;'
+                                                   {% if not reporte.formatoword %}disabled="disabled"{% endif %}
+                                                   class="{% if reporte.formatoword %}runjr{% endif %} btn btn-outline-secondary format-btn"
+                                                   rid="{{ reporte.id }}" rt='docx'
+                                                   title="Abrir Word" data-bs-toggle="tooltip">
+                                                    {% if reporte.formatoword %}<i class="fa fa-file-word-o" aria-hidden="true"></i>{% endif %}
+                                                </a>
+                                                <a href='javascript:;'
+                                                   {% if not reporte.formatocsv %}disabled="disabled"{% endif %}
+                                                   class="{% if reporte.formatocsv %}runjr{% endif %} btn btn-outline-secondary format-btn"
+                                                   rid="{{ reporte.id }}" rt='csv'
+                                                   title="Descargar CSV" data-bs-toggle="tooltip">
+                                                    {% if reporte.formatocsv %}<i class="fa fa-file-text-o" aria-hidden="true"></i>{% endif %}
+                                                </a>
+                                                <a href='javascript:;'
+                                                   {% if not reporte.formatoxls %}disabled="disabled"{% endif %}
+                                                   class="{% if reporte.formatoxls %}runjr{% endif %} btn btn-outline-secondary format-btn"
+                                                   rid="{{ reporte.id }}" rt='xlsx'
+                                                   title="Abrir Excel" data-bs-toggle="tooltip">
+                                                    {% if reporte.formatoxls %}<i class="fa fa-file-excel-o" aria-hidden="true"></i>{% endif %}
+                                                </a>
+                                            </td>
+                                            <td {% if not reporte.detalle %} rowspan="2" {% endif %}>
+                                                <h4 class="reporte-titulo">
+                                                    {{ forloop.counter }}.- {{ reporte.descripcion|capfirst }} ({{ reporte.id }})
+                                                </h4>
+                                            </td>
+                                        </tr>
+                                        <tr class="reporte-row">
+                                            <td style="font-size:12px">
+                                                {% if reporte.detalle %}{{ reporte.detalle }}{% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr class="reporte-row"></tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade static" id="parametrospanel" style="display: none;">
+        <div class="modal-dialog modal-fullscreen-xxl-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 id="parametrospanelpaneltitle">Par&aacute;metros del reporte</h4>
+                </div>
+                <div class="modal-body" style="min-height: 80px;">
+                    <p id="parametrospanelpanelbody"></p>
+                    <table id="parametrospanelpanelcanvas" class="table"></table>
+                    <div id="parametrospanelpanelalert"></div>
+                </div>
+                <div class="modal-footer">
+                    <a href="javascript:;" class="btn btn-success btn-ejecutar">
+                        <i class="fa fa-play"></i> Ejecutar Reporte
+                    </a>
+                    <a href="javascript:;" class="btn btn-cerrar btn-danger">
+                        <i class="fa fa-times"></i> Cerrar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

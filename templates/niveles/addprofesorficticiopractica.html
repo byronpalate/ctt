@@ -1,0 +1,23 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_desde, #id_hasta").datepicker({format:"dd-mm-yyyy"});
+            $("#id_tipoprofesor, #id_profesor, #id_desde, #id_hasta, #id_motivo").addClass("validate[required]");
+
+            $("#id_horassemanales").blur(function () {
+                numerico($(this), 0, 0, 1);
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=grupospracticas&id={{ grupo.materia.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addprofesorficticiopractica'/>
+    <input type='hidden' name='mid' value='{{ grupo.id }}'/>
+{% endblock %}
+{% block formback %}/niveles?action=grupospracticas&id={{ grupo.materia.id }}{% endblock %}
+{% block formdestination %}/niveles?action=grupospracticas&id={{ grupo.materia.id }}{% endblock %}
+

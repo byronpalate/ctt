@@ -1,0 +1,116 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function () {
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Estudiante: {{ inscripcion }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class="row">
+        <div class="col-md-12">
+{#            {% if not inscripcion.activocertificadonoadeudar and pagado and atiempo%}#}
+                <a href="javascript:;" nhref="/inscripciones?action=activarcertificadonoadeudar&id={{ inscripcion.id }}" class="btn btn-success confirmacionmodal">Él/la estudiante canceló, activar solicitud y enviar notificación a áreas</a>
+                <a href="javascript:;" nhref="/inscripciones?action=resetearcertificado&id={{ inscripcion.id }}" class="btn btn-warning confirmacionmodal">Resetear Proceso</a>
+{#            {% endif %}#}
+        </div>
+    </div><br>
+    {% if  inscripcion.activocertificadonoadeudar %}
+        <div class='row' id="tabledata">
+            <div class='col-12'>
+                <table class='table table-bordered'>
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 75%;">Colecturia
+                            <div style="float: right;">
+                                {% if inscripcion.certificadoaprobadocolecturia %}
+                                    <button class="btn btn-success " style="border-right: 0px;">&#10004; Aprobado</button>{% endif %}<br>
+                                {{ inscripcion.fechacolecturia|date:"d- m, Y, h:i a" }}
+                            </div>
+                        </th>
+                        <th>
+                            {% if not inscripcion.certificadoaprobadocolecturia %}<a class="confirmacionmodal btn btn-primary btn-sm" href="javascript:;" nhref="/inscripciones?action=aprobarcertificadonoadeuda&id={{ inscripcion.id }}&op=1"><i class="icon-check"></i> Aprobar</a>
+                                <a class="formmodal btn btn-secondary btn-sm" href="javascript:;" nhref="/inscripciones?action=addobservacioncertificadonoadeuda&id={{ inscripcion.id }}&op=1"><i class="icon-book"></i> Agregar observacvion</a>{% endif %}
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for observacionc in observacionesc %}
+                        <tr>
+                            <td>{{ observacionc.observacion }}</td>
+                            <td style="text-align: center;">{{ observacionc.encargado.persona }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class='row' id="tabledata">
+            <div class='col-12'>
+                <table class='table table-bordered'>
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 75%;">Secretaria
+                            <div style="float: right;">
+                                {% if inscripcion.certificadoaprobadosecretaria %}
+                                    <button class="btn btn-success " style="border-right: 0px;">&#10004; Aprobado</button>{% endif %}<br>
+                                {{ inscripcion.fechasecretaria|date:"d- m, Y, h:i a" }}
+                            </div>
+                        </th>
+                        <th>
+                            {% if not inscripcion.certificadoaprobadosecretaria %}<a class="confirmacionmodal btn btn-primary btn-sm" href="javascript:;" nhref="/inscripciones?action=aprobarcertificadonoadeuda&id={{ inscripcion.id }}&op=2"><i class="icon-check"></i> Aprobar</a>
+                                <a class="formmodal btn btn-secondary btn-sm" href="javascript:;" nhref="/inscripciones?action=addobservacioncertificadonoadeuda&id={{ inscripcion.id }}&op=2"><i class="icon-book"></i> Agregar observacvion</a>{% endif %}
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for observacions in observacioness %}
+                        <tr>
+                            <td>{{ observacions.observacion }}</td>
+                            <td style="text-align: center;">{{ observacions.encargado.persona }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class='row' id="tabledata">
+            <div class='col-12'>
+                <table class='table table-bordered'>
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 75%;">Biblioteca
+                            <div style="float: right;">
+                                {% if inscripcion.certificadoaprobadobiblioteca %}
+                                    <button class="btn btn-success " style="border-right: 0px;">&#10004; Aprobado</button>{% endif %}<br>
+                                {{ inscripcion.fechabiblioteca|date:"d- m, Y, h:i a" }}
+                            </div>
+                        </th>
+                        <th>
+                            {% if not inscripcion.certificadoaprobadobiblioteca %}<a class="confirmacionmodal btn btn-primary btn-sm" href="javascript:;" nhref="/inscripciones?action=aprobarcertificadonoadeuda&id={{ inscripcion.id }}&op=3"><i class="icon-check"></i> Aprobar</a>
+                                <a class="formmodal btn btn-secondary btn-sm" href="javascript:;" nhref="/inscripciones?action=addobservacioncertificadonoadeuda&id={{ inscripcion.id }}&op=3"><i class="icon-book"></i> Agregar observacvion</a>{% endif %}
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for observacionb in observacionesb %}
+                        <tr>
+                            <td>{{ observacionb.observacion }}</td>
+                            <td style="text-align: center;">{{ observacionb.encargado.persona }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

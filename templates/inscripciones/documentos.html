@@ -1,0 +1,117 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function () {
+            $(".entrega_doc").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('idd');
+                var idinsc = elemento.attr('idins');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: {'action': 'entrega_doc', 'id': id, 'estado': valor, 'idinscripcion':idinsc, 'csrfmiddlewaretoken': csrftoken},
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result == 'ok') {
+                            location.reload();
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Estudiante: {{ inscripcion }}</h4>
+        </div>
+    </div>
+{#    {% if perms.ctt.puede_modificar_inscripciones %}#}
+{#        {% if not inscripcion.graduado %}#}
+{#            <div class='row mb-2'>#}
+{#                <div class='col-6'>#}
+{#                    <a href="javascript:;" nhref="/inscripciones?action=adddocumento&id={{ inscripcion.id }}"#}
+{#                       class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar</a>#}
+{#                </div>#}
+{#            </div>#}
+{#        {% endif %}#}
+{#    {% endif %}#}
+{% endblock %}
+{% block canvas %}
+
+<div class='row'>
+        <div class="col-12 center">
+            <table class='table table-bordered center align-center '
+            style="width: 50%;margin-left: 15%;margin-top: 15px">
+                <thead class="table-light">
+                <tr>
+                    <th>Documento</th>
+{#                    <th>Observaci&oacute;n</th>#}
+                    <th style="width: 80px;text-align: center;">Fecha de entrega</th>
+                    <th style="width: 80px;text-align: center;">Entregado</th>
+{#                    <th style="width: 60px;"></th>#}
+                </tr>
+                </thead>
+                <tbody>
+                {% for doc in documentos %}
+                    <tr>
+                        <td>{{ doc.nombre }}</td>
+{#                        <td>{% for archivo in archivos %}#}
+{#                            {% if archivo.tipodocumentoinscripcion == doc %}#}
+{#                                {{ archivo.observacion }}#}
+{#                            {% endif %}#}
+{#                        {% endfor %}</td>#}
+                        <td style="text-align: center;">
+                            {% for archivo in archivos %}
+                                {% if archivo.tipodocumentoinscripcion == doc %}
+                                    {{ archivo.fecha|date:"Y-m-d" }}
+                                {% endif %}
+                            {% endfor %}
+
+                        </td>
+                        <td style="text-align: center;">
+
+                            {% with existe=doc|args:inscripcion|call:'existedocumento' %}
+                                {% if existe %}
+                                    <input type="checkbox" class="entrega_doc" idd="{{ doc.id }}" idins="{{ inscripcion.id }}"
+                                           checked="checked"
+                                           {% if not perms.ctt.puede_modificar_inscripciones %}
+                                           disabled="disabled">
+                                            {% endif %}
+                                {% else %}
+                                    <input type="checkbox" class="entrega_doc" idd="{{ doc.id }}" idins="{{ inscripcion.id }}"
+                                     {% if not perms.ctt.puede_modificar_inscripciones %}
+                                           disabled="disabled">
+                                            {% endif %}>
+                                {% endif %}
+
+                            {% endwith %}
+
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </div>
+{% endblock %}

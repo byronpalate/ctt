@@ -1,0 +1,17 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type = "text/javascript">
+        var reloadinterface = true;
+        $(function (){
+            $("#id_periodo").addClass("validate[required]");
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/cambioperiodo{% endblock %}
+{% block formdestination %}{{ path }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='changeperiodo'/>
+{% endblock %}
+{% block formback %}/{% endblock %}
+{% block buttonname %}Seleccionar{% endblock %}

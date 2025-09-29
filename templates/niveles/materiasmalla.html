@@ -1,0 +1,74 @@
+<table class="table table-bordered">
+    <thead class="table-light">
+    <tr>
+        <th style="text-align: center; width: 30px"><input type="checkbox" id="todos"></th>
+        <th>Asignatura</th>
+        {% if coordinacion.id == 16 or coordinacion.id == 17 %}
+            <th style="width: 100px">Intensiva</th>
+        {% endif %}
+        <th style="width: 250px">Itinerario</th>
+        <th style="width: 100px">Nivel</th>
+        <th style="text-align: center; width: 70px">Horas</th>
+        <th style="text-align: center; width: 70px">Cr&eacute;ditos</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for materiamalla in materiasmalla %}
+        <tr>
+            <td style="text-align: center"><input type="checkbox" id="{{ materiamalla.id }}" class="selector"></td>
+            <td class="smaller">{{ materiamalla.asignatura.nombre }}</td>
+            {% if coordinacion.id == 16 or coordinacion.id == 17 %}
+                <td class="smaller"><input type="checkbox" id="{{ materiamalla.id }}" class="selectorintensivo"></td>
+            {% endif %}
+            <td class="smaller">{{ materiamalla.itinerario|default_if_none:'' }}</td>
+            <td class="smaller">{{ materiamalla.nivelmalla }}</td>
+            <td class="smaller" style="text-align: center">{{ materiamalla.horas|floatformat:1 }}</td>
+            <td class="smaller" style="text-align: center">{{ materiamalla.creditos|floatformat:4 }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="20">NO EXISTEN DATOS</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% if carrera.posgrado %}
+    <div class='row'>
+        <div class='col-12'>
+            <h4>Nivel para módulos en posgrado:</h4>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <select id='modulonivelmallaselect' class="input-block-level">
+                {% for mdn in modulonivelesmalla %}
+                    <option value='{{ mdn.id }}' >{{ mdn }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+{% endif %}
+<table class="table table-bordered">
+    <thead class="table-light">
+    <tr>
+        <th style="text-align: center; width: 30px"><input type="checkbox" id="todosmodulos"></th>
+        <th>M&oacute;dulos</th>
+        <th style="text-align: center; width: 70px">Horas</th>
+        <th style="text-align: center; width: 70px">Cr&eacute;ditos</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for materiamodulo in materiasmodulo %}
+        <tr>
+            <td style="text-align: center"><input type="checkbox" id="{{ materiamodulo.id }}" class="selectormodulo"></td>
+            <td class="smaller">{{ materiamodulo.asignatura.nombre }}</td>
+            <td class="smaller" style="text-align: center">{{ materiamodulo.horas|floatformat:1 }}</td>
+            <td class="smaller" style="text-align: center">{{ materiamodulo.creditos|floatformat:4 }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="20">NO EXISTEN DATOS</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

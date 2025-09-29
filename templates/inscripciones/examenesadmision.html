@@ -1,0 +1,274 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            $(".selectorfecha").datepicker({format:"dd-mm-yyyy"}).on('changeDate', function(ev){
+                var elemento = $(this);
+                var idi = elemento.attr('idi');
+                var valor = elemento.val();
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: { 'action': 'actualizafecha', 'id': idi, "valor": valor, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok'){
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $(".selectorhora").timepicker({minuteStep: 1,appendWidgetTo: 'body', showSeconds: false, showMeridian: false, defaultTime: false}).on('hide.timepicker', function(ev){
+                var valor = ev.time.value;
+                var elemento = $(this);
+                var idi = elemento.attr('idi');
+                var va = elemento.attr('va');
+                if (va !== valor) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/inscripciones",
+                        data: { 'action': 'actualizahora', 'id': idi, "valor": valor, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok'){
+                                elemento.attr({'va': valor, 'value': valor});
+                            } else {
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                                elemento.val(elemento.attr('va'));
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                            elemento.val(elemento.attr('va'));
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            var intentos = 0;
+            var materias;
+
+            $(".sel_examen").change(function () {
+                var elemento = $(this);
+                var idi = elemento.attr('idi');
+                var id = elemento.val();
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: {'action': 'examen_ins', 'id': id, 'idi': idi, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': id});
+                            if (id>0){
+                                $("#fecha_"+idi).val(data.fecha).removeAttr('disabled').attr({'va': data.fecha});
+                                $("#hora_"+idi).val(data.hora).removeAttr('disabled').attr({'va': data.hora});
+                                $("#lugar_"+idi).val(data.lugar).removeAttr('disabled').attr({'va': data.lugar});
+                            }else{
+                                $("#fecha_"+idi).val('').attr({'disabled': 'disabled'});
+                                $("#hora_"+idi).val('').attr({'disabled': 'disabled'});
+                                $("#lugar_"+idi).val('').attr({'disabled': 'disabled'});
+                            }
+                        } else {
+                            elemento.val(elemento.attr('va'));
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.val(elemento.attr('va'));
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $(".lugar").change(function () {
+                var elemento = $(this);
+                var idi = elemento.attr('idi');
+                var id = elemento.val();
+                var va = elemento.attr('va');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: {'action': 'actualizalugar', 'id': id, 'idi': idi, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok'){
+                            elemento.attr({'va': id});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(va);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.val(va);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Estudiante: {{ inscripcion }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    {% if perms.ctt.puede_modificar_inscripciones %}
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <div class="btn-group dropdown">
+                    <a class="btn dropdown-toggle btn-success btn-sm" data-bs-toggle="dropdown" href="#"><i class="icon-plus"></i> Adicionar <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=addexamen&id={{ inscripcion.id }}" class="formmodal dropdown-item"> Examen General</a></li>
+                        <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=addexameni&id={{ inscripcion.id }}" class="formmodal dropdown-item"> Examen Individual</a></li>
+                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=addentrevista&id={{ inscripcion.id }}"> Entrevista</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Examen</th>
+                    <th style="width: 80px; text-align: center">Fecha</th>
+                    <th style="width: 80px; text-align: center ">Hora</th>
+                    <th style="width: 400px;">Lugar</th>
+                    <th style="width: 100px; text-align: center">Estado</th>
+                    <th style="width: 80px; text-align: center"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for c in examenes %}
+                    {% with rindioexamen=c|call:"registro_examen_inscripcion" %}
+                        <tr>
+                            <td>{{ c.examenadmision }}</td>
+                            <td style="text-align: center">
+                                {% if perms.ctt.puede_modificar_inscripciones %}
+                                    <input type="text" class="form-control selectorfecha" {% if rindioexamen %}disabled="disabled"{% endif %} id="fecha_{{ c.id }}" idi="{{ c.id }}" va="{{ c.fecha|date:"Y-m-d" }}" value="{{ c.fecha|date:"Y-m-d" }}">
+                                {% else %}
+                                    {{ c.fecha|date:"Y-m-d" }}
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if perms.ctt.puede_modificar_inscripciones %}
+                                    <input type="text" class="form-control selectorhora" {% if rindioexamen %}disabled="disabled"{% endif %} id="hora_{{ c.id }}" idi="{{ c.id }}" va="{{ c.hora|time:"H:i" }}" value="{{ c.hora|time:"H:i" }}">
+                                {% else %}
+                                    {{ c.fecha|date:"Y-m-d" }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if perms.ctt.puede_modificar_inscripciones %}
+                                    <select class="lugar input-block-level form-select-sm" {% if rindioexamen %}disabled="disabled"{% endif %} id="lugar_{{ c.id }}" va="{{ c.aula.id }}" idi="{{ c.id }}">
+                                        <option value="0">---------</option>
+                                        {% for aula in c.aulas %}
+                                            <option {% if c.aula.id == aula.id %}selected="selected"{% endif %} value="{{ aula.id }}">{{ aula }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% else %}
+                                    {{ c.aula }}
+                                {% endif %}
+                            </td>
+                            {% with respuesta=c.mi_respuesta_examen %}
+                                <td style="text-align: center">
+                                    {% if respuesta %}
+                                        <span class="badge {% if respuesta.aprobado %}text-bg-success{% elif respuesta.reprobado %}text-bg-danger{% else %}text-bg-warning{% endif %}">{{ respuesta.get_estado_display }}</span>
+                                    {% endif %}
+                                </td>
+                            {% endwith %}
+                            <td style="text-align: center">
+                                {% if perms.ctt.puede_modificar_inscripciones %}
+                                    <a class="btn btn-ssm btn-danger eliminacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar" href="javascript:;" nhref="/inscripciones?action=delexamen&id={{ c.id }}&idi={{ inscripcion.id }}"><i class="icon-remove"></i></a>
+                                    <a class="btn btn-ssm btn-info formmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Mover" href="javascript:;" nhref="/inscripciones?action=moverexamen&id={{ c.id }}&idi={{ inscripcion.id }}"><i class="icon-refresh"></i></a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endwith %}
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Entrevista</th>
+                    <th style="width: 100px; text-align: center"></th>
+                    <th style="width: 80px; text-align: center">Puntaje</th>
+                    <th style="width: 40px; text-align: center"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for e in entrevistas %}
+                    <tr>
+                        <td>{{ e.entrevista }}</td>
+                        <td style="text-align: center">
+                            {% if not e.respuesta_finalizada %}
+                                {% if perms.ctt.puede_modificar_inscripciones %}
+                                    <a class="btn btn-sm btn-success" id="hacer_ent_{{ e.inscripcion.id }}" href="/inscripciones?action=realizar_ent&id={{ e.id }}"><i class="icon-list"></i> Entrevistar</a>
+                                {% endif %}
+                            {% else %}
+                                <a class="btn btn-sm btn-info" id="hacer_ent_{{ e.inscripcion.id }}" href="/inscripciones?action=realizar_ent&id={{ e.id }}"><i class="icon-list"></i> Consultar</a>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; vertical-align: middle">
+                            {% if e.respondio_entrevista %}
+                                <span class="badge-info">{{ e.respuesta.valor }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if e.respuesta_finalizada %}
+                                {% if reporte_0 %}
+                                    <a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&id={{ e.id }}" class='btn reportedirecto btn-ssm btn-warning tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Respuesta"><i class="icon-print"></i></a>
+                                {% endif %}
+                            {% else %}
+                                {% if perms.ctt.puede_modificar_inscripciones %}
+                                    <a class="btn btn-ssm btn-danger eliminacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar" href="javascript:;" nhref="/inscripciones?action=delentrevista&id={{ e.id }}&idi={{ inscripcion.id }}"><i class="icon-remove"></i></a>
+                                    <a class="btn btn-ssm btn-info formmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Mover" href="javascript:;" nhref="/inscripciones?action=moverentrevista&id={{ e.id }}&idi={{ inscripcion.id }}"><i class="icon-refresh"></i></a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

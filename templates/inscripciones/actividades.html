@@ -1,0 +1,58 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <p><h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row' id="tabledata">
+        <div class='col-12'>
+            <table class='table table-bordered' >
+                <thead class="table-light">
+                <tr>
+                    <th>Actividad</th>
+                    <th style="width: 300px;">Profesor</th>
+                    <th style="width: 80px; text-align: center;">Inicio</th>
+                    <th style="width: 80px; text-align: center;">Fin</th>
+                    <th style="width: 80px; text-align: center;">Nota</th>
+                    <th style="width: 80px; text-align: center;">% Asist.</th>
+                    <th style="width: 80px; text-align: center;">Estado</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for actividad in actividades %}
+                    <tr>
+                        <td>{{ actividad.actividad.nombre }}</td>
+                        <td>{{ actividad.actividad.responsable }}</td>
+                        <td style="text-align: center;">{{ actividad.actividad.fechainicio|date:'Y-m-d' }}</td>
+                        <td style="text-align: center;">{{ actividad.actividad.fechafin|date:'Y-m-d' }}</td>
+                        <td style="text-align: center;">
+                            {% if actividad.actividad.calificar %}
+                                {{ actividad.nota|floatformat:2 }}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">{{ actividad.asistencia|floatformat:0 }}%</td>
+                        <td style="text-align: center;">
+                            <span class='badge {% if actividad.estado.aprobada %}text-bg-success{% elif actividad.estado.reprobado %}label label-important{% else %}label-info{% endif %}'>{{ actividad.estado }}</span>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "basebs.html" %}
+{% block atras %}/docentes?id={{ profesor.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <tbody>
+                <thead class="table-light">
+                <tr>
+                    <th>Proyecto</th>
+                    <th style="width: 300px">Integrante</th>
+                    <th style="width: 80px; text-align: center">Avance</th>
+                    <th style="width: 80px; text-align: center">Tutorías</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for tutoria in tutorias %}
+                    <tr>
+                        <td>{{ tutoria.proyecto }}</td>
+                        <td>
+                            {% for integrante in tutoria.preproyecto.integrantes %}
+                                {{ integrante.persona }}{% if not forloop.last %}<br>{% endif %}
+                            {% endfor %}
+                        </td>
+                        <td style="text-align: center">{{ tutoria.proyecto.porcientoavance|floatformat:0 }}%</td>
+                        <td style="text-align: center">{{ tutoria.proyecto.cantidad_tutorias }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

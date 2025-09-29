@@ -1,0 +1,331 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $('.actualizarprincipalpractica').click(function(){
+                var elemento = $(this);
+                var valoractual = elemento.is(':checked');
+                var id = elemento.attr("pid");
+                var idm = elemento.attr("idm");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/niveles",
+                    data: { 'action': 'updateprincpalpractica', 'id': id, 'valor': valoractual, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok'){
+                            $(".principalpracticas_" + idm).prop('checked', false);
+                            elemento.prop('checked', valoractual);
+                        } else {
+                            elemento.prop('checked', !valoractual);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valoractual);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.horassemanalesdocentepractica').blur(function(){
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 1);
+                var id  = elemento.attr("pid");
+                var valoranterior = parseFloat(elemento.attr("va"));
+                var valoractual = parseFloat(elemento.val());
+                elemento.val(valoractual.toFixed(1));
+                if (valoranterior !== valoractual){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/niveles",
+                        data: { 'action': 'updatehorassemanalesdocentepractica', 'id': id, 'valor': valoractual, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok'){
+                                elemento.attr({'va': parseFloat(data.valor).toFixed(1)});
+                            } else {
+                                elemento.val(valoranterior.toFixed(1));
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.val(valoranterior.toFixed(1));
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            }); 
+            
+            $('.actualizarprincipalpracticaficticio').click(function(){
+                var elemento = $(this);
+                var valoractual = elemento.is(':checked');
+                var id = elemento.attr("pid");
+                var idm = elemento.attr("idm");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/niveles",
+                    data: { 'action': 'updateprincpalpracticaficticio', 'id': id, 'valor': valoractual, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok'){
+                            $(".principalpracticas_" + idm).prop('checked', false);
+                            elemento.prop('checked', valoractual);
+                        } else {
+                            elemento.prop('checked', !valoractual);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valoractual);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.horassemanalesdocentepracticaficticio').blur(function(){
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 1);
+                var id  = elemento.attr("pid");
+                var valoranterior = parseFloat(elemento.attr("va"));
+                var valoractual = parseFloat(elemento.val());
+                elemento.val(valoractual.toFixed(1));
+                if (valoranterior !== valoractual){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/niveles",
+                        data: { 'action': 'updatehorassemanalesdocentepracticaficticio', 'id': id, 'valor': valoractual, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok'){
+                                elemento.attr({'va': parseFloat(data.valor).toFixed(1)});
+                            } else {
+                                elemento.val(valoranterior.toFixed(1));
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.val(valoranterior.toFixed(1));
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Materia: {{ materia }}</h4>
+        </div>
+    </div>
+    <div class='row mb-2'>
+        <div class='col-6'>
+       {% with cond_modif=materia.puede_editar_distributivo %}
+  {% if extension.modificardocente or cond_modif %}
+    {% if not materia.cerrado and perms.ctt.puede_modificar_profesor_materia %}
+      <a href="javascript:;" nhref="/niveles?action=addgrupopractica&id={{ materia.id }}" class="btn btn-sm btn-success formmodal"><i class="icon-plus"></i> Adicionar</a>
+    {% endif %}
+  {% endif %}
+{% endwith %}
+
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 50px;text-align: center;">No.</th>
+                    <th>Nombre</th>
+                    <th style="width: 400px;">Profesor(es)</th>
+                    <th style="width:60px;text-align: center"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for grupo in grupospracticas %}
+                    <tr>
+                        <td style="text-align: center;">{{ forloop.counter }}</td>
+                        <td>{{ grupo.nombre }}</td>
+                        <td>
+                            <table class="table table-bordered table-condensed">
+                                {% for profesormateria in grupo.profesores_materia_practica %}
+                                    <tr>
+                                        <td>
+                                            <div style="float: left;width: 100%;">
+                                                <div style="min-width: 0;height: 40px;float: left;text-align: center; vertical-align: middle">
+                                               {% with cond_modif=grupo.materia.puede_editar_distributivo %}
+  {% if perms.ctt.puede_modificar_profesor_materia %}
+    {# (extension.modificardocente OR cond_modif) AND demás #}
+    {% if extension.modificardocente or cond_modif %}
+      {% if not nivel.cerrado and not materia.cerrado and not profesormateria.tiene_contrato %}
+        <a style="margin-top: 10px"
+           href="javascript:;" nhref="/niveles?action=delprofesorpractica&id={{ profesormateria.id }}"
+           class="btn btn-ssm btn-danger eliminacionmodal tu"
+           data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar">
+           <i class="icon-remove"></i>
+        </a>
+        <a style="margin-top: 10px"
+           href="javascript:;" nhref="/niveles?action=editprofesorpractica&id={{ profesormateria.id }}"
+           class="formmodal btn btn-ssm btn-success tu"
+           data-bs-toggle="tooltip" data-bs-placement="top" title="Editar">
+           <i class="icon-edit"></i>
+        </a>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+{% endwith %}
+
+                                                </div>
+                                                <div style="width: 40px; height: 40px; float: left; margin-left: 3px; text-align: center">
+                                               {% with cond_modif=grupo.materia.puede_editar_distributivo %}
+  {% if extension.modificardocente or cond_modif %}
+    {% if not materia.nivel.cerrado and perms.ctt.puede_modificar_profesor_materia and not profesormateria.tiene_contrato %}
+      <input class="form-imput imp-numbersmall horassemanalesdocentepractica form-control form-control-sm" pid="{{ profesormateria.id }}" id="hpm_{{ profesormateria.id }}" type="text" va="{{ profesormateria.horassemanales|floatformat:1 }}" value="{{ profesormateria.horassemanales|floatformat:1 }}" style="width: 40px; margin-top: 5px">
+    {% else %}
+      {{ profesormateria.horassemanales|floatformat:1 }} hrs.
+    {% endif %}
+  {% else %}
+    {{ profesormateria.horassemanales|floatformat:1 }} hrs.
+  {% endif %}
+{% endwith %}
+
+                                                </div>
+                                                <div style="height: 20px; overflow: hidden; padding-left: 5px">
+                                                    <span style="font-weight: bold;">{{ profesormateria.profesor.persona.nombre_completo }}</span>
+                                                </div>
+                                                <div style="height: 20px; overflow: hidden; padding-left: 5px">
+                                                    <span class="fechaspractica{{ grupo.id }} smaller">{{ profesormateria.tipoprofesor }} - [{{ profesormateria.desde|date:'Y-m-d' }} al {{ profesormateria.hasta|date:'Y-m-d' }}]</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        {% with cond_modif=grupo.materia.puede_editar_distributivo %}
+                            {% if not grupo.materia.nivel.cerrado and not grupo.materia.cerrado %}
+                                {% if extension.modificardocente or cond_modif and perms.ctt.puede_modificar_profesor_materia %}
+                                    <a href="javascript:;" nhref="/niveles?action=addprofesorpractica&mid={{ grupo.id }}" class="formmodal btn btn-ssm btn-success" style="margin: 3px"><i class="icon-plus"></i> Profesor</a>
+                                {% endif %}
+                            {% endif %}
+                        {% endwith %}
+                        
+                          <table class="table table-tranparent table-borderless">
+                            <thead>
+                            {% with cond_modif=grupo.materia.puede_editar_distributivo %}
+                            {% if not materia.nivel.cerrado and not materia.cerrado %}
+                                {% if extension.modificardocente or cond_modif and perms.ctt.puede_modificar_profesor_materia %}
+                                    <tr>
+                                        <th class="text-end" style="padding-right: 10px;">
+                                            <a href="javascript:;" nhref="/niveles?action=addprofesorficticiopractica&mid={{ grupo.id }}" class="formmodal btn btn-outline-secondary btn-sm" style="display: inline-block; font-size: 0.8em;" data-bs-toggle="tooltip" title="Añadir Profesor Ficticio"><i class="bi bi-person-plus"></i></a>
+                                        </th>
+                                    </tr>
+                                {% endif %}
+                            {% endif %}
+                            {% endwith %}
+                            </thead>
+                                <tbody class="bg-danger bg-opacity-10">
+                               
+                                    {% for profesormateria in grupo.profesoresficticios_materia_practica %}
+                                        <tr>
+                                            <td>
+                                                <div style="float: left; width: 100%">
+                                                    <div style="min-width: 0;height: 40px;float: left;text-align: center">
+                                                       {% with cond_modif=grupo.materia.puede_editar_distributivo %}
+                                                        {% if perms.ctt.puede_modificar_profesor_materia %}
+                                                            {% if not nivel.cerrado and not materia.cerrado and extension.modificardocente and not profesormateria.tiene_contrato or cond_modif %}
+                                                                <div style="height: 40px; float: left; margin-left: 2px; text-align: center">
+                                                                    <a style="margin-top: 10px" href="javascript:;" nhref="/niveles?action=delprofesorpracticaficticio&id={{ profesormateria.id }}" class='btn btn-ssm btn-danger eliminacionmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+{#                                                                    <a style="margin-top: 10px" href="javascript:;" nhref="/niveles?action=editprofesorficticiopractica&id={{ profesormateria.id }}" class='formmodal btn btn-ssm btn-success tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>#}
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    
+                                                        
+                                                            {% if extension.modificardocente or cond_modif  and not materia.cerrado and perms.ctt.puede_modificar_profesor_materia %}
+                                                                <div style="height: 40px; float: left; margin-left: 2px; text-align: center">
+                                                                    <input style="margin-top: 13px" class="actualizarprincipalpracticaficticio principal_{{ materia.id }} tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Principal" pid="{{ profesormateria.id }}" idm="{{ materia.id }}" type="checkbox" {% if profesormateria.es_principal %}checked{% endif %}>
+                                                                </div>
+                                                            {% else %}
+                                                                {% if profesormateria.es_principal %}
+                                                                    <div style="height: 40px; float: left; margin-left: 2px; text-align: center">
+                                                                        <span class="badge text-bg-info tu" data-bs-toggle="tooltip" style="margin-top: 10px" data-bs-placement="top" title="Principal">P</span>
+                                                                    </div>
+                                                                {% endif %}
+                                                       
+                                                            
+                                                        {% endif %}
+                                                    </div>
+                                                    <div style="width: 40px; height: 40px; float: left; margin-left: 3px; text-align: center">
+                                                        {% if extension.modificardocente or cond_modif  and not materia.nivel.cerrado and perms.ctt.puede_modificar_profesor_materia and not profesormateria.tiene_contrato %}
+                                                            <input class="form-imput imp-numbersmall horassemanalesdocentepracticaficticio form-control-sm" pid="{{ profesormateria.id }}" id="hpm_{{ profesormateria.id }}" type="text" va="{{ profesormateria.horas_semanales|floatformat:1 }}" value="{{ profesormateria.horas_semanales|floatformat:1 }}" style="width: 35px; margin-top: 5px">
+                                                        {% else %}
+                                                            {{ profesormateria.horas_semanales|floatformat:1 }} hrs.
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                    </div>
+                                                    <div style="height: 20px; overflow: hidden; padding-left: 5px">
+                                                        <!-- Nombre del Profesor Ficticio con Badge Informativo -->
+<span style="font-weight: bold;">
+    {{ profesormateria.profesor_ficticio }}
+</span>
+<span class="badge bg-danger ms-2" style="font-size: 0.7em;">
+    <i class="bi bi-exclamation-triangle"></i> Docente Ficticio
+</span>
+
+                                                    </div>
+                                                    <div style="height: 20px; overflow: hidden; padding-left: 5px">
+                                                        <span class="fechas{{ materia.id }} smaller">[{{ profesormateria.fecha_inicio|date:'Y-m-d' }} al {{ profesormateria.fecha_fin|date:'Y-m-d' }}]</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                </table>
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li class="smaller"><a href='/niveles?action=tomandompracticas&id={{ grupo.id }}' class="dropdown-item"><i class="icon-user"></i> Tomaron la Practica</a></li>
+                                    <li class="smaller"><a href='/adm_horariospracticas?action=horario&id={{ grupo.id }}' class="dropdown-item"><i class="icon-time"></i> Horario de la practica</a></li>
+                                    <li class="smaller"><a href="javascript:;" nhref='/niveles?action=editgrupopractica&id={{ grupo.id }}' class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
+                                    {% with cond_modif=grupo.materia.puede_editar_distributivo %}
+                                    {% if perms.ctt.puede_modificar_materias and extension.modificardocente or cond_modif  %}
+                                        <li class="dropdown-divider"></li>
+                                        <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/niveles?action=deletegrupopracticas&id={{ grupo.id }}'><i class="icon-remove"></i> Eliminar Grupo</a></li>
+                                    {% endif %}
+                                {% endwith %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

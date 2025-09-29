@@ -1,0 +1,44 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_materia").addClass("validate[required]");
+
+            $("#formbutton").hide();
+
+            contarMarcados = function() {
+                var cant = $(".estudiante:checked").length;
+                if (cant>0) {
+                    $("#formbutton").show();
+                } else {
+                    $("#formbutton").hide();
+                }
+            };
+
+            $(".estudiante").click(function() {
+                contarMarcados();
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
+{% block formdestination %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='dividir'/>
+    <input type='hidden' name='nivel' value='{{ materia.nivel.id }}'/>
+    <input type='hidden' name='materia' value='{{ materia.id }}'/>
+    <div class="control-group">
+        <label class="control-label">Matriculados</label>
+        <div class="control">
+            {% for ma in materia.asignados_a_esta_materia_por_id %}
+                <label class="checkbox">
+                    <input type="checkbox" name="ins" value="{{ ma.id }}" class='estudiante'>
+                    {{ forloop.counter }} - {{  ma.matricula.inscripcion.persona }}
+                </label>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+{% block formback %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}

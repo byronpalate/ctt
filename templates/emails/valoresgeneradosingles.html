@@ -1,0 +1,114 @@
+{% extends "emails/emailbase.html" %}
+{% block contenido %}
+    <div>
+    <style>
+            /* Estilos generales para las tablas */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 2px 0;
+                font-size: 14px;
+                text-align: left;
+            }
+
+            th, td {
+                padding: 12px;
+                border: 1px solid #ddd;
+            }
+
+            th {
+                background-color: #f4f4f4;
+                font-weight: bold;
+            }
+
+            td {
+                background-color: #ffffff;
+            }
+
+            /* Estilo para las cabeceras */
+            thead th {
+                background-color: #007bff;
+                color: white;
+            }
+
+            /* Alternar colores para las filas */
+            tbody tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+
+            /* Centrar los textos */
+            th, td {
+                text-align: left;
+            }
+
+            /* Estilo para las tablas vacías */
+            tbody tr td {
+                color: #888888;
+            }
+
+            div {
+                margin-bottom: 20px;
+            }
+
+            .alerta-usuario {
+                background-color: #ffcccc; /* Color de fondo rojo claro */
+                color: #cc0000; /* Texto rojo fuerte */
+                padding: 20px; /* Espaciado interno para que el texto no esté pegado a los bordes */
+                border-radius: 10px; /* Esquinas redondeadas */
+                border: 1px solid #cc0000; /* Borde rojo */
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra alrededor del div */
+                font-weight: bold; /* Texto en negrita */
+                text-align: center; /* Texto centrado */
+                margin-bottom: 20px; /* Separación debajo del div */
+                font-size: 16px; /* Tamaño del texto */
+            }
+        </style>
+
+    <div class="alerta-usuario">
+    ¡AVISO! <br>Le informamos que se han generado las solicitudes de pago en el sistema(CTT) puedes revisarlas en "Tus Finanzas", <br>
+        de acuerdo con los niveles aprobados en el Examen de Validación de Inglés.
+    </div>
+    <div>
+        <table>
+            <tr>
+                <th>Dirigido a :</th>
+                <td>{{ proceso.inscripcion.persona }}</td>
+            </tr>
+            <tr>
+                <th>Fecha de Creación:</th>
+                <td>{% now "d/m/Y" %}</td>
+            </tr>
+            <tr>
+                <th>Valor a cancelar:</th>
+                <td>{{valor}} $</td>
+            </tr>
+            <tr>
+                <th>Nota:</th>
+                <td>Una vez procesado el pago en el CTT, confirmar al siguiente correo mariaamancha@uti.edu.ec para el ingreso de notas en su record</td>
+            </tr>
+        </table>
+    </div>
+
+    <div>
+        <table>
+            <thead>
+            <tr>
+                <th>Modulos Aprobados</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for mod in modulos %}
+                <tr>
+                    <td>{{ mod.asignatura }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td>NO APLICA</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </div>
+    <br>
+{% endblock %}

@@ -1,0 +1,309 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+        });
+        var lista_items1 = [];
+        $(function() {
+
+            $("#FilterTextBox1").keyup(function(){
+                var s = $(this).val().toUpperCase();
+                $(".filterable1 tr").show();
+                if (s.length > 0){
+                    $(".filterable1 tr .SearchColumn:not(:contains('" + s + "'))").parent().hide();
+                }
+            });
+
+            actualizar_lista = function () {
+                lista_items1 = [];
+                if ($(".seleccionados:checked").length > 0){
+                    $("#salvar").show();
+                }else{
+                    $("#salvar").hide();
+                }
+                var lista_completa = true;
+                $(".seleccionados:checked").each(function () {
+                    var ida = $(this).attr('ida');
+                    var fecha = $("#fecha_"+ida).val();
+                    var nota = parseFloat($("#nota_"+ida).val());
+                    var notae = parseFloat($("#notae_"+ida).val());
+                    var carrerai = parseInt($("#carrerainterna_"+ida).val());
+                    var asignaturai = parseInt($("#asignaturainterna_"+ida).val());
+                    var carrerae = $("#carreraexterna_"+ida).val();
+                    var asignaturae = $("#asignaturaexterna_"+ida).val();
+                    var valor = $("#tipohomologacion").val();
+                    if (parseInt(valor) === 1){
+                        if (carrerai === 0 || asignaturai === 0 || nota === 0 || notae === 0){
+                            lista_completa = false;
+                        }
+                    }else{
+                        if (carrerae.length === 0 || asignaturae.length === 0 || nota === 0 || notae === 0){
+                            lista_completa = false;
+                        }
+                    }
+                    var item = {
+                        id: ida,
+                        fecha: fecha,
+                        nota: nota,
+                        notae: notae,
+                        carrerai: carrerai,
+                        asignaturai: asignaturai,
+                        carrerae: carrerae,
+                        asignaturae: asignaturae
+                    };
+                    lista_items1.push(item);
+                });
+                return lista_completa;
+            };
+
+            $("#selector").click(function(){
+                if ($(this).is(':checked')){
+                    $(".seleccionados").prop('checked', true);
+                } else {
+                    $(".seleccionados").prop('checked', false);
+                }
+                actualizar_lista();
+            });
+
+            $(".seleccionados").click(function () {
+                actualizar_lista();
+            });
+
+            $(".nota, .notae").blur(function () {
+                numerico($(this), 0, 0, 2);
+                actualizar_lista();
+            });
+
+            $(".fechah").datepicker({format:"dd-mm-yyyy"}).on('changeDate', function(ev){
+                actualizar_lista();
+            });
+
+            $("#enviarlista").click(function(){
+                var tipohomologacion = parseInt($("#tipohomologacion").val());
+                var periodo = parseInt($("#periodo").val());
+                var tipo = parseInt($("#tipo_r").val());
+                var tipoh = parseInt($("#tipo_h").val());
+                var tiempo = parseFloat($("#tiempo_r").val());
+                var lista_completa = actualizar_lista();
+                if (lista_completa.length === 0 || tipoh === 0 || tipohomologacion === 0) {
+                    smoke.alert("Debe completar todos los datos de la homologación.");
+                }else {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/inscripciones",
+                        data: {'action': 'addrecordhomologadamasiva', 'lista': JSON.stringify(lista_items1), 'id': {{ inscripcion.id }}, 'tipo': tipohomologacion, 'periodo': periodo, 'tipor': tipo, 'tipoh': tipoh, 'tiempo': tiempo, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            if (data.result === 'ok') {
+                                location.href = "/inscripciones?action=record&id={{ inscripcion.id }}"
+                            } else {
+                                desbloqueointerface();
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $(".carrerasinternas").change(function(){
+                var elemento = $(this);
+                var ida = elemento.attr('ida');
+                var va = elemento.val();
+                $('#asignaturainterna_'+ida).empty().append('<option value="">---------</option>').val(0);
+                if (va > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/inscripciones",
+                        data: {'action': 'asignaturacarrera', 'id': va, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#asignaturainterna_'+ida).append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#tipohomologacion").change(function () {
+                actualizar_tipo_homologacion();
+            });
+
+            actualizar_tipo_homologacion = function () {
+                var valor = $("#tipohomologacion").val();
+                if (parseInt(valor) === 2){
+                    $('.internas').hide();
+                    $('.externas').show();
+                } else {
+                    $('.internas').show();
+                    $('.externas').hide();
+                }
+            };
+
+            $("#tiempo_r").blur(function(){
+                numerico($(this), 0, 0, 4);
+            });
+
+            actualizar_tipo_homologacion();
+            $("#selector").prop('checked', false);
+            $(".seleccionados").prop('checked', false);
+
+            $(".carrerasinternas").val(0);
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?action=record&id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            Tipo Homologacion
+            <select id="tipohomologacion" style="width: 100%">
+                <option value="1">INTERNA</option>
+                <option value="2">EXTERNA</option>
+            </select>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            Periodo
+            <select id="periodo" style="width: 100%">
+                <option value="0" selected>-----------</option>
+                {% for periodo in periodoshomologacion %}
+                    <option value="{{ periodo.id }}">{{ periodo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            Tipo homologacion
+            <select  id="tipo_h" style="width: 100%">
+                <option value="0" selected>-----------</option>
+                {% for tipo in tiposh %}
+                    <option value="{{ tipo.id }}">{{ tipo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12 externas">
+            Tipo reconocimiento
+            <select  id="tipo_r" style="width: 100%">
+                <option value="0" selected>-----------</option>
+                {% for tipo in tipos %}
+                    <option value="{{ tipo.id }}">{{ tipo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12 externas">
+            Tiempo reconocimiento<br>
+            <input type="text" id="tiempo_r" class="imp-numbermed-right" value="0.0000">
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <input type="search" style="text-transform: uppercase; margin-bottom: 0px" class="input-block-level" id="FilterTextBox1" name="FilterTextBox1">
+            <table class='table table-bordered table-striped filterable1'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 40px; text-align: center"><input type="checkbox" id="selector"></th>
+                    <th style="width: 100px; text-align: center">Fecha</th>
+                    <th style="width: 70px; text-align: center">Nota</th>
+                    <th style="width: 80px">Nivel</th>
+                    <th>Asignatura</th>
+                    <th style="width: 400px">Carrera homologa</th>
+                    <th style="width: 300px">Asignatura homologa</th>
+                    <th style="width: 70px; text-align: center">Nota E.</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for a in asignaturasmalla %}
+                    <tr>
+                        <td style="text-align: center"> <input type="checkbox" id="selec_{{ a.asignatura.id }}" ida="{{ a.asignatura.id }}" name="asignatura" class="seleccionados"></td>
+                        <td style="text-align: center"><input type="text" class="selectorfecha fechah" id="fecha_{{ a.asignatura.id }}" ida="{{ a.asignatura.id }}" value="{{ ahora|date:"Y-m-d" }}"></td>
+                        <td style="text-align: center"> <input type="text" class="imp-numbersmall nota" id="nota_{{ a.asignatura.id }}" ida="{{ a.asignatura.id }}" value="0.00"></td>
+                        <td>{{ a.nivelmalla }}</td>
+                        <td>{{ a.asignatura }}</td>
+                        <td class="externas"><input type="text" class="input-block-level" id="carreraexterna_{{ a.asignatura.id }}"></td>
+                        <td class="externas"><input type="text" class="input-block-level" id="asignaturaexterna_{{ a.asignatura.id }}"></td>
+                        <td class="internas">
+                            <select id="carrerainterna_{{ a.asignatura.id }}" ida="{{ a.asignatura.id }}" class="carrerasinternas" style="width: 100%">
+                                <option value="0" selected>-----------</option>
+                                {% for carrera in carreras %}
+                                    <option value="{{ carrera.id }}">{{ carrera }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="internas">
+                            <select id="asignaturainterna_{{ a.asignatura.id }}" style="width: 100%">
+                                <option value="0" selected>-----------</option>
+                            </select>
+                        </td>
+                        <td style="text-align: center"> <input type="text" class="imp-numbersmall notae" id="notae_{{ a.asignatura.id }}" ida="{{ a.asignatura.id }}" value="0.00"></td>
+                    </tr>
+                {% endfor %}
+                {% for a in asignaturasmodulo %}
+                    <tr>
+                        <td style="text-align: center"> <input type="checkbox" id="selec_{{ a.asignatura.id }}" ida="{{ a.asignatura.id }}" name="asignatura" class="seleccionados"></td>
+                        <td style="text-align: center"><input type="text" class="selectorfecha fechah" id="fecha_{{ a.asignatura.id }}" ida="{{ a.asignatura.id }}" value="{{ ahora|date:"Y-m-d" }}"></td>
+                        <td style="text-align: center"> <input type="text" class="imp-numbersmall nota" id="nota_{{ a.asignatura.id }}" ida="{{ a.asignatura.id }}" value="0"></td>
+                        <td></td>
+                        <td>{{ a.asignatura }}</td>
+                        <td class="externas"><input type="text" class="input-block-level" id="carreraexterna_{{ a.asignatura.id }}"></td>
+                        <td class="externas"><input type="text" class="input-block-level" id="asignaturaexterna_{{ a.asignatura.id }}"></td>
+                        <td class="internas">
+                            <select id="carrerainterna_{{ a.asignatura.id }}" ida="{{ a.asignatura.id }}" class="carrerasinternas" style="width: 100%">
+                                <option value="0" selected>-----------</option>
+                                {% for carrera in carreras %}
+                                    <option value="{{ carrera.id }}">{{ carrera }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="internas">
+                            <select id="asignaturainterna_{{ a.asignatura.id }}" style="width: 100%">
+                                <option value="0" selected>-----------</option>
+                            </select>
+                        </td>
+                        <td style="text-align: center"> <input type="text" class="imp-numbersmall notae" id="notae_{{ a.asignatura.id }}" ida="{{ a.asignatura.id }}" value="0"></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot id="salvar" style="display: none">
+                <tr>
+                    <td colspan="20"><a class="btn btn-sm btn-success" id="enviarlista"><i class="icon-save"></i> Guardar</a></td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+{% endblock %}

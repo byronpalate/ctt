@@ -1,0 +1,44 @@
+<div id="ajaxmensajedinamicbs"></div>
+
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+        <!-- Encabezado del modal -->
+        <div class="modal-header">
+            <h4>Detalle mensaje</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Cuerpo del modal -->
+        <div class="modal-body" id="ajaxmensajedinamicbs-modal-body" style="min-height: 60px;">
+            <div class='row'>
+                <div class="col-12">
+
+                    <label><b>Destinatarios:</b></label>
+                    <div id="seleccionados" style="width: 100%; min-height:30px;">
+                        {% for destinatario in mensaje.destinatarios %}
+                            <a>{{ destinatario.destinatario.nombre_completo_simple }}{% if not forloop.last %},{% endif %}</a>
+                        {% endfor %}
+                    </div>
+
+                    <div style="width: 100%;">
+                        <label><b>Asunto:</b></label>
+                        <p>{{ mensaje.asunto }}</p>
+                    </div>
+
+                    <div style="width: 100%;min-height: 50px;">
+                        <label><b>Mensaje:</b></label>
+                        <p>{{ mensaje.contenido|safe }}</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Pie de página del modal -->
+       <div class="modal-footer" id="formmodal_buttons">
+            <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal"><i class="icon-remove"></i> Cerrar</button>
+        </div>
+
+    </div> <!-- Fin de .modal-content -->
+</div> <!-- Fin de .modal-dialog -->

@@ -1,0 +1,100 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            var lista = [];
+
+            $(".seleccionar").click(function(){
+                var mid = $(this).attr('mid');
+                var datos = '{{ datos }}';
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/niveles",
+                    data: {'action': 'movermateriasession', 'lista_items1': datos, 'mid': mid, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            location.href = '/niveles?action=tomandom&id={{ materia_estaba.id }}';
+                        } else {
+                            desbloqueointerface();
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=tomandom&id={{ materia_estaba.id }}{% endblock %}
+{% block headcanvas %}
+    <div class='row'>
+        <div class='col-12'>
+            <h4>Materia: {{ materia_estaba }}</h4>
+            <h5>Carrera: {{ materia_estaba.carrera.nombre }}</h5>
+            <h5>Nivel: {{ materia_estaba.nivel }}</h5>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Materias</th>
+                    <th>Horarios</th>
+                    <th style="width: 70px"> </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for materia in materias %}
+                    <tr>
+                        <td>
+                            <b>{{ materia.nombre_completo }}</b><br/>
+                            {% if materia.paralelomateria %}
+                                <span class="badge text-bg-success">{{ materia.paralelomateria }}</span><br>
+                            {% endif %}
+                            {{ materia.nivel.coordinacion.nombre }}<br>
+                            {% if materia.nivel.carrera %}
+                                {{ materia.nivel.carrera }}
+                            {% elif materia.asignaturamalla %}
+                                {{ materia.asignaturamalla.malla.carrera }}
+                            {% endif %}
+                            <br>
+                            <span class='smaller'>{% if materia.nivel.nivelmalla %}{{ materia.nivel.nivelmalla }} - {% endif %}{{ materia.nivel.paralelo }} - {{ materia.nivel.sesion }}{% if materia.nivel.sede %}, {{ materia.nivel.sede }}{% endif %}</span><br/>
+                            <span class="smaller badge text-bg-info"> {{ materia.inicio|date:'Y-m-d' }} - {{ materia.fin|date:'Y-m-d' }}</span>
+                            {% if materia.capacidad_disponible < 0 %}
+                                <span class="smaller badge text-bg-warning">{{ materia.capacidad_sobrepasada }} - SOBR. </span>
+                            {% else %}
+                                <span class="smaller badge text-bg-info">{{ materia.capacidad_disponible }} - DISP. </span>
+                            {% endif %}
+                            <span class="smaller badge text-bg-info">{{ materia.capcidad_total }} - TOTAL </span>
+                        </td>
+                        <td>
+                            <ul>
+                                {% for profesormateria in materia.profesores_materia %}
+                                    {{ profesormateria.profesor }}<br>
+                                {% endfor %}
+                                {% for clase in materia.horarios %}
+                                    <li>
+                                        {{ clase.dia_semana }} - {{ clase.turno }} del {{ clase.inicio|date:'Y-m-d' }} al {{ clase.fin|date:'Y-m-d' }} - (Aula: {{ clase.aula.nombre }})
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td style="text-align: center">
+                            <a mid='{{ materia.id }}' class='btn btn-sm btn-info seleccionar'><i class="icon-arrow-up"></i> Mover</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

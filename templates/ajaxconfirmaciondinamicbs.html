@@ -1,0 +1,80 @@
+<script type="text/javascript">
+    $(function() {
+
+        envioformulario = function(){
+            $('.datepicker').css({"display": "none"});
+            bloqueointerface();
+            var formdata = new FormData($("#formulario1")[0]);
+            try {
+                formdata.append("lista_items1", JSON.stringify(lista_items1));
+            } catch (err){
+                console.log(err.message);
+            }
+            try {
+                formdata.append("csrfmiddlewaretoken", csrftoken);
+            } catch (err){
+                console.log(err.message);
+            }
+            try {
+                formdata.append("lista_items2", JSON.stringify(lista_items2));
+            } catch (err){
+                console.log(err.message);
+            }
+            try {
+                formdata.append("lista_items3", JSON.stringify(lista_items3));
+            } catch (err){
+                console.log(err.message);
+            }
+            $.ajax({
+                type: "POST",
+                url: "{% block formaction %}/{% endblock %}",
+                data: formdata,
+                success: function(data) {
+                    if (data.result === 'ok') {
+                        location.href = "{% block formdestination %}/{% endblock %}";
+                    } else {
+                        desbloqueointerface();
+                        NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                    }
+                },
+                error: function() {
+                    desbloqueointerface();
+                    NotificacionError('Opss..!!', 'Error de conexión')
+                },
+                dataType: "json",
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        };
+
+        $("#confirmacionmodal_formbutton").click(function(){
+            $('#confirmacionmodaldinamico').modal('hide');
+            envioformulario();
+        });
+
+        $("#confirmacionmodal_cancel").click(function(){
+            $('#confirmacionmodaldinamico').modal('hide');
+        });
+
+    });
+</script>
+{% block canvas %}
+    <div id="ajaxconfirmaciondinamicbs_{{ sessionclientid }}"></div>
+    <div class="modal-header"><h4>{% block titulo %}{% endblock %}</h4></div>
+    <div class="modal-body" style="min-height: 60px">
+        <form id="formulario1" style="margin-bottom: 0; margin-top: 0; background-color: white">
+            {% block mensaje %}{% endblock %}<b> {% block formobjectrepr %}{% endblock %}</b>
+            <input type='hidden' name="action" value="{% block formactionvalue %}{% endblock %}"/>
+            <input type='hidden' name='id' value="{% block formobjectid %}0{% endblock %}"/>
+            {% block fieldsextra %}
+            {% endblock %}
+        </form>
+    </div>
+    <div class="modal-footer">
+        <p style="text-align: right; margin-bottom: 0">
+            <a href="javascript:;" id="confirmacionmodal_formbutton" class='btn btn-sm btn-danger btn-form'> {% block botonlabel %}Confirmar{% endblock %}</a>
+            <a href="javascript:;" id="confirmacionmodal_cancel" class="btn btn-sm btn-info"> Cerrar</a>
+        </p>
+    </div>
+{% endblock %}

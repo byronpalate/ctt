@@ -1,0 +1,47 @@
+{% load ctt_extras %}
+<script type="text/javascript">
+    $(function() {
+        $("#formcancelbutton").click(function(){
+            $("#ajaxformdinamicbs-modal-body").html('');
+            formulariomodaldinamico.hide();
+        });
+        $("#formsalirbutton").click(function(){
+            $.ajax({
+                type: "POST",
+                url: "/logout",
+                data: {'csrfmiddlewaretoken': csrftoken},
+                success: function(data) {
+                    if (data.result === 'ok') {
+                        localStorage.removeItem('sessionid');
+                        sessionid = null;
+                        window.name = '';
+                        location.href = "/";
+                        sysend.broadcast('ctt', {message: 'exit'});
+                    } else {
+                        sleep(5000);
+                        logoutajax()
+                    }
+                },
+                error: function() {
+                    sleep(5000);
+                    logoutajax();
+                },
+                dataType: "json"
+            });
+        });
+    });
+</script>
+{% block javascript %}
+{% endblock %}
+<div id="ajaxformdinamicbs"></div>
+<div class="modal-header">
+    <h4>{% block titulo %}{% endblock %}</h4>
+</div>
+<div class="modal-body" id="ajaxformdinamicbs-modal-body" style="min-height: 60px;">
+    {% block form %}
+    {% endblock %}
+</div>
+<div class="modal-footer">
+    {% block buttonsform %}
+    {% endblock %}
+</div>

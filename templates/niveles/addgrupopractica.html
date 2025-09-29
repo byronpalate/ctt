@@ -1,0 +1,20 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_carrera, #id_asignatura").addClass("validate[required]");
+
+
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=otrascarreras&id={{ materia.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addgrupopractica'/>
+    <input type='hidden' name='id' value='{{ materia.id }}'/>
+{% endblock %}
+{% block formdestination %}/niveles?action=grupospracticas&id={{ materia.id }}{% endblock %}
+{% block formback %}/niveles?action=grupospracticas&id={{ materia.id }}{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Estudiante: {{ inscripcion }}</h4>
+        </div>
+    </div>
+    {% if not existereconocimiento %}
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref="/inscripciones?action=addreconocimiento&id={{ inscripcion.id }}&idi={{ inscripcion.id }}"><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Institución</th>
+                    <th style="width:200px; text-align: center">Tipo reconocimiento</th>
+                    <th style="width:200px; text-align: center">Tiempo Reconocimiento</th>
+                    <th style="width:200px; text-align: center">Carrera</th>
+                    <th style="width:100px; text-align: center"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for estudios in reconocimiento %}
+                <tr>
+                    <td>{{ estudios.institucion}}</td>
+                    <td style="text-align: center">{{ estudios.tiporeconocimiento }}</td>
+                    <td style="text-align: center">{{ estudios.tiemporeconocimiento}}</td>
+                    <td style="text-align: center">{{ estudios.carrera}}</td>
+                    <td style="text-align: center">
+                        <a style="margin-top: 10px" href="javascript:;" nhref="/inscripciones?action=editreconocimiento&id={{ estudios.id }}" class='formmodal btn btn-ssm btn-success tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                        <a style="margin-top: 10px" href="javascript:;" nhref="/inscripciones?action=delreconocimiento&id={{ estudios.id }}" class='btn btn-ssm btn-danger eliminacionmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

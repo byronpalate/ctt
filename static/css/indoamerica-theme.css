@@ -1,0 +1,33 @@
+
+    /* Sombras, cards y transición hover para dar efecto moderno */
+    .card {
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(58,20,103,0.07), 0 1.5px 4px rgba(0,0,0,0.03);
+    }
+    .table-striped > tbody > tr:nth-of-type(odd) {
+        background-color: #f7f7fa;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #e2ddf3 !important;
+        transition: background 0.2s;
+    }
+
+    .badge {
+    display: inline-block;
+    font-weight: 500;
+    padding: 2px 6px;               !* Ajuste justo al texto *!
+    border-radius: 5px;             !* Menos redondeado, más sobrio *!
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    white-space: nowrap;           !* No se rompe el texto *!
+    vertical-align: middle;
+}
+
+
+
+/*    .badge {
+        font-size: 0.95em;
+        border-radius: 5px;
+        padding: 4px 12px;
+        letter-spacing: .04em;
+    } */

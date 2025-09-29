@@ -1,0 +1,197 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_modelo, #id_paralelomateria").addClass("validate[required]");
+
+            verificar=function(){
+                var x = $("#seleccionados").val();
+                var y = $("#seleccionadosmodulos").val();
+                var z = $("#seleccionadosintensivos").val();
+                if (x.length > 0 || y.length > 0 || z.length > 0){
+                    $("#formbutton").show();
+                } else {
+                    $("#formbutton").hide();
+                }
+            };
+
+            actualizar_lista = function(){
+                var selected = [];
+                $('.selector').each(function() {
+                    if  ($(this).is(":checked")) {
+                        selected.push($(this).attr('id'));
+                    }
+                });
+                $("#seleccionados").val(selected);
+
+                var selectedintensivos = [];
+                $('.selectorintensivo').each(function() {
+                    if  ($(this).is(":checked")) {
+                        selectedintensivos.push($(this).attr('id'));
+                    }
+                });
+                $("#seleccionadosintensivos").val(selectedintensivos);
+
+
+                var selectedmodulos = [];
+                $('.selectormodulo').each(function() {
+                    if  ($(this).is(":checked")) {
+                        selectedmodulos.push($(this).attr('id'));
+                    }
+                });
+                $("#seleccionadosmodulos").val(selectedmodulos);
+
+                var mnm = $("#modulonivelmallaselect").val()
+                $("#modulonivelmalla").val(mnm)
+
+                verificar();
+            };
+
+            todos = function(){
+                if ($('#todos').is(":checked")){
+                    $(".selector").prop('checked', true);
+                } else{
+                    $(".selector").removeAttr('checked');
+                }
+                actualizar_lista();
+            };
+
+            todosmodulos = function(){
+                if ($('#todosmodulos').is(":checked")){
+                    $(".selectormodulo").prop('checked', true);
+                } else{
+                    $(".selectormodulo").removeAttr('checked');
+                }
+                actualizar_lista();
+            };
+
+            materias = function(){
+                var id = $("#id_malla").val();
+                if (id==0){
+                    $("#contenido").empty();
+                    actualizar_lista();
+                } else {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/niveles",
+                        data: {'action': 'materiasmalla', 'mid': id, 'nmid': '{{ nivelmallaid }}', 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === "ok") {
+                                $("#contenido").html(data.segmento);
+                                $(".selector, .selectormodulo, .selectorintensivo").click(function () {
+                                    actualizar_lista();
+                                });
+                                $("#todos").click(function () {
+                                    todos();
+                                });
+                                $("#todosmodulos").click(function () {
+                                    todosmodulos();
+                                });
+                                $("#modulonivelmallaselect").change(function(){
+                                    $("#modulonivelmalla").val($(this).val());
+                                });
+                                actualizar_lista();
+                            } else {
+                                $("#contenido").empty();
+                                $("#id_malla").val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            $("#contenido").empty();
+                            $("#id_malla").val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            };
+
+            $("#id_malla").change(function() {
+                materias();
+            });
+
+            materias();
+            
+            verifica_lmsmalla = function () {
+                $("#fieldset_lms, #fieldset_plantillalms").hide();
+                $("#id_lms, #id_plantillalms").removeClass('validate[required]');
+                if (!$("#id_lmsdesdemalla").is(':checked')){
+                    $("#fieldset_lms, #fieldset_plantillalms").show();
+                    $("#id_lms, #id_plantillalms").addClass('validate[required]');
+                }
+            };
+
+            $("#id_lmsdesdemalla").change(function () {
+                verifica_lmsmalla();
+            });
+
+            verifica_lmsmalla();
+
+            usa_lms = function () {
+                if ($("#id_usalms").is(':checked')){
+                    $("#fieldset_lmsdesdemalla").show();
+                    verifica_lmsmalla();
+                }else{
+                    $("#fieldset_lmsdesdemalla, #fieldset_lms, #fieldset_plantillalms").hide();
+                }
+            };
+
+            $("#id_usalms").change(function () {
+                usa_lms();
+            });
+
+            usa_lms();
+
+            $('#id_lms').change(function(){
+                $('#id_plantillalms').children().remove().end().append('<option selected="selected" value="">---------</option>');
+                var id = parseInt($('#id_lms').val());
+                if (id > 0){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_mallas",
+                        data: {'action': 'plantillalms', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (i in data.lista){
+                                    elemento = data.lista[i];
+                                    $('#id_plantillalms').append('<option value="'+elemento.id+'">'+elemento.nombre+'</option>');
+                                }
+                            } else {
+                                $('#id_lms').val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            $('#id_lms').val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=materias&id={{ nivel.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/niveles?action=materias&id={{ nivel.id }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addmateriamalla'/>
+    <input type='hidden' name='nid' id='nid' value='{{ nivel.id }}'/>
+    <input type='hidden' name='seleccionados' id="seleccionados" value='0'/>
+    <input type='hidden' name='seleccionadosmodulos' id="seleccionadosmodulos" value='0'/>
+    <input type='hidden' name='seleccionadosintensivos' id="seleccionadosintensivos" value='0'/>
+    <input type='hidden' name='modulonivelmalla' id='modulonivelmalla' value='0' />
+{% endblock %}
+{% block formsuffix %}
+    <div style="float: left; width: 100%" id="contenido"></div>
+{% endblock %}
+{% block formback %}/niveles?action=materias&id={{ nivel.id }}{% endblock %}

@@ -1,0 +1,210 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            $(".predecesora").click(function() {
+                var id = $(this).attr('idm');
+                resumen(id);
+            });
+
+            var resumen = function (id) {
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: {'action': 'predecesora', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            $('#contenidopredecesora').html('');
+                            for (i = 0; i < data.lista.length; i++) {
+                                $('#contenidopredecesora').append('<tr><td>'+data.lista[i][0]+'</td><td>'+data.lista[i][1]+'</td></tr>');
+                            }
+                            $('#precedenciapanel').modal({'width': 'lg'}).modal("show");
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+                return false;
+            };
+
+            $(".btn-cerrar").click(function(){
+                $('#precedenciapanel').modal('hide');
+                return false;
+            });
+            new DragDivScroll( 'contenidomalla', 'toggleaxis, noXBarHide, noMousewheel' );
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class='row mb-2'>
+        <div class="col-10">
+            <h4>{{ title }}
+                <br>Estudiante: {{ inscripcion.persona }}
+                <br>Carrera: {{ malla.carrera }}
+                <br>Malla: {{ malla }}
+                <br>Itinerario: {{ inscripcion.mi_itinerario }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <div style="overflow:auto;" id="contenidomalla">
+                <h4 class="mb-2">Materias de Malla</h4>
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 150px"></th>
+                        {% for nivelmalla in malla.lista_niveles %}
+                            <th style="text-align: center; width: 170px"><div style="width: 170px">{{ nivelmalla }}</div></th>
+                        {% endfor %}
+                        <th style="text-align: center; width: 170px">TOTAL</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for eje in ejesformativos %}
+                        <tr>
+                            <td>{{ eje.nombre }}</td>
+                            {% for nivelmalla in  malla.lista_niveles %}
+                                <td style="vertical-align: top">
+                                    {% with asignaturasmallas=malla|args:eje|args:nivelmalla|args:inscripcion|call:'asignatura_malla_itinerario' %}
+                                        <table class='table-bordered' nivel='{{ nivelmalla.id }}' eje='{{ eje.id }}' >
+                                            {% for asignaturamalla in asignaturasmallas %}
+                                                <tr>
+                                                    {% with aprobado=inscripcion|args:asignaturamalla.asignatura|call:'esta_aprobado_asignatura' reprobado=inscripcion|args:asignaturamalla.asignatura|call:'esta_reprobado_asignatura' %}
+                                                        <div class="card {% if aprobado %}bg-success text-white{% endif %} {% if reprobado %}bg-danger text-white{% endif %}" style="width: 18rem;">
+                                                            <div class="card-body mb-2">
+                                                                <span class="badge text-bg-primary" style="font-size: medium">{{ clase.turno.nombre_horario }}</span>
+                                                                <b>{{ asignaturamalla.identificacion }}-{{ asignaturamalla.asignatura }}</b>
+                                                                <br/>Hrs: {{ asignaturamalla.horas|floatformat:1 }}
+                                                                Cred.: {{ asignaturamalla.creditos|floatformat:4 }}<br>
+                                                                H.Sem.: {{ asignaturamalla.horassemanales }}<br>
+                                                                {% if asignaturamalla.rectora or asignaturamalla.practicas or asignaturamalla.sinasistencia %}
+                                                                    {% if asignaturamalla.sinasistencia %}
+                                                                        <span class='badge text-bg-warning' data-bs-toggle="tooltip" data-bs-placement="top" title='No valida asistencia'>A</span>
+                                                                    {% endif %}
+                                                                    {% if asignaturamalla.rectora %}
+                                                                        <span class='badge text-bg-success' data-bs-toggle="tooltip" data-bs-placement="top" title='Materia comun'>MG</span>
+                                                                    {% endif %}
+                                                                    {% if asignaturamalla.practicas %}
+                                                                        <span class='badge text-bg-warning' data-bs-toggle="tooltip" data-bs-placement="top" title='Practicas'>PT</span>
+                                                                    {% endif %}
+                                                                    <br/>
+                                                                {% endif %}
+                                                                <div>
+                                                                    {% if asignaturamalla.tiene_predecesoras %}
+                                                                        <a href="javascript:;" class='btn btn-ssm btn-danger predecesora' idm = {{ asignaturamalla.id }}><i class='icon-list'></i> Predecesora</a>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    {% endwith %}
+                                                </tr>
+                                            {% endfor %}
+                                        </table>
+                                    {% endwith %}
+                                </td>
+                            {% endfor %}
+                            <td>
+                                <div style="width:170px"></div>
+                            </td>
+                            <td></td>
+                        </tr>
+                    {% endfor %}
+                    <tr>
+                        <td>TOTALES </td>
+                        {% for nivelmalla in  malla.lista_niveles %}
+                            {% with totalcreditos=malla|args:nivelmalla|call:'total_ceditos_nivel' totalhoras=malla|args:nivelmalla|call:'total_horas_nivel' totalvalor=malla|args:nivelmalla|call:'total_valor_nivel'%}
+                                <td>Horas: <b>{{ totalhoras }}</b>  <br>Creditos: <b>{{ totalcreditos|floatformat:4 }}</b></td>
+                            {% endwith %}
+                        {% endfor %}
+                        <td>Horas:<b> {{ malla.horas|floatformat:1 }}</b><br>Creditos: <b> {{ malla.cantidad_creditos_solo_malla|floatformat:4 }}</b></td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <h4>Materias de M&oacute;dulo</h4>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>M&oacute;dulo</th>
+                    <th style="width: 100px; text-align: center">Horas</th>
+                    <th style="width: 100px; text-align: center;">Cr&eacute;ditos</th>
+                    <th style="width: 100px; text-align: center;">Valida Cr&eacute;ditos</th>
+                    <th style="width: 100px; text-align: center;">Valida Promedio</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for modulo in modulos %}
+                    {% with aprobado=inscripcion|args:modulo.asignatura|call:'esta_aprobado_asignatura' reprobado=inscripcion|args:modulo.asignatura|call:'esta_reprobado_asignatura' %}
+                        <tr>
+                            <td>{{ modulo.asignatura }}</td>
+                            <td style="text-align: center">{{ modulo.horas|floatformat:1 }}</td>
+                            <td style="text-align: center;">{{ modulo.creditos|floatformat:4 }}</td>
+                            <td style="text-align: center;">
+                                {% if modulo.validacreditos %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Válida para créditos">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Válida para créditos">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if modulo.validapromedio %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Válida para promedio">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Válida para promedio">No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endwith %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="modal fade" id="precedenciapanel" tabindex="-1" aria-labelledby="precedenciapanelLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h1 class="modal-title fs-5" id="precedenciapanelLabel">Precedencias</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class='table table-bordered table-hover'>
+                        <thead>
+                        <tr>
+                            <th>Asignaturas</th>
+                            <th style="width: 150px">Nivel</th>
+                        </tr>
+                        </thead>
+                        <tbody id="contenidopredecesora">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

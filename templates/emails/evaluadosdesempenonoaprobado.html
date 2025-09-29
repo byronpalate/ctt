@@ -1,0 +1,9 @@
+{% extends "emails/emailbase.html" %}
+{% block contenido %}
+    <p><b>Evaluación de Desempeño EVO</b></p>
+    <p>Estimado/a {{ persona }}, el objetivo no está alineado a la metodología SMART por favor modificar. Revisar su CTT en el módulo de evaluación de desempeño para ver sus inconsistencias. </p>
+    <p>Revise las observaciones</p>
+    {% for observacion in observaciones %}
+        <p><b>{{ observacion.descripcion }}: </b> {{ observacion.observacionestalento }}</p>
+    {% endfor %}
+{% endblock %}

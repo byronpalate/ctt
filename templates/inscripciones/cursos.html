@@ -1,0 +1,92 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Estudiante: {{ inscripcion }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row' id="tabledata">
+        <div class='col-12'>
+            <table class='table table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Cursos</th>
+                    <th style="width: 200px;">Sesión</th>
+                    <th style="width: 100px;">Paralelo</th>
+                    <th style="width: 100px; text-align: center;">Inicio</th>
+                    <th style="width: 100px; text-align: center;">Fin</th>
+                    <th style="width: 100px; text-align: center;">Estado</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for matricula in matriculas %}
+                    <tr>
+                        <td>{{ matricula.curso.nombre }}</td>
+                        <td>{{ matricula.curso.sesion.nombre }}</td>
+                        <td>{{ matricula.curso.paralelo }}</td>
+                        <td style="text-align: center;">{{ matricula.curso.fecha_inicio|date:'Y-m-d' }}</td>
+                        <td style="text-align: center;">{{ matricula.curso.fecha_fin|date:'Y-m-d' }}</td>
+                        <td style="text-align: center;">
+                            {% if matricula.curso.cerrado  %}
+                                <span class="badge text-bg-success">CERRADO</span>
+                            {% else %}
+                                <span class="badge text-bg-danger">EN CURSO</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <table class='table table-bordered' >
+                <thead class="table-light">
+                <tr>
+                    <th>Cursos</th>
+                    <th style="width: 300px;">Tipo</th>
+                    <th style="width: 100px;">Paralelo</th>
+                    <th style="width: 100px; text-align: center;">Inicio</th>
+                    <th style="width: 100px; text-align: center;">Fin</th>
+                    <th style="width: 100px; text-align: center;">Estado</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for matricula in matriculastitulacion %}
+                    <tr>
+                        <td>{{ matricula.curso.nombre }}</td>
+                        <td>{{ matricula.curso.tipotrabajotitulacion }}</td>
+                        <td>{{ matricula.curso.paralelo }}</td>
+                        <td style="text-align: center;">{{ matricula.curso.fecha_inicio|date:'Y-m-d' }}</td>
+                        <td style="text-align: center;">{{ matricula.curso.fecha_fin|date:'Y-m-d' }}</td>
+                        <td style="text-align: center;">
+                            {% if matricula.curso.cerrado  %}
+                                <span class="badge text-bg-success">CERRADO</span>
+                            {% else %}
+                                <span class="badge text-bg-danger">EN CURSO</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

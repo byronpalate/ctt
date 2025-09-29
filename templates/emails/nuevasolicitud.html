@@ -1,0 +1,18 @@
+{% extends "emails/emailbase.html" %}
+{% block contenido %}
+    <p><b>Nueva solicitud.</b></p>
+    {% if d.inscripcion %}
+        <p><b>Quien: </b>{{ d.inscripcion.persona.nombre_completo }} ({{ d.inscripcion.persona.email }})</p>
+    {% endif %}
+    <p><b>Fecha: </b>{{ d.fecha|date:"Y-m-d" }} / {{ d.hora|time:"H:i" }}</p>
+    <p><b>Tipo de solicitud: </b>{{ d.tipo.nombre }}</p>
+    <p><b>Descripci&oacute;n: </b></p>
+    {% autoescape off %}
+        {{ d.descripcion|linebreaks }}<br>
+    {% endautoescape %}
+    {% if d.tiene_costo %}
+        <p><b>Para iniciar el proceso cancelar en el costo de su solicitud.</b></p>
+    {% else %}
+        <p><b>Su solicitud est&aacute; en proceso.</b></p>
+    {% endif %}
+{% endblock %}

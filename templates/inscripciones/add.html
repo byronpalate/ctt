@@ -1,0 +1,982 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function () {
+            var items = [];
+            var datosnacimiento = []
+            var datosresidencia = []
+
+            $("#id_nacimiento, #id_fecha, #id_fecha_ingreso, #id_fechaexamensnna, #id_fechainicio, #id_fechafin, #id_fechainiciocarrera, #id_fechafincarrera").datepicker({format: "dd-mm-yyyy"});
+            $("#id_etnia, #id_paisnac, #id_pais, #id_nacionalidad, #id_provincianac, #id_cantonnac, #id_parroquianac, #id_nombre1, #id_apellido1, #id_sexo, #id_nacimiento, #id_direccion, #id_periodo, #id_fuente").addClass("validate[required]");
+            $("#id_apellido2,#id_sangre,#id_sector,#id_direccion2,#id_telefono,#id_email,#id_titulocolegio,#id_especialidad,#id_fuentefinanciacion").addClass("validate[required]");
+            $("#id_colegio,#id_comoseinformo").addClass("validate[required]");
+            $("#id_emailinst").css({'text-transform': 'none'}).addClass("validate[custom[email],correoinstitucional[@{{ email_domain }}#@{{ email_domain_estudiante }}]]");
+            $("#id_email").css({'text-transform': 'none'}).addClass("validate[custom[email],correoprivado[@{{ email_domain }}#@{{ email_domain_estudiante }}]]");
+            $("#id_facturaemail").css({'text-transform': 'none'});
+            $("#id_telefono").addClass("validate[movil]");
+            $("#id_telefono_conv").addClass("validate[fijo]");
+            $("#fieldset_eshomologacionexterna").hide();
+            $("#fieldset_provincianac, #fieldset_cantonnac, #fieldset_parroquianac").hide();
+            $("#fieldset_provincia, #fieldset_canton, #fieldset_parroquia").hide();
+            $("#fieldset_nacionalidadindigena,#fieldset_universidadgrado,#fieldset_titulogrado,#fieldset_otrofuentefinanciacion").hide();
+            $("#fieldset_mocs,#fieldset_trabaja,#fieldset_otraubicacionsalesforce").hide();
+
+
+            document.getElementById('id_ubicacionresidenciasalesforce').addEventListener('change', function () {
+                var fieldset = document.getElementById('fieldset_otraubicacionsalesforce');
+                if (this.value === '6') {
+                   $("#fieldset_otraubicacionsalesforce").show();
+                } else {
+                    $("#fieldset_otraubicacionsalesforce").hide();
+                }
+            });
+
+
+            validarcedula = function () {
+                var valor = $("#id_cedula").val().trim();
+                $("#id_cedula").val(valor);
+                if (valor.length > 0) {
+                    $("#id_cedula").addClass("validate[required,cedula]");
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'datosexternospersona', 'cedula': valor},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                datosconsulta = data;
+                                $("#id_nombre1").val(data['nombre1']);
+                                $("#id_nombre2").val(data['nombre2']);
+                                $("#id_apellido1").val(data['apellido1']);
+                                $("#id_apellido2").val(data['apellido2']);
+                                $('#id_direccion').val(data['calledomicilio'])
+                                $('#id_telefono').val(data['celular'])
+                                $('#id_email').val(data['email'])
+                                // datos factura
+                                var value1 = $('#id_nombre1').val();
+                                var value2 = $('#id_nombre2').val();
+                                var value3 = $('#id_apellido1').val();
+                                var value4 = $('#id_apellido2').val();
+                                $("#id_facturanombre").val(value1 + " " + value2 + " " + value3 + " " + value4);
+                                var valuedireccion = $('#id_direccion').val();
+                                $("#id_facturadireccion").val(valuedireccion);
+                                var valuecelular = $('#id_telefono').val();
+                                $("#id_facturatelefono").val(valuecelular);
+                                var valueemail = $('#id_email').val();
+                                $("#id_facturaemail").val(valueemail);
+
+
+                                if ($('#id_paisnac')) {
+                                    if ('idpaisnacimiento' in data) {
+                                        $('#id_paisnac').val(parseInt(data['idpaisnacimiento'])).trigger('change');
+                                    }
+                                }
+
+                                if ($('#id_nacionalidad')) {
+                                    if ('idnacionalidad' in data) {
+                                        $('#id_nacionalidad').val(parseInt(data['idnacionalidad'])).trigger('change');
+                                    }
+                                }
+
+                                if ($('#id_provincianac')) {
+                                    datosnacimiento = [];
+                                    if ('idprovicianacimiento' in data) {
+                                        idprovicianacimiento = parseInt(data['idprovicianacimiento']);
+                                        idcantonac = parseInt(data['idcantonnacimiento']);
+                                        idparroquianac = parseInt(data['idparroquianacimiento']);
+                                        if (idcantonac > 0) {
+                                            datosnacimiento.push(idcantonac);
+                                        }
+                                        if (idparroquianac > 0) {
+                                            datosnacimiento.push(idparroquianac);
+                                        }
+                                        if (idprovicianacimiento > 0) {
+                                            $('#id_provincianac').val(idprovicianacimiento).trigger('change');
+                                        }
+                                    }
+                                }
+
+
+                                if ($('#id_nacimiento')) {
+                                    if ('nacimiento' in data) {
+                                        $('#id_nacimiento').val((data['nacimiento']));
+                                    }
+                                }
+
+                                if ($('#id_sexo')) {
+                                    if ('idsexo' in data) {
+                                        $('#id_sexo').val((data['idsexo']));
+                                    }
+                                }
+
+                                if ($('#id_estadocivil')) {
+                                    if ('idestadocivil' in data) {
+                                        $('#id_estadocivil').val((data['idestadocivil']));
+                                    }
+                                }
+
+                                if ($('#id_pais')) {
+                                    if ('idprovinciadom' in data) {
+                                        if (parseInt(data['idprovinciadom']) > 0) {
+                                            $('#id_pais').val({{ pais_ecuador_id }}).trigger('change');
+                                        }
+                                    }
+                                }
+
+                                if ($('#id_provincia')) {
+                                    datosresidencia = [];
+                                    if ('idprovinciadom' in data) {
+                                        idprovicia = parseInt(data['idprovinciadom']);
+                                        idcanton = parseInt(data['idcantondom']);
+                                        idparroquia = parseInt(data['idparroquiadom']);
+                                        if (idcanton > 0) {
+                                            datosresidencia.push(idcanton);
+                                        }
+                                        if (idparroquianac > 0) {
+                                            datosresidencia.push(idparroquia);
+                                        }
+                                        if (idprovicia > 0) {
+                                            $('#id_provincia').val(idprovicia).trigger('change');
+                                        }
+                                    }
+                                }
+
+
+                                if ($('#id_sector')) {
+                                    if ('sector' in data) {
+                                        $('#id_sector').val(data['sector']);
+                                    }
+                                }
+
+                                if ($('#id_direccion')) {
+                                    if ('calledomicilio' in data) {
+                                        $('#id_direccion').val(data['calledomicilio']);
+                                    }
+                                }
+
+                                if ($('#id_num_direccion')) {
+                                    if ('numerodomicilio' in data) {
+                                        $('#id_num_direccion').val(data['numerodomicilio']);
+                                    }
+                                }
+
+                                if ($('#id_telefono_conv')) {
+                                    if ('telefono' in data) {
+                                        $('#id_telefono_conv').val(data['telefono']);
+                                    }
+                                }
+
+                                if ($('#id_telefono')) {
+                                    if ('celular' in data) {
+                                        $('#id_telefono').val(data['celular']);
+                                    }
+                                }
+
+                                if ($('#id_email')) {
+                                    if ('email' in data) {
+                                        $('#id_email').val(data['email']);
+                                    }
+                                }
+
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                        },
+                        dataType: "json"
+                    });
+                } else {
+                    $("#id_cedula").removeClass("validate[required,cedula]");
+                }
+            };
+
+            $("#id_cedula").change(function () {
+                validarcedula();
+            });
+
+
+            $("#id_comoseinformo, #id_razonesmotivaron").addClass("validate[required]");
+            $("#fieldset_comoseinformootras, #fieldset_comoseinformoredsocial").hide();
+            comoseinformo = function () {
+                opcion = document.getElementById('id_comoseinformo').options[document.getElementById('id_comoseinformo').selectedIndex].text;
+                if (opcion.toLowerCase() !== "otros") {
+                    $("#fieldset_comoseinformootras").hide();
+                    $("#id_comoseinformootras").attr({"disabled": "disabled"}).removeClass("validate[required]");
+                } else {
+                    $("#fieldset_comoseinformootras").show();
+                    $("#id_comoseinformootras").removeAttr("disabled").addClass("validate[required]");
+                }
+                if (opcion.toLowerCase() !== "redes sociales") {
+                    $("#fieldset_comoseinformoredsocial").hide();
+                    $("#id_comoseinformoredsocial").attr({"disabled": "disabled"}).removeClass("validate[required]");
+                } else {
+                    $("#fieldset_comoseinformoredsocial").show();
+                    $("#id_comoseinformoredsocial").removeAttr("disabled").addClass("validate[required]");
+                }
+            };
+
+            comoseinformo();
+
+            $("#id_comoseinformo").change(function () {
+                comoseinformo();
+            });
+
+            $("#fieldset_fechaexamensnna, #fieldset_puntajesnna").hide();
+
+            snna = function () {
+                if ($("#id_rindioexamen").is(':checked')) {
+                    $("#fieldset_fechaexamensnna, #fieldset_puntajesnna").show();
+                    $('#id_puntajesnna').blur(function () {
+                        numerico($(this), 0, 1000, 2);
+                    });
+                } else {
+                    $("#fieldset_fechaexamensnna, #fieldset_puntajesnna").hide();
+                }
+            };
+
+            snna();
+
+            $("#id_rindioexamen").change(function () {
+                snna();
+            });
+
+
+            $('#id_modalidad').change(function () {
+                var elemento = $(this);
+                var id = parseInt(elemento.val());
+                if (id > 2) {
+                    $("#fieldset_centroinformacion").show();
+                } else {
+                    $("#fieldset_centroinformacion").hide();
+                }
+            });
+
+
+            $('#id_modalidad').change(function () {
+                var elemento = $(this);
+                var id = parseInt(elemento.val());
+                if (id > 2) {
+                    $("#fieldset_centroinformacion").show();
+                } else {
+                    $("#fieldset_centroinformacion").hide();
+                }
+            });
+
+            $("#fieldset_empresa, #fieldset_ocupacion, #fieldset_telefono_trabajo, #fieldset_fecha_ingreso").hide();
+
+            trabaja = function () {
+                if ($("#id_trabaja").is(':checked')) {
+                    $("#fieldset_empresa, #fieldset_ocupacion, #fieldset_telefono_trabajo, #fieldset_fecha_ingreso,#fieldset_universidadgrado,#fieldset_titulogrado").show();
+                } else {
+                    $("#fieldset_empresa, #fieldset_ocupacion, #fieldset_telefono_trabajo, #fieldset_fecha_ingreso,#fieldset_universidadgrado,#fieldset_titulogrado").hide();
+                }
+            };
+
+            trabaja();
+
+            $("#id_trabaja").click(function () {
+                trabaja();
+            });
+
+            verifica_prenivelacion = function () {
+                if ($("#id_prenivelacion").is(':checked')) {
+                    $("#id_observacionespre").removeAttr("disabled").addClass("validate[required]");
+                } else {
+                    $("#id_observacionespre").attr({"disabled": "disabled"}).removeClass("validate[required]");
+                }
+            };
+
+            $("#id_prenivelacion").click(function () {
+                verifica_prenivelacion();
+            });
+
+            verifica_prenivelacion();
+
+            $("#id_coordinacion, #id_sede, #id_carrera, #id_modalidad, #id_malla, #id_sesion").addClass("validate[required]").val(0);
+
+            $('#id_sede').change(function () {
+                var elemento = $(this);
+                $("#fieldset_trabaja").hide()
+                $('#id_coordinacion, #id_carrera, #id_sesion, #id_periodo, #id_nivel').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'coordinacionespersona', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_coordinacion').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'sesionessede', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_sesion').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $('#id_coordinacion').change(function () {
+                var elemento = $(this);
+                $('#id_carrera, #id_periodo, #id_nivel').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+
+                    if (id === 22 || id === 23 || id === 28) {
+                        $("#fieldset_mocs").show();
+                    } else {
+                        $("#fieldset_mocs").hide();
+                    }
+
+                    
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'carrerascoordinacion', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_carrera').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $('#id_provincia').change(function () {
+                var elemento = $(this);
+                $('#id_canton, #id_parroquia').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'cantones', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_canton').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>');
+                                }
+                                if (datosresidencia.length > 0) {
+                                    $('#id_canton').val(datosresidencia[0]).trigger('change');
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $('#id_canton').change(function () {
+                var elemento = $(this);
+                $('#id_parroquia').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'parroquias', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_parroquia').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>');
+                                }
+                                if (datosresidencia.length > 0) {
+                                    $('#id_parroquia').val(datosresidencia[1]);
+                                    datosresidencia = [];
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            verifica_paisnacimiento = function () {
+                var valor = $('#id_paisnac').val();
+                if (parseInt(valor) === {{ pais_ecuador_id }}) {
+                    $('#id_provincianac, #id_cantonnac, #id_parroquianac').removeAttr("disabled").addClass("validate[required]");
+                    $("#fieldset_provincianac, #fieldset_cantonnac, #fieldset_parroquianac").show();
+                } else {
+                    $('#id_provincianac, #id_cantonnac, #id_parroquianac').attr({"disabled": "disabled"}).removeClass("validate[required]");
+                    $("#fieldset_provincianac, #fieldset_cantonnac, #fieldset_parroquianac").hide();
+                }
+            };
+
+            $('#id_paisnac').change(function () {
+                verifica_paisnacimiento();
+            });
+
+            verifica_paisnacimiento();
+
+            verifica_paisresidencia = function () {
+                var valor = $('#id_pais').val();
+                if (parseInt(valor) === {{ pais_ecuador_id }}) {
+                    $('#id_provincia, #id_canton, #id_parroquia').removeAttr("disabled").addClass("validate[required]");
+                    $('#fieldset_provincia, #fieldset_canton, #fieldset_parroquia').show();
+                } else {
+                    $('#id_provincia, #id_canton, #id_parroquia').attr({"disabled": "disabled"}).removeClass("validate[required]");
+                    $('#fieldset_provincia, #fieldset_canton, #fieldset_parroquia').hide();
+                }
+            };
+
+            $('#id_pais').change(function () {
+                verifica_paisresidencia();
+            });
+
+            verifica_paisresidencia();
+
+            $('#id_provincianac').change(function () {
+                var elemento = $(this);
+                $('#id_cantonnac').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'cantones', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_cantonnac').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>');
+                                }
+                                if (datosnacimiento.length > 0) {
+                                    $('#id_cantonnac').val(datosnacimiento[0]).trigger('change');
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $('#id_cantonnac').change(function () {
+                var elemento = $(this);
+                $('#id_parroquianac').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'parroquias', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_parroquianac').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>');
+                                }
+                                if (datosnacimiento.length > 0) {
+                                    $('#id_parroquianac').val(datosnacimiento[1]);
+                                    datosnacimiento = [];
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            ItemsDisplay = function (item) {
+                if (item.name) {
+                    return $('<span>' + item.name + '</span>');
+                } else {
+                    return '---------';
+                }
+            };
+
+            $("#id_colegio_select2").select2(
+                {
+                    dropdownParent: $('#formulariomodaldinamico'),
+                    width: '100%',
+                    placeholder: "---------",
+                    allowClear: true,
+                    ajax: {
+                        url: '/api',
+                        type: "POST",
+                        dataType: 'json',
+                        delay: 300,
+                        data: function (params) {
+                            var idpro = parseInt($('#id_provinciacole').val());
+                            var idcan = parseInt($('#id_cantoncole').val());
+                            return {
+                                q: params.term,
+                                page: params.page,
+                                a: 'data',
+                                model: 'Colegio:provincia_id=' + idpro + ',canton_id=' + idcan + ':estado=False:70',
+                                p: 1,
+                                s: 10,
+                                csrfmiddlewaretoken: csrftoken
+                            };
+                        },
+                        processResults: function (data, params) {
+                            params.page = params.page || 1;
+                            return {
+                                results: data.data,
+                                pagination: {
+                                    more: (params.page * 30) < data.total_count
+                                }
+                            };
+                        },
+                        cache: true
+                    },
+                    escapeMarkup: function (markup) {
+                        return markup;
+                    },
+                    minimumInputLength: 1,
+                    templateResult: ItemsDisplay,
+                    templateSelection: ItemsDisplay
+                }).on("select2:select", function (evt) {
+                $("#id_colegio").attr({"value": (evt.params.data.id)});
+            });
+
+            $("#id_colegio").attr({"value": ""});
+            $("#id_colegio_select2").val(0).trigger("change");
+
+            $("#id_especialidad_select2").select2({
+                dropdownParent: $('#formulariomodaldinamico'),
+                width: '100%',
+                placeholder: "---------",
+                allowClear: true,
+                ajax: {
+                    url: '/api',
+                    type: "POST",
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page,
+                            a: 'data',
+                            model: 'Especialidad:::10',
+                            p: 1,
+                            s: 10,
+                            csrfmiddlewaretoken: csrftoken
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.data,
+                            pagination: {
+                                more: (params.page * 30) < data.total_count
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                escapeMarkup: function (markup) {
+                    return markup;
+                },
+                minimumInputLength: 1,
+                templateResult: ItemsDisplay,
+                templateSelection: ItemsDisplay
+            }).on("select2:select", function (evt) {
+                $("#id_especialidad").attr({"value": (evt.params.data.id)});
+            });
+
+            $("#id_especialidad").attr({"value": ""});
+            $("#id_especialidad_select2").val(0).trigger("change");
+
+            buscarmallas = function () {
+                var idc = parseInt($('#id_carrera').val());
+                var idm = parseInt($('#id_modalidad').val());
+                $('#id_malla').empty().append('<option value="">---------</option>').val(0);
+                if (idc > 0 && idm > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/inscripciones",
+                        data: {
+                            'action': 'carrerasmalla',
+                            'idcarrera': idc,
+                            'idmodalidad': idm,
+                            'csrfmiddlewaretoken': csrftoken
+                        },
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_malla').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            };
+
+            buscaperiodo = function () {
+                var idc = parseInt($('#id_carrera').val());
+                $('#id_periodo').empty().append('<option value="">---------</option>').val(0);
+                if (idc > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/inscripciones",
+                        data: {'action': 'periodoscarrera', 'idcarrera': idc, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_periodo').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            };
+
+            $('#id_carrera').change(function () {
+    var elemento = $(this);
+    var id = parseInt(elemento.val());
+    
+    // Realizar la llamada AJAX para verificar si es posgrado
+    $.ajax({
+        type: "POST",
+        url: "/inscripciones",
+        data: {'action': 'verificar_posgrado', 'carrera_id': id, 'csrfmiddlewaretoken': csrftoken},
+        success: function(response) {
+            if (response.es_posgrado) {
+                $("#fieldset_eshomologacionexterna").show();
+                $("#fieldset_cohorte,#fieldset_trabaja").show();
+            } else {
+                $("#fieldset_cohorte,#fieldset_trabaja").hide();
+                $("#fieldset_empresa, #fieldset_ocupacion, #fieldset_telefono_trabajo, #fieldset_fecha_ingreso,#fieldset_universidadgrado,#fieldset_titulogrado").hide();
+            }
+        },
+        error: function() {
+            console.error('Error al verificar si la carrera es un posgrado');
+        }
+    });
+
+    buscarmallas();
+    buscaperiodo();
+});
+
+
+            $('#id_modalidad').change(function () {
+                buscarmallas();
+                verificar_centro_informacion();
+            });
+
+            verificaetnia = function () {
+                var valor = $("#id_etnia").val();
+                if (parseInt(valor) === {{ nacionalidad_indigena_id  }}) {
+                    $("#id_nacionalidadindigena").removeAttr("disabled").addClass("validate[required]");
+                    $("#fieldset_nacionalidadindigena").show();
+                } else {
+                    $("#id_nacionalidadindigena").attr({"disabled": 'disabled'}).removeClass("validate[required]");
+                    $("#fieldset_nacionalidadindigena").hide();
+                }
+            };
+
+            verificaetnia();
+
+            $('#id_etnia').change(function () {
+                verificaetnia();
+            });
+
+            verificar_centro_informacion = function () {
+                if (parseInt($("#id_modalidad").val()) === {{ modalidad_distancia }}) {
+                    $("#id_centroinformacion").addClass("validate[required]");
+                } else {
+                    $("#id_centroinformacion").removeClass("validate[required]");
+                }
+            };
+
+            verificar_centro_informacion();
+
+            $('#id_periodo').change(function () {
+                var elemento = $(this);
+                $('#id_nivel').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                var ids = parseInt($('#id_sede').val());
+                var idc = parseInt($('#id_carrera').val());
+                var idm = parseInt($('#id_modalidad').val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/inscripciones",
+                        data: {
+                            'action': 'periodo',
+                            'id': id,
+                            'ids': ids,
+                            'idc': idc,
+                            'idm': idm,
+                            'csrfmiddlewaretoken': csrftoken
+                        },
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                $('#fieldset_nivel').hide();
+                                $('#id_nivel').removeClass("validate[required]");
+                                {#if (data.posgrado){#}
+                                {#    $('#fieldset_nivel').show();#}
+                                {#    for (item in data.lista){#}
+                                {#        datos=data.lista[item]#}
+                                {#        $('#id_nivel').append('<option value="'+datos.id+'">'+datos.nombre+'</option>').val(0);#}
+                                {#    }#}
+                                {#    $('#id_nivel').addClass("validate[required]");#}
+                                {#--}else{--#}
+                                {#    $('#fieldset_nivel').hide();#}
+                                {#    $('#id_nivel').removeClass("validate[required]");#}
+                                {#-}-#}
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $('#id_periodo').val(0).removeClass("validate[required]");
+            $('#id_nivel').removeClass("validate[required]");
+
+            $("#fieldset_tipodiscapacidad, #fieldset_porcientodiscapacidad, #fieldset_carnetdiscapacidad").hide();
+
+            discapacidad = function () {
+                if ($("#id_tienediscapacidad").is(':checked')) {
+                    $("#fieldset_tipodiscapacidad, #fieldset_porcientodiscapacidad, #fieldset_carnetdiscapacidad").show();
+                    $("#id_porcientodiscapacidad").blur(function () {
+                        numerico($(this), 0, 100, 0);
+                    });
+                    $("#id_tipodiscapacidad, #id_porcientodiscapacidad, #id_carnetdiscapacidad").addClass("validate[required]");
+                } else {
+                    $("#fieldset_tipodiscapacidad, #fieldset_porcientodiscapacidad, #fieldset_carnetdiscapacidad").hide();
+                    $("#id_tipodiscapacidad, #id_porcientodiscapacidad, #id_carnetdiscapacidad").removeClass("validate[required]");
+                }
+            };
+
+            discapacidad();
+
+            $("#id_tienediscapacidad").click(function () {
+                discapacidad();
+            });
+
+            $("#id_raza,#id_estrato").addClass("validate[required]");
+
+            $("#id_cedula").keyup(function () {
+                var value = $(this).val();
+                $("#id_facturaidentificacion").val(value);
+            });
+
+            $("#id_telefono").keyup(function () {
+                var value = $(this).val();
+                $("#id_facturatelefono").val(value);
+            });
+
+            $("#id_email").keyup(function () {
+                var value = $(this).val();
+                $("#id_facturaemail").val(value);
+            });
+
+            $("#id_nombre1,#id_nombre2,#id_apellido1,#id_apellido2").keyup(function () {
+                var value1 = $('#id_nombre1').val();
+                var value2 = $('#id_nombre2').val();
+                var value3 = $('#id_apellido1').val();
+                var value4 = $('#id_apellido2').val();
+                $("#id_facturanombre").val(value1 + " " + value2 + " " + value3 + " " + value4);
+            });
+
+            $("#id_direccion,#id_direccion2").keyup(function () {
+                var value1 = $('#id_direccion').val();
+                var value2 = $('#id_direccion2').val();
+                $("#id_facturadireccion").val(value1 + " " + value2);
+            });
+
+            $("#id_examenubicacionidiomas").change(function () {
+                if ($(this).is(':checked')) {
+                    if ($('#id_homologar').is(':checked')) {
+                        $('#id_homologar').removeAttr('checked');
+                    }
+                }
+            });
+
+            $("#id_homologar").change(function () {
+                if ($(this).is(':checked')) {
+                    if ($('#id_examenubicacionidiomas').is(':checked')) {
+                        $('#id_examenubicacionidiomas').removeAttr('checked');
+                    }
+                }
+            });
+
+            $("#id_fuentefinanciacion").change(function () {
+                var value = $(this).val();
+                if (value === '4') {
+                    $("#fieldset_otrofuentefinanciacion").show();
+                    $("#id_otrofuentefinanciacion").addClass("validate[required]");
+                } else {
+                    $("#fieldset_otrofuentefinanciacion").hide();
+                    $("#id_otrofuentefinanciacion").removeClass("validate[required]");
+                }
+            });
+
+            $('#id_provinciacole').change(function () {
+                var elemento = $(this);
+                $('#id_cantoncole').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'cantones', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_cantoncole').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/inscripciones{% endblock %}
+{% block formdestination %}/inscripciones{% endblock %}
+{% block formback %}/inscripciones{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='add'/>
+    <input type='hidden' name='redireccion' value='' id='redireccion'/>
+{% endblock %}
+{% block formsuffix %}
+    <hr style="border-top: 1px solid gray;">
+    <div class="form-check h6 ">
+        <input class="form-check-input validate[required]" type="checkbox" value="" name="aceptaterminos" id="aceptaterminos">
+        <label class="form-check-label" for="aceptaterminos">
+            Autorizo a Universidad Indoamérica, a sus dependientes, subcontratados o asociados a contactarme para asesorarme en relación a propuestas educativas relacionadas con cualquiera de las alternativas existentes en el territorio ecuatoriano.
+            <a target="_blank" href="https://ctt.uti.edu.ec/terminos_condiciones?action=politicas">Politicas de Privacidad</a>.
+        </label>
+    </div>
+    <hr style="border-top: 1px solid gray;">
+    <div class="form-check h6 ">
+        <input class="form-check-input validate[required]" type="checkbox" value="" name="aceptanohomologacion" id="aceptanohomologacion">
+        <label class="form-check-label" for="aceptanohomologacion">
+            Es de conocimiento del estudiante que al iniciar desde primer semestre, no se realizará posteriormente el proceso de homologación por estudios previos o trayectoria. </label>
+    </div>
+
+{% endblock %}

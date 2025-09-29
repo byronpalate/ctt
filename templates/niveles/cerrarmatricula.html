@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/niveles?action=tomandom&id={{ materia.id }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
+{% block formactionvalue %}abrirmatricula{% endblock %}
+{% block formobjectid %}   {{ matricula.id }}{% endblock %}
+{% block formobjectrepr %}{{ matricula }}{% endblock %}
+{% block mensaje %}Desea confirmar el cierre de la matrícula: {% endblock %}

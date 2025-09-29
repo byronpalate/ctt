@@ -1,0 +1,1614 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <img src="/static/images/ajax-document-loader.gif" STYLE="display: none"/>
+    <meta charset="utf-8">
+    <title>{% block pagetitle %}{{ title }}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="ACADEMIC-OK">
+    <meta name="author" content="OKSOFTWR">
+    <link href="/static/css/jquery.timeentry.css?v={{ institucion.versionstaticscss }}" type='text/css' rel='stylesheet' />
+    <link href="/static/css/date_input.css?v={{ institucion.versionstaticscss }}" type='text/css' rel='stylesheet' />
+    <link href="/static/css/smoke.css?v={{ institucion.versionstaticscss }}" rel="stylesheet" type="text/css" media="screen" />
+    <link href="/static/css/bootstrap.min.css?v={{ institucion.versionstaticscss }}">
+    <link href="/static/css/bootstrap.min.css?v={{ institucion.versionstaticscss }}" rel="stylesheet" crossorigin="anonymous">
+    <link href='/static/css/font-awesome.css?v={{ institucion.versionstaticscss }}' rel='stylesheet'/>
+    <link href="/static/css/datepicker.css?v={{ institucion.versionstaticscss }}" rel='stylesheet'/>
+    <link href="/static/css/bootstrap-timepicker.css?v={{ institucion.versionstaticscss }}" rel='stylesheet'/>
+    <link href="/static/css/jquery.flexbox.css?v={{ institucion.versionstaticscss }}" type="text/css" rel="stylesheet" />
+    <link rel="shortcut icon" href="/static/images/aok/favicon.ico?v={{ institucion.versionstaticsimg }}" type="image/x-icon" />
+    <link rel="stylesheet" href="/static/css/bootstrap5-dropdown-ml-hack-hover.css?v={{ institucion.versionstaticscss }}">
+    <link href="/static/css/styles.css?v={{ institucion.versionstaticscss }}" rel='stylesheet'/>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css?v={{ institucion.versionstaticscss }}" rel="stylesheet" />
+    <link type='text/css' rel='stylesheet' href="/static/css/validationEngine.jquery.css?v={{ institucion.versionstaticscss }}"/>
+    <script type='text/javascript' src="/static/js/alertas/sweetalert2.all.min.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type='text/javascript' src="/static/js/alertas/MensajesJS.js?v={{ institucion.versionstaticsjs }}"></script>
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/indoamerica-theme.css">
+    {% block extracss %}
+    {% endblock %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('breadcrumb-toggle');
+            const dropdown = document.getElementById('breadcrumb-dropdown');
+
+            toggle.addEventListener('click', function() {
+                if (dropdown.style.display === 'block') {
+                    dropdown.style.display = 'none';
+                } else {
+                    dropdown.style.display = 'block';
+                }
+            });
+
+            // Si se hace clic fuera del dropdown, se cierra
+            document.addEventListener('click', function(e) {
+                if (!toggle.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        });
+    </script>
+<style>
+  /* ---- Futuristic / glass look ---- */
+  .wait-glass{
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.22);
+    background: radial-gradient(120% 120% at -10% -10%, rgba(255,255,255,.22) 0%, rgba(255,255,255,.08) 45%, rgba(255,255,255,.06) 100%),
+                linear-gradient(135deg, rgba(40,40,60,.35), rgba(25,25,40,.35));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.06);
+    overflow: hidden;
+  }
+  .wait-body{
+    display:flex; align-items:center; gap:.9rem;
+  }
+  .wait-text{
+    color:#e9ecf1; font-size:.95rem; line-height:1.25rem;
+  }
+  .modal-title{ color:#f2f5f9; font-weight:600; letter-spacing:.2px; }
+  .wait-close{ filter: invert(1) brightness(1.2) opacity(.8); }
+
+  /* ---- Spinner (CSS puro, sin dependencias) ---- */
+  .wait-spinner{
+    width:28px; height:28px; border-radius:50%;
+    background:
+      conic-gradient(from 0deg, rgba(255,255,255,.95) 0 40%, rgba(255,255,255,.25) 40% 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent 55%, #000 56%);
+            mask: radial-gradient(farthest-side, transparent 55%, #000 56%);
+    animation: wait-rot 1s linear infinite;
+    flex: 0 0 28px;
+  }
+  @keyframes wait-rot{ to{ transform: rotate(360deg); } }
+
+  /* ---- Barra indeterminada inferior ---- */
+  .wait-progress{ position:relative; height:3px; background:rgba(255,255,255,.12); }
+  .wait-progress span{
+    position:absolute; inset:0; width:35%;
+    background: linear-gradient(90deg, rgba(255,255,255,.0), rgba(255,255,255,.9), rgba(255,255,255,.0));
+    animation: wait-slide 1.2s ease-in-out infinite;
+  }
+  @keyframes wait-slide{
+    0%{ left:-35%; } 50%{ left:35%; } 100%{ left:100%; }
+  }
+
+  /* ---- Soporte modo claro/oscuro (opcional) ---- */
+  @media (prefers-color-scheme: light){
+    .wait-glass{ background: radial-gradient(120% 120% at -10% -10%, rgba(255,255,255,.85) 0%, rgba(255,255,255,.65) 100%); }
+    .wait-text, .modal-title{ color:#203040; }
+    .wait-close{ filter:none; }
+    .wait-progress{ background:rgba(0,0,0,.08); }
+    .wait-progress span{ background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.45), rgba(0,0,0,0)); }
+    .wait-spinner{
+      background: conic-gradient(from 0deg, rgba(32,48,64,.95) 0 40%, rgba(32,48,64,.25) 40% 100%);
+    }
+  }
+</style>
+
+</head>
+<body {% if not persona or especial %} class='{% block contentextraclass %}{% endblock %}'{% endif %}>
+{% csrf_token %}
+<header>
+    <nav class="navbar navbar-expand-lg fixed-top" style="background-color: #3A1467; padding: 0">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="/static/images/aok/logo.png?v={{ insitucion.versionstaticsimg }}" alt="" height="25">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            {% if persona %}
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <li class="nav-item d-flex" style="padding-top: 4px">
+                            <a href="javascript:;" nhref="/cudu" class="formmodal nav-link link-light"><i class="icon-group"></i><span style="margin-left: 5px" >{{ persona.nombre_completo_simple }}</span></a>
+                        </li>
+                        {% if persona.tiene_mensajes %}
+                            <li class="nav-item" style="padding-top: 4px">
+                                <a id="checkmailicon" href="/mailbox" class="nav-link link-light"><img src='/static/images/iconos/mail.png' border=0 class="blinkimg"></a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item" style="padding-top: 4px">
+                            <a href="javascript:;" nhref="/account" class="formmodal nav-link link-light"><i class="icon-user"></i> <span style="margin-left: 5px" >Cuenta</span></a>
+                        </li>
+                        <li class="nav-item" style="padding-top: 4px">
+                            <a  id="passwordModalLink" class="formmodal nav-link link-light" href="javascript:;" nhref="/pass?modal=true"><i class="icon-key"></i> <span style="margin-left: 5px" >Clave</span></a>
+                        </li>
+                        {% if persona.usuario.is_superuser %}
+                            <li class="nav-item" style="padding-top: 4px">
+                                <a href='/admin' target="_blank" class="nav-link link-light"><i class="icon-wrench"></i> <span style="margin-left: 5px" >Administraci&oacute;n</span></a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item" style="padding-top: 4px">
+                            <a href="javascript:;" class="nav-link link-light" onclick="logoutcomplet()"><i class="icon-off"></i> <span style="margin-left: 5px" >Salir</span></a>
+                        </li>
+                        {% if not perfilprincipal.es_estudiante and not perfilprincipal.es_profesor %}
+                            <li class="nav-item" style="padding-top: 4px">
+                                <a href="javascript:;" nhref="/cambiocoordinacion" class="cambiac formmodal nav-link link-light"><i class="icon-list"></i><span style="margin-left: 5px" >{{ coordinacionseleccionada.alias }}</span></a>
+                            </li>
+                        {% endif %}
+                        {% if not perfilprincipal.es_empleador %}
+                            {% if not perfilprincipal.es_estudiante  %}
+                                <li class="nav-item" style="padding-top: 4px">
+                                    <a href="javascript:;" nhref="/cambioperiodo" class="cambiac formmodal nav-link link-light"><i class="icon-list"></i><span style="margin-left: 5px" >{{ periodo.nombre }}</span></a>
+                                </li>
+                            {% else %}
+                                <li class="nav-item" style="padding-top: 4px">
+                                    <a href="javascript:;" class="nav-link link-light"><i class="icon-list"></i><span style="margin-left: 5px" >{{ periodo.nombre }}</span></a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                        <li class="divider-vertical"></li>
+                        <li class="nav-item">
+                            <a href="javascript:;" style="font-size: 20px;" class="nav-link link-light"><span id="clock"></span></a>
+                        </li>
+
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </nav>
+</header>
+<main>
+ {% if messages %}
+    <div class="container mt-4" id="flash-messages" style="max-width: 860px;">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+    <style>
+        /* === Estilos originales de breadcrumb adaptados === */
+        .breadcrumb-pill {
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
+            display: flex;
+            gap: 0.2rem;
+            align-items: center;
+            font-size: 0.89rem;
+            min-height: 26px;
+        }
+        .breadcrumb-pill .breadcrumb-link {
+            background: #fff;
+            border: 1px solid #e0d6ef;
+            color: #3A1467;
+            border-radius: 2rem;
+            padding: 0.08rem 0.7rem;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+            font-size: 0.89em;
+        }
+        .breadcrumb-pill .breadcrumb-link:hover {
+            background: #3A1467;
+            color: #fff;
+            border-color: #3A1467;
+        }
+        .breadcrumb-pill .breadcrumb-current {
+            background: #3A1467;
+            color: #fff;
+            border-radius: 2rem;
+            padding: 0.08rem 0.7rem;
+            font-weight: 600;
+            border: 1px solid #3A1467;
+            pointer-events: none;
+            font-size: 0.89em;
+        }
+        .breadcrumb-pill .breadcrumb-sep {
+            color: #b9a7d6;
+            font-size: 1em;
+            margin: 0 0.08rem;
+            user-select: none;
+        }
+
+        .breadcrumb-wrapper {
+            margin-top: 70px;
+            padding-left: 30px;
+            padding-right: 30px;
+            margin-bottom: 12px;
+        }
+        .breadcrumb-container {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 2px 0;
+            box-shadow: 0 1px 4px #0001;
+        }
+
+        /* Botón “toggle” para móvil */
+        .breadcrumb-toggle {
+            display: none;           /* oculto por defecto */
+            background: none;
+            border: none;
+            color: #3A1467;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0;
+            margin-right: 0.5rem;
+        }
+
+        /* Dropdown oculto inicialmente */
+        .breadcrumb-dropdown {
+            position: absolute;
+            top: 60px;               /* ajustar según layout */
+            left: 30px;              /* mismo padding que .breadcrumb-wrapper */
+            background: #fff;
+            border: 1px solid #e0d6ef;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: none;
+            z-index: 1000;
+            min-width: 180px;
+        }
+        .breadcrumb-dropdown li {
+            padding: 0.5rem 1rem;
+        }
+        .breadcrumb-dropdown li + li {
+            border-top: 1px solid #e0d6ef;
+        }
+        .breadcrumb-dropdown a {
+            text-decoration: none;
+            color: #3A1467;
+            display: block;
+            width: 100%;
+        }
+        .breadcrumb-dropdown a:hover {
+            background: #f0f0f5;
+        }
+
+        /* Responsive: en pantallas móviles (<576px) */
+        @media (max-width: 576px) {
+            .breadcrumb-toggle {
+                display: inline-flex;
+            }
+            .breadcrumb-pill {
+                display: none;
+            }
+        }
+
+        /* Estilos del botón “Atrás” */
+        .urlatrasbutton {
+            background: #3A1467;
+            color: #fff;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.08rem 0.8rem;
+            font-weight: 600;
+            font-size: 0.89em;
+            box-shadow: 0 1px 4px rgba(58,20,103,0.08);
+            transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.3em;
+            height: 26px;
+            text-decoration: none;
+        }
+        .urlatrasbutton:hover {
+            background: #fff;
+            color: #3A1467;
+            border: 1px solid #3A1467;
+            box-shadow: 0 2px 8px rgba(58,20,103,0.13);
+            text-decoration: none;
+        }
+        .urlatrasbutton i {
+            font-style: normal; /* reemplaza con tu icono o librería */
+        }
+    </style>
+
+
+
+    <div class="container-fluid breadcrumb-wrapper">
+        {% if ruta %}
+            <div class="row breadcrumb-container">
+                <div class="col-12 d-flex justify-content-between align-items-center px-2 flex-nowrap gap-2">
+
+                    {# Botón toggle que aparece solo en móvil #}
+                    <button id="breadcrumb-toggle" class="breadcrumb-toggle" aria-label="Mostrar breadcrumb completo">
+                        <!-- Puedes cambiar este “≡” por un ícono de tu librería, p. ej. FontAwesome -->
+                        &#9776;
+                    </button>
+
+                    {# Breadcrumb horizontal (oculto en móvil) #}
+                    <nav aria-label="breadcrumb" class="breadcrumb-pill my-0">
+                        {% for r in ruta %}
+                            <a href="{{ r.0 }}" class="breadcrumb-link">{{ r.1 }}</a>
+                            <span class="breadcrumb-sep">›</span>
+                        {% endfor %}
+                    </nav>
+
+                    {# Botón “Atrás” #}
+                    <a id="urlatrasbutton"
+                       class="urlatrasbutton"
+                       href="{% if ret %}{{ ret }}{% else %}{% block atras %}/{% endblock %}{% endif %}">
+                        <i class="icon-arrow-left"></i> Atrás
+                    </a>
+
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    {# Dropdown oculto para móviles: solo muestra los enlaces intermedios #}
+    <ul id="breadcrumb-dropdown" class="breadcrumb-dropdown">
+        {% for r in ruta %}
+            {% if not forloop.last %}
+                <li><a href="{{ r.0 }}">{{ r.1 }}</a></li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+
+
+    <div class='container-fluid' id="content">
+        {% block headcanvas %}
+        {% endblock %}
+        {% if not alertanoticias %}
+            <div style="width: 100%; overflow: auto; min-height: 800px">
+            <div style="width: 100%;" id="canvascontent">
+        {% endif %}
+        {% if notificar_deuda %}
+            <div style="width: 100%; overflow: auto; min-height: 800px">
+            <div style="width: 100%; " id="canvascontentdeuda">
+        {% endif %}
+        {% block canvas %}
+        {% endblock %}
+        {% if notificar_deuda %}
+            </div>
+            </div>
+        {% endif %}
+        {% if not alertanoticias %}
+            </div>
+            </div>
+        {% endif %}
+    </div>
+</main>
+<footer>
+    <nav class="navbar navbar-dark fixed-bottom" style="background-color: #3A1467; padding: 0;z-index: 999;">
+        <div class="container-fluid">
+            <div class='row' style="margin-bottom: 0">
+                <div class="col-12">
+                    {% if archivoayuda %}
+                        <div style="float: left; width: 25px ;height: 25px; background-color: transparent; margin-top: 5px">
+                            <a href="{{ archivoayuda.archivo.url }}" target="_blank"><img src='/static/images/iconos/help.png'/></a>
+                        </div>
+                    {% endif %}
+                    <div class="smaller">
+                        <div style="text-align: left; float: left; margin-left: 5px; color: #FFFFFF">
+                            <div style="">Sistema de Gesti&oacute;n Acad&eacute;mica, {{ institucion.nombre }} | <a href="/terminos_condiciones">Terminos y condiciones</a> | <a href="/terminos_condiciones?action=politicas"> Politicas de privacidad</a> </div>
+                            <div>Todos los derechos reservados(c) 2012{% if remoteaddr %}, Acceso al sistema desde - {{ remoteaddr }}{% endif %}</div>
+                        </div>
+                        {% if pie_pagina_creative_common_licence %}
+                            <div style="text-align: right; float: right" class="hidden-phone hidden-tablet visible-desktop">
+                                <div style="margin-bottom: -5px"><a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img width="70" alt="Licencia Creative Commons" style="border-width:0" src="/static/images/cc.png" /></a></div>
+                                <div>Esta obra está bajo una <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank">Licencia Creative Commons Atribución-NoComercial 4.0 Internacional</a></div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+</footer>
+{% if not request.user.is_anonymous %}
+    <div style="width: 300px; height: 250px; background-color: lightgray; position: fixed; bottom: 10px; display: none; border-top-left-radius: 3px; border-top-right-radius: 3px" id="chatwindows">
+        <div id="chatwindowssolicitud" style="width: 100%; height: 100%;">
+            <select id="tiposolicitudchat" style="width: 293px; margin: 3px" class="form-select-sm">
+                {% for tiposolicitud in tipossolicitudessoporte %}
+                    <option value="{{ tiposolicitud.id }}">{{ tiposolicitud }}</option>
+                {% endfor %}
+            </select>
+            <textarea rows="5" style="width: 293px; height: 138px; margin: 3px" id="descripcionsolicitudchat" placeholder="Ingrese su requerimiento."></textarea>
+            <a class="btn btn-sm btn-primary" style="margin-top: 3px; margin-left: 90px" id="solicitudsoporte"><i class="icon-comment"></i> Solicitar soporte</a>
+        </div>
+        <div id="chatwindowsmensaje" style="width: 100%; height: 100%; padding: 3px">
+            <div style="width: 294px; height: 177px; background-color: white; margin-bottom: 3px; overflow: scroll" id="chatmessajes">
+                {% for mensaje in solicitud_soporte_pendiente.mis_mensajes %}
+                    {% if mensaje.personalsoporte %}
+                        <div class="alert alert-success" style="width: 75%; float: right; margin-bottom: 3px">
+                            {% autoescape on %}
+                                {{ mensaje.personalsoporte.administrativo.persona.usuario }}: {{ mensaje.descripcion|safe|urlize }}
+                            {% endautoescape %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info" style="width: 75%; float: left; margin-bottom: 3px">
+                            {% autoescape on %}
+                                {{ mensaje.descripcion|safe|urlize }}
+                            {% endautoescape %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div style="width: 294px; height: 40px; background-color: transparent">
+                <textarea style="width: 230px; height: 33px; line-height: 12px" id="textchatmensaje"></textarea>
+                <a class="btn btn-sm btn-success" id="sendchatmensaje">Enviar</a>
+            </div>
+        </div>
+        <div id="chatwindowsnumero" style="width: 100%; height: 100%; text-align: center; vertical-align: middle">
+            <p style="margin-top: 90px">Su solicitud de soporte se encuentra en el turno: <br><span class="badge badge-warning" id="numerosoporte">{% if solicitud_soporte_pendiente %}{{ solicitud_soporte_pendiente.numero }}{% else %}0{% endif %}</span></p>
+            <a class="btn btn-sm btn-success" id="cancelarsoporte">Cancelar soporte</a>
+        </div>
+    </div>
+{% endif %}
+
+{#<div class="modal fade" id="waitpanel" tabindex="-1" aria-labelledby="waitpanelLabel" aria-hidden="true">#}
+{#    <div class="modal-dialog">#}
+{#        <div class="modal-content">#}
+{#            <div class="modal-header">#}
+{#                <h5 class="modal-title" id="waitpaneltitle">Título</h5>#}
+{#            </div>#}
+{#            <div class="modal-body" id="waitpanelbody">#}
+{#                Mensaje#}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
+{#</div>#}
+
+<div class="modal fade" id="waitpanel" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content wait-glass">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title" id="waitpaneltitle">Procesando…</h5>
+        <button type="button" class="btn-close wait-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <div class="wait-body">
+          <div class="wait-spinner" aria-hidden="true"></div>
+          <div class="wait-text" id="waitpanelbody">Espere unos segundos por favor…</div>
+        </div>
+      </div>
+      <div class="wait-progress"><span></span></div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="formatoreporte" tabindex="-1" role="dialog" aria-labelledby="formatoreporteLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <!-- Encabezado del Modal -->
+            <div class="modal-header">
+                <h5 class="modal-title" id="formatoreporteLabel">Seleccione el formato del reporte</h5>
+                <!-- Se eliminó el botón de cerrar con la "x" -->
+            </div>
+            <!-- Cuerpo del Modal -->
+            <div class="modal-body">
+                <select class="form-select form-select-sm" style="width: 100%;" id="formatoreporte_formato">
+                    <option id="formatopdf" value="0">Documento PDF (ideal para impresión)</option>
+                    <option id="formatodoc" value="1">Documento de Word (editable)</option>
+                    <option id="formatoxls" value="2">Hoja de cálculo de Excel (para datos)</option>
+                    <option id="formatocsv" value="3">Archivo CSV (para importar/exportar datos)</option>
+                </select>
+            </div>
+            <!-- Pie de página del Modal -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success btn-sm" id="formatoreporte_run">Generar Reporte</button>
+                <button type="button" class="btn btn-info btn-sm" data-dismiss="modal" id="formatoreporte_close">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade static" id="ficheromodal" style="display: none;">
+    <div class="modal-header">
+        <h4>Descargar archivo</h4>
+    </div>
+    <div class="modal-body" style="text-align: center; min-height: 30px">
+        <div style="width: 40px; float: left"><a id='enlacefichero' href="javascript:;" target="_blank" class="btn btn-success btn-sm tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar"><i class="icon-arrow-down"></i></a></div>
+        <div style="float: left"><p id='enlaceficheronombre' ></p></div>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:;" class="btn btn-cerrar btn-info">Cerrar</a>
+    </div>
+</div>
+
+<div class="modal" id="confirmacionmodaldinamico">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div id="confirmacionmodaldinamicobody"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" tabindex="-1" id="formulariomodaldinamico">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div id="formulariomodaldinamicobody"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="eliminacionmodaldinamico">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div id="eliminacionmodaldinamicobody"></div>
+        </div>
+    </div>
+</div>
+
+{#<div class="modal" id="mensajemodaldinamico">#}
+<div class="modal fade" id="mensajemodaldinamico" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="mensajemodaldinamicoLabel" aria-hidden="true">
+</div>
+
+<div class="modal fade" id="infomodaldinamico" tabindex="-1" aria-labelledby="infomodaldinamicoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-1">
+                <h6 class="modal-title fs-6" id="infomodaldinamicoLabel">Información</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="infomodaldinamico_body">
+            </div>
+            <div class="modal-footer py-1">
+                <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% block moreblock %}
+{% endblock %}
+<script type='text/javascript' src="/static/js/jquery.min.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type='text/javascript' src="/static/js/jquery.blockUI.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type='text/javascript' src="/static/js/jquery.maskedinput.min.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type='text/javascript' src="/static/js/sysend.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type="text/javascript" src="/static/js/smoke.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type="text/javascript" src="/static/js/popper.min.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type="text/javascript" src="/static/js/bootstrap-datepicker.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type="text/javascript" src="/static/js/bootstrap-timepicker.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type="text/javascript" src="/static/js/bootstrap-modal.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type="text/javascript" src="/static/js/bootstrap-modalmanager.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type="text/javascript" src="/static/js/big.min.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type='text/javascript' src='/static/js/jquery.flexbox.js?v={{ institucion.versionstaticsjs }}'></script>
+<script type='text/javascript' src='/static/js/dragdivscroll.js?v={{ institucion.versionstaticsjs }}'></script>
+<script type="text/javascript" src="/static/js/jquery.date_input.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type='text/javascript' src="/static/js/jquery.timeentry.js?v={{ institucion.versionstaticsjs }}"></script>
+<script type="text/javascript" src='/static/js/jquery.validationEngine-es.js?v={{ institucion.versionstaticsjs }}' ></script>
+<script type="text/javascript" src='/static/js/jquery.validationEngine.js?v={{ institucion.versionstaticsjs }}'></script>
+<script type="text/javascript" src='/static/js/bootstrap-filestyle.min.js?v={{ institucion.versionstaticsjs }}'></script>
+<script type="text/javascript" src='/static/js/bootstrap.min.js?v={{ institucion.versionstaticsjs }}'></script>
+<script type="text/javascript" src="/static/js/bootstrap5-dropdown-ml-hack.js?v={{ institucion.versionstaticsjs }}"></script>
+<script src="/static/js/select2.min.js?v={{ institucion.versionstaticsjs }}"></script>
+<script  type="text/javascript" src="/static/js/getbootstrap.com_2.0.0_assets_js_bootstrap-typeahead.js?v={{ institucion.versionstaticsjs }}"></script>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0GD5MJWYWT"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-0GD5MJWYWT');
+</script>
+
+{#<script id="prodId" type="text/javascript" src="https://widget02.wolkvox.com/chat/?prodId=bmV0LWlvLXVuaXZlcnNpZGFkLWluZG9hbWVyaWNhLjEyNTk=" async=""></script>#}
+<script>
+    var perfilusuarioid = null;
+    var sessionid = null;
+    var chequearsesion = null;
+    var logouttimer = null;
+    var tikets = null;
+    var csrftoken = null;
+    var formulariomodaldinamico = null;
+
+    $(function() {
+
+        if(!('contains' in String.prototype)) {
+            String.prototype.contains = function(str, startIndex) {
+                return -1 !== String.prototype.indexOf.call(this, str, startIndex);
+            };
+        }
+
+        {#    $("*").focusin(function(){#}
+        {#        $('.datepicker').css({"display": "none"});#}
+        {#    });#}
+        {##}
+window.showWaiting = function (titulo, mensaje, close) {
+  var panel = document.getElementById("waitpanel");
+  if (!panel) { console.error("No existe #waitpanel en el DOM"); return; }
+
+  var modal = bootstrap.Modal.getOrCreateInstance(panel, {
+    backdrop: close === false ? 'static' : true,
+    keyboard: close !== false
+  });
+
+  document.getElementById("waitpaneltitle").textContent = titulo || "Procesando…";
+  document.getElementById("waitpanelbody").innerHTML =
+    '<div class="d-flex align-items-center gap-3">' +
+      '<div class="spinner-border" role="status" aria-hidden="true"></div>' +
+      '<div><div>' + (mensaje || "Por favor, espera…") + '</div>' +
+      '<small class="text-muted">No cierres esta ventana</small></div>' +
+    '</div>';
+
+  modal.show();
+};
+
+window.hideWaiting = function () {
+  var panel = document.getElementById("waitpanel");
+  if (!panel) return;
+  var modal = bootstrap.Modal.getInstance(panel);
+  if (modal) modal.hide();
+};
+
+        sinurlatrasbutton = function(){
+            if (location.pathname === '/'){
+                $("#urlatrasbutton").hide();
+            }
+        };
+
+        deshabilitar = function(nombre) {
+            $(nombre).attr({"disabled": "disabled"});
+        };
+
+        habilitar = function(nombre) {
+            $(nombre).removeAttr("disabled").removeAttr("readonly");
+        };
+
+        numerico = function(elemento, min, max, decimales) {
+            var nvalor;
+            var valor = elemento.val().trim();
+            if (valor.length === 0){
+                valor = parseFloat(min).toFixed(decimales);
+                elemento.val(valor);
+            } else if (isNaN(valor)){
+                nvalor = parseFloat(min).toFixed(decimales);
+                elemento.val(nvalor);
+            } else if (parseFloat(valor) < min) {
+                nvalor = parseFloat(min).toFixed(decimales);
+                elemento.val(nvalor);
+            } else if (max > 0 && parseFloat(valor) > max){
+                nvalor = parseFloat(max).toFixed(decimales);
+                elemento.val(nvalor);
+            } else {
+                nvalor = parseFloat(valor).toFixed(decimales);
+                elemento.val(nvalor);
+            }
+        };
+
+        {#    replaceAll = function (str, find, replace) {#}
+        {#        return str.replace(new RegExp(find, 'g'), replace);#}
+        {#    };#}
+        {##}
+        {#    validacionesnumericas = function() {#}
+        {#        $(".validarnumero").blur(function(){#}
+        {#            numerico($(this), 0, 0, 0);#}
+        {#        });#}
+        {##}
+        {#        $(".validarmoneda").blur(function(){#}
+        {#            numerico($(this), 0, 0, 2);#}
+        {#        });#}
+        {#    };#}
+        {##}
+
+        radionbuttonselectedvalueset = function(name, SelectdValue) {
+            $('input[name="' + name+ '"][value="' + SelectdValue + '"]').prop('checked', true);
+        };
+
+        sinurlatrasbutton();
+        {##}
+        {#    $("#infomodaldinamico_cancel").click(function(){#}
+        {#        $("#infomodaldinamico").modal("hide");#}
+        {#    });#}
+        {##}
+        {#    {% if chequear_correo %}#}
+        {#        chequearemial = function(){#}
+        {#            $.ajax({#}
+        {#                type: "POST",#}
+        {#                url: "/api",#}
+        {#                data: {'a': 'checkmail', 'csrfmiddlewaretoken': csrftoken},#}
+        {#                success: function(data) {#}
+        {#                    if (data.result === 'ok') {#}
+        {#                        if (data.mensajes){#}
+        {#                            $("#checkmailicon").removeClass("hidden").show();#}
+        {#                        } else {#}
+        {#                            $("#checkmailicon").addClass("hidden").hide();#}
+        {#                        }#}
+        {#                    }#}
+        {#                },#}
+        {#                dataType: "json"#}
+        {#            });#}
+        {#        };#}
+        {##}
+        {#        setInterval(chequearemial,60000);#}
+        {#    {% endif %}#}
+        {##}
+        {% if notificar_deuda and not perfilprincipal.es_administrativo %}
+            notificardeuda = function(){
+                $.ajax({
+                    type: "POST",
+                    url: "/api",
+                    data: {'a': 'chequeardeuda', 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            if (data.deudas){
+                                $("#canvascontentdeuda").html("<div align='center'><img src='/static/images/notificaciondeuda.jpg' class='fancybox' id='graficodeuda'></div>")
+                            } else {
+                                $("#canvascontentdeuda").addClass("hidden").hide();
+                            }
+                        }
+                    },
+                    dataType: "json"
+                });
+            };
+            var URLactual = window.location.pathname;
+            if (URLactual != '/alu_finanzas')
+            {
+                setInterval(notificardeuda,2000);
+                $(location).attr('href','/alu_finanzas');
+            }
+
+        {% endif %}
+        {##}
+        {#    function sleep_function ( sleepDuration, prototipe ){#}
+        {#        setTimeout(function() { prototipe(); }, sleepDuration);#}
+        {#    }#}
+        {##}
+        {#    function sleep ( sleepDuration ){#}
+        {#        var now = new Date().getTime();#}
+        {#        while(new Date().getTime() < now + sleepDuration){ /* do nothing */ }#}
+        {#    }#}
+
+        bloqueointerface = function(){
+            try {
+                if ($('.blockOverlay').length === 0){
+                    $.blockUI({message: '<img width="35" src="/static/images/ajax-document-loader.gif">', css: { 'border': '1px solid', 'border-radius' : '10px', 'left': '45%', 'width':'60px',  'height':'60px',  'padding-top': '12px',  '-webkit-border-radius': '10px', '-moz-border-radius': '10px', 'opacity': '.5', 'color': '#000' }});
+                }
+            } catch (err){
+            }
+        };
+
+        desbloqueointerface = function(){
+            try {
+                if ($('.blockOverlay').length >= 1){
+                    $.unblockUI();
+                }
+            } catch (err){
+            }
+        };
+
+        $(".changeuser").click(function () {
+            var id = $(this).attr('idu');
+            bloqueointerface();
+            $.ajax({
+                type: "POST",
+                url: "/cu",
+                data: {'id': id, 'csrfmiddlewaretoken': csrftoken},
+                success: function(data) {
+                    if (data.result === 'ok') {
+                        localStorage.removeItem('sessionid');
+                        localStorage.setItem('sessionid', data.sessionid);
+                        window.name = data.sessionid;
+                        chequearsesionid = true;
+                        sysend.broadcast('ctt', {message: 'reload', token: data.sessionid});
+                        location.href = "/";
+                    } else {
+                        desbloqueointerface();
+                        NotificacionAlerta(data.icono, data.titulo, data.mensaje)
+                    }
+                },
+                error: function() {
+                    desbloqueointerface();
+                    NotificacionError('!!!', 'Error de conexión');
+                },
+                dataType: "json"
+            });
+        });
+
+        {#    loginfow = function (varsessionid) {#}
+        {#        if (window.name !== sessionid){#}
+        {#            bloqueointerface();#}
+        {#            localStorage.setItem('sessionid', varsessionid);#}
+        {#            window.name = varsessionid;#}
+        {#            sysend.broadcast('ctt', {message: 'inicio', token: varsessionid});#}
+        {#            location.href = '/';#}
+        {#        }#}
+        {#    };#}
+        {##}
+
+        serverdate = new Date({{ currenttime.year }},{{ currenttime.month }}-1,{{ currenttime.day }}, {{ currenttime.hour }},{{ currenttime.minute }},{{ currenttime.second }},0);
+        clientdate = new Date();
+
+        showTime = function(){
+            var m;
+            var today=new Date();
+            var timediff = today - clientdate;
+            var renderdate = new Date(serverdate.getTime() + timediff);
+            var h=renderdate.getHours();
+            var mer = " AM";
+            if (h>12) {
+                mer = " PM";
+                h -= 12;
+            }
+            m = renderdate.getMinutes();
+            m = checkTime(m);
+            $("#clock").text(h+":"+m+mer);
+        };
+
+        checkTime = function(i){
+            if (i<10){
+                i="0" + i;
+            }
+            return i;
+        };
+
+        setInterval(showTime,15000);
+
+        showTime();
+
+        {#    {% if persona %}#}
+        {#        $("#chat").click(function () {#}
+        {#            if ($(this).attr('visible') == 'si'){#}
+        {#                $(this).attr({'visible': 'no'});#}
+        {#                $("#chatwindows").hide();#}
+        {#            } else {#}
+        {#                $(this).attr({'visible': 'si'});#}
+        {#                $("#chatwindows").show();#}
+        {#            }#}
+        {#        });#}
+        {##}
+        {#        chequearsesionfn = function(){#}
+        {#            $.ajax({#}
+        {#                type: "POST",#}
+        {#                url: "/api",#}
+        {#                data: {'a': 'checksession', 'csrfmiddlewaretoken': csrftoken},#}
+        {#                success: function(data) {#}
+        {#                    if (data.result === 'ok') {#}
+        {#                        if (data.nuevasesion){#}
+        {#                            logoutsimple();#}
+        {#                        } else {#}
+        {#                            if (!data.soporte){#}
+        {#                                $("#chat").hide().attr({'visible': 'no'});#}
+        {#                            } else {#}
+        {#                                $("#chat").show();#}
+        {#                            }#}
+        {#                            if (!data.ticket){#}
+        {#                                $("#chatwindowsmensaje").hide();#}
+        {#                                $("#chatwindowssolicitud").show();#}
+        {#                                $("#chatwindowsnumero").hide();#}
+        {#                            } else if (data.ticket && !data.atendiendo){#}
+        {#                                $("#chatwindowsmensaje").hide();#}
+        {#                                $("#chatwindowssolicitud").hide();#}
+        {#                                $("#chatwindowsnumero").show();#}
+        {#                                $("#numerosoporte").html(data.numero);#}
+        {#                            } else if (data.ticket && data.atendiendo){#}
+        {#                                $("#chatwindowsmensaje").show();#}
+        {#                                $("#chatwindowssolicitud").hide();#}
+        {#                                $("#chatwindowsnumero").hide();#}
+        {#                            }#}
+        {#                        }#}
+        {#                    }#}
+        {#                },#}
+        {#                dataType: "json"#}
+        {#            });#}
+        {#        };#}
+        {##}
+        {#        chequeartickets = function(){#}
+        {#            $.ajax({#}
+        {#                type: "POST",#}
+        {#                url: "/api",#}
+        {#                data: {'a': 'checkticket', 'csrfmiddlewaretoken': csrftoken},#}
+        {#                success: function(data) {#}
+        {#                    if (data.result === 'ok') {#}
+        {#                        $("#numerosoporte").html(data.numero);#}
+        {#                        if (data.activo){#}
+        {#                            $("#chatwindowsmensaje").show();#}
+        {#                            $("#chatwindowsnumero").hide();#}
+        {#                            if (data.nuevo){#}
+        {#                                $("#chatmessajes").append(data.html);#}
+        {#                                var div = document.getElementById('chatmessajes');#}
+        {#                                div.scrollTop = div.scrollHeight - div.clientHeight;#}
+        {#                            }#}
+        {#                        }#}
+        {#                        if (data.cerrado){#}
+        {##}
+        {#                        }#}
+        {#                    }#}
+        {#                },#}
+        {#                dataType: "json"#}
+        {#            });#}
+        {#        };#}
+        {##}
+        {#        {% if not solicitud_soporte_pendiente %}#}
+        {#            $("#chatwindowsmensaje").hide();#}
+        {#            $("#chatwindowssolicitud").show();#}
+        {#            $("#chatwindowsnumero").hide();#}
+        {#        {% elif solicitud_soporte_pendiente and not solicitud_soporte_pendiente.personalsoporte %}#}
+        {#            $("#chatwindowsmensaje").hide();#}
+        {#            $("#chatwindowssolicitud").hide();#}
+        {#            $("#chatwindowsnumero").show();#}
+        {#            tikets = setInterval(chequeartickets, 3000);#}
+        {#            var div = document.getElementById('chatmessajes');#}
+        {#            div.scrollTop = div.scrollHeight - div.clientHeight;#}
+        {#        {% elif solicitud_soporte_pendiente and solicitud_soporte_pendiente.personalsoporte %}#}
+        {#            $("#chatwindowsmensaje").show();#}
+        {#            $("#chatwindowssolicitud").hide();#}
+        {#            $("#chatwindowsnumero").hide();#}
+        {#            tikets = setInterval(chequeartickets, 3000);#}
+        {#            var div = document.getElementById('chatmessajes');#}
+        {#            div.scrollTop = div.scrollHeight - div.clientHeight;#}
+        {#        {% endif %}#}
+        {##}
+        {#        $("#solicitudsoporte").click(function(){#}
+        {#            var tipo = $("#tiposolicitudchat").val();#}
+        {#            var descripcion = $("#descripcionsolicitudchat").val().trim();#}
+        {#            if (descripcion.length == 0){#}
+        {#                $("#descripcionsolicitudchat").focus();#}
+        {#            } else {#}
+        {#                $.ajax({#}
+        {#                    type: "POST",#}
+        {#                    url: "/api",#}
+        {#                    data: {'a': 'openticket', 'tipo': tipo, 'descripcion': descripcion, 'csrfmiddlewaretoken': csrftoken},#}
+        {#                    success: function(data) {#}
+        {#                        if (data.result === 'ok') {#}
+        {#                            $("#chatmessajes").html('');#}
+        {#                            $("#chatwindowsmensaje").hide();#}
+        {#                            $("#chatwindowssolicitud").hide();#}
+        {#                            $("#chatwindowsnumero").show();#}
+        {#                            $("#numerosoporte").html(data.numero);#}
+        {#                            tikets = setInterval(chequeartickets, 3000);#}
+        {#                        } else {#}
+        {#                            smoke.alrt(data.mensaje);#}
+        {#                        }#}
+        {#                    },#}
+        {#                    dataType: "json"#}
+        {#                });#}
+        {#            }#}
+        {#        });#}
+        {##}
+        {#        sendmensajechat = function () {#}
+        {#            var mensaje = $("#textchatmensaje").val().trim();#}
+        {#            if (mensaje.length > 0){#}
+        {#                $.ajax({#}
+        {#                    type: "POST",#}
+        {#                    url: "/api",#}
+        {#                    data: {'a': 'sendmensajeclientsuport', 'mensaje': mensaje, 'csrfmiddlewaretoken': csrftoken},#}
+        {#                    success: function(data) {#}
+        {#                        if (data.result === 'ok') {#}
+        {#                            $("#textchatmensaje").val('');#}
+        {#                            $("#chatmessajes").append(data.html);#}
+        {#                            var div = document.getElementById('chatmessajes');#}
+        {#                            div.scrollTop = div.scrollHeight - div.clientHeight;#}
+        {#                        }#}
+        {#                    },#}
+        {#                    dataType: "json"#}
+        {#                });#}
+        {#            }#}
+        {#        };#}
+        {##}
+        {#        $('#textchatmensaje').keyup(function(e) {#}
+        {#            if(e.keyCode === 13) {#}
+        {#                sendmensajechat();#}
+        {#            }#}
+        {#        });#}
+        {##}
+        {#        $("#sendchatmensaje").click(function(){#}
+        {#            sendmensajechat();#}
+        {#        });#}
+        {##}
+        {#        $("#cancelarsoporte").click(function(){#}
+        {#            $.ajax({#}
+        {#                type: "POST",#}
+        {#                url: "/api",#}
+        {#                data: {'a': 'closeticket', 'csrfmiddlewaretoken': csrftoken},#}
+        {#                success: function(data) {#}
+        {#                    if (data.result === 'ok') {#}
+        {#                        $("#chatwindowsmensaje").hide();#}
+        {#                        $("#chatwindowssolicitud").show();#}
+        {#                        $("#chatwindowsnumero").hide();#}
+        {#                        clearInterval(tikets);#}
+        {#                    } else {#}
+        {#                        smoke.alrt(data.mensaje);#}
+        {#                    }#}
+        {#                },#}
+        {#                dataType: "json"#}
+        {#            });#}
+        {#        });#}
+        {##}
+        {#        chequearsesion = setInterval(chequearsesionfn,60000);#}
+        {#    {% endif %}#}
+        {##}
+        {#    $("#id_email, #id_emailinst, #id_correoinstasoc, #id_correoinst, #id_emailcontactoemergencia, #id_correo").css({'text-transform': 'none'});#}
+        {##}
+        {#    $(".btn-form").click(function(){#}
+        {#        bloqueointerface();#}
+        {#    });#}
+        {##}
+        {#    if (typeof String.prototype.startsWith !== 'function') {#}
+        {#        String.prototype.startsWith = function (str){#}
+        {#            return this.indexOf(str) === 0;#}
+        {#        };#}
+        {#    }#}
+        {##}
+        {#    if (typeof String.prototype.endsWith !== 'function') {#}
+        {#        String.prototype.endsWith = function (str){#}
+        {#            return this.slice(-str.length) === str;#}
+        {#        };#}
+        {#    }#}
+        {##}
+        adicionar_lista = function(lista, elemento){
+            lista.push(elemento);
+        };
+        {##}
+        remover_lista = function(lista, elemento){
+            for(var i = lista.length - 1; i >= 0; i--) {
+                if(lista[i] === elemento) {
+                    lista.splice(i, 1);
+                }
+            }
+        };
+
+        conectar_reportes = function(){
+            var href = $(this).attr('nhref');
+            var tipos = $(this).attr('tipos');
+            if (!tipos){
+                tipos = "pdf, xls, csv, doc";
+            }
+            formato_final = '';
+            if(tipos.contains("pdf")){
+                formato_final = '&rt=pdf';
+                $("#formatopdf").removeAttr("hidden");
+            }else{
+                $("#formatopdf").attr({"hidden":"hidden"});
+            }
+            if(tipos.contains("doc")){
+                formato_final = '&rt=docx';
+                $("#formatodoc").removeAttr("hidden");
+            }else{
+                $("#formatodoc").attr({"hidden":"hidden"});
+            }
+            if(tipos.contains("xls")){
+                formato_final = '&rt=xlsx';
+                $("#formatoxls").removeAttr("hidden");
+            }else{
+                $("#formatoxls").attr({"hidden":"hidden"});
+            }
+            if(tipos.contains("csv")){
+                formato_final = '&rt=csv';
+                $("#formatocsv").removeAttr("hidden");
+            }else{
+                $("#formatocsv").attr({"hidden":"hidden"});
+            }
+            var tipo = $("#formatoreporte_formato").find("option:not([hidden]):eq(0)");
+            $("#formatoreporte_formato").val(tipo.val()).trigger('change');
+            if (tipos.length > 4) {
+                $('#formatoreporte').modal('show');
+                $('#formatoreporte_run').attr('nhref', href);
+            }else{
+                ejecutar_reporte_directo(href + formato_final);
+            }
+        };
+
+        $('#formatoreporte_close').click(function(){
+            $('#formatoreporte').modal('hide');
+        });
+
+        openwindow_reporte = function (url, width, height) {
+            newwindow = window.open(url, 'name', 'height='+height+' ,width='+width);
+        };
+
+        openwindow = function(verb, url, data, target) {
+            var form = document.createElement("form");
+            form.action = url;
+            form.method = verb;
+            form.target = target || "_self";
+            if (data) {
+                for (var key in data) {
+                    var input = document.createElement("textarea");
+                    input.name = key;
+                    input.value = typeof data[key] === "object" ? JSON.stringify(data[key]) : data[key];
+                    form.appendChild(input);
+                }
+            }
+            form.style.display = 'none';
+            document.body.appendChild(form);
+            form.submit();
+        };
+
+        ejecutar_reporte_directo = function(ruta) {
+            var href = ruta;
+            $('#formatoreporte').modal('hide');
+            var formato = parseInt($('#formatoreporte_formato').val());
+            var formato_final = '';
+            if (formato === 0) {
+                formato_final = '&rt=pdf';
+            }else if (formato === 1) {
+                formato_final = '&rt=docx';
+            }else if (formato === 2){
+                formato_final = '&rt=xlsx';
+            }else if (formato === 3){
+                formato_final = '&rt=csv';
+            }
+            bloqueointerface();
+            var report_url = href + formato_final;
+            $.ajax({
+                type: "GET",
+                url: report_url,
+                success: function(data) {
+                    desbloqueointerface();
+                    if (data.result === 'ok') {
+                        if(formato === 0 ){
+                            openwindow_reporte(location.origin + data.reportfile, 800, 500);
+                        }else{
+                            location.href = location.origin + data.reportfile;
+                        }
+                    } else {
+                        NotificacionError('Opss..!!',"Error al generar el reporte.");
+                    }
+                },
+                error: function() {
+                    desbloqueointerface();
+                    NotificacionError('!!!', 'Error de conexión');
+                },
+                dataType: "json"
+            });
+        };
+
+        ejecutar_reporte = function() {
+            var href = $(this).attr('nhref');
+            $('#formatoreporte').modal('hide');
+            var formato = parseInt($('#formatoreporte_formato').val());
+            var formato_final = '';
+            if (formato === 0) {
+                formato_final = '&rt=pdf';
+            }else if (formato === 1) {
+                formato_final = '&rt=docx';
+            }else if (formato === 2){
+                formato_final = '&rt=xlsx';
+            }else if (formato === 3){
+                formato_final = '&rt=csv';
+            }
+            bloqueointerface();
+            var report_url = href + formato_final;
+            $.ajax({
+                type: "GET",
+                url: report_url,
+                success: function(data) {
+                    desbloqueointerface();
+                    if (data.result === 'ok') {
+                        if(formato === 0 ){
+                            openwindow_reporte(location.origin + data.reportfile, 800, 500);
+                        }else{
+                            location.href = location.origin + data.reportfile;
+                        }
+                    } else {
+                        NotificacionError('Opss..!!',"Error al generar el reporte.");
+                    }
+                },
+                error: function() {
+                    desbloqueointerface();
+                    NotificacionError('!!!', 'Error de conexión');
+                },
+                dataType: "json"
+            });
+        };
+
+        conectar_confirmacion = function(){
+            var href = $(this).attr('nhref');
+            bloqueointerface();
+            $.ajax({
+                type: "GET",
+                url: href,
+                success: function(data) {
+                    desbloqueointerface();
+                    if (data.search('"'+'ajaxconfirmaciondinamicbs_'+sessionid+'"') >= 0){
+                        formulariomodaldinamico = new bootstrap.Modal(document.getElementById('confirmacionmodaldinamico'), {keyboard: false, backdrop: 'static'})
+                        $("#confirmacionmodaldinamico").removeClass("modal-xl").removeClass("modal-lg").removeClass("modal-sm").addClass("modal-lg");
+                        $("#confirmacionmodaldinamicobody").html(data);
+                        formulariomodaldinamico.show();
+                    } else {
+                        NotificacionError('Opss..!!', "Error al cargar la opción.");
+                    }
+                },
+                error: function() {
+                    desbloqueointerface();
+                    NotificacionError('!!!', 'Error de conexión');
+                },
+                dataType: "html"
+            });
+        };
+
+        conectar_eliminacion = function(){
+            var href = $(this).attr('nhref');
+            bloqueointerface();
+            $.ajax({
+                type: "GET",
+                url: href+'&idform='+sessionid,
+                success: function(data) {
+                    desbloqueointerface();
+                    if (data.search('"'+'ajaxdeletedinamicbs_'+sessionid+'"') >= 0){
+                        formulariomodaldinamico = new bootstrap.Modal(document.getElementById('eliminacionmodaldinamico'), {keyboard: false, backdrop: 'static'})
+                        $("#eliminacionmodaldinamico").removeClass("modal-xl").removeClass("modal-lg").removeClass("modal-sm").addClass("modal-lg");
+                        $("#eliminacionmodaldinamicobody").html(data);
+                        formulariomodaldinamico.show();
+                    } else {
+                        NotificacionError('Opss..!!', "Error al cargar la opción.");
+                    }
+                },
+                error: function() {
+                    desbloqueointerface();
+                    NotificacionError('!!!', 'Error de conexión');
+                },
+                dataType: "html"
+            });
+        };
+
+        conectar_formulario = function(){
+            var control = $(this);
+            var href = control.attr('nhref');
+            bloqueointerface();
+            $.ajax({
+                type: "GET",
+                url: href,
+                success: function(data) {
+                    desbloqueointerface();
+                    if ($('#formbs').length > 0) {
+                        NotificacionError('Opss..', 'Ya existe activo un formulario.');
+                    } else {
+                        if (data.search('"'+'ajaxformdinamicbs' + '"') >= 0){
+                            formulariomodaldinamico = new bootstrap.Modal(document.getElementById('formulariomodaldinamico'), {keyboard: false, backdrop: 'static'})
+                            $("#formulariomodaldinamico").removeClass("modal-xl").removeClass("modal-lg").removeClass("modal-sm");
+                            if (data.search('ajaxformwidth_sm') > 0){
+                                $("#formulariomodaldinamico").addClass("modal-sm");
+                            }
+                            if (data.search('ajaxformwidth_lg') > 0){
+                                $("#formulariomodaldinamico").addClass("modal-lg");
+                            }
+                            if (data.search('ajaxformwidth_xl') > 0){
+                                $("#formulariomodaldinamico").addClass("modal-xl");
+                            }
+                            $("#formulariomodaldinamicobody").html(data);
+
+                            formulariomodaldinamico.show();
+                        } else {
+                            NotificacionError('!!!', 'Error de conexión');
+                        }
+                    }
+                },
+                error: function() {
+                    desbloqueointerface();
+                    NotificacionError('!!!', 'Error de conexión');
+                },
+                dataType: "html"
+            });
+        };
+
+        conectar_mensaje = function(){
+            var href = $(this).attr('nhref');
+            bloqueointerface();
+            $.ajax({
+                type: "GET",
+                url: '/api',
+                data: {'a': 'mensaje', 'ids': href, 'csrfmiddlewaretoken': csrftoken},
+                success: function(data) {
+                    desbloqueointerface();
+                    if (data.search('"'+'ajaxmensajedinamicbs'+'"') >= 0){
+                        $("#mensajemodaldinamico").html(data);
+                        $('#mensajemodaldinamico').modal('show');
+                    } else {
+                        mensajes("Error de conexión.", "Error");
+                    }
+                },
+                error: function() {
+                    desbloqueointerface();
+                    mensajes("Error de conexión.", "Error");
+                },
+                dataType: "html"
+            });
+        };
+
+        {% if mensj or info %}
+            NotificacionAlerta('info','Información','{{ mensj }}{{ info }}')
+            {#smoke.alert('{{ mensj }}{{ info }}');#}
+        {% endif %}
+
+        $('.reportedirecto').bind('click.conectar_reportes', conectar_reportes);
+        $('.confirmacionmodal').bind('click.conectar_confirmacion', conectar_confirmacion);
+        $('.eliminacionmodal').bind('click.conectar_eliminacion', conectar_eliminacion);
+        $('.formmodal').bind('click.conectar_formulario', conectar_formulario);
+        $('.mensajecorreomodal').bind('click.conectar_mensajes', conectar_mensaje);
+        $("#formatoreporte_run").bind("click.ejecutar_reporte", ejecutar_reporte);
+
+        conectar_reportes_interface = function(){
+            $('.reportedirecto').unbind('click.conectar_reportes');
+            $('.reportedirecto').bind('click.conectar_reportes', conectar_reportes);
+        };
+        {##}
+        {#    #}
+        {##}
+        {#    history.pushState(null, null, location.href);#}
+        {#    window.addEventListener('popstate', function(event) {#}
+        {#        history.pushState(null, null, location.href);#}
+        {#    });#}
+        {##}
+        {#    actualizarnumerico = function(){#}
+        {#        $('.imp-number[decimales], .imp-moneda[decimales], .imp-numbersmall[decimales], .imp-numbermed-right[decimales], .imp-numbermed-center[decimales], .nota[decimales]').each(function(){#}
+        {#            numerico($(this), 0, 0, $(this).attr('decimales'));#}
+        {#        })#}
+        {#    };#}
+        {##}
+        foconumerico = function () {
+            $('.imp-number, .imp-moneda, .imp-numbersmall, .imp-numbermed-right, .imp-numbermed-center, .nota').focus(function(){
+                if (!parseFloat($(this).val())){
+                    $(this).val("");
+                }
+            });
+        };
+        $(document).ready(function(){
+
+            {% if persona.necesita_cambiar_clave %}
+                document.getElementById('passwordModalLink').click();
+            {% endif %}
+
+            csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
+
+            $('.rotate').parent().css('padding', 0);
+            $('.rotate').parent().css('height', 'auto');
+            $('.rotate').css('margin-left', 'auto');
+            $('.rotate').css('margin-right', 'auto');
+            $('.rotate').css('margin-bottom', '2px');
+
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+
+            $(".autoheight").each(function () {
+                var max = 0;
+                $(this).find('span').each(function () {
+                    try {
+                        if (parseInt($(this).attr('badge-height')) > max){
+                            max = parseInt($(this).attr('badge-height'));
+                        }
+                    } catch (err){
+
+                    }
+                })
+                $(this).css('height', max);
+            });
+
+            {#        actualizarnumerico();#}
+            {#        foconumerico();#}
+            {##}
+
+            multiselect_validation = function () {
+                $(".custom-multiselect").find('input').unbind();
+                $(".custom-multiselect").find('input').bind("click", function () {
+                    var cantidad = $('input:checked[name='+$(this).attr('basename')+']').length;
+                    $("#id_"+$(this).attr('basename')+"_validacion").val((cantidad?"1":"")).attr({'value':(cantidad?"1":"")});
+
+                });
+                $(".inputmultiselect").each(function () {
+                    var cantidad = $('input:checked[name='+$(this).attr('basename')+']').length;
+                    $(this).val((cantidad?"1":"")).attr({'value':(cantidad?"1":"")});
+                });
+
+                $(".busqueda_multiselect").unbind();
+                $(".busqueda_multiselect").keyup(function(){
+                    var id = $(this).attr('ide');
+                    var s = $(this).val().toUpperCase();
+                    $(".contenido_"+id).show();
+
+                    if (s.length > 0){
+                        $(".contenido_"+id).each(function () {
+                            if (!$(this).text().contains(s)){
+                                $(this).hide();
+                            }
+                        });
+                    }
+                });
+            };
+        });
+
+        $('.selectorfecha').keypress(function(){
+            return false;
+        });
+
+        redondear = function (valor, lugares) {
+            return parseFloat(Big(valor).toFixed(lugares));
+        };
+
+        logoutajax =  function () {
+            $.ajax({
+                type: "POST",
+                url: "/logout",
+                data: {'csrfmiddlewaretoken': csrftoken},
+                success: function(data) {
+                    if (data.result === 'ok') {
+                        localStorage.removeItem('sessionid');
+                        sessionid = null;
+                        window.name = '';
+                        location.href = "/";
+                        sysend.broadcast('ctt', {message: 'exit'});
+                    } else {
+                        sleep(5000);
+                        logoutajax()
+                    }
+                },
+                error: function() {
+                    sleep(5000);
+                    logoutajax();
+                },
+                dataType: "json"
+            });
+        };
+
+        logoutcomplet = function () {
+            bloqueointerface();
+            logoutajax();
+        };
+
+        logoutsimple = function () {
+            bloqueointerface();
+            localStorage.removeItem('sessionid');
+            sessionid = null;
+            window.name = '';
+            location.href = "/logout";
+        };
+
+        logout = function(){
+            if (window.name && sessionid && window.name === sessionid) {
+                logoutcomplet();
+            }
+        };
+
+        sysend.on('ctt', function(obj) {
+            if (obj.message === 'check'){
+                if (window.name && sessionid && window.name === sessionid) {
+                    sysend.broadcast('ctt', {message: 'set', token: window.name});
+                }
+            }
+            if (obj.message === 'exit'){
+                bloqueointerface();
+                localStorage.removeItem('sessionid');
+                sessionid = null;
+                window.name = '';
+                location.href = '/';
+            }
+            if (obj.message === 'reload'){
+                bloqueointerface();
+                window.name = obj.token;
+                localStorage.setItem('sessionid', obj.token);
+                location.href = '/';
+            }
+            if (obj.message === 'refresh'){
+                location.href = location.pathname;
+            }
+            if (obj.message === 'set'){
+                clearInterval(logouttimer);
+                if (window.name === '') {
+                    desbloqueointerface();
+                    window.name = obj.token;
+                    localStorage.setItem('sessionid', obj.token);
+                    sessionid = obj.token;
+                }
+            }
+            if (obj.message === 'forceset'){
+                window.name = obj.token;
+                localStorage.setItem('sessionid', obj.token);
+                sessionid = obj.token;
+            }
+            if (obj.message === 'inicio'){
+                loginfow(obj.token);
+            }
+        });
+
+        {% if perfilprincipal %}
+            var validarperfilid = parseInt('{{ perfilprincipal.id }}');
+            if (perfilusuarioid !== validarperfilid) {
+                localStorage.setItem('perfilusuarioid', validarperfilid);
+                perfilusuarioid = validarperfilid;
+            }
+        {% endif %}
+
+        try {
+            sessionid = localStorage.getItem('sessionid');
+            {% if session_key %}
+                sessionid = '{{ session_key }}';
+                localStorage.setItem('sessionid', sessionid);
+                window.name = sessionid;
+            {% endif %}
+        } catch (err) {
+            console.log('no pudo obtener el id');
+            logoutsimple();
+        }
+
+        chequeo_inicial = function () {
+            if (sessionid !== null){
+                if (window.name === ''){
+                    if (location.pathname !== '/login') {
+                        bloqueointerface();
+                        sysend.broadcast('ctt', {message: 'check'});
+                        logouttimer = setInterval(logoutsimple, 3000);
+                    }
+                } else {
+                    desbloqueointerface();
+                }
+            } else {
+                if (window.name === ''){
+                    if (location.pathname !== '/login') {
+                        bloqueointerface();
+                        sysend.broadcast('ctt', {message: 'check'});
+                        logouttimer = setInterval(logoutsimple,3000);
+                    }
+                }
+            }
+        };
+
+        {% if persona %}
+            {% if not especial %}
+                chequeo_inicial();
+            {% endif %}
+        {% endif %}
+
+        {#let dropdowns = document.querySelectorAll('.dropdown-toggle')#}
+        {#dropdowns.forEach((dd)=>{#}
+        {#    dd.addEventListener('click', function (e) {#}
+        {#        var el = this.nextElementSibling#}
+        {#        el.style.display = el.style.display==='block'?'none':'block'#}
+        {#    })#}
+        {# })#}
+        actualiza_path = function () {
+            $(".cambiac").each(function () {
+                var elemento = $(this);
+                var hr = elemento.attr('nhref');
+                elemento.attr({'nhref': hr+"?path="+location.pathname});
+            });
+        };
+
+        verifica_archivo = function (fileInput) {
+            {#const fileInput = document.getElementById('id_foto');#}
+            const maxFileSize = fileInput.getAttribute('data-max-file-size') * 1024;
+            const errorMensaje = document.createElement('span');
+            errorMensaje.className = 'error-archivo';  // Clase CSS para el mensaje de error
+
+            fileInput.insertAdjacentHTML('beforebegin', '<br>');
+            fileInput.insertAdjacentElement('afterend', errorMensaje);
+
+            fileInput.addEventListener('change', function () {
+
+                const selectedFile = this.files[0];
+                if (selectedFile) {
+                    if (selectedFile.size > maxFileSize) {
+                        errorMensaje.textContent = 'El archivo es demasiado grande. El tamaño máximo permitido es ' + (maxFileSize / 1024 / 1024) + ' Mb.';
+                        fileInput.value = ''; // Limpia el campo de archivo
+                    } else {
+                        errorMensaje.textContent = ''; // Borra el mensaje de error si el archivo es válido
+                    }
+                }
+            });
+        };
+
+        actualiza_path();
+    });
+</script>
+{% block heading %}
+{% endblock %}
+</body>
+</html>

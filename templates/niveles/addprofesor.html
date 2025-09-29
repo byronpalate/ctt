@@ -1,0 +1,76 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_desde, #id_hasta").datepicker({format:"dd-mm-yyyy"});
+            $("#id_tipoprofesor, #id_profesor, #id_desde, #id_hasta, #id_motivo").addClass("validate[required]");
+
+            $("#id_horassemanales").blur(function () {
+                numerico($(this), 0, 0, 1);
+            });
+            
+            
+            
+              ItemsDisplay = function (item) {
+                if (item.name) {
+                    return $('<span>' + item.name + '</span>');
+                } else {
+                    return '---------';
+                }
+            };
+            $("#id_profesor_select2").select2({
+                dropdownParent: $('#formulariomodaldinamico'),
+                width: '100%',
+                placeholder: "---------",
+                allowClear: true,
+                ajax: {
+                    url: '/api',
+                    type: "POST",
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page,
+                            a: 'data',
+                            model: 'Profesor:activo=True,persona__usuario__is_active=True:::10',
+                            p: 1,
+                            s: 10,
+                            csrfmiddlewaretoken: csrftoken
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.data,
+                            pagination: {
+                                more: (params.page * 30) < data.total_count
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                escapeMarkup: function (markup) { return markup; },
+                minimumInputLength: 1,
+                templateResult: ItemsDisplay,
+                templateSelection: ItemsDisplay
+            }).on("select2:select", function (evt) {
+                $("#id_profesor").attr({"value":(evt.params.data.id)});
+            });
+            $("#id_profesor").attr({"value": ""});
+            $("#id_profesor_select2").val(0).trigger("change");
+
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addprofesor'/>
+    <input type='hidden' name='mid' value='{{ materia.id }}'/>
+{% endblock %}
+{% block formback %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}
+{% block formdestination %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}
+

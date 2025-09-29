@@ -1,0 +1,376 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $(".verificartitulo").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/docentes",
+                    data: {'action': 'verificartitulo', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            location.href = document.URL;
+                        } else {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $(".verificarprincipal").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_talentohumano",
+                    data: {'action': 'verificarprincipal', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+
+                            $('.verificarprincipal').not(elemento).prop('checked', false);
+
+                        } else {
+                            elemento.prop('checked', !valoractual);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+
+            $(".verificarcurso").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/docentes",
+                    data: {'action': 'verificarcurso', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            location.href = document.URL;
+                        } else {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $(".verificarpublicacion").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/docentes",
+                    data: {'action': 'verificarpublicacion', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            location.href = document.URL;
+                        } else {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/docentes?id={{ profesor.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}: {{ profesor }} - C.I.: {{ profesor.persona.identificacion }}</h4>
+        </div>
+    </div>
+    <div class='row mb-2'>
+        {% if docentes_registran_estudios %}
+            <div class='row'>
+                <div class='col-12'>
+                    {% if perms.ctt.puede_modificar_profesores %}
+                        <a href="javascript:;" nhref="/docentes?action=addtitulacion&id={{ profesor.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar Titulaci&oacute;n</a>
+{#                        <a href="javascript:;" nhref="/docentes?action=actualizartitulos&id={{ profesor.id }}" class='btn btn-sm btn-warning confirmacionmodal'><i class="icon-refresh"></i> Actualizar títulos</a>#}
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 80px;">Tipo</th>
+                    <th>Institución</th>
+                    <th style="width: 80px; text-align: center">Inicio</th>
+                    <th style="width: 80px; text-align: center">Fin</th>
+                    <th style="width: 60px; text-align: center">Cursando</th>
+                    <th style="width: 300px;">Título/Especialidad/Carrera</th>
+                    <th style="width: 120px;">Nivel</th>
+                    <th style="width: 120px">Registro</th>
+                    {% if docentes_registran_estudios %}
+                        <th style="width: 30px; text-align: center">Verf.</th>
+                        <th style="width: 30px; text-align: center">Princ.</th>
+                    {% endif %}
+                    <th style="width: 80px; text-align: center">Archivo</th>
+                    <th style="width: 80px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for estudio in titulos %}
+                    <tr>
+                        <td>{% if estudio.superior %}E.SUPERIOR{% else %}E.BASICA{% endif %}</td>
+                        <td>
+                            {% if estudio.superior %}
+                                {{ estudio.institucioneducacionsuperior }}
+                            {% else %}
+                                {{ estudio.institucioneducacionbasica }}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">{{ estudio.fechainicio|date:"Y-m-d"|default_if_none:"" }}</td>
+                        <td style="text-align: center">{{ estudio.fechafin|date:"Y-m-d"|default_if_none:"" }}</td>
+                        <td style="text-align: center">
+                            {% if estudio.cursando %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cursando">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cursando">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if estudio.superior %}
+                                {{ estudio.titulo }}<br>{% if estudio.carrera %}{{ estudio.carrera }}<br>{% endif %}
+                            {% else %}
+                                {{ estudio.especialidadeducacionbasica }}
+                            {% endif %}
+                        </td>
+                        <td>{{ estudio.niveltitulacion|default_if_none:'' }}<br>{{ estudio.detalleniveltitulacion|default_if_none:'' }}</td>
+                        <td>{{ estudio.registro|default_if_none:'' }}</td>
+                        {% if docentes_registran_estudios %}
+                            <td style="text-align: center">
+                                <input type="checkbox" {% if estudio.verificado %}checked{% endif %} class="verificartitulo sizecheckmd" ida="{{ estudio.id }}">
+                            </td>
+                            <td style="text-align: center">
+                                <input type="checkbox" {% if estudio.principal %}checked{% endif %} class="verificarprincipal sizecheckmd" ida="{{ estudio.id }}">
+                            </td>
+                        {% endif %}
+                        <td style="text-align: center">
+                            {% if not estudio.verificado  %}
+                                <a href="javascript:;" nhref='/docentes?action=addarchivo&id={{ estudio.id }}' class='btn btn-success btn-ssm formmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Cargar"><i class="icon-arrow-up"></i></a>
+                            {% endif %}
+                            {% if estudio.archivo  %}
+                                <a id="{{ estudio.id }}" href="{% if estudio.archivo %}{{ estudio.archivo.url }}{% endif %}" target="_blank" class='btn btn-info btn-ssm tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar"><i class="icon-arrow-down"></i></a>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if docentes_registran_estudios %}
+                                {% if not estudio.verificado %}
+                                    {% if estudio.superior %}
+                                        {% if perms.ctt.puede_modificar_profesores %}
+                                            <a href="javascript:;" nhref='/docentes?action=edittitulacion&id={{ estudio.id }}' class='btn btn-ssm btn-info formmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                            <a href="javascript:;" nhref='/docentes?action=deltitulacion&id={{ estudio.id }}' class='btn btn-ssm btn-danger eliminacionmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        {% if docentes_registran_estudios %}
+            <div class='row'>
+                <div class='col-12'>
+                    {% if docentes_registran_cursos %}
+                        <div class='row'>
+                            <div class='col-12'>
+                                {% if perms.ctt.puede_modificar_profesores %}
+                                    <a href="javascript:;" nhref="/docentes?action=addcurso&id={{ profesor.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar Curso</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <br>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Curso/Instituci&oacute;n</th>
+                    <th style="width: 300px;">Tipo</th>
+                    <th style="width: 80px;text-align: center;">Fecha Inicio</th>
+                    <th style="width: 80px;text-align: center;">Fecha Fin</th>
+                    <th style="width: 50px;text-align: center;">Horas</th>
+                    {% if docentes_registran_cursos %}
+                        <th style="width: 30px; text-align: center">Verf.</th>
+                    {% endif %}
+                    <th style="width: 80px; text-align: center">Archivo</th>
+                    <th style="width: 80px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for curso in cursos %}
+                    <tr>
+                        <td>{{ curso.nombre }}<br>{% if curso.institucion %}{{ curso.institucion }}{% else %}{{ curso.institucionformacion }}{% endif %}</td>
+                        <td>{{ curso.tipocurso }} </td>
+                        <td style="text-align: center;">{{ curso.fecha_inicio|date:"Y-m-d"}} </td>
+                        <td style="text-align: center;">{{ curso.fecha_fin|date:"Y-m-d"}} </td>
+                        <td style="text-align: center;">{{ curso.horas|floatformat:0 }}</td>
+                        {% if docentes_registran_cursos %}
+                            <td style="text-align: center">
+                                <input type="checkbox" {% if curso.verificado %}checked{% endif %} class="verificarcurso sizecheckmd" ida="{{ curso.id }}">
+                            </td>
+                        {% endif %}
+                        <td style="text-align: center">
+                            {% if not curso.verificado %}
+                                <a href="javascript:;" nhref='/docentes?action=addarchivocurso&id={{ curso.id }}' class='btn btn-success btn-ssm formmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Cargar"><i class="icon-arrow-up"></i> </a>
+                            {% endif %}
+                            {% if curso.archivo %}
+                                <a id="{{ curso.id }}" href="{% if curso.archivo %}{{ curso.archivo.url }}{% endif %}" target="_blank" class='btn btn-info btn-ssm tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar"><i class="icon-arrow-down"></i> </a>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if docentes_registran_cursos %}
+                                {% if not curso.verificado and  perms.ctt.puede_modificar_profesores %}
+                                    <a href="javascript:;" nhref='/docentes?action=editcurso&id={{ curso.id }}' class='btn btn-ssm btn-info formmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                    <a href="javascript:;" nhref='/docentes?action=delcurso&id={{ curso.id }}' class='btn btn-ssm btn-danger tu eliminacionmodal' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        {% if docentes_registran_estudios %}
+            <div class='row'>
+                <div class='col-12'>
+                    {% if docentes_registran_publicaciones %}
+                        {% if perms.ctt.puede_modificar_profesores %}
+                            <div class='row'>
+                                <div class='col-12'>
+                                    <a href="javascript:;" nhref="/docentes?action=addpublicacion&id={{ profesor.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar Publicación</a>
+                                </div>
+                            </div>
+                            <br>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 500px;">Nombre</th>
+                    <th style="width: 80px;">Revista</th>
+                    <th style="width: 80px;text-align: center;">Fecha </th>
+                    <th style="width: 100px;">Url</th>
+                    <th style="width: 80px;">ISBN</th>
+                    {% if docentes_registran_publicaciones %}
+                        <th style="width: 30px; text-align: center">Verf.</th>
+                    {% endif %}
+                    <th style="width: 80px; text-align: center">Archivo</th>
+                    <th style="width: 80px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for publicacion in publicaciones %}
+                    <tr>
+                        <td>{{ publicacion.titulo }}</td>
+                        <td>{{ publicacion.basedatosindexada }} </td>
+                        <td style="text-align: center;">{{ publicacion.fechapublicacion|date:"Y-m-d"}} </td>
+                        <td><a href="{{ publicacion.linkpublicacion }}" target="_blank">{{ publicacion.linkpublicacion }}</a></td>
+                        <td>{{ publicacion.isbn|default_if_none:publicacion.issn }} </td>
+                        {% if docentes_registran_publicaciones %}
+                            <td style="text-align: center">
+                                <input type="checkbox" {% if publicacion.verificado %}checked{% endif %} class="verificarpublicacion sizecheckmd" ida="{{ publicacion.id }}">
+                            </td>
+                        {% endif %}
+                        <td style="text-align: center">
+                            {% if not publicacion.verificado %}
+                                <a href="javascript:;" nhref='/docentes?action=addarchivopublicacion&id={{ publicacion.id }}' class='btn btn-success btn-ssm formmodal'><i class="icon-arrow-up"></i> </a>
+                            {% endif %}
+                            {% if publicacion.archivo %}
+                                <a id="{{ publicacion.id }}" href="{% if publicacion.archivo %}{{ publicacion.archivo.url }}{% endif %}" class='btn btn-info btn-ssm'><i class="icon-arrow-down"></i> </a>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if docentes_registran_publicaciones %}
+                                {% if not publicacion.verificado and  perms.ctt.puede_modificar_profesores %}
+                                    <a href="javascript:;" nhref='/docentes?action=delpublicacion&id={{ publicacion.id }}' class='btn btn-ssm btn-danger tu eliminacionmodal' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

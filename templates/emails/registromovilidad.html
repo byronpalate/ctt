@@ -1,0 +1,13 @@
+{% extends "emails/emailbase.html" %}
+{% block contenido %}
+    Gracias por inscribirte, hemos recibido tu información.<br>
+    <br>
+    Las credenciales para ingresar al Sistema CTT son las siguientes:
+    <br>
+    Usuario: {{ persona.usuario }}
+    <br>
+    Clave: (su pasaporte o DNI)
+    <br>
+    Aquí accede al sistema CTT: <a href="https://ctt.uti.edu.ec/" target="_blank" >https://ctt.uti.edu.ec/</a>
+    <br>
+{% endblock %}

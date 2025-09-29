@@ -1,0 +1,49 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_sede,#id_carrera, #id_modalidad, #id_asignatura").addClass("validate[required]");
+
+            $('#id_carrera').change(function(){
+                var elemento = $(this);
+                $('#id_asignatura').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/niveles",
+                        data: {'action': 'asignaturascarrera', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_asignatura').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=materiascompartidas&id={{ materia.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addmateriascompartidas'/>
+    <input type='hidden' name='id' value='{{ materia.id }}'/>
+{% endblock %}
+{% block formdestination %}/niveles?action=materiascompartidas&id={{ materia.id }}{% endblock %}
+{% block formback %}/niveles?action=materiascompartidas&id={{ materia.id }}{% endblock %}

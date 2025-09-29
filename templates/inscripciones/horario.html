@@ -1,0 +1,63 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ matricula.inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Estudiante: {{ matricula.inscripcion }} </h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-hover'>
+                <thead class="table1">
+                <tr>
+                    {% for dia in semana %}
+                        <th style="text-transform: uppercase;text-align: center;width: 20px">{{ dia.1 }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    {% for dia in semana %}
+                        <td>
+                            {% with turnos=matricula|args:dia.0|call:"turnos_dia" %}
+                                {% for turno in turnos %}
+                                    {% with clases=matricula|args:dia.0|args:turno|args:periodo|call:"clases_horario" %}
+                                        {% for clase in clases %}
+                                            <div class="card text-center" style="width: 18rem;">
+                                                <div class="card-body mb-2" dia="{{ forloop.counter }}" turno="{{ turno.id }}">
+                                                    <span class="text-bg-primary rounded-1">  {{ clase.turno.nombre_horario }}  </span><br>
+                                                    {{ clase.materia.asignatura.nombre }}<br>
+                                                    <h7><b>[{{ clase.materia.identificacion }}]</b><br>
+                                                        <span class="badge bg-secondary">
+                                                        <b>{{ clase.fechas_horarios }}</b>
+                                                    </span></h7>
+                                                    <br>
+                                                    <span class="smaller">
+                                                        <br/>{{ clase.materia.nivel.paralelo }}
+                                                        <br/>{{ clase.aula.nombre }}
+                                                        <br/>{{ clase.aula.sede.nombre }}</span>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% endwith %}
+                                {% endfor %}
+                            {% endwith %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                </tbody>
+            </table>
+        </div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/docentes?id={{ profesor.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+            <h5>Docente: {{ profesor }} </h5>
+        </div>
+    </div>
+    <div class="row">
+        <div class='col-6' style="padding:8px">
+            {% if reporte_0 %}
+                <a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&profesor={{ profesor.id }}&periodo={{ periodo.id }}" class='btn reportedirecto btn-warning'><i class="icon-print"></i> Imprimir</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'  >
+                <thead class="table-light">
+                <tr>
+                    {% for dia in semana %}
+                        <th style="text-transform: uppercase;text-align: center;width: 14.2%">{{ dia.1 }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    {% for dia in semana %}
+                        <td>
+                            {% with turnos=profesor|args:dia.0|call:"turnos_dia" %}
+                                {% for turno in turnos %}
+                                    {% with clases=profesor|args:dia.0|args:turno|args:periodo|call:"clases_horario" %}
+                                        {% for clase in clases %}
+                                            <table class='cell table table-bordered' dia='{{ forloop.counter }}' turno='{{ turno.id }}' style="margin-bottom: 5px">
+                                                <tr id='horario_normal_{{ clase.id }}' class='horario_normal'>
+                                                    <td style='text-align: center'>
+                                                        <span class="badge text-bg-info">{{ clase.turno.nombre_horario }}</span><br>
+                                                        <b>{{ clase.materia.asignatura.nombre }}</b>
+                                                        <br><b>{{ clase.materia.paralelomateria }}</b>
+                                                        <br><b>[{{ clase.materia.identificacion }}]</b>
+                                                        <span class="smaller">
+                                                        <br><b>{{ clase.fechas_horarios }}</b>
+                                                        <br/>{{ clase.materia.carrera }}
+                                                        <br/>{{ clase.materia.nivel.paralelo }}
+                                                        <br/>{{ clase.aula.nombre }}
+                                                        <br/>{{ clase.aula.sede.nombre }}
+                                                    </span>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        {% endfor %}
+                                    {% endwith %}
+                                {% endfor %}
+                            {% endwith %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

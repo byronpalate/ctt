@@ -1,0 +1,143 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript" src="/static/js/bootstrap-filestyle.min.js?v={{ institucion.versionstaticsjs }}"> </script>
+    <script type="text/javascript">
+        $(function() {
+
+            conectar_texto = function () {
+                $(".entradatexto").unbind();
+                $(".entradatexto").focusin(function () {
+                    $(".entradatexto").attr({'rows': '1'});
+                    $(this).attr({'rows': '5'});
+                });
+                $(".entradatexto").focusout(function () {
+                    $(this).attr({'rows': '1'});
+                });
+            };
+
+            conectar_texto();
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=planificacion&id={{ planificacionmateria.materia.id }}{% endblock %}
+{% block headcanvas %}
+    <div class='row'>
+        <div class='col-12'>
+            <h4>{{ title }} - {{ taller }}</h4>
+            <h5>Materia: {{ planificacionmateria.materia }}</h5>
+            <h5>Horario:
+                {% for horario in planificacionmateria.materia.clases_informacion_simple %}
+                    {{ horario }}
+                {% endfor %}
+            </h5>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class="row">
+        <div class="col-12">
+            <table class="table table-bordered">
+                <tr>
+                    <td style="width: 9%; text-align: right">Total docencia: </td>
+                    <td style="text-align: center; width: 3%">{{ planificacionmateria.horasasistidasporeldocente }}</td>
+                    <td style="width: 9%; text-align: right">Disp. docencia: </td>
+                    <td style="text-align: center; width: 3%" id="disp_docencia">{{ planificacionmateria.disponile_docencia }}</td>
+                    <td style="width: 9%; text-align: right">Total autónomas: </td>
+                    <td  style="text-align: center; width: 3%">{{ planificacionmateria.horasautonomas }}</td>
+                    <td style="width: 9%; text-align: right">Disp. autónomas: </td>
+                    <td  style="text-align: center; width: 3%" id="disp_autonoma">{{ planificacionmateria.disponile_autonoma }}</td>
+                    <td style="width: 9%; text-align: right">Total colaborativas: </td>
+                    <td  style="text-align: center; width: 3%">{{ planificacionmateria.horascolaborativas }}</td>
+                    <td style="width: 9%; text-align: right">Disp. colaborativas: </td>
+                    <td  style="text-align: center; width: 3%" id="disp_col">{{ planificacionmateria.disponile_colabora }}</td>
+                    <td style="width: 9%; text-align: right">Total prácticas: </td>
+                    <td  style="text-align: center; width: 3%">{{ planificacionmateria.horaspracticas }}</td>
+                    <td style="width: 9%; text-align: right">Disp. prácticas: </td>
+                    <td  style="text-align: center; width: 3%" id="disp_prac">{{ planificacionmateria.disponile_practica }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <table class="table table-bordered">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 5%; text-align: center">Fecha</th>
+                    <th style="width: 5%; text-align: center">Fecha fin act.</th>
+                    <th style="width: 19.5%"></th>
+                    <th style="width: 19.5%"></th>
+                    <th style="width: 3%; text-align: center"></th>
+                    <th style="width: 19.5%"></th>
+                    <th style="width: 3%; text-align: center"></th>
+                    <th style="width: 3.5%; text-align: center">Arch.</th>
+                </tr>
+                </thead>
+                <tbody id="contenidotaller_{{ taller.id }}">
+                {% for clase in taller.mis_clases %}
+                    <tr id="fila1_{{ clase.id }}" ida="{{ clase.id }}" class="filasclases">
+                        <td style="text-align: center; vertical-align: middle" rowspan="2">
+                            {{ clase.fecha|date:"Y-m-d" }}
+                        </td>
+                        <td style="text-align: center; vertical-align: middle" rowspan="2">
+                            {{ clase.fechafinactividades|date:"Y-m-d" }}
+                        </td>
+                        <td rowspan="2" style="vertical-align: middle">
+                            <span class="smaller"><b>CONTENIDO: </b></span><br>
+                            {{ clase.contenido }}
+                        </td>
+                        <td>
+                            <span class="smaller"><b>ACTIVIDAD DOCENCIA ASISTIDA:</b></span><br>
+                            {{ clase.actividadesaprendizajecondocenciaasistida_uno|default_if_none:"" }}<br>
+                            <span class="smaller"><b>OTRAS ACTIVIDADES DOCENCIA ASISTIDA:</b></span><br>
+                            {{ clase.actividadesaprendizajecondocenciaasistida_dos|default_if_none:"" }}
+                        </td>
+                        <td style="text-align: center; width: 3%">
+                            <span class="smaller"><b>H. DOC: </b></span><br>
+                            {{ clase.horasdocente_uno|floatformat:1 }}
+                            <br>
+                            <span class="smaller"><b>O. H. DOC: </b></span><br>
+                            {{ clase.horasdocente_dos|floatformat:1 }}
+                        </td>
+                        <td>
+                            <span class="smaller"><b>ACTIVIDAD DE TRABAJO AUTÓNOMAS: </b></span><br>
+                            {{ clase.actividadestrabajoautonomas|default_if_none:"" }}
+                        </td>
+                        <td style="text-align: center; width: 3%">
+                            <span class="smaller"><b>H. AUTO.: </b></span><br>
+                            {{ clase.horasautonomas|floatformat:1 }}
+                        </td>
+                        <td rowspan="2" style="vertical-align: middle; text-align: center">
+                            {% if clase.archivo %}
+                                <a class="btn btn-sm btn-success descargararchivo tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar" href="{{ clase.archivo.url }}" target="_blank"><i class="icon-download-alt"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr id="fila2_{{ clase.id }}">
+                        <td>
+                            <span class="smaller"><b> ACTIVIDAD APRENDIZAJE COLABORATIVAS: </b></span><br>
+                            {{ clase.actividadesaprendizajecolaborativas|default_if_none:"" }}
+                        </td>
+                        <td style="text-align: center; width: 3%">
+                            <span class="smaller"><b>H. COL: </b></span><br>
+                            {{ clase.horascolaborativas|floatformat:1 }}
+                        </td>
+                        <td>
+                            <span class="smaller"><b> ACTIVIDAD APRENDIZAJE PRÁCTICO: </b></span><br>
+                            {{ clase.actividadesaprendizajepractico|default_if_none:"" }}
+                        </td>
+                        <td style="text-align: center; width: 3%">
+                            <span class="smaller"><b>H. PRAC.: </b></span><br>
+                            {{ clase.horaspracticas|floatformat:1 }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr id="vacio">
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

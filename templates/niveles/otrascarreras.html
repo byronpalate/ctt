@@ -1,0 +1,87 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            $('.cupo').blur(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 0);
+                var id = elemento.attr('ida');
+                var valor = parseInt(elemento.val());
+                var valoranterior = parseInt(elemento.attr('va'));
+                if (valor !== valoranterior){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/niveles",
+                        data: {'action': 'actualizacupocompartido', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                elemento.attr({'va': valor});
+                            } else {
+                                elemento.val(valoranterior);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.val(valoranterior);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=materiascompartidas&id={{ materia.materia.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Materia: {{ materia }}
+                <br>Cupo: {{ materia.materia.cupo|floatformat:0 }}</h4>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            {% if extension.modificarcupo and perms.ctt.puede_modificar_materias %}
+                <a href="javascript:;" nhref="/niveles?action=addmateriaotrascarreras&id={{ materia.id }}" class="formmodal btn btn-sm btn-success"><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 600px;">Asignatura</th>
+                    <th style="width: 50px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for m in materiasotras %}
+                    <tr>
+                        <td>{{ m.asignatura }}</td>
+                        <td style="text-align: center;">
+                            {% if not m.en_uso and perms.ctt.puede_modificar_materias and extension.modificarcupo %}
+                                <a href="javascript:;" nhref="/niveles?action=delmateriaotrascarreras&id={{ m.id }}" class='btn btn-danger btn-sm tu eliminacionmodal' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+

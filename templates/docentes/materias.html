@@ -1,0 +1,61 @@
+{% extends "basebs.html" %}
+{% block atras %}/docentes?id={{ profesor.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }} : {{ profesor }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Materia</th>
+                    <th style="width: 120px">Modalidad</th>
+                    <th style="width: 80px;text-align: center">Horas Semanales</th>
+                    <th style="width: 120px">Coordinaci&oacute;n</th>
+                    <th style="width: 80px;text-align: center">Inicio</th>
+                    <th style="width: 80px;text-align: center">Fin</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for profesormateria in materias %}
+                    <tr>
+                        <td class='rightborder'>
+                            {{ profesormateria.materia.nombre_simple }}
+                            {% if profesormateria.materia.cerrado %}
+                                <br><span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Retirado"> CERRADA</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ profesormateria.materia.nivel.modalidad }}</td>
+                        <td style="text-align: center">{{ profesormateria.horassemanales }}</td>
+                        <td>{{ profesormateria.materia.nivel.coordinacion.alias }}</td>
+                        <td style="text-align: center">{{ profesormateria.materia.inicio|date:"Y-m-d" }}</td>
+                        <td style="text-align: center">{{ profesormateria.materia.fin|date:"Y-m-d" }}</td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {% if reporte_0 %}
+                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&materia={{ profesormateria.materia.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Listado de Asistencia</a></li>
+                                    {% endif %}
+                                    {% if reporte_1 %}
+                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_1.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_1.nombre }}&materia={{ profesormateria.materia.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Listado de Matriculados</a></li>
+                                    {% endif %}
+                                    {% if reporte_2 %}
+                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_2.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_2.nombre }}&materia={{ profesormateria.materia.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Control academico</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

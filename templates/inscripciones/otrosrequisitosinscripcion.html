@@ -1,0 +1,66 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?action=otrosrequisitosmalla&id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+            <h3>{{ requisito }}</h3>
+            <h5>Estudiante: {{ inscripcion }}</h5>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_inscripciones %}
+        {% if not inscripcion.graduado %}
+            <div class="row">
+                <div class='col-6'>
+                    <a href="javascript:;" nhref="/inscripciones?action=addotrosrequisitos&id={{ requisito.id }}&idi={{ inscripcion.id }}" class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar</a>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th >Observaci&oacute;n</th>
+                    <th style="width: 80px;text-align: center;">Archivo</th>
+                    <th style="width: 80px;text-align: center;">Fecha</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for archivo in archivos %}
+                    <tr>
+                        <td>{{ archivo.observaciones }}</td>
+                        <td style="text-align: center;">
+                            <a href='{{ archivo.archivo }}' target="_blank" class='btn btn-success btn-ssm tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar"><i class='icon-download-alt' ></i></a>
+                        </td>
+                        <td style="text-align: center;">{{ archivo.fecha|date:"Y-m-d"}}</td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_inscripciones %}
+                                {% if not inscripcion.graduado %}
+                                    <a class="formmodal btn btn-sm btn-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref='/inscripciones?action=editotrosrequisitos&id={{ archivo.id }}'><i class="icon-edit"></i></a>
+                                    <a class="btn btn-sm btn-danger eliminacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar" href="javascript:;" nhref='/inscripciones?action=delotrosrequisitos&id={{ archivo.id }}'><i class="icon-remove"></i></a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

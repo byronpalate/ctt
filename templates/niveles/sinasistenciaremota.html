@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
+{% block formactionvalue %}sinasistenciaremota{% endblock %}
+{% block formobjectid %}   {{ materia.id }}{% endblock %}
+{% block formobjectrepr %}{{ materia.nombre_simple }}{% endblock %}
+{% block mensaje %}Desea confirmar la materia sin asistencia remota{% endblock %}

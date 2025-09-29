@@ -1,0 +1,8 @@
+{% extends "emails/emailbase.html" %}
+{% block contenido %}
+    <p><b>Notificaci&oacute;n de inicio de sesi&oacute;n.</b></p>
+    <p>Usted se ha autenticado con &eacute;xito en el Sistema de Gesti&oacute;n Acad&eacute;mica (CTT)</p>
+    <p><b>Acceso desde: </b> {{ ip }}</p>
+    <p><b>Browser/OS: </b> {{ bs }} - {{ os }}</p>
+    <p><b>Resoluci&oacute;n: </b> {{ screensize }}</p>
+{% endblock %}

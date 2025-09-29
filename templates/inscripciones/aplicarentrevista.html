@@ -1,0 +1,126 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            $(".radio_r").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('idv');
+                var idr = elemento.attr('idr');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: {'action': 'act_respuesta', 'idr': idr, 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $("#idsaveobs").click(function () {
+                var texto = $("#obser_respuesta").val();
+                var idr = $("#obser_respuesta").attr('idr');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: {'action': 'act_observ_respuesta', 'idr': idr, 'texto': texto, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            $("#idsaveobs").hide();
+                            $("#idsaveentre").show();
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $("#obser_respuesta").blur(function () {
+                var elemento = $(this);
+                var texto = elemento.val();
+                var va = elemento.attr('va');
+                if (va !== texto) {
+                    $("#idsaveobs").show();
+                    $("#idsaveentre").hide();
+                }
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?action=examenesadmision&id={{ inscripcion.inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            {% for competencia in competencias %}
+                <tr>
+                    <td>
+                        <h4>Competencia: {{ competencia.nombre }}</h4>
+                        {% for detallec in competencia.mis_competencias %}
+                            <h5>{{ detallec.nombre }}</h5>
+                            <table class="table table-bordered table-striped" style="margin-bottom: 5px; margin-top: 5px; width: 100%">
+                                <thead class="table-light">
+                                <tr>
+                                    <th style="width: 500px;">Aspecto a evaluar</th>
+                                    <th>Calificación</th>
+                                </tr>
+                                </thead>
+                                <tbody id="preguntas_competencia_{{ detallec.id }}">
+                                {% for preg in detallec.preguntas %}
+                                    {% with mi_respuesta=preg|args:inscripcion|call:"mi_respuesta" %}
+                                        <tr>
+                                            <td>
+                                                {{ preg.nombre }}
+                                            </td>
+                                            <td style="vertical-align: middle">
+                                                {% for numero in preg.lista %}
+                                                    <input {% if respuesta.confirmada %}disabled="disabled"{% endif %} class="radio_r" type="radio" idv="{{ numero }}" mv="{{ mi_respuesta.valor }}" idr="{{ mi_respuesta.id }}" {% if mi_respuesta.valor == numero %}checked="checked"{% endif %} style="margin-left: 20px; margin-top: 0" name="{{ preg.id }}" value="{{ numero }}"> <label class="label">{{ numero }}</label>
+                                                {% endfor %}
+                                            </td>
+                                        </tr>
+                                    {% endwith %}
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+            {% if not respuesta.confirmada %}
+                <textarea class="input-block-level" style="text-transform: uppercase" va="{{ respuesta.observaciones }}" id="obser_respuesta" idr="{{ respuesta.id }}" rows="3">{{ respuesta.observaciones }}
+                </textarea>
+            {% else %}
+                {{ respuesta.observaciones|safe }}
+            {% endif %}
+            {% if not respuesta.confirmada %}
+                <a class="btn btn-warning" style="margin-top: 10px; margin-right: 3px; display: none" idr="{{ respuesta.id }}"  id="idsaveobs"><i class="icon-save"></i> Guardar</a>
+                <a class="btn btn-success confirmacionmodal" style="margin-top: 10px" href="javascript:;" id="idsaveentre" nhref="/inscripciones?action=confirmarentrevista&id={{ respuesta.id }}"><i class="icon-check"></i> Confirmar</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

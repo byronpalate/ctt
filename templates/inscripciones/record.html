@@ -1,0 +1,348 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $("#FilterTextBox1").keyup(function(){
+                var s = $(this).val().toUpperCase();
+                $(".filterable1 tr").show();
+                if (s.length > 0){
+                    $(".filterable1 tr .SearchColumn:not(:contains('" + s + "'))").parent().hide();
+                }
+            });
+        });
+
+        $('.actualizarpromediogeneral').click(function () {
+                var id = $(this).attr('id');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: {'action': 'actualizarpromediogeneral', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                    success: function (data) {
+                        if (data.result === 'ok') {
+                            desbloqueointerface();
+                        } else {
+                            desbloqueointerface();
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Estudiante: {{ inscripcion.persona }}
+                <br>Malla: {{ inscripcion.mi_malla }}
+                <br>Itinerario: {{ inscripcion.mi_itinerario }}</h4>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            {#            {% if not inscripcion.graduado %}#}
+
+            {% if perms.ctt.puede_modificar_informacion_academica_restringida and not PERSONA_ADMINS_ACADEMICO_ID %}
+                <a href="javascript:;" nhref="/inscripciones?action=addrecord&id={{ inscripcion.id }}" class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+            {% if PERSONA_ADMINS_ACADEMICO_ID %}
+                {% if perms.ctt.puede_modificar_records %}
+{#                    <a href="javascript:;" nhref="/inscripciones?action=recalcularcreditos&id={{ inscripcion.id }}" class='btn btn-sm btn-success confirmacionmodal'><i class="icon-retweet"></i> Actualizar</a>#}
+                {% endif %}
+            {% endif %}
+            {#            {% endif %}#}
+            <a href="/inscripciones?action=extracurricular&id={{ inscripcion.id }}" class='btn btn-sm btn-primary btn-form'><i class="icon-certificate"></i> Otras Notas</a>
+            {% if reporte_0 %}
+                <a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&inscripcion={{ inscripcion.id }}" class="btn btn-sm reportedirecto btn-warning"><i class="icon-print"></i> Imprimir Registro</a>
+            {% endif %}
+            {% if homologa %}
+                <a href="javascript:;" tipos="{{ reporte_1.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_1.nombre }}&inscripcion={{ inscripcion.id }}" class="btn btn-sm reportedirecto btn-info"><i class="icon-print"></i> Imprimir Homologaci&oacute;n</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive-lg'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="text-align: center;width: 5.8%;">Total<br>Horas</th>
+                    <th style="text-align: center;width: 5.8%;">Total<br>Cr&eacute;ditos</th>
+                    <th style="text-align: center;width: 5.8%;">Cr&eacute;ditos<br>Malla</th>
+                    <th style="text-align: center;width: 5.8%;">Cr&eacute;ditos<br>M&oacute;dulos</th>
+                    <th style="text-align: center;width: 5.8%;">Cr&eacute;ditos<br>Libre Conf.</th>
+                    <th style="text-align: center;width: 5.8%;">Cr&eacute;ditos<br>Optativas</th>
+                    <th style="text-align: center;width: 5.8%;">Nota<br>Egreso</th>
+                    <th style="text-align: center;width: 5.8%;">Promedio<br>General</th>
+                    <th style="text-align: center;width: 5.8%;">Valor<br>Calificaci&oacute;n</th>
+                    <th style="text-align: center;width: 5.8%;">Aprobadas<br>Malla</th>
+                    <th style="text-align: center;width: 5.8%;">Aprobadas<br>Otras</th>
+                    <th style="text-align: center;width: 5.8%;">Reprobadas<br>Malla</th>
+                    <th style="text-align: center;width: 5.8%;">Reprobadas<br>Otras</th>
+                    <th style="text-align: center;width: 5.8%;">Promedio<br>N.Nivelaci&oacute;n</th>
+                    <th style="text-align: center;width: 5.8%;">Promedio<br>A.Nivelaci&oacute;n</th>
+                    <th style="text-align: center;width: 5.8%;">Estado<br>Nivelaci&oacute;n</th>
+                    <th style="text-align: center;width: 5.8%">Nivelaci&oacute;n<br>Convalida</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td style="text-align: center;">{{ inscripcion.total_horas|floatformat:0 }}</td>
+                    <td style="text-align: center;">{{ inscripcion.total_creditos|floatformat:4 }}</td>
+                    <td style="text-align: center;">{{ inscripcion.total_creditos_malla|floatformat:4 }}</td>
+                    <td style="text-align: center;">{{ inscripcion.total_creditos_modulos|floatformat:4 }}</td>
+                    <td style="text-align: center;">{{ inscripcion.total_creditos_otros_libre_c|floatformat:4 }}</td>
+                    <td style="text-align: center;">{{ inscripcion.total_creditos_otros_optativa|floatformat:4 }}</td>
+                    <td style="text-align: center;">{{ inscripcion.nota_egreso|floatformat:2 }}</td>
+                    <td style="text-align: center;">{{ inscripcion.promedio_record|floatformat:2 }}
+                        {% if not inscripcion.graduado %}
+                            <a class='actualizarpromediogeneral tu btn btn-ssm btn-success tu'  id="{{ inscripcion.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Actualizar"><i class="icon-refresh"></i></a>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">{% if inscripcion.valoracioncalificacion %}<span class="tu" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ inscripcion.valoracioncalificacion.categoria }}">{{ inscripcion.valoracioncalificacion.nominacion }}</span>{% endif %}</td>
+                    <td style="text-align: center;">{{ aprobadasmalla }}</td>
+                    <td style="text-align: center;">{{ aprobadasotras }}</td>
+                    <td style="text-align: center;">{{ reprobadasmalla }}</td>
+                    <td style="text-align: center;">{{ reprobadasotras }}</td>
+                    <td style="text-align: center;">{{ inscripcion.promedio_nota_nivelacion|floatformat:2 }}</td>
+                    <td style="text-align: center;">{{ inscripcion.promedio_asistencia_nivelacion|floatformat:0 }}</td>
+                    <td style="text-align: center">{% if inscripcion.aprobo_nivelacion %} <span class="badge text-bg-success">APROBADO</span>{% else %}<span class="badge text-bg-danger">REPROBADO</span>{% endif %}</td>
+                    <td style="text-align: center">
+                        {% if inscripcion.documentos_entregados.pre %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Pre nivelación">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Pre nivelación">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            <input type="search" style="text-transform: uppercase; margin-bottom: 0px" class="input-block-level form-control form-control-sm" id="FilterTextBox1" name="FilterTextBox1">
+            <table class='table table-bordered table-striped filterable1' >
+                <thead class="table-light">
+                <tr>
+                    <th>Asignatura</th>
+                    <th style="width: 50px; text-align: center;">Créditos</th>
+                    <th style="width: 50px; text-align: center;">Horas</th>
+                    <th style="width: 230px;">Profesor/Período</th>
+                    <th style="width: 30px; text-align: center;">Valr.</th>
+                    <th style="width: 50px; text-align: center;">Nota</th>
+                    <th style="width: 50px; text-align: center;">Asist.(%)</th>
+                    <th style="width: 80px; text-align: center;">Fecha</th>
+                    <th style="width: 35px; text-align: center;">Hom.</th>
+                    <th style="width: 35px; text-align: center;">Libre Conf.</th>
+                    <th style="width: 35px; text-align: center;">Optat.</th>
+                    <th style="width: 35px; text-align: center;">Cred.</th>
+                    <th style="width: 35px; text-align: center;">Prom.</th>
+                    <th style="width: 80px; text-align: center;">Estado</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for record in records %}
+                    <tr>
+                        <td class="SearchColumn">
+                            {{ record.asignatura }}<br/>
+                            {% if record.asignaturamalla  %}
+                                <span class="badge text-bg-info smaller">{{ record.asignaturamalla.nivelmalla }}</span>
+                            {% elif record.modulomalla  %}
+                                <span class="badge text-bg-warning smaller">MÓDULO</span>
+                            {% else %}
+                                <span class="badge text-bg-danger smaller">NO CONSTA EN MALLA</span>
+                            {% endif %}
+                            {% if record.matriculas > 1  %}
+                                <span class="badge text-bg-warning smaller"> {{ record.matriculas }} MAT.</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">{{ record.creditos|floatformat:4 }}</td>
+                        <td style="text-align: center;">{{ record.horas|floatformat:1 }}</td>
+                        <td>
+                            {% if record.materiaregular %}
+                                {% if record.es_movilidad %}
+                                    <span class="badge text-bg-dark">M</span>
+                                {% else %}
+                                    <span class="badge text-bg-success">D</span>
+                                {% endif %}
+                                <span class="smaller">
+                                    {% if record.materiaregular.nivel.periodo.es_grado %}
+                                        {{ record.materiaregular.nivel.periodo.nombre }}
+                                    {% else %}
+                                        {{ record.materiaregular.nivel.paralelo }}
+                                    {% endif %}
+                                    - {{ record.materiaregular.profesor_principal|default_if_none:"" }}</span><br>
+                            {% elif record.materiacurso %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Curso">C</span>
+                                <span class="smaller">{% if record.materiacurso.curso.periodo.es_grado %} {{ record.materiacurso.curso.periodo.nombre }} - {% endif %}{{ record.materiacurso.profesor|default_if_none:"" }}</span><br>
+                            {% elif record.materiacursotitulacion %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Unidad Titulación">T</span>
+                                <span class="smaller">{% if record.materiacursotitulacion.curso.periodo.es_grado %} {{ record.materiacursotitulacion.curso.periodo.nombre }} - {% endif %}{{ record.materiacursotitulacion.profesor|default_if_none:"" }}</span><br>
+                            {% elif record.internado %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Internado">I</span>
+                                <span class="smaller">{{ record.internado.profesor|default_if_none:"" }}</span><br>
+                            {% endif %}
+                            <span class="smaller">{{ record.observaciones|default_if_none:"" }}</span>
+                        </td>
+                        <td style="text-align: center;">{% if record.valoracioncalificacion %}<span class="tu" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ record.valoracioncalificacion.categoria }}">{{ record.valoracioncalificacion.nominacion }}</span>{% endif %}</td>
+                        <td style="text-align: center;">{{ record.nota|floatformat:2 }}</td>
+                        <td style="text-align: center;">{{ record.asistencia|floatformat:0 }}%</td>
+                        <td style="text-align: center;">{{ record.fecha|date:"Y-m-d"  }}</td>
+                        <td style="text-align: center;">
+                            {% if record.homologada or record.convalidacion %}
+                                {% if record.datos_homologacion and record.datos_homologacion.archivo %}
+                                    <a class="btn btn-ssm btn-success tu" href="{{ record.datos_homologacion.archivo.url }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar" target="_blank"><i class="icon-arrow-down"></i></a>
+                                {% elif record.datos_convalidacion and record.datos_convalidacion.archivo %}
+                                    <a class="btn btn-ssm btn-success tu" href="{{ record.datos_convalidacion.archivo.url }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar" target="_blank"><i class="icon-arrow-down"></i></a>
+                                {% else %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Homologación {% if record.homologada %}Interna{% else %}Externa{% endif %}">{% if record.homologada %}I{% else %}E{% endif %}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Homologación">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if record.libreconfiguracion %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Libre configuración">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Libre configuración">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if record.optativa %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Optativa">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Optativa">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if record.validacreditos %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Créditos">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Créditos">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if record.validapromedio %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Promedio">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Promedio">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if record.es_nivelacion %}
+                                {% if muestra_estado_nivelacion %}
+                                    <span class='badge {% if record.noaplica %}text-bg-warning{% else %}{% if record.aprobada %}text-bg-success{% else %}text-bg-danger{% endif %}{% endif %}'>{% if record.noaplica %}NO APLICA{% else %}{% if record.aprobada %}APROBADA{% else %}REPROBADA{% endif %}{% endif %}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class='badge {% if record.noaplica %}text-bg-warning{% else %}{% if record.aprobada %}text-bg-success{% else %}text-bg-danger{% endif %}{% endif %}'>{% if record.noaplica %}NO APLICA{% else %}{% if record.aprobada %}APROBADA{% else %}REPROBADA{% endif %}{% endif %}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li class="smaller"><a href="/inscripciones?action=historico&id={{ inscripcion.id }}&rec={{ record.id }}" class="dropdown-item"><i class="icon-calendar"></i> Hist&oacute;rico</a></li>
+                                    {% if not inscripcion.graduado and record.asignaturamalla and record.materiacurso or record.materiahomologacion and not PERSONA_ADMINS_ACADEMICO_ID %}
+                                            {% if not record.validacreditos %}
+                                                <li class="smaller"><a href="javascript:;" nhref='/inscripciones?action=validar&id={{ record.id }}' class="formmodal dropdown-item"><i class="icon-plus"></i> Considerar cr&eacute;ditos</a></li>
+                                            {% else %}
+                                                <li class="smaller"><a href="javascript:;" nhref='/inscripciones?action=novalidar&id={{ record.id }}' class="formmodal dropdown-item"><i class="icon-minus"></i> No Considerar cr&eacute;ditos</a></li>
+                                            {% endif %}
+                                            {% if not record.validapromedio %}
+                                                <li class="smaller"><a href="javascript:;" nhref='/inscripciones?action=validarpromedio&id={{ record.id }}' class="formmodal dropdown-item"><i class="icon-plus"></i> Considerar promedio</a></li>
+                                            {% else %}
+                                                <li class="smaller"><a href="javascript:;" nhref='/inscripciones?action=novalidarpromedio&id={{ record.id }}' class="formmodal dropdown-item"><i class="icon-minus"></i> No Considerar promedio</a></li>
+                                            {% endif %}
+                                    {% endif %}
+                                    {% if not inscripcion.graduado %}
+                                        {% if perms.ctt.puede_modificar_informacion_academica_restringida and not PERSONA_ADMINS_ACADEMICO_ID%}
+                                            {% if not record.materiaregular %}
+                                                <li class="dropdown-divider"></li>
+                                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delrecord&id={{ record.id }}'><i class="icon-remove"></i> Eliminar</a></li>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN REGISTROS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            <h5>Pendientes</h5>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Asignatura</th>
+                    <th style="width: 100px">Nivel</th>
+                    <th style="width: 100px; text-align: center;">Créditos</th>
+                    <th style="width: 100px; text-align: center;">Horas</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for record in ampendientes %}
+                    <tr>
+                        <td>{{ record.asignatura }}</td>
+                        <td>{{ record.nivelmalla }}</td>
+                        <td style="text-align: center;">{{ record.creditos|floatformat:4 }}</td>
+                        <td style="text-align: center;">{{ record.horas|floatformat:1 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN REGISTROS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Asignatura</th>
+                    <th style="width: 100px; text-align: center;">Créditos</th>
+                    <th style="width: 100px; text-align: center;">Horas</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for record in mmpendientes %}
+                    <tr>
+                        <td>{{ record.asignatura }}</td>
+                        <td style="text-align: center;">{{ record.creditos|floatformat:4 }}</td>
+                        <td style="text-align: center;">{{ record.horas|floatformat:1 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN REGISTROS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

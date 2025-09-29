@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block pagetitle %}{{ title }}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ACADEMIC-OK">
+    <meta name="author" content="OKSOFTWR">
+
+    <script type='text/javascript' src="/static/js/jquery.min.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type='text/javascript' src="/static/js/jquery.blockUI.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type='text/javascript' src="/static/js/jquery.maskedinput.min.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type='text/javascript' src="/static/js/sysend.js?v={{ institucion.versionstaticsjs }}"></script>
+
+    <script type="text/javascript" src="/static/js/smoke.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript" src="/static/js/bs/bootstrap.min.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript" src="/static/js/bootstrap-datepicker.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript" src="/static/js/bootstrap-timepicker.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript" src="/static/js/bootstrap-modal.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript" src="/static/js/bootstrap-modalmanager.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript" src="/static/js/big.min.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type='text/javascript' src='/static/js/jquery.flexbox.js?v={{ institucion.versionstaticsjs }}'></script>
+    <script type='text/javascript' src='/static/js/dragdivscroll.js?v={{ institucion.versionstaticsjs }}'></script>
+    <script type="text/javascript" src="/static/js/jquery.date_input.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type='text/javascript' src="/static/js/jquery.timeentry.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript" src='/static/js/select2.js?v={{ institucion.versionstaticsjs }}' ></script>
+
+    <link href="/static/css/jquery.timeentry.css?v={{ institucion.versionstaticscss }}" type='text/css' rel='stylesheet' />
+    <link href="/static/css/date_input.css?v={{ institucion.versionstaticscss }}" type='text/css' rel='stylesheet' />
+    <link href="/static/css/smoke.css?v={{ institucion.versionstaticscss }}" rel="stylesheet" type="text/css" media="screen" />
+    <link href="/static/css/bootstrap.min.css?v={{ institucion.versionstaticscss }}" rel="stylesheet"/>
+    <link href="/static/css/bootstrap-responsive.css?v={{ institucion.versionstaticscss }}" rel="stylesheet"/>
+    <link href='/static/css/font-awesome.css?v={{ institucion.versionstaticscss }}' rel='stylesheet'/>
+    <link href="/static/css/datepicker.css?v={{ institucion.versionstaticscss }}" rel='stylesheet'/>
+    <link href="/static/css/bootstrap-timepicker.css?v={{ institucion.versionstaticscss }}" rel='stylesheet'/>
+    <link href="/static/css/bootstrap-modal.css?v={{ institucion.versionstaticscss }}" rel='stylesheet'/>
+    <link href="/static/css/jquery.flexbox.css?v={{ institucion.versionstaticscss }}" type="text/css" rel="stylesheet" />
+    <link type='text/css' rel='stylesheet' href="/static/css/select2-bootstrap-5-theme-1.3.0/select2-bootstrap-5-theme.css?v={{ institucion.versionstaticscss }}"/>
+    <link href="/static/css/styles.css?v={{ institucion.versionstaticscss }}" rel='stylesheet'/>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js?v={{ institucion.versionstaticsjs }}"></script>
+    <![endif]-->
+
+    <link rel="shortcut icon" href="/static/images/aok/favicon.ico?v={{ institucion.versionstaticsimg }}">
+
+    <script>
+        $(function() {
+
+            numerico = function(elemento, min, max, decimales) {
+                var nvalor;
+                var valor = elemento.val().trim();
+                if (valor.length === 0){
+                    valor = parseFloat(min).toFixed(decimales);
+                    elemento.val(valor);
+                } else if (isNaN(valor)){
+                    nvalor = parseFloat(min).toFixed(decimales);
+                    elemento.val(nvalor);
+                } else if (parseFloat(valor) < min) {
+                    nvalor = parseFloat(min).toFixed(decimales);
+                    elemento.val(nvalor);
+                } else if (max > 0 && parseFloat(valor) > max){
+                    nvalor = parseFloat(max).toFixed(decimales);
+                    elemento.val(nvalor);
+                } else {
+                    nvalor = parseFloat(valor).toFixed(decimales);
+                    elemento.val(nvalor);
+                }
+            };
+
+            validacionesnumericas = function() {
+                $(".validarnumero").blur(function(){
+                    numerico($(this), 0, 0, 0);
+                });
+
+                $(".validarmoneda").blur(function(){
+                    numerico($(this), 0, 0, 2);
+                });
+            };
+
+            $("#id_email").css({'text-transform': 'none'});
+
+            bloqueointerface = function(){
+                try {
+                    if ($('.blockOverlay').length === 0){
+                        $.blockUI({message: $('#throbber'), css: { 'border': '1px solid', 'border-radius' : '10px', 'left': '46%', 'width':'60px',  'padding': '15px',  '-webkit-border-radius': '10px', '-moz-border-radius': '10px', opacity: .6, color: '#000' }});
+                    }
+                } catch (err){
+                }
+            };
+
+            desbloqueointerface = function(){
+                try {
+                    if ($('.blockOverlay').length >= 1){
+                        $.unblockUI();
+                    }
+                } catch (err){
+                }
+            };
+
+            $(".btn-form").click(function(){
+                bloqueointerface();
+            });
+
+            $(document).ready(function(){
+                /*
+                actualizarnumerico = function(){
+                    $('.imp-number[decimales], .imp-moneda[decimales], .imp-numbersmall[decimales], .imp-numbermed-center[decimales], .imp-numbermed-right[decimales], .nota[decimales]').each(function(){
+                        numerico($(this), 0, 0, $(this).attr('decimales'));
+                    })
+                };
+
+                actualizarnumerico();
+
+                $('.imp-number, .imp-moneda, .imp-numbersmall, .imp-numbermed-right, .imp-numbermed-center, .nota').focus(function(){
+                    if (!parseFloat($(this).val())){
+                        $(this).val("");
+                    }
+                });
+*/
+                multiselect_validation = function () {
+                $(".custom-multiselect").find('input').unbind();
+                $(".custom-multiselect").find('input').bind("click", function () {
+                    var cantidad = $('input:checked[name='+$(this).attr('name')+']').length;
+                    $("#id_"+$(this).attr('name')+"").val((cantidad?"1":"")).attr({'value':(cantidad?"1":"")});
+                });
+                $(".inputmultiselect").each(function () {
+                    var cantidad = $('input:checked[name='+$(this).attr('basename')+']').length;
+                    $(this).val((cantidad?"1":"")).attr({'value':(cantidad?"1":"")});
+                });
+                $(".busqueda_multiselect").unbind();
+                $(".busqueda_multiselect").keyup(function(){
+                    var id = $(this).attr('ide');
+                    var s = $(this).val().toUpperCase();
+                    $(".contenido_"+id).show();
+
+                    if (s.length > 0){
+                        $(".contenido_"+id).each(function () {
+                            if (!$(this).text().contains(s)){
+                              $(this).hide();
+                            }
+                        });
+                    }
+                });
+            };
+            });
+        });
+    </script>
+    {% block heading %}
+    {% endblock %}
+</head>
+<body data-spy="scroll" data-target=".subnav" data-offset="50" class="{% block fondo %}bg8{% endblock %}">
+<div id="nav-header" class="navbar navbar-fixed-top">
+    <div>
+        <div class="container-fluid">
+            <ul class='nav'>
+                <li>
+                    <a href="/" class="hidden-phone hidden-tablet visible-desktop" style="padding: 7px">
+                        <img style="height: 25px" src='/static/images/aok/logo.png?v={{ insitucion.versionstaticsimg }}'/>
+                    </a>
+                    <a href="/" class="visible-phone visible-tablet hidden-desktop" style="padding: 7px">
+                        <img style="height: 25px" src='/static/images/aok/logo.png?v={{ insitucion.versionstaticsimg }}'/>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div id="content">
+    <div class='container-fluid'>
+        {% if ruta %}
+            <div class="row">
+                <div class="col-12">
+                    <ul class="breadcrumb">
+                        {% for r in ruta %}
+                            <li><a href="{{ r.0 }}">{{ r.1 }}</a> <span class="divider">/</span></li>
+                        {% endfor %}
+                        <a style="float: right;" href="{% block atras %}javascript:;{% endblock %}" class='btn btn-sm urlatrasbutton' id="urlatrasbutton"><i class="icon-arrow-left"></i> Atr&aacute;s</a>
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+        {% block canvas %}
+        {% endblock %}
+    </div>
+</div>
+{% block moreblock %}
+    <div id="throbber" style="display:none; margin: 0 auto; width: 60px; height: 60px; background-color: #ffffff">
+        <img src="/static/images/ajax-document-loader.gif" />
+    </div>
+{% endblock %}
+</body>
+</html>

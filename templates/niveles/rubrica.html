@@ -1,0 +1,15 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        var lista_items1 = [];
+        $(function(){
+            $("#id_evidencia, #id_criterio").addClass("validate[required]");
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=planificacion&id={{ materia.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
+{% block formdestination%}/niveles?action=planificacion&id={{ materia.id }}{% endblock %}
+{% block formback %}/niveles?action=planificacion&id={{ materia.id }}{% endblock %}

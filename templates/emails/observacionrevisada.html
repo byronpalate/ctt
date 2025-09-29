@@ -1,0 +1,19 @@
+{% extends "emails/emailbase.html" %}
+{% block contenido %}
+    {% autoescape off %}
+        <p><b>Proyectos de Investigación</b></p>
+        <p>La observacion : <b> {{ observacion.observacion }}</b>,</p>
+        <p>del proyecto de investigación : <b> {{ proyecto.nombre }}</b>,</p>
+        <p>ha sido corregida por parte del docente <b> {{ persona }} </b></p>
+        <p>Por favor, revise los cambios realizados y verifique si se aprueba o no el proyecto.</p>
+        {% if financiero == 1 %}
+            <a href="https://ctt.uti.edu.ec/fin_convocatoria?action=detalleproyecto&id={{ proyecto.id }}">Link del
+                proyecto</a>
+        {% else %}
+            <a href="https://ctt.uti.edu.ec/adm_convocatoria?action=detalleproyecto&id={{ proyecto.id }}">Link del
+                proyecto</a>
+        {% endif %}
+        <p></p>
+
+    {% endautoescape %}
+{% endblock %}

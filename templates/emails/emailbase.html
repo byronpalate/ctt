@@ -1,0 +1,28 @@
+<b>{% block titulo %}Mensaje desde el Sistema de Gesti&oacute;n Acad&eacute;mica{% endblock %}</b>
+<br>
+<br>
+{% if personaenvia %}
+    <b>De: </b> {{ personaenvia }}
+    <br>
+    <br>
+{% endif %}
+{% if fechaenvio %}
+    <b>Fecha: </b> {{ fechaenvio|date:'Y-m-d' }}
+    <b>Hora: </b> {{ fechaenvio|time:'H:i:a' }}
+    <br>
+    <br>
+{% endif %}
+{% block contenido %}{% endblock %}
+<br>
+<br>
+{% if attachtment %}
+    <b>Adjuntos: </b><br>
+    {% for archivo in attachtment %}
+        {% if archivo.archivo.url %}
+        <a href="https://{{ t.domainapp }}{{ archivo.archivo.url }}">{{ t.domainapp }}{{ archivo.archivo.url }}</a><br>
+        {% endif %}
+    {% endfor %}
+    <br>
+    <br>
+{% endif %}
+<p>Correo generado de forma autom&aacute;tica por el Sistema de Gesti&oacute;n Acad&eacute;mica<br>{{ t.nombre }}<br><a href="https://{{ t.web }}"> {{ t.web }}</a></p>

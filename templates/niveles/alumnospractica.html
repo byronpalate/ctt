@@ -1,0 +1,141 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script>
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+        });
+
+        $(function() {
+            $("#guardar").click(function () {
+                var lista = actualizar_lista();
+                if (lista.length > 0) {
+                    bloqueointerface();
+                    datos = {action: 'alumnospractica', 'id': {{ profesormateria.id }}, 'listamaterias': lista, 'csrfmiddlewaretoken': csrftoken};
+                    $.ajax({
+                        cache: false,
+                        type: "POST",
+                        url: "/niveles",
+                        data: datos,
+                        error: function () {
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        success: function (data) {
+                            if (data.result === "ok") {
+                                location.href = '/niveles?action=materias&id={{ nivel.id }}{% if mallaid %}&mallaid={{ mallaid }}{% endif %}{% if nivelmallaid %}&nivelmallaid={{ nivelmallaid }}{% endif %}{% if paralelomateriaid %}&paralelomateriaid={{ paralelomateriaid }}{% endif %}';
+                            } else {
+                                desbloqueointerface();
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        }
+                    });
+                } else {
+                    smoke.alert("Debe seleccionar al menos un estudiante.");
+                }
+            });
+
+            $('#selectortodos').click(function () {
+                if ($('#selectortodos').is(":checked")) {
+                    $('.selector').prop('checked', true);
+                } else {
+                    $('.selector').prop('checked', false);
+                }
+            });
+
+            actualizar_lista = function () {
+                var lista = '';
+                $('.selector').each(function () {
+                    if ($(this).is(":checked")) {
+                        lista += $(this).attr('idm') + ',';
+                    }
+                });
+                if (lista.length > 0) {
+                    lista = lista.substring(0, lista.length - 1);
+                }
+                return lista;
+            };
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=materias&id={{ nivel.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Materia: {{ profesormateria.materia.nombre_completo }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 50px;text-align: center;">
+                        <input id="selectortodos" type="checkbox">
+                    </th>
+                    <th>Inscripci&oacute;n</th>
+                    <th style="width: 90px;">Identificación</th>
+                    <th style="width: 200px;">Email</th>
+                    <th style="width: 150px;">Telefono</th>
+                    <th style="width:60px;text-align: center">Foto</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for materiaasignada in materiasasignadas %}
+                    <tr>
+                        <td style="text-align: center;">
+                            {% with seleccionado=materiaasignada|args:profesormateria|call:"seleccionado_practica" %}
+                                <input class="selector" type="checkbox" {% if seleccionado %}checked{% endif %} idm="{{ materiaasignada.id }}">
+                            {% endwith %}
+                        </td>
+                        <td>{{ materiaasignada.matricula.inscripcion.persona }}
+                            {% if nivel != materiaasignada.matricula.nivel %}
+                                <br><span class="badge">{{ materiaasignada.matricula.nivel.paralelo }}</span>
+                            {% endif %}
+                            {% if materiaasignada.retirado %}
+                                <br><span class="badge text-bg-danger">RETIRADO</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ materiaasignada.matricula.inscripcion.persona.identificacion }}</td>
+                        <td>{% if materiaasignada.matricula.inscripcion.persona.emails %}
+                            <a href="mailto:{{ materiaasignada.matricula.inscripcion.persona.emails }}">{{ materiaasignada.matricula.inscripcion.persona.emails }}</a>
+                        {% endif %}
+                        </td>
+                        <td>
+                            {% if materiaasignada.matricula.inscripcion.persona.telefono %}
+                                {{ materiaasignada.matricula.inscripcion.persona.telefono }}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if materiaasignada.matricula.inscripcion.persona.foto %}
+                                <a data-bs-toggle="tooltip" data-bs-placement="top" title="{{ materiaasignada.matricula.inscripcion.persona.nombre_completo }}" href='{{ materiaasignada.matricula.inscripcion.persona.foto.foto.url }}' class="fancybox" rel="group"><img src="{{ materiaasignada.matricula.inscripcion.persona.foto.foto.url }}" width="30px"></a>
+                            {% else %}
+                                {% if materiaasignada.matricula.inscripcion.persona.es_mujer %}
+                                    <img src="/static/images/iconos/mujer_small.png" width="30">
+                                {% else %}
+                                    <img src="/static/images/iconos/hombre_small.png" width="30">
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <a class="btn btn-sm btn-success" href="javascript:;" id="guardar">Guardar</a>
+        </div>
+    </div>
+{% endblock %}

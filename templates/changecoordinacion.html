@@ -1,0 +1,17 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type = "text/javascript">
+        var reloadinterface = true;
+        $(function (){
+            $("#id_coordinacion").addClass("validate[required]");
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/cambiocoordinacion{% endblock %}
+{% block formdestination %}{{ path }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='changecoordinacion'/>
+{% endblock %}
+{% block formback %}/{% endblock %}
+{% block buttonname %}Seleccionar{% endblock %}

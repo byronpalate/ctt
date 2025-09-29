@@ -1,0 +1,8 @@
+{% extends "emails/emailbase.html" %}
+{% block contenido %}
+    <p><b>Aprobando Certificado no Adeudar</b></p>
+    <p>Estimado/a colaborador: </p>
+    <p>Por medio del presente le solicitamos comedidamente comprobar si el estudiante {{ inscripcion.persona }} - {{ inscripcion.persona.cedula }} no registra valores pendientes dentro de su departamento.</p>
+    <br>
+    <p>Si cumple con estas condiciones, favor de realizar la respectiva aprobacion en el modulo de inscripciones del CTT </p>
+{% endblock %}

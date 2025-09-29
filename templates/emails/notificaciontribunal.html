@@ -1,0 +1,14 @@
+{% extends "emails/emailbase.html" %}
+{% block contenido %}
+    <p>Notificación de participación en Tribunal de defensa de Proyecto</p>
+    <p><b>Proyecto: </b> {{ tribunal.proyectogrado }}</p>
+    {% for tut in tribunal.proyectogrado.mis_tutores %}
+        <p><b>Tutor: </b> {{ tut.profesor }}</p>
+    {% endfor %}
+    {% for integ in tribunal.proyectogrado.preproyecto.integrantes  %}
+        <p><b>Integrante: </b> {{ integ }}</p>
+    {% endfor %}
+    <p><b>Cargo: </b> {{ tribunal.get_tipo_display }}</p>
+    <p><b>Lugar: </b> {{ tribunal.proyectogrado.lugardefensa }}</p>
+   <p> <b>Fecha: </b> {{ tribunal.proyectogrado.fechadefensa|date:"Y-m-d" }} - <b>Hora: </b> {{ tribunal.proyectogrado.horadefensa|time:"h:i a" }}</p>
+{% endblock %}

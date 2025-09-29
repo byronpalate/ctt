@@ -1,0 +1,228 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        var lista_items2 = [];
+        $(function() {
+            busqueda = function(tipo){
+                var term = '';
+               term = $("#searchinput").val().trim().toUpperCase();
+                if (term.length>0){
+                    location.href = "/mailbox?s="+term;
+                } else {
+                    location.href = "/mailbox";
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda(1);
+            });
+
+            $('#searchinput').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    if ( $(this).hasClass('searchinput')){
+                        busqueda(1);
+                    } else {
+                        busqueda(2);
+                    }
+                }
+            }).focus();
+
+            function sleep ( sleepDuration ){
+                var now = new Date().getTime();
+                while(new Date().getTime() < now + sleepDuration){ /* do nothing */ }
+            }
+
+            $(".trMouseOver").click(function () {
+                var elemento = $(this);
+                elemento.parent().css({'background-color': 'white'});
+                var id = elemento.parent().attr('idm');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/mailbox",
+                    data: {'action': 'vin', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            desbloqueointerface();
+                            $("#mensajemodaldinamico").html(data.html);
+                            if (parseInt(data.pendientes) === 0) {
+                                $("#checkmailicon").addClass("hidden").hide();
+                            }
+                            $('#mensajemodaldinamico').modal('show');
+                            $(".respondermensaje").click(function () {
+                                $("#respondercorreomodal").bind('click.conectar_mensajes', conectar_mensaje);
+                                $("#respondercorreomodal").trigger('click.conectar_mensajes');
+                            });
+                        } else {
+                            desbloqueointerface();
+                            $('#mensajemodaldinamico').modal('hide');
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        $('#mensajemodaldinamico').modal('hide');
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            actualizar_lista = function () {
+                lista_items2 = [];
+                $(".seleccion:checked").each(function () {
+                    var idd = $(this).attr('idd');
+                    var item = {
+                        id: idd
+                    };
+                    lista_items2.push(item);
+                });
+
+                if (lista_items2.length > 0){
+                    $(".delmensajes").show();
+                } else {
+                    $(".delmensajes").hide();
+                }
+            };
+
+            $('.seleccion').click(function(){
+                actualizar_lista();
+            });
+
+            $("#allinbox").click(function(){
+                if ($(this).is(':checked')){
+                    $(".seleccion").prop('checked', true);
+                } else {
+                    $(".seleccion").prop('checked', false);
+                }
+                actualizar_lista();
+            });
+
+            $(".delmensajes").click(function() {
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/mailbox",
+                    data: {'action': 'delin', 'lista': JSON.stringify(lista_items2), 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        if (data.result === 'ok'){
+                            location.reload();
+                        } else {
+                            desbloqueointerface();
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('#allinbox').prop('checked', false);
+            $('.seleccion').prop('checked', false);
+
+            $(".delmensajes").hide();
+
+            actualizar_lista();
+
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class='row mb-2'>
+        <div class='col-12 col-md-6 mb-2'>
+            <a href="javascript:;" nhref="" class='btn btn-sm btn-success mensajecorreomodal'><i class="icon-envelope-alt"></i> Nuevo</a>
+            <a href="javascript:;" class='delmensajes btn btn-sm btn-danger'><i class="icon-remove"></i> Eliminar</a>
+            <a href="/mailbox?action=enviados" class='btn btn-sm btn-info'><i class="icon-list"></i> Enviados</a>
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="searchinput" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/mailbox" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row'>
+        <div class="col-12">
+            <table class='table table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 40px;vertical-align: middle; text-align: center"><input id="allinbox" type="checkbox" style="margin: 0"></th>
+                    <th style="width: 20%;">Enviado a</th>
+                    <th style="width: 90px; text-align: center">Fecha</th>
+                    <th style="width: 90px; text-align: center">Hora</th>
+                    <th style="width: 40px;"></th>
+                    <th>Asunto</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for mensaje in mensajes %}
+                    {% with leido=mensaje|args:persona|call:"esta_leido" %}
+                        <tr id="{{ mensaje.id }}" idm="{{ mensaje.id }}" {% if not leido %}style="background-color: #f6dccb"{% endif %}>
+                        <td style="width: 40px;vertical-align: middle; text-align: center">
+    <input type="checkbox" idd="{{ mensaje.id }}" class="seleccion seleccionout" style="margin: 0;">
+</td>
+
+                            <td class="trMouseOver">
+                                {{ mensaje.origen|default_if_none:'SISTEMA' }}
+                            </td>
+                            <td class="trMouseOver" style="text-align: center">{{ mensaje.fecha|date:"Y-m-d" }}</td>
+                            <td class="trMouseOver" style="text-align: center">{{ mensaje.hora }}</td>
+                            <td style="text-align: center" class="trMouseOver">
+                                {% if mensaje.tiene_adjunto %}<i class="icon-paper-clip"></i>{% endif %}
+                            </td>
+                            <td class="trMouseOver">{{ mensaje.asunto }}</td>
+                        </tr>
+                    {% endwith %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN MENSAJES</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item"><a href="/mailbox?{% if search %}s={{ search }}&{% endif %}page=1" class="page-link">1</a></li>
+                            <li class="page-item"><a href="/mailbox?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="page-link">...</a></li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/mailbox?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item"><a href="/mailbox?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="page-link">...</a></li>
+                            <li class="page-item"><a href="/mailbox?{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}" class="page-link">{{ paging.num_pages }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/mailbox?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

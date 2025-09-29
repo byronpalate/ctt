@@ -1,0 +1,93 @@
+{#<div id="ajaxmensajedinamicbs"></div>#}
+{#<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">#}
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+        <!-- Header Section -->
+        <div class="modal-header">
+            <h4 class="modal-title">Detalle mensaje</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Body Section -->
+        <div class="modal-body" id="ajaxmensajedinamicbs-modal-body" style="min-height: 60px;">
+            {% if mensaje.origen %}
+                <div style="width: 100%; text-align: left; padding-bottom: 10px;">
+<a href="javascript:;" class="btn btn-sm btn-success respondermensaje">    <i class="fas fa-envelope"></i> Responder</a>
+                    <a href="javascript:;" nhref="{{ mensaje.origen.id }}" style="display: none" id="respondercorreomodal" class="mensajecorreomodal"></a>
+                </div>
+            {% endif %}
+
+            <label><b>De:</b></label>
+            <div id="sender" style="width: 100%; min-height:30px;">
+                <a>{{ mensaje.origen.nombre_completo }}</a>
+            </div>
+
+            <label><b>Destinatarios:</b></label>
+            <div id="recipients" style="width: 100%; min-height:30px;">
+                {% for destinatario in mensaje.destinatarios %}
+                    <a>{{ destinatario.destinatario.nombre_completo_simple }}{% if not forloop.last %},{% endif %}</a>
+                {% endfor %}
+            </div>
+
+            <div style="width: 100%;">
+                <label><b>Asunto:</b></label>
+                <p>{{ mensaje.asunto }}</p>
+            </div>
+
+            <div style="width: 100%;min-height: 50px;">
+                <label><b>Mensaje:</b></label>
+                <p>{{ mensaje.contenido|safe }}</p>
+            </div>
+
+        </div>
+
+        <!-- Footer Section -->
+        <div class="modal-footer" id="formmodal_buttons">
+            <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal"><i class="icon-remove"></i> Cerrar</button>
+        </div>
+
+    </div>
+</div>
+
+    {##}
+    {##}
+    {#<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">#}
+    {#    <div class="modal-dialog">#}
+    {#        <div class="modal-content">#}
+    {#            <div class="modal-header">#}
+    {#                <h1 class="modal-title fs-5" id="staticBackdropLabel">Detalle mensaje</h1>#}
+    {#                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>#}
+    {#            </div>#}
+    {#            <div class="modal-body" id="ajaxmensajedinamicbs-modal-body">#}
+    {#                {% if mensaje.origen %}#}
+    {#                    <div style="width: 100%; text-align: left; padding-bottom: 10px;">#}
+    {#                        <a href="javascript:;" class="btn btn-sm btn-success respondermensaje"><i class="icon-envelope"></i> Responder</a>#}
+    {#                        <a href="javascript:;" nhref="{{ mensaje.origen.id }}" style="display: none" id="respondercorreomodal" class="mensajecorreomodal"></a>#}
+    {#                    </div>#}
+    {#                {% endif %}#}
+    {#                <label><b>De:</b></label>#}
+    {#                <div id="seleccionados" style="width: 100%; min-height:30px;">#}
+    {#                    <a>{{ mensaje.origen.nombre_completo }}</a>#}
+    {#                </div>#}
+    {#                <label><b>Destinatarios:</b></label>#}
+    {#                <div id="seleccionados" style="width: 100%; min-height:30px;">#}
+    {#                    {% for destinatario in mensaje.destinatarios %}#}
+    {#                        <a>{{ destinatario.destinatario.nombre_completo_simple }}{% if not forloop.last %},{% endif %}</a>#}
+    {#                    {% endfor %}#}
+    {#                </div>#}
+    {#                <div style="width: 100%;">#}
+    {#                    <label><b>Asunto:</b></label>#}
+    {#                    <p>{{ mensaje.asunto }}</p>#}
+    {#                </div>#}
+    {#                <div style="width: 100%;min-height: 50px;">#}
+    {#                    <label><b>Mensaje:</b></label>#}
+    {#                    <p>{{ mensaje.contenido|safe }}</p>#}
+    {#                </div>#}
+    {#            </div>#}
+    {#            <div class="modal-footer" id="formmodal_buttons">#}
+    {#                <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal">Cerrar</button>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#    </div>#}
+{#</div>#}

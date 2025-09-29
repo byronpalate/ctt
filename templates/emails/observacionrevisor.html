@@ -1,0 +1,20 @@
+{% extends "emails/emailbase.html" %}
+{% block contenido %}
+    {% autoescape off %}
+        <p><b>Proyectos de Investigación</b></p>
+        <p>Su proyecto con el nombre: <b> {{ proyecto.nombre }}</b>,</p>
+        <p>ha recibido la siguiente observación: </p>
+        <p><b>{{ observacion.observacion }}</b></p>
+        <p>Por parte de: <b> {{ observacion.persona }}</b></p>
+        <p>Por favor, realice los cambios sugeridos.</p>
+        {% if financiero == 1 %}
+            <a href="https://ctt.uti.edu.ec/fin_convocatoria?action=detalleproyecto&id={{ proyecto.id }}">Link del
+                proyecto</a>
+        {% else %}
+            <a href="https://ctt.uti.edu.ec/pro_convocatoria?action=proyectos&id={{ proyecto.id }}">Link del
+                proyecto</a>
+        {% endif %}
+        <p></p>
+
+    {% endautoescape %}
+{% endblock %}

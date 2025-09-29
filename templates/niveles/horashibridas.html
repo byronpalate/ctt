@@ -1,0 +1,94 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $('.horassemanales').blur(function(){
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 1);
+                var mid;
+                var valoranterior = parseFloat(elemento.attr("va"));
+                var valoractual = parseFloat(elemento.val());
+                elemento.val(valoractual.toFixed(1));
+                mid = elemento.attr("mid");
+                if (valoranterior !== valoractual){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/niveles",
+                        data: { 'action': 'updatehorassemanaleshibridas', 'mid': mid, 'valor': valoractual, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok'){
+                                elemento.attr({'va': parseFloat(data.valor).toFixed(1)});
+                                for (item in data.lista){
+                                    var profesormateria = $("#hpm_"+data.lista[item][0]);
+                                    profesormateria.val(parseFloat(data.lista[item][1]).toFixed(1));
+                                }
+                            } else {
+                                elemento.val(valoranterior.toFixed(1));
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.val(valoranterior.toFixed(1));
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=materias&id={{ profesormateria.materia.nivel.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Asignatura: {{ profesormateria }}
+            <br>Horas: {{ profesormateria.horassemanales }}</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_mallas and permite_modificar %}
+        <div class='row mb-2'>
+            <div class='col-12'>
+                {% if permite_modificar %}
+                    <a class="btn btn-sm btn-success confirmacionmodal" href="javascript:;" nhref="/niveles?action=actualizarhibridas&id={{ profesormateria.id }}"><i class="icon-refresh"></i> Actualizar</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Modalidad</th>
+                    <th style="width: 150px">Horas</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for hibrida in hibridas %}
+                    <tr>
+                        <td>{{ hibrida.asignaturamallahibrida.modalidad }}</td>
+                        <td>
+                            {% if  not materia.cerrado and perms.ctt.puede_modificar_cupo_materias %}
+                                <input class="form-imput imp-numbersmall horassemanales form-control form-control-sm" mid="{{ hibrida.id }}" type="text" va="{{ hibrida.horas|floatformat:1 }}" value="{{ hibrida.horas|floatformat:1 }}" style="width: 35px">
+                            {% else %}
+                                {{ hibrida.horas|floatformat:1 }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

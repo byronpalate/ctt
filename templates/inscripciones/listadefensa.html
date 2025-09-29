@@ -1,0 +1,79 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Proyecto: {{ proyecto }} </h4>
+        </div>
+    </div>
+    {% if not defensa.proyectogrado.tiene_estudiantes_graduados %}
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref="/inscripciones?action=adddefensa&id={{ proyecto.id }}&idi={{ inscripcion.id }}"><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width:80px; text-align: center">Fecha</th>
+                    <th style="width:80px; text-align: center">Hora</th>
+                    <th>Lugar</th>
+                    <th style="width:50px; text-align: center">Opor.</th>
+                    <th style="width:100px; text-align: center">Folio</th>
+                    <th style="width:100px; text-align: center">Número de acta</th>
+                    <th style="width:100px; text-align: center">Observaciones</th>
+                    <th style="width:100px; text-align: center">Calificación</th>
+                    <th style="width:100px; text-align: center">Estado</th>
+                    <th style="width:60px;">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for defensa in defensas %}
+                    <tr>
+                        <td style="text-align: center">{{ defensa.fechadefensa|date:"Y-m-d" }}</td>
+                        <td style="text-align: center">{{ defensa.horadefensa|time:"h:i a" }}</td>
+                        <td>{{ defensa.lugardefensa }}</td>
+                        <td style="text-align: center">{{ defensa.numerooportunidad}}</td>
+                        <td style="text-align: center">{{ defensa.foliodefensa}}</td>
+                        <td style="text-align: center">{{ defensa.numeroactadefensa}}</td>
+                        <td style="text-align: center">{{ defensa.observaciones}}</td>
+                        <td style="text-align: center">{{ defensa.calificaciondefensa}}</td>
+                        <td style="text-align: center">
+                            <span class="badge {% if defensa.estadosustentacion == 1 %} label-important{% elif defensa.estadosustentacion == 2 %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ defensa.repr_estado_sustentacion }}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {#                                {% if not defensa.proyectogrado.tiene_estudiantes_graduados %}#}
+                                    <li class="smaller"><a href="/inscripciones?action=tribunaldefensa&id={{ defensa.id }}&idi={{ inscripcion.id }}"><i class="icon-group"></i> Tribunal </a></li>
+                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=editdefensa&id={{ defensa.id }}&idi={{ inscripcion.id }}"><i class="icon-edit"></i> Editar</a></li>
+                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/inscripciones?action=editdefensaextra&id={{ defensa.id }}&idi={{ inscripcion.id }}"><i class="icon-edit"></i> Editar Otros Datos</a></li>
+                                    <li class="dropdown-divider"></li>
+                                    <li class="smaller"><a  href="javascript:;" nhref="/inscripciones?action=deldefensa&id={{ defensa.id }}&idi={{ inscripcion.id }}" class="eliminacionmodal dropdown-item"><i class="icon-remove"></i> Eliminar</a></li>
+                                    {#                                {% endif %}#}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

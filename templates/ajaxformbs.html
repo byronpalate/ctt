@@ -1,0 +1,39 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block contentextraclass %}bg{{ background }}{% endblock %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $("#formcancelbutton").click(function () {
+                var url = $(this).attr('nhref');
+                bloqueointerface();
+                location.href = url;
+            });
+        });
+    </script>
+    {% block javascript %}
+    {% endblock %}
+{% endblock %}
+{% block canvas %}
+    <div class='row'>
+        <div class='col-12' style="position: absolute; margin-top: 0; margin-bottom: 0; left: 0; width: 100%; overflow: auto">
+            <div style="min-height: 100px; margin:0 auto 0 auto; margin-top: 20px; margin-bottom: 100px;width: {{ form.form_real_width }}px">
+                {% block pre_form %}{% endblock %}
+                <div class='row no-marging-bottom'>
+                    <div class="well" style="margin-bottom: 3px;padding: 10px;">
+                        <h4>{% block titulo %}{% endblock %}</h4>
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='well' style="display: flex;">
+                        {% block form %}
+                        {% endblock %}
+                        {% block extraalerts %}
+                        {% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

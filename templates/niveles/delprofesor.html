@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
+{% block formdestination %}/niveles?action=materias&id={{ nivel.id }}{% endblock %}
+{% block formactionvalue %}delprofesor{% endblock %}
+{% block formobjectid %}{{ profesormateria.id }}{% endblock %}
+{% block formobjectname %}el profesor{% endblock %}
+{% block formobjectrepr %}{{ profesormateria.profesor }}{% endblock %}

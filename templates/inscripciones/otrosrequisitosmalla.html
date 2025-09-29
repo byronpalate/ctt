@@ -1,0 +1,47 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Estudiante: {{ inscripcion }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 300px">Nombre</th>
+                    <th >Descripción</th>
+                    <th style="width: 120px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for requisito in otrosrequisitos %}
+                    <tr>
+                        <td>{{ requisito.nombre }}</td>
+                        <td>{{ requisito.descripcion }}</td>
+                         <td style="text-align: center">
+                            <a class="btn btn-sm btn-success btn-sm" href="/inscripciones?action=otrosrequisitosinscripcion&id={{ requisito.id }}&idi={{ inscripcion.id }}"><i class="icon-list"></i> Requisitos</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

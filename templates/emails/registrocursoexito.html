@@ -1,0 +1,22 @@
+{% extends "emails/emailbase.html" %}
+{% block contenido %}
+    Gracias por inscribirte, hemos recibido tu información.<br>
+    <br>
+    Las credenciales para ingresar al Sistema CTT son las siguientes:
+    <br>
+    Usuario: {{ persona.usuario }}
+    <br>
+    Clave: (su cédula de identidad)
+    <br>
+    Aquí accede al sistema CTT: <a href="https://ctt.uti.edu.ec/" target="_blank" >https://ctt.uti.edu.ec/</a>
+    <br>
+    Te confirmamos los medios de pago disponibles, así:<br>
+    <br>
+    <ul>
+        <li>1. Los métodos de pagos disponibles los encontrarás en: <a href="https://www.indoamerica.edu.ec/informacion-financiera/" target="_blank" >https://www.indoamerica.edu.ec/informacion-financiera/</a></li>
+    </ul>
+    <br>
+    Aquí puede ver el instructivo para validación de pagos: <a href="https://www.indoamerica.edu.ec/wp-content/uploads/2023/09/MANUAL_VALIDAClON_COMPROBANTES-S23.pdf" target="_blank">https://www.indoamerica.edu.ec/wp-content/uploads/2023/09/MANUAL_VALIDAClON_COMPROBANTES-S23.pdf</a>
+    <br>
+    Quedamos atentos.
+{% endblock %}

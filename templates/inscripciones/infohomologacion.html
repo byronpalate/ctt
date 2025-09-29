@@ -1,0 +1,240 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $(".aprobado_requisitoprehomologacion").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('idd');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: {'action': 'aprobado_requisitoprehomologacion', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result == 'ok') {
+                             location.reload();
+                        }else{
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+            $(".aprobado_admision").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('idd');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: {'action': 'aprobado_homologacion', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result == 'ok') {
+                             location.reload();
+                        }else{
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+            $(".aprobado_secretaria").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('idd');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/inscripciones",
+                    data: {'action': 'aprobado_secretaria', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result == 'ok') {
+                             location.reload();
+                        }else{
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+              
+        });
+        
+    </script>
+    
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+             <h4> {{ inscripcion.persona }}</h4>
+             <h4> Periodo de Homologacion: {{ inscripcion.periodo_homologacion }}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class='col-12 col-md-6 mb-2'>
+              {% if not inscripcion.tiene_solicitud_homologacion %}
+                <a href="javascript:;" nhref="/inscripciones?action=addsolicitudhomologacion&id={{ inscripcion.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+              {% endif %}
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+           
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                 
+                <tr>
+                    <th>Nombre</th>
+                    
+                    
+ 
+                        <th style="width: 35px; text-align: center">Aprobado Admision.</th>
+ 
+                    
+                        <th style="width: 35px; text-align: center">Aprobado Seceretaria.</th>
+ 
+                    <th style="width: 35px; text-align: center">Aprobado Decano.</th>
+                    <th style="width: 35px; text-align: center">Pasado al Record</th>
+                    <th style="width: 100px; text-align: center">Matriculado</th>
+                    <th style="width: 100px; text-align: center">Anulada</th>
+                
+                    <th style="width: 50px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for solicitud in solicitudes %}
+                        <tr>
+                            <td>
+                                {{ solicitud.periodo_homologacion }}
+                            </td>
+                           
+                                <td style="text-align: center">
+                                    <input type="checkbox" class="aprobado_admision" idd="{{ solicitud.id }}" {% if solicitud.aprobado_admision %}checked="checked" {% endif %}{% if solicitud.aprobado_secretaria  %}disabled="disabled"{% endif %}>
+                                </td>
+           
+                          
+                                <td style="text-align: center">
+                                    {% if solicitud.aprobado_admision %}
+                                        <input type="checkbox" class="aprobado_secretaria" idd="{{ solicitud.id }}" {% if solicitud.aprobado_secretaria %} checked="checked" {% endif %}>
+                                    {% endif %}
+                                </td>
+                               <td>
+             <span class="badge {% if solicitud.existe_prehomologacion %}text-bg-success{% else %}text-bg-danger{% endif %}">
+    {% if solicitud.existe_prehomologacion %}
+        SI
+    {% else %}
+        NO
+    {% endif %}
+</span>
+
+
+                               </td>
+                               <td>
+             <span class="badge {% if solicitud.existe_pasado_record %}text-bg-success{% else %}text-bg-danger{% endif %}">
+    {% if solicitud.existe_pasado_record %}
+        SI
+    {% else %}
+        NO
+    {% endif %}
+             </span></td>
+                                 <td>
+             <span class="badge {% if solicitud.existe_matricula %}text-bg-success {% else %}text-bg-danger{% endif %}">
+    {% if solicitud.existe_matricula %}
+        SI
+    {% else %}
+        NO
+    {% endif %}
+             </span></td>
+                                <td>
+             <span class="badge {% if solicitud.anulado %}text-bg-success {% else %}text-bg-danger{% endif %}">
+    {% if solicitud.anulado %}
+        SI
+    {% else %}
+        {% if not solicitud.existe_prehomologacion %}
+        <a class="btn btn-ssm btn-danger confirmacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top"
+           title="No anulado" {% if solicitud.anulado %}style="display: none"{% endif %} href="javascript:;"
+           nhref="/inscripciones?action=anularsolicitud&id={{ solicitud.id }}"><i class="icon-refresh"></i></a>
+        {#                            <a class="btn btn-ssm btn-success confirmacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cumple" {% if not inscripcion.cumpleperfil %}style="display: none"{% endif %} href="javascript:;" nhref="/adm_admisionposgrado?action=nocumpleperfil&id={{ inscripcion.id }}"><i class="icon-refresh"></i></a>#}
+              {% else %}      
+                         Tiene prehologacion              
+    {% endif %}
+    {% endif %}
+             </span></td>
+                               <td>
+                                   {% if not solicitud.existe_prehomologacion and not solicitud.anulado %}
+                                       <a  href="javascript:;" nhref="/inscripciones?action=delsolicitudhomologacion&id={{ solicitud.id }}" class='btn btn-sm btn-danger eliminacionmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                        {% endif %}            
+                                       </td>
+                          
+                           
+                        </tr>
+             
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item"><a href="/adm_criteriosactividadesdocente?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page=1" class="page-link">1</a></li>
+                            <li class="page-item"><a href="/adm_criteriosactividadesdocente?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="page-link">...</a></li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_criteriosactividadesdocente?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item"><a href="/adm_criteriosactividadesdocente?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="page-link">...</a></li>
+                            <li class="page-item"><a href="/adm_criteriosactividadesdocente?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page={{ paging.num_pages }}" class="page-link">{{ paging.num_pages }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_criteriosactividadesdocente?{% if search %}s={{ search }}&{% endif %}{% if idc %}idc={{ idc }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

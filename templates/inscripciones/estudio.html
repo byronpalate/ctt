@@ -1,0 +1,365 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            {% if perms.ctt.puede_modificar_inscripciones %}
+                $(".verificar").click(function () {
+                    var elemento = $(this);
+                    var id = elemento.attr('ida');
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/inscripciones",
+                        data: {'action': 'verificarestudio', 'id': id, 'valor': valor, 'inscripcionid': {{ inscripcion.id }}, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            if (data.result === 'ok') {
+                                location.href = document.URL;
+                            } else {
+                                desbloqueointerface();
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                });
+
+                actualizarsituacionlaboral = function(){
+                    var selected = $("input[type='radio'][name='situacionlaboral']:checked");
+                    if (selected.length > 0) {
+                        var valor = parseInt(selected.val());
+                    }
+                    var situacionactual = $('#situacionlaboralestudiante').val();
+
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/inscripciones",
+                        data: {'action': 'acualizasituacionlaboral', 'idi': {{ inscripcion.id }},'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                radionbuttonselectedvalueset('situacionlaboral', data.ide);
+                            } else {
+                                radionbuttonselectedvalueset('situacionlaboral', situacionactual);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            radionbuttonselectedvalueset('situacionlaboral', situacionactual);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                };
+
+                verificarsituacionlaboral = function(){
+                    var valor = 0;
+                    var selected = $("input[type='radio'][name='situacionlaboral']:checked");
+                    if (selected.length > 0) {
+                        valor = parseInt(selected.val());
+                    }
+                };
+
+                verificarsituacionlaboral();
+
+                $(".situacionlaboral").click(function(){
+                    verificarsituacionlaboral();
+                    actualizarsituacionlaboral();
+                });
+            {% endif %}
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas%}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Persona: {{ inscripcion.persona }}</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_inscripciones %}
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <div class="btn-group dropdown">
+                    <a class="btn dropdown-toggle btn-success btn-sm" data-bs-toggle="dropdown" href="javascript:;"><i class="icon-plus"></i> Adicionar <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=addestudio&id={{ inscripcion.id }}" class="formmodal dropdown-item">Estudios b&aacute;sicos</a></li>
+                        <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=addestudiosuperior&id={{ inscripcion.id }}" class="formmodal dropdown-item">Estudios superiores</a></li>
+                        <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=addidioma&id={{ inscripcion.id }}" class='formmodal dropdown-item'>Adicionar idioma</a></li>
+                        <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=addtrabajo&id={{ inscripcion.id }}" id="addtrabajo" class="formmodal dropdown-item"></i> Adicionar trabajo</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th colspan="20">ESTUDIOS</th>
+                </tr>
+                </thead>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 80px;">Tipo</th>
+                    <th>Institución/Sostenimiento</th>
+                    <th style="width: 80px; text-align: center">Inicio</th>
+                    <th style="width: 80px; text-align: center">Fin</th>
+                    <th style="width: 40px; text-align: center">Curs.</th>
+                    <th style="width: 40px; text-align: center">Aband.</th>
+                    <th style="width: 350px;">Título/Especialidad/Carrera</th>
+                    <th style="width: 80px;">Nivel</th>
+                    <th style="width: 120px">Registro</th>
+                    <th style="width: 40px; text-align: center">Verf.</th>
+                    <th style="width: 80px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for estudio in estudios %}
+                    <tr>
+                        <td>{% if estudio.superior %}SUPERIOR{% else %}BASICA{% endif %}</td>
+                        <td>
+                            {% if estudio.superior %}
+                                {{ estudio.institucioneducacionsuperior.tipo }}
+                            {% else %}
+                                {{ estudio.institucioneducacionbasica }}<br>
+                                {{ estudio.institucioneducacionbasica.tipocolegio }}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">{{ estudio.fechainicio|date:"Y-m-d"|default_if_none:"" }}</td>
+                        <td style="text-align: center">{{ estudio.fechafin|date:"Y-m-d"|default_if_none:"" }}</td>
+                        <td style="text-align: center">
+                            {% if estudio.cursando %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Curscando">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Curscando">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if estudio.abanderado %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Abanderado">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Abanderado">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if estudio.superior %}
+                                {{ estudio.titulo }}<br>{{ estudio.carrera }}
+                            {% else %}
+                                {{ estudio.titulocolegio|default_if_none:"" }}<br>
+                                {{ estudio.especialidadeducacionbasica }}
+                            {% endif %}
+                        </td>
+                        <td>{{ estudio.niveltitulacion|default_if_none:'' }}<br>{{ estudio.detalleniveltitulacion|default_if_none:'' }}</td>
+                        <td>{{ estudio.registro|default_if_none:'' }}</td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_inscripciones %}
+                                <input type="checkbox" class="verificar" ida="{{ estudio.id }}" {% if estudio.verificado %}checked{% endif %}>
+                            {% else %}
+                                {% if estudio.verificado %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Verificado">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Verificado">No</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if not estudio.verificado %}
+                                {% if not estudio.superior %}
+                                    <a href="javascript:;" nhref='/inscripciones?action=editestudio&id={{ estudio.id }}&idi={{ inscripcion.id }}' class="btn btn-ssm btn-info formmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                {% else %}
+                                    <a href="javascript:;" nhref='/inscripciones?action=editestudiosuperior&id={{ estudio.id }}&idi={{ inscripcion.id }}' class="btn btn-ssm btn-info formmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                {% endif %}
+                                {% if perms.ctt.puede_modificar_inscripciones %}
+                                    <a href="javascript:;" nhref='/inscripciones?action=delestudio&id={{ estudio.id }}&idi={{ inscripcion.id }}' class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_inscripciones %}
+        <div class="row">
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/inscripciones?action=addidioma&id={{ inscripcion.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th colspan="5">IDIOMAS</th>
+                </tr>
+                </thead>
+                <thead class="table-light">
+                <tr>
+                    <th>Idioma</th>
+                    <th style="width: 120px; text-align: center;">Lectura</th>
+                    <th style="width: 120px; text-align: center;">Escritura</th>
+                    <th style="width: 120px; text-align: center;">Dominio oral</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for idioma in idiomas %}
+                    <tr>
+                        <td>{{ idioma.idioma }}</td>
+                        <td style="text-align: center;">{{ idioma.lectura|floatformat:0 }}%</td>
+                        <td style="text-align: center;">{{ idioma.escritura|floatformat:0 }}%</td>
+                        <td style="text-align: center;">{{ idioma.oral|floatformat:0 }}%</td>
+                        <td style="text-align: center">
+                            <a href="javascript:;" nhref='/inscripciones?action=editidioma&id={{ idioma.id }}&idi={{ inscripcion.id }}' class="btn btn-sm btn-info formmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                            {% if perms.ctt.puede_modificar_inscripciones %}
+                                <a href="javascript:;" nhref='/inscripciones?action=delidioma&id={{ idioma.id }}&idi={{ inscripcion.id }}' class="btn btn-sm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_inscripciones %}
+        <div class="row">
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/inscripciones?action=addtrabajo&id={{ inscripcion.id }}" id="addtrabajo" class="btn btn-sm btn-success formmodal"><i class="icon-plus tu"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th colspan="8">DATOS LABORALES</th>
+                </tr>
+                <tr>
+                    <th colspan="11">
+                        SITUACIÓN LABORAL ACTUAL:
+                        <form>
+                            <table class="table table-condensed">
+                                <tr>
+                                    <th style="width: 15%"><label class="radio"><input type="radio" name="situacionlaboral" class="situacionlaboral" id="situacionlaboral_0" value="0" {% if ficha.situacionlaboral == 0 %}checked{% endif %} {% if laboraactualmente %}disabled{% endif %} {% if not perms.ctt.puede_modificar_inscripciones %}disabled{% endif %}><b>ESTUDIANTE</b></label></th>
+                                    <th style="width: 15%"><label class="radio"><input type="radio" name="situacionlaboral" class="situacionlaboral" id="situacionlaboral_1" value="1" {% if ficha.situacionlaboral == 1 %}checked{% endif %} {% if not perms.ctt.puede_modificar_inscripciones %}disabled{% endif %}><b>ACTIVO</b></label></th>
+                                    <th style="width: 15%"><label class="radio"><input type="radio" name="situacionlaboral" class="situacionlaboral" id="situacionlaboral_2" value="2" {% if ficha.situacionlaboral == 2 %}checked{% endif %} {% if laboraactualmente %}disabled{% endif %} {% if not perms.ctt.puede_modificar_inscripciones %}disabled{% endif %}><b>AMA DE CASA</b></label></th>
+                                    <th style="width: 15%"><label class="radio"><input type="radio" name="situacionlaboral" class="situacionlaboral" id="situacionlaboral_3" value="3" {% if ficha.situacionlaboral == 3 %}checked{% endif %} {% if laboraactualmente %}disabled{% endif %} {% if not perms.ctt.puede_modificar_inscripciones %}disabled{% endif %}><b>DESEMPLEADO</b></label></th>
+                                    <th style="width: 15%"><label class="radio"><input type="radio" name="situacionlaboral" class="situacionlaboral" id="situacionlaboral_4" value="4" {% if ficha.situacionlaboral == 4 %}checked{% endif %} {% if laboraactualmente %}disabled{% endif %} {% if not perms.ctt.puede_modificar_inscripciones %}disabled{% endif %}><b>INVALIDEZ LABORAL</b></label></th>
+                                    <th style="width: 15%"><label class="radio"><input type="radio" name="situacionlaboral" class="situacionlaboral" id="situacionlaboral_5" value="5" {% if ficha.situacionlaboral == 5 %}checked{% endif %} {% if laboraactualmente %}disabled{% endif %} {% if not perms.ctt.puede_modificar_inscripciones %}disabled{% endif %}><b>JUBILADO</b></label></th>
+                                </tr>
+                            </table>
+                            <input id="situacionlaboralestudiante" value="{{ ficha.situacionlaboral }}" hidden="hidden">
+                        </form>
+                    </th>
+                </tr>
+                </thead>
+                <thead class="table-light">
+                <tr>
+                    <th>Empresa/Cargo</th>
+                    <th style="width: 350px">Dirección</th>
+                    <th style="width: 300px">Teléfono/Email</th>
+                    <th style="width: 80px; text-align: center;">Inicio</th>
+                    <th style="width: 80px; text-align: center;">Fin</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for trabajo in trabajos %}
+                    <tr>
+                        <td>{{ trabajo.empresa }}<br>{{ trabajo.industria }}</td>
+                        <td>{{ trabajo.cargo }}<br>{{ trabajo.ocupacion }}</td>
+                        <td>{{ trabajo.telefono }}<br>{{ trabajo.email }}</td>
+                        <td style="text-align: center;">{{ trabajo.fecha|date:'Y-m-d' }}</td>
+                        <td style="text-align: center;">{{ trabajo.fechafin|date:'Y-m-d' }}</td>
+                        <td style="text-align: center">
+                            <a href="javascript:;" nhref='/inscripciones?action=edittrabajo&id={{ trabajo.id }}&idi={{ inscripcion.id }}' class="btn btn-ssm btn-info formmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                            {% if perms.ctt.puede_modificar_inscripciones %}
+                                <a href="javascript:;" nhref='/inscripciones?action=deltrabajo&id={{ trabajo.id }}&idi={{ inscripcion.id }}' class="btn btn-ssm btn-danger eliminacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if inscripcion.intercambio %}
+        <div class="row">
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/inscripciones?action=movilidad&id={{ inscripcion.id }}" class="btn btn-sm btn-success formmodal"><i class="icon-plus tu"></i> Adicionar</a>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th colspan="8">DATOS MOVILIDAD</th>
+                    </tr>
+                    </thead>
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px; text-align: center;">Movilidad</th>
+                        <th>Universidad</th>
+                        <th style="width: 80px; text-align: center;">Tipo de universidad</th>
+                        <th style="width: 300px; text-align: center">Asignaturas</th>
+                        <th style="width: 200px; ; text-align: center">Homologación</th>
+                        <th style="width: 200px; text-align: center;">Tipo movilidad académica</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for mov in movilidad %}
+                        <tr>
+                            <td style="text-align: center;">{{ mov.get_tipomovilidad_display }}</td>
+                            <td>{{ mov.instituto }}</td>
+                            <td style="text-align: center;">{{ mov.instituto.tipotecnologicouniversidad }}</td>
+                            <td style="text-align: center;">{{ mov.asignaturas }}</td>
+                            <td style="text-align: center;">{{ mov.get_homologacion_display }}</td>
+                            <td style="text-align: center;">{{ mov.get_tipomovilidadacademica_display }}</td>
+                            <td style="text-align: center">
+                                <a href="javascript:;" nhref='/inscripciones?action=editmovilidad&id={{ mov.id }}' class="btn btn-ssm btn-info formmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                {% if perms.ctt.puede_modificar_inscripciones %}
+                                    <a href="javascript:;" nhref='/inscripciones?action=delmovilidad&id={{ inscripcion.id }}' class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="20">NO EXISTEN DATOS</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

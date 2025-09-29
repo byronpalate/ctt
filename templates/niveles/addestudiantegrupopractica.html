@@ -1,0 +1,103 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        var lista_items1 = [];
+        $(function() {
+
+
+
+            actualizar_lista = function () {
+                lista_items1 = [];
+                $(".seleccionados:checked").each(function () {
+                    var ida = $(this).attr('id');
+                    var item = {
+                        id: ida
+                    };
+                    lista_items1.push(item);
+                });
+            };
+
+            conectacontroles = function() {
+                $(".seleccionados").unbind();
+                $(".seleccionados").click(function () {
+                    actualizar_lista();
+                });
+            };
+
+
+            $("#selector").click(function(){
+                if ($(this).prop('checked')){
+                    $(".seleccionados").prop('checked', true);
+                } else {
+                    $(".seleccionados").prop('checked', false);
+                }
+                actualizar_lista();
+            });
+
+
+
+            $("#guardar").click(function () {
+
+                actualizar_lista();
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/niveles",
+                    data: {'action': 'addestudiantegrupopractica', 'lista': JSON.stringify(lista_items1), 'grupo': {{grupo.id}}, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            location.href = "/niveles?action=tomandompracticas&id="+{{grupo.id}}
+                        } else {
+                            desbloqueointerface();
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles?action=tomandompracticas&id={{ grupo.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class="row" style="max-height: 700px; overflow: auto">
+        <table class="table table-bordered">
+            <thead class="table-light">
+            <tr><th colspan="10">Inscripciones</th>
+            </tr>
+            <tr>
+                <th style="width: 30px; text-align: center"><input type="checkbox" id="selector"></th>
+                <th style="width: 100px">Identificación</th>
+                <th style="width: 400px">Estudiante</th>
+                <th style="width: 250px">Carrera</th>
+            </tr>
+            </thead>
+           {% for alumno in alumnos %}
+    <tr>
+        <td style="text-align: center"><input type="checkbox" class="seleccionados" id="{{ alumno.id }}"></td>
+
+        <td>{{ alumno.matricula.inscripcion.persona.identificacion }}</td>
+        <td>{{ alumno.matricula.inscripcion.persona }}</td>
+        <td>{{ alumno.matricula.inscripcion.carrera }}</td>
+
+    </tr>
+{% endfor %}
+
+        </table>
+    </div>
+    <a class="btn btn-sm btn-success" id="guardar"><i class="icon-save"></i> Agregar</a>
+{% endblock %}

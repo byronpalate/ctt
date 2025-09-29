@@ -1,0 +1,268 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            $('.nivelhorarios').click(function(){
+                var valor = $(this).is(':checked');
+                var id = $(this).attr('nid');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/niveles",
+                    data: {'action': 'bloqueohorarios', 'id': id, 'val': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            desbloqueointerface();
+                        } else {
+                            desbloqueointerface();
+                            $("#nivelhorarios_"+id).prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        $("#nivelhorarios_"+id).prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.nivelcupo').click(function(){
+                var valor = $(this).is(':checked');
+                var id = $(this).attr('nid');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/niveles",
+                    data: {'action': 'bloqueocupos', 'id': id, 'val': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            desbloqueointerface();
+                        } else {
+                            desbloqueointerface();
+                            $("#nivelcupo_"+id).prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        $("#nivelcupo_"+id).prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.nivelplanificacion').click(function(){
+                var valor = $(this).is(':checked');
+                var id = $(this).attr('nid');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/niveles",
+                    data: {'action': 'bloqueoplanificacion', 'id': id, 'val': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            desbloqueointerface();
+                        } else {
+                            desbloqueointerface();
+                            $("#nivelplanificacion_"+id).prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        $("#nivelplanificacion_"+id).prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.nivelprofesor').click(function(){
+                var id = $(this).attr('nid');
+                var valor = $(this).is(':checked')
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/niveles",
+                    data: {'action': 'bloqueoprofesor', 'id': id, 'val': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            desbloqueointerface();
+                        } else {
+                            desbloqueointerface();
+                            $("#nivelprofesor_"+id).prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        $("#nivelprofesor_"+id).prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    {% if perms.ctt.puede_modificar_niveles %}
+        <div class='row mb-2'>
+            <div class="col-12">
+                <a href="javascript:;" nhref="/niveles?action=add" class="formmodal btn btn-sm btn-success"><i class="icon-plus tu"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+    <div class='row'>
+        <div class="col-12">
+            <table class='table table-bordered cell'>
+                <thead class="table-light">
+                <tr>
+                       {% if perms.ctt.puede_bloquear_distributivos or perms.ctt.puede_bloquear_distributivos_2 %}
+                        <th style='text-align: center; width: 30px'><i class='icon-lock'></i></th>
+                           {% if perms.ctt.puede_bloquear_distributivos or perms.ctt.puede_bloquear_distributivos_2 and periodo.modificar_niveles %}
+                        <th style='text-align: center; width: 30px'><i class='icon-user'></i></th>
+                           {% endif %}                 
+                        <th style='text-align: center; width: 30px'><i class='icon-th'></i></th>
+                        
+                        <th style='text-align: center; width: 30px'><i class='icon-list'></i></th>
+                    {% endif %}
+                    <th>Nivel</th>
+                    <th style='text-align: center; width: 60px'>Matrículas</th>
+                    <th style='text-align: center; width: 60px'>Materias<br>abiertas</th>
+                    <th style='text-align: center; width: 60px'>Materias<br>cerradas</th>
+                    <th style="width:150px">Sesión/Modalidad</th>
+                    <th style='width:80px;text-align: center;'>Inicio/Fin</th>
+                    <th style='width:80px;text-align: center;'>Cierre Período</th>
+                    <th style='width:80px;text-align: center;'>Mat.Reg.</th>
+                    <th style='width:80px;text-align: center;'>Mat.Ext.</th>
+                    <th style='width:80px;text-align: center;'>Mat.Esp.</th>
+                    <th style='width:100px;text-align: center;'>Estado <br>Distributivo</th>
+                    <th style='width:100px; text-align: center;' title="Estado Financiero">Valida<br>Financiero</th>
+                    <th style="width:80px"></th>
+                    <th style="width:100px"></th>
+                    <th style="width:60px"></th>
+                </tr>
+                </thead>
+                {% with niveles=persona|args:coordinacion|args:periodo|call:"mis_niveles_modalidad" %}
+                    {% for nivel in niveles %}
+                        <tr>
+                            {% if perms.ctt.puede_bloquear_distributivos or perms.ctt.puede_bloquear_distributivos_2 %}
+
+                                <td style='text-align: center'>
+                                    <input class='nivelhorarios tu' id="nivelhorarios_{{ nivel.id }}" nid='{{ nivel.id }}' data-bs-toggle="tooltip" data-bs-placement="top" title='Modificar horario' type='checkbox' {% if nivel.extension.modificarhorario %}checked='checked'{% endif %}/>
+                                </td>
+                                {% if perms.ctt.puede_bloquear_distributivos or perms.ctt.puede_bloquear_distributivos_2 and periodo.modificar_niveles %}
+                                <td style='text-align: center'>
+                                    <input class='nivelprofesor tu' id="nivelprofesor_{{ nivel.id }}" nid='{{ nivel.id }}' data-bs-toggle="tooltip" data-bs-placement="top" title='Modificar profesores' type='checkbox' {% if nivel.extension.modificardocente %}checked='checked'{% endif %}{% if nivel.aprobadofinanciero %}disabled{% endif %}/>
+                                </td>
+                                    {% endif %}
+                                <td style='text-align: center'>
+                                    <input class='nivelcupo tu' id="nivelcupo_{{ nivel.id }}" nid='{{ nivel.id }}' data-bs-toggle="tooltip" data-bs-placement="top" title='Modificar cupos y materias' type='checkbox' {% if nivel.extension.modificarcupo %}checked='checked'{% endif %}/>
+                                </td>
+                          
+                                <td style='text-align: center'>
+                                    <input class='nivelplanificacion tu' id="nivelplanificacion_{{ nivel.id }}" nid='{{ nivel.id }}' data-bs-toggle="tooltip" data-bs-placement="top" title='Modificar planificacion' type='checkbox' {% if nivel.extension.modificarplanificacion %}checked='checked'{% endif %}/>
+                                </td>
+                          {% endif %}
+                            <td>
+                                {{ nivel.paralelo  }}<br>
+                                {% if nivel.cerrado %}
+                                    <span class='badge text-bg-danger'>CERRADO</span>
+                                {% endif %}
+                            </td>
+                            <td style='text-align: center'>{{ nivel.total_matriculados }}</td>
+                            <td style='text-align: center'>{{ nivel.total_materias_abiertas }}</td>
+                            <td style='text-align: center'>{{ nivel.total_materias_cerradas }}</td>
+                            <td>{{ nivel.sesion.nombre }}<br>{{ nivel.modalidad }}</td>
+                            <td style='text-align: center;'>{{ nivel.inicio|date:'Y-m-d' }}<br>{{ nivel.fin|date:'Y-m-d' }}</td>
+                            <td style='text-align: center;'>{{ nivel.fechacierre|date:'Y-m-d' }}</td>
+                            <td style='text-align: center;'>{{ nivel.fechatopematricula|date:'Y-m-d' }}</td>
+                            <td style='text-align: center;'>{{ nivel.fechatopematriculaex|date:'Y-m-d' }}</td>
+                            <td style='text-align: center;'>{{ nivel.fechatopematriculaes|date:'Y-m-d' }}</td>
+                            <td style='text-align: center;'>
+                                {% if nivel.distributivoaprobado %}
+                                    <div class="badge bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title='Estado Distributivo'>APROBADO</div>
+                                {% else %}
+                                    <div class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title='Estado Distributivo'>POR APROBAR</div>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if nivel.aprobadofinanciero %}
+                                    <div class="badge bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title='Validado por Financiero'>APROBADO</div>
+                                {% else %}
+                                    <div class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Validado por Financiero">POR APROBAR</div>
+                                {% endif %}  
+                            </td>
+                            <td style="text-align: center">
+                                <a href='/niveles?action=materias&id={{ nivel.id }}' class='btn btn-ssm btn-success btn-form' ><i class='icon-list'></i> Materias</a>
+                            </td>
+                            <td style="text-align: center">
+                                <a href='/matriculas?action=matricula&id={{ nivel.id }}' class='btn btn-ssm btn-primary btn-form'><i class='icon-user'></i> Matriculados </a>
+                            </td>
+                            <td>
+                                <div class="btn-group dropdown">
+                                    <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                        {% if periodo.activo and perms.ctt.puede_modificar_niveles %}
+                                            <li class="smaller"><a class='formmodal dropdown-item' href="javascript:;" nhref='/niveles?action=edit&id={{ nivel.id }}'><i class='icon-edit'></i> Editar</a></li>
+                                        {% endif %}
+                                        {% if perms.ctt.puede_modificar_datos_financieros %}
+                                            {% if not nivel.aprobadofinanciero %}
+                                                <li class="smaller"><a href="javascript:;" nhref='/niveles?action=aprobarfinanciero&id={{ nivel.id }}' class="btn-form confirmacionmodal dropdown-item"><i class="icon-check"></i> Aprobar Financiero</a></li>
+                                            {% else %}
+                                                <li class="smaller"><a href="javascript:;" nhref='/niveles?action=desaprobarfinanciero&id={{ nivel.id }}' class="btn-form confirmacionmodal dropdown-item"><i class="icon-check"></i> Desaprobar Financiero</a></li>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if perms.ctt.puede_modificar_niveles %}
+                                            {% if not nivel.cerrado %}
+                                                <li class="smaller"><a href='/niveles?action=nivelesmatricula&id={{ nivel.id }}' class="dropdown-item"><i class='icon-list'></i> Nivel Matrícula</a></li>
+                                                {% if perms.ctt.puede_aprobar_distributivo and not nivel.distributivoaprobado %}
+                                                    <li class="smaller"><a href="javascript:;" nhref='/niveles?action=aprobardistributivo&id={{ nivel.id }}' class="btn-form confirmacionmodal dropdown-item"><i class="icon-check"></i> Aprobar Distributivo</a></li>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if not nivel.cerrado %}
+                                                <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/niveles?action=cerrarnivel&id={{ nivel.id }}"><i class="icon-unlock"></i> Cerrar</a></li>
+                                            {% else %}
+                                                <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/niveles?action=abrirnivel&id={{ nivel.id }}"><i class="icon-lock"></i> Abrir</a></li>
+                                            {% endif %}
+                                            <li class="dropdown smaller dropstart">
+                                                <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Reportes</a>
+                                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                                    {% if reporte_0 %}
+                                                        <li class="smaller"><a class="reportedirecto dropdown-item" href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&nivel={{ nivel.id }}&tiporeporte= {{ reporte.tiporeporte }}"><i class="icon-print"></i> Matriculados</a></li>
+                                                    {% endif %}
+                                                </ul>
+                                            </li>
+                                            {% if nivel.puede_eliminarse %}
+                                                <li class="dropdown-divider"></li>
+                                                <li class="smaller"><a href="javascript:;" nhref='/niveles?action=del&id={{ nivel.id }}' class='eliminacionmodal dropdown-item'><i class='icon-remove'></i> Eliminar</a></li>
+                                            {% endif %}
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="20">NO EXISTEN DATOS</td>
+                        </tr>
+                    {% endfor %}
+                {% endwith %}
+            </table>
+        </div>
+    </div>
+{% endblock %}

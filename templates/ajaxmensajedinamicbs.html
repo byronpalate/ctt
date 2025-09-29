@@ -1,0 +1,283 @@
+<div id="ajaxmensajedinamicbs"></div>
+
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <!-- Encabezado del modal -->
+        <div class="modal-header">
+            <h4>Nuevo mensaje</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Cuerpo del modal -->
+        <div class="modal-body" >
+            <div class='row'>
+                <div class="col-12">
+                    <form id="formensaje" style="margin: 0">
+                        <h6>Grupos de contacto</h6>
+                        <div style="padding-top: 5px; padding-bottom: 5px; overflow: auto" id="gruposcontacto">
+                            {% for grupocontacto in gruposcontacto %}
+                                <div class="btn-group destinatario" role="group" style="margin-right: 3px; margin-bottom: 2px; margin-left: 0; float: left" id="des_{{ grupocontacto }}">
+                                    <a class="btn btn-sm btn-primary">{{ grupocontacto }}</a>
+                                    <a class="btn btn-sm btn-info gruposcontacto" href="javascript:;" idp="{{ grupocontacto }}"><i class="icon-list"></i></a>
+                                </div>
+                            {% endfor %}
+                            <div style="width: 100%; overflow: auto" id="contenigogrupo"></div>
+                        </div>
+                        <h6>Contacto(s)</h6>
+                        <div style="width: 100%">
+                            <input type="text" class="form-control" id="busquedapersonamensaje" style="width: 100%" placeholder="Buscar">
+                        </div>
+                        <h6>Destinatario(s)</h6>
+                        <div style="width: 100%; overflow: auto" id="destinatarios">
+                            {% for destinatario in destinatarios %}
+                                <div class="btn-group destinatario" idp="{{ destinatario.id }}" role="group" style="margin-right: 3px; margin-bottom: 2px; margin-left: 0; float: left" id="des_{{ destinatario.id }}">
+                                    <a class="btn btn-sm btn-primary">{{ destinatario.nombre_completo }}</a>
+                                    <a class="btn btn-sm btn-danger deldestinatario" href="javascript:;" idp="{{ destinatario.id }}"><i class="icon-remove"></i></a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div style="width: 100%">
+                            <input type="text" style="width: 100%; text-transform: none" name="asuntonuevomensaje" id="asuntonuevomensaje" maxlength="100" placeholder="Asunto" class="form-control">
+                        </div>
+                        <div style="width: 100%">
+                            <textarea placeholder="Contenido" style="width: 100%; text-transform: none" name="contenidonuevomensaje" id="contenidonuevomensaje" rows="5" class="form-control"></textarea>
+                        </div>
+                        <h6>Adjunto</h6>
+                        <div style="width: 100%" id="attachtments">
+                            <a class="btn btn-success btn-sm" id="addattachtment"><i class="icon-plus"></i></a><br>
+                        </div>
+                        <input type="hidden" name="a" id="a" value="sendmensaje">
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pie de página del modal -->
+        <div class="modal-footer py-1" id="formmodal_buttons">
+            <a href="javascript:;" class="btn btn-sm btn-success btn-form" id="formbutton" tabindex="0"><i class="icon-envelope"></i> Enviar</a>
+            <a tabindex="0" href="javascript:;" id="formmodal_mensaje_cancel" class="btn btn-sm btn-danger"><i class="icon-remove"></i> Cerrar</a>
+        </div>
+    </div> <!-- Fin de .modal-content -->
+</div> <!-- Fin de .modal-dialog -->
+
+<script type="text/javascript">
+    var lista_items1 = [];
+    var archivosatch = 1;
+    $(function() {
+
+        $("#formmodal_mensaje_cancel").click(function(){
+            $('#mensajemodaldinamico').modal('hide');
+        });
+
+        actualizar_lista = function () {
+            lista_items1 = [];
+            $(".deldestinatario").each(function () {
+                var idp = $(this).attr('idp');
+                var item = {
+                    id: idp
+                };
+                lista_items1.push(item);
+            });
+        };
+
+
+        envioformulario = function(){
+            if ($("#asuntonuevomensaje").val().trim().length === 0){
+                $("#asuntonuevomensaje").focus();
+            } else if ($("#contenidonuevomensaje").val().trim().length === 0){
+                $("#contenidonuevomensaje").focus();
+            } else if (lista_items1.length === 0) {
+
+            } else {
+                bloqueointerface();
+                var formdata = new FormData($("#formensaje")[0]);
+                formdata.append("lista_items1", JSON.stringify(lista_items1));
+                try {
+                    formdata.append("csrfmiddlewaretoken", csrftoken);
+                } catch (err){
+                    console.log(err.message);
+                }
+                $.ajax({
+                    type: "POST",
+                    url: "/api",
+                    data: formdata,
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            desbloqueointerface();
+                            if (location.pathname === '/mailbox') {
+                                location.href = "/mailbox?action=enviados";
+                            }else{
+                                $("#mensajemodaldinamico").modal('hide');
+                            }
+                        } else {
+                            desbloqueointerface();
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        $("#formmodal_buttons").show();
+                    },
+                    dataType: "json",
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+        };
+
+        $("#formbutton").click(function(){
+            envioformulario();
+        });
+
+        conectar_eliminar_destinatrios = function () {
+            $(".deldestinatario").click(function () {
+                var id = $(this).attr('idp');
+                $(".individual_"+id).prop('checked', false);
+                $("#des_"+id).remove();
+                actualizar_lista();
+            });
+        };
+
+        var timeout;
+
+        buscar_persona = function(query, process) {
+            if(timeout){ clearTimeout(timeout);}
+            timeout = setTimeout(function() {
+                $.ajax({
+                    type: "POST",
+                    url: "/api",
+                    data: {'a':'data', 'model': 'Persona:::10','p': 1, 'q': query, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            $("#busquedapersonamensaje").get(0).results = data.data;
+                            var listing = [];
+                            for (var i in data.data) {
+                                var dato = data.data[i];
+                                listing.push(dato.name);
+                            }
+                            process(listing);
+                        }
+                    },
+                    dataType: "json"
+                });
+            },500);
+        };
+
+        $('#busquedapersonamensaje').typeahead({source: buscar_persona, updater: function(item) {
+                var results = $("#busquedapersonamensaje").get(0).results;
+                for (var i in results) {
+                    var datos = results[i];
+                    if (item === datos.name) {
+                        add_contact(datos.alias[0], datos.alias[1]);
+                    }
+                }
+                return "";
+            }});
+
+        conectar_eliminar_destinatrios();
+
+        $(".gruposcontacto").click(function () {
+            var grupo = $(this).attr('idp');
+            bloqueointerface();
+            $.ajax({
+                type: "POST",
+                url: "/api",
+                data: {'a':'integrantegrupo', 'grupo': grupo, 'csrfmiddlewaretoken': csrftoken},
+                success: function(data) {
+                    desbloqueointerface();
+                    $("#contenigogrupo").html(data.html);
+                    conectar_grupos_mensaje();
+                    comprobar_seleccionados();
+                },
+                error: function() {
+                    desbloqueointerface();
+                },
+                dataType: "json"
+            });
+        });
+
+
+
+        add_contact = function (id, nombre) {
+            if ($("#des_"+id).length <= 0) {
+                $("#destinatarios").append('<div class="btn-group destinatario" idp="' + id + '" role="group" style="margin-right: 3px; margin-bottom: 2px; margin-left: 0; float: left" id="des_' + id + '">' +
+                    '<a class="btn btn-sm btn-primary">' + nombre + '</a>' +
+                    '<a class="btn btn-sm btn-danger deldestinatario" href="javascript:;" idp="' + id + '"><i class="icon-remove"></i></a>' +
+                    '</div>');
+            }
+            $(".individual_"+id).prop('checked', true);
+            actualizar_lista();
+            conectar_eliminar_destinatrios();
+        };
+
+        remove_contact = function (id) {
+            $("#des_"+id).remove();
+            $(".individual_"+id).prop('checked', false);
+        };
+
+        conectar_grupos_mensaje = function () {
+            $(".gruposelectormensaje").unbind('click');
+            $(".gruposelectormensaje").bind('click', function () {
+                var id = $(this).attr('ida');
+                $('.hidegrupos').hide();
+                if ($(this).attr('visible') === 'true'){
+                    $(this).attr({'visible': 'false'});
+                } else {
+                    $('.grupo_'+id).show();
+                    $(this).attr({'visible': 'true'});
+                }
+            });
+
+            $(".todos_gruposelectormensaje").unbind('click');
+            $(".todos_gruposelectormensaje").bind('click', function () {
+                var id = $(this).attr('ida');
+                if ($(this).is(":checked")){
+                    $('.gruposelectormensaje_'+id).each(function () {
+                        var idp = $(this).attr('idp');
+                        var nombre = $("#nam_"+idp).html();
+                        $(this).prop('checked', true);
+                        add_contact(idp, nombre);
+                    });
+                } else {
+                    $('.gruposelectormensaje_'+id).each(function () {
+                        var idp = $(this).attr('idp');
+                        $(this).prop('checked', false);
+                        remove_contact(idp);
+                    });
+                }
+            });
+            $(".individual_selectormensaje").unbind('click');
+            $(".individual_selectormensaje").bind('click', function () {
+                var idp = $(this).attr('idp');
+                if ($(this).is(":checked")){
+                    var nombre = $("#nam_"+idp).html();
+                    $(this).prop('checked', true);
+                    add_contact(idp, nombre);
+                } else {
+                    $(this).prop('checked', false);
+                    remove_contact(idp);
+                }
+            });
+
+        };
+
+        comprobar_seleccionados = function () {
+            $(".destinatario").each(function () {
+                $(".individual_"+$(this).attr('idp')).prop('checked', true);
+            });
+        };
+
+        actualizar_lista();
+
+        $("#addattachtment").click(function () {
+            $("#attachtments").append('<input class="filesmensaje" name="archivo' + archivosatch +'" type="file">');
+            archivosatch += 1;
+            $(":file").filestyle({input: false});
+            $(".bootstrap-filestyle").css({'float': 'left', 'margin-top': '2px', 'margin-right': '2px'})
+        });
+
+    });
+</script>

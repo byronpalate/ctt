@@ -1,0 +1,198 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/inscripciones?action=record&id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Record: {{ record }}</h4>
+        </div>
+    </div>
+    {% if not inscripcion.egresado and not inscripcion.graduado %}
+        {% if perms.ctt.puede_modificar_informacion_academica_restringida %}
+            <div class='row mb-2'>
+                <div class='col-12'>
+                    <a href="javascript:;" nhref="/inscripciones?action=addhistorico&id={{ inscripcion.id }}&idr={{ record.id }}" class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar</a>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Asignatura</th>
+                    <th style="width: 50px; text-align: center;">Cred.</th>
+                    <th style="width: 40px; text-align: center;">Hrs.</th>
+                    <th style="width: 250px;">Profesor/Observaciones</th>
+                    <th style="width: 30px; text-align: center;">Val.</th>
+                    <th style="width: 50px; text-align: center;">Nota</th>
+                    <th style="width: 50px; text-align: center;">Asist.(%)</th>
+                    <th style="width: 80px; text-align: center;">Fecha</th>
+                    <th style="width: 35px; text-align: center;">Hom.</th>
+                    <th style="width: 35px; text-align: center;">Libre Conf.</th>
+                    <th style="width: 35px; text-align: center;">Optat.</th>
+                    <th style="width: 35px; text-align: center;">Cred.</th>
+                    <th style="width: 35px; text-align: center;">Prom.</th>
+                    <th style="width: 80px; text-align: center;">Estado</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for historico in historicos %}
+                    <tr>
+                        <td>
+                            {{ historico.asignatura }}<br>
+                            {% if historico.asignaturamalla %}
+                                <span class="badge text-bg-info smaller">{{ historico.asignaturamalla.nivelmalla }}</span>
+                            {% elif historico.modulomalla  %}
+                                <span class="badge text-bg-warning smaller">MÓDULO</span>
+                            {% else %}
+                                <span class="badge text-bg-danger">NO CONSTA EN MALLA</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">{{ historico.creditos|floatformat:4 }}</td>
+                        <td style="text-align: center;">{{ historico.horas|floatformat:1 }}</td>
+                        <td>
+                            {% if historico.materiaregular %}
+                                {% if historico.es_movilidad %}
+                                    <span class="badge text-bg-dark">M</span>
+                                {% else %}
+                                    <span class="badge text-bg-success">D</span>
+                                {% endif %}
+                                <span class="smaller">
+                                    {% if historico.materiaregular.nivel.periodo.es_grado %}
+                                        {{ historico.materiaregular.nivel.periodo.nombre }}
+                                    {% else %}
+                                        {{ historico.materiaregular.nivel.paralelo }}
+                                    {% endif %}
+                                    - {{ historico.materiaregular.profesor_principal|default_if_none:"" }}</span><br>
+                            {% elif historico.materiacurso %}
+                                <span class="badge text-bg-success">C</span>
+                                <span class="smaller">{% if historico.materiacurso.curso.periodo.es_grado %} {{ historico.materiacurso.curso.periodo.nombre }} - {% endif %}{{ historico.materiacurso.profesor|default_if_none:"" }}</span><br>
+                            {% elif historico.materiacursotitulacion %}
+                                <span class="badge text-bg-success">T</span>
+                                <span class="smaller">{% if historico.materiacursotitulacion.curso.periodo.es_grado %} {{ historico.materiacursotitulacion.curso.periodo.nombre }} - {% endif %}{{ historico.materiacursotitulacion.profesor|default_if_none:"" }}</span><br>
+                            {% endif %}
+                            <span class="smaller">{{ historico.observaciones|default_if_none:"" }}</span>
+                        </td>
+                        <td style="text-align: center;">{% if historico.valoracioncalificacion %}<span class="tu" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ historico.valoracioncalificacion.categoria }}">{{ historico.valoracioncalificacion.nominacion }}</span>{% endif %}</td>
+                        <td style="text-align: center;">{{ historico.nota|floatformat:2 }}</td>
+                        <td style="text-align: center;">{{ historico.asistencia|floatformat:0 }}%</td>
+                        <td style="text-align: center;">{{ historico.fecha|date:"Y-m-d"  }}</td>
+                        <td style="text-align: center;">
+                            {% if historico.homologada or historico.convalidacion %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Homologación {% if historico.homologada %}Interna{% else %}Externa{% endif %}">{% if historico.homologada %}I{% else %}E{% endif %}</span>
+                                {% if historico.datos_homologacion and historico.datos_homologacion.archivo %}
+                                    <a class="tu" href="{{ historico.datos_homologacion.archivo.url }}" target="_blank" data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar"><i class="icon-arrow-down"></i></a>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Homologación">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if historico.libreconfiguracion %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Libre configuración">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Libre configuración">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if historico.optativa %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Optativa">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Optativa">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if historico.validacreditos %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Créditos">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Créditos">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if historico.validapromedio %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Promedio">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Promedio">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if historico.es_nivelacion %}
+                                {% if muestra_estado_nivelacion %}
+                                    <span class='badge {% if historico.noaplica %}text-bg-warning{% else %}{% if historico.aprobada %}text-bg-success{% else %}text-bg-danger{% endif %}{% endif %}'>{% if historico.noaplica %}NO APLICA{% else %}{% if historico.aprobada %}APROBADA{% else %}REPROBADA{% endif %}{% endif %}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class='badge {% if historico.noaplica %}text-bg-warning{% else %}{% if historico.aprobada %}text-bg-success{% else %}text-bg-danger{% endif %}{% endif %}'>{% if historico.noaplica %}NO APLICA{% else %}{% if historico.aprobada %}APROBADA{% else %}REPROBADA{% endif %}{% endif %}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {#                        ***********Menu solo para PABLO ALVAREZ *********************#}
+                            {#                        {% if menusinrestriccion %}#}
+                            {#                        <div class="btn-group dropdown">#}
+                            {#                            <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>#}
+                            {#                            <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">#}
+                            {#                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=edithistorico&id={{ historico.id }}'><i class="icon-edit"></i> Editar</a></li>#}
+                            {#                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=cambiorecordhomologacion&id={{ historico.id }}'><i class="icon-list"></i> Homologación</a></li>#}
+                            {#                                    <li class="dropdown-divider"></li>#}
+                            {#                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delhistorico&id={{ historico.id }}'><i class="icon-remove"></i> Eliminar</a></li>#}
+                            {#                            </ul>#}
+                            {#                        </div>#}
+                            {#                        {% endif %}#}
+                            {#                        ******************************#}
+                            {% if perms.ctt.puede_modificar_informacion_academica_restringida %}
+                                {% if not inscripcion.graduado %}
+                                    {% if historico.recordacademico.es_ingles and editanotashistoricoingles %}
+                                        <div class="btn-group dropdown">
+                                            <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                            <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                                {% if historico.trabajotitulacionmalla or historico.materiahomologacion or historico.materiacursotitulacion or historico.materiacurso or historico.materiaregular %}
+
+                                                {% else %}
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=edithistorico&id={{ historico.id }}'><i class="icon-edit"></i> Editar</a></li>
+{#                                                    {% if historico.materiahomologacion %}#}
+                                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=cambiorecordhomologacion&id={{ historico.id }}'><i class="icon-list"></i> Homologación</a></li>
+{#                                                    {% endif %}#}
+                                                    <li class="dropdown-divider"></li>
+                                                {% endif %}
+                                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delhistorico&id={{ historico.id }}'><i class="icon-remove"></i> Eliminarrr</a></li>
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                    {% if not historico.recordacademico.es_ingles and editanotashistorico %}
+                                        <div class="btn-group dropdown">
+                                            <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                            <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                                {% if historico.trabajotitulacionmalla or historico.materiahomologacion or historico.materiacursotitulacion or historico.materiacurso or historico.materiaregular %}
+
+                                                {% else %}
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=edithistorico&id={{ historico.id }}'><i class="icon-edit"></i> Editar</a></li>
+                                                    {#                                                {% if historico.materiahomologacion %}#}
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=cambiorecordhomologacion&id={{ historico.id }}'><i class="icon-list"></i> Homologación</a></li>
+                                                    {#                                                {% endif %}#}
+                                                    <li class="dropdown-divider"></li>
+                                                {% endif %}
+                                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delhistorico&id={{ historico.id }}'><i class="icon-remove"></i> Eliminar</a></li>
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

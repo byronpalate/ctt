@@ -1,0 +1,23 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_inicio, #id_fin, #id_fechatopematricula, #id_fechatopematriculaext,#id_fechatopematriculaesp").datepicker({format:"dd-mm-yyyy"});
+            $("#id_inicio,#id_fin,#id_fechatopematricula, #id_fechatopematriculaex, #id_capacidadmatricula").addClass("validate[required]");
+
+            $("#id_capacidad").blur(function(){
+                numerico($(this), 0, 0, 0);
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/niveles{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/niveles?action=grupospracticas&id={{ grupo.materia.id }}{% endblock %}
+
+{% block formaction %}/niveles{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editgrupopractica'/>
+    <input type='hidden' name='id' value='{{ grupo.id }}'/>
+{% endblock %}
+{% block formback %}/niveles?action=grupospracticas&id={{ grupo.materia.id }}{% endblock %}
