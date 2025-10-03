@@ -424,7 +424,7 @@ def panel(request):
                 if encuestas:
                     return HttpResponseRedirect('/com_responderencuestas?action=responder&id=' + str(encuestas.first().id))
             data['grupos'] = misgrupos
-            # LISTADO DE ESTUDIANTES Y PROFESORES QUE ESTAN DE CUMPLEAÑOS
+            # LISTADO DE ESTUDIANTES Y PROFESORES QUE ESTAN DE CUMPLEAAÑOS
             data['ins_cumple'] = Inscripcion.objects.filter(persona__nacimiento__day=hoy.day, persona__nacimiento__month=hoy.month, matricula__nivel__fin__gte=hoy).distinct()
             data['prof_cumple'] = Profesor.objects.filter(persona__nacimiento__day=hoy.day, persona__nacimiento__month=hoy.month, activo=True, profesormateria__materia__nivel__fin__gte=hoy).distinct()
             data['actividades'] =  actividades = Actividad.objects.filter(inicio__lte=hoy, fin__gte=hoy)
