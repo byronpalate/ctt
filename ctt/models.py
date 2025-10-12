@@ -1334,7 +1334,6 @@ class Parroquia(ModeloBase):
     canton = models.ForeignKey(Canton, blank=True, null=True, verbose_name=u"Canton", on_delete=models.CASCADE)
     tipo = models.ForeignKey(TipoParroquia, blank=True, null=True, on_delete=models.CASCADE)
     nombre = models.CharField(default='', max_length=100, verbose_name=u"Nombre")
-    codseven = models.CharField(max_length=10, default='', verbose_name=u'Codigo parroquia Seven')
 
     def __str__(self):
         return u'%s' % self.nombre
@@ -2239,42 +2238,6 @@ class Persona(ModeloBase):
 
     def cantidadinscritos(self, periodo):
         return Inscripcion.objects.filter(personainscribio=self, periodo=periodo).count()
-
-    def paisSeven(self):
-        if self.pais is None:
-            return ''
-        pais = Pais.objects.filter(pk=self.pais.id).first()
-        if pais is None or pais.codseven is None:
-            return ''
-        else:
-            return pais.codseven
-
-    def provinciaSeven(self):
-        if self.provincia is None:
-            return ''
-        provincia = Provincia.objects.filter(pk=self.provincia.id).first()
-        if provincia is None or provincia.codseven is None:
-            return ''
-        else:
-            return provincia.codseven
-
-    def cantonSeven(self):
-        if self.canton is None:
-            return ''
-        canton = Canton.objects.filter(pk=self.canton.id).first()
-        if canton is None or canton.codseven is None:
-            return ''
-        else:
-            return canton.codseven
-
-    def parroquiaSeven(self):
-        if self.parroquia is None:
-            return ''
-        parroquia = Parroquia.objects.filter(pk=self.parroquia.id).first()
-        if parroquia is None or parroquia.codseven is None:
-            return ''
-        else:
-            return parroquia.codseven
 
     def mis_datosbancarios(self):
         return self.informacionbancariapersona_set.first()
