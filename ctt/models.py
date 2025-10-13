@@ -2263,9 +2263,6 @@ class Persona(ModeloBase):
         self.libretamilitar = null_to_text(self.libretamilitar, lower=True)
         super(Persona, self).save(*args, **kwargs)
 
-
-
-
 class Sede(ModeloBase):
     nombre = models.CharField(default='', max_length=100, verbose_name=u'Nombre')
     provincia = models.ForeignKey(Provincia, blank=True, null=True, verbose_name=u"Provincia", on_delete=models.CASCADE)
