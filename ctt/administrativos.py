@@ -30,8 +30,6 @@ def view(request):
     data = {}
     adduserdata(request, data)
     persona = request.session['persona']
-    if persona.id in PERM_DIRECTOR_SIS:
-        data['PERM_DIRECTOR_SIS'] = True
     if request.method == 'POST':
         action = request.POST['action']
 
