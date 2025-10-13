@@ -1,0 +1,122 @@
+{% extends "adm_institucion/4.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+            var envio = false;
+
+            $('.lmsactivo').change(function () {
+                if (!envio){
+                    var elemento = $(this);
+                    var id = elemento.attr('ide');
+                    var valor = elemento.is(':checked');
+                    envio = true;
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'activarlms', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                if (elemento.is(':checked')){
+                                    elemento.prop('checked', false);
+                                } else {
+                                    elemento.prop('checked', true);
+                                }
+                                envio = false;
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            } else {
+                                envio = false;
+                            }
+                        },
+                        error: function() {
+                            if (elemento.is(':checked')){
+                                elemento.prop('checked', false);
+                            } else {
+                                elemento.prop('checked', true);
+                            }
+                            envio = false;
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    {% if perms.ctt.puede_modificar_parametros_institucion %}
+        <div class='row'>
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/adm_institucion?action=addlms" class='formmodal btn btn-sm mb-2 btn-success'><i class="icon-plus tu"></i>Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+    <div class='row'>
+        <div class='col-12'>
+            <table class="table table-bordered">
+                <thead class="table-light">
+                <tr class="autoheight">
+                    <th>Nombre</th>
+                    <th>Host</th>
+                    <th>Puerto</th>
+                    <th>Tipo</th>
+                    <th>Key</th>
+                    <th style="width: 80px;"></th>
+                    <th style="width: 80px;"></th>
+                    <th style="width: 120px;"></th>
+                    <th style="width: 30px;"><div class="rotate" style="margin: 5px; "><span badge-height="100" class="badge text-bg-primary" style="white-space: nowrap;">Bloqueo por deuda</span></div></th>
+                    <th style="width: 30px;"><div class="rotate" style="margin: 5px; "><span badge-height="50" class="badge text-bg-primary" style="white-space: nowrap;">Activo</span></div></th>
+                    <th style="width: 30px;"><div class="rotate" style="margin: 5px; "><span badge-height="50" class="badge text-bg-primary" style="white-space: nowrap;">Bloqueo activo</span></div></th>
+                    <th style="width: 80px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for lms in lmsall %}
+                    <tr>
+                        <td>{{ lms.nombre }}</td>
+                        <td>{{ lms.host }}</td>
+                        <td>{{ lms.port }}</td>
+                        <td>{{ lms.tipolms }}</td>
+                        <td>{{ lms.key }}</td>
+                        <td style="text-align: center">
+                            <a class="btn btn-ssm btn-success" href="/adm_institucion?action=plantillaslms&id={{ lms.id }}"><i class="icon-list"></i> Plantillas</a>
+                        </td>
+                        <td style="text-align: center">
+                            <a class="btn btn-ssm btn-success" href="/adm_institucion?action=modeloslms&id={{ lms.id }}"><i class="icon-list"></i> Modelos</a>
+                        </td>
+                        <td style="text-align: center">
+                            <a class="btn btn-ssm btn-success" href="/adm_institucion?action=bloqueadoslms&id={{ lms.id }}"><i class="icon-list"></i> Bloqueados - {{ lms.cantidad_bloqueados }}</a>
+                        </td>
+                        <td>
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="Activo">Si</span>
+                        </td>
+                        <td style="padding: 0;">
+                            <div class="form-check form-switch" style="margin-left: 0.4em; margin-top: 1.1em;">
+                                <input class=" form-check-input lmsactivo" ide="{{ lms.id }}" {% if lms.activo %}checked{% endif %} type="checkbox" role="switch" id="flexSwitchCheckDefault">
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="Activo">Si</span>
+                        </td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                <a class="formmodal btn btn-ssm btn-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editlms&id={{ lms.id }}"><i class="icon-edit"></i></a>
+                                <a href="javascript:;" nhref="/adm_institucion?action=dellms&id={{ lms.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

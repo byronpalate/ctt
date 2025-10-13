@@ -1,0 +1,75 @@
+{% extends "adm_institucion/4.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    <table class="table table-bordered">
+        <thead class="table-light">
+        <tr>
+            <th style="width: 100px; text-align: center">Horario estricto</th>
+            <th style="width: 100px; text-align: center">Abrir materias en fecha</th>
+            <th style="width: 100px; text-align: center">Clases contínuas automáticas</th>
+            <th style="width: 100px; text-align: center">Cierre automático de clases</th>
+            <th style="width: 120px; text-align: center">Minutos de apertura antes del inicio de clases</th>
+            <th style="width: 120px; text-align: center">Minutos de apertura despues de inicio clases</th>
+            <th style="width: 120px; text-align: center">Minutos de cierre antes de terminación</th>
+            <th style="width: 120px; text-align: center">Egresa con malla completa</th>
+            <th style="width: 70px"></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td style="text-align: center">
+                {% if institucion.horarioestricto %}
+                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horario estricto">Si</span>
+                {% else %}
+                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horario estricto">No</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center">
+                {% if institucion.abrirmateriasenfecha %}
+                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Abrir materia en fecha">Si</span>
+                {% else %}
+                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Abrir materia en fecha">No</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center">
+                {% if institucion.clasescontinuasautomaticas %}
+                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Clases continuas automaticas">Si</span>
+                {% else %}
+                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Clases continuas automaticas">No</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center">
+                {% if institucion.clasescierreautomatico %}
+                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cierre de clases automatico">Si</span>
+                {% else %}
+                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cierre de clases automatico">No</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center">{{ institucion.minutosapeturaantes }}</td>
+            <td style="text-align: center">{{ institucion.minutosapeturadespues }}</td>
+            <td style="text-align: center">{{ institucion.minutoscierreantes }}</td>
+            <td style="text-align: center">
+                {% if institucion.egresamallacompleta %}
+                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Egreso automatico">Si</span>
+                {% else %}
+                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Egreso automatico">No</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center">
+                {% if perms.ctt.puede_modificar_parametros_institucion %}
+                    {% if not turno.en_uso %}
+                        <a href="javascript:;" nhref="/adm_institucion?action=editparametrosclases" class="btn btn-ssm btn-success tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i> Editar</a>
+                    {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+        </tbody>
+    </table>
+{% endblock %}

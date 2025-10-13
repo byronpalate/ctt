@@ -1,0 +1,60 @@
+{% extends "adm_institucion/2.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    <div class="row">
+        <div class="col-12">
+            {% if perms.ctt.puede_modificar_parametros_institucion %}
+                <a href="javascript:;" nhref="/adm_institucion?action=addcuenta" class="btn btn-sm mb-2 btn-success formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+        </div>
+    </div>
+    <table class="table table-bordered">
+        <thead class="table-light">
+        <tr>
+            <th>Banco</th>
+            <th style="width: 250px; ">Tipo</th>
+            <th style="width: 200px;">Número</th>
+            <th style="width: 300px;">Representante</th>
+            <th style="width: 70px; text-align: center">Activa</th>
+            <th style="width: 100px; text-align: center"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for c in cuentas %}
+            <tr>
+                <td>{{ c.banco }}</td>
+                <td>{{ c.tipocuenta }}</td>
+                <td>{{ c.numero }}</td>
+                <td>{{ c.representante }}</td>
+                <td style="text-align: center">
+                    <span class="badge {% if c.activo %}text-bg-success{% else %}text-bg-danger{% endif %}">{% if c.activo %} Si{% else %}No{% endif %}</span>
+                </td>
+                <td style="text-align: center">
+                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                        <a href="javascript:;" nhref="/adm_institucion?action=editcuenta&id={{ c.id }}" class="btn btn-ssm btn-success tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                        {% if not c.en_uso %}
+                            <a href="javascript:;" nhref="/adm_institucion?action=delcuenta&id={{ c.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal " data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                        {% endif %}
+                        {% if c.activo %}
+                            <a href="javascript:;" nhref="/adm_institucion?action=desactivarcuenta&id={{ c.id }}" class="btn btn-ssm btn-danger tu confirmacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Deshabilitar"><i class="icon-lock"></i></a>
+                        {% else %}
+                            <a href="javascript:;" nhref="/adm_institucion?action=activarcuenta&id={{ c.id }}" class="btn btn-ssm btn-success tu confirmacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitar"><i class="icon-unlock"></i></a>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="20">NO EXISTEN DATOS</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

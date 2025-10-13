@@ -1,0 +1,131 @@
+{% extends "adm_institucion/2.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    {% if perms.ctt.puede_modificar_parametros_institucion %}
+        <div class="row">
+            <div class="col-12">
+                <a href="javascript:;" nhref="/adm_institucion?action=addpuntoventa" class='formmodal btn btn-sm mb-2 btn-success'><i class="icon-plus tu"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+    {% for punto in puntoventa %}
+        <table class="table table-bordered">
+            <thead class="table-light">
+            <tr>
+                <th colspan="2">Punto de Venta: {{ punto }}
+                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                        <a style="margin-left: 5px; float: right" href="javascript:;" nhref="/adm_institucion?action=editpunto&id={{ punto.id }}" class="btn btn-ssm btn-success tu pull-right formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                        {% if not punto.en_uso %}
+                            <a style="margin-left: 5px;" href="javascript:;" nhref="/adm_institucion?action=delpunto&id={{ punto.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal pull-right" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                        {% endif %}
+                    {% endif %}
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td style="width: 50%">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px; text-align: center">Imprime<br>Factura</th>
+                            <th style="width: 80px; text-align: center">Secuencia<br>Factura</th>
+                            <th style="width: 150px;">Modelo Imp. Factura</th>
+                            <th style="width: 80px; text-align: center">Imprime<br>Recibo Pago</th>
+                            <th style="width: 80px; text-align: center">Secuencia<br>Recibo Pago</th>
+                            <th style="width: 150px;">Modelo Imp. Recibo Pago</th>
+                            <th style="width: 80px; text-align: center">Imprime<br>Nota crédito</th>
+                            <th style="width: 80px; text-align: center">Secuencia<br>Nota crédito</th>
+                            <th style="width: 150px;">Modelo Imp. Nota Créd.</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="text-align: center">
+                                {% if punto.imprimirfactura %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Imprime factura">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Imprime factura">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">{{ punto.secuenciafactura }}</td>
+                            <td>{{ punto.modeloimpresionfactura }}</td>
+                            <td style="text-align: center">
+                                {% if punto.imprimirrecibopago %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Imprime recibo de pago">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Imprime recibo de pago">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">{{ punto.secuenciarecibopago }}</td>
+                            <td>{{ punto.modeloimpresionrecibopago }}</td>
+                            <td style="text-align: center">
+                                {% if punto.imprimirnotacredito %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Imprime nota de credito">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Imprime nota de credito">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">{{ punto.secuencianotacredito }}</td>
+                            <td>{{ punto.modeloimpresionnotacredito }}</td>
+                            <td></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                        <tr>
+                            <th colspan="5">Cajero(s) del punto de Venta
+                                {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                    <a href="javascript:;" nhref="/adm_institucion?action=addcajero&id={{ punto.id }}" class="formmodal btn btn-sm btn-success pull-right"><i class="icon-plus tu"></i>Adicionar</a>
+                                {% endif %}
+                            </th>
+                        </tr>
+                        </thead>
+                        {% for cajero in punto.mis_cajeros %}
+                            <tr>
+                                <td colspan="2">{{ cajero.nombre }}: {{ cajero.persona }}</td>
+                                <td style="text-align: center; width: 80px">
+                                    {% if not cajero.en_uso %}
+                                        <span class="badge text-bg-success">SIN USO</span>{% else %}
+                                        <span class="badge text-bg-warning">EN USO</span>{% endif %}
+                                </td>
+                                <td style="text-align: center; width: 80px">
+                                    {% if cajero.activo %}
+                                        <span class="badge text-bg-success">ACTIVO</span>{% else %}
+                                        <span class="badge text-bg-warning">INACTIVO</span>{% endif %}
+                                </td>
+                                <td style="width: 40px; text-align: center">
+                                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                        {% if not cajero.en_uso %}
+                                            <a href="javascript:;" nhref="/adm_institucion?action=delcajero&id={{ cajero.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                        {% else %}
+                                            {% if cajero.activo %}
+                                                <a href="javascript:;" nhref="/adm_institucion?action=deshabilitarcajero&id={{ cajero.id }}" class="btn btn-ssm btn-danger tu confirmacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Deshabilitar"><i class="icon-lock"></i></a>
+                                            {% else %}
+                                                <a href="javascript:;" nhref="/adm_institucion?action=habilitarcajero&id={{ cajero.id }}" class="btn btn-ssm btn-success tu confirmacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitar"><i class="icon-unlock"></i></a>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="20">NO EXISTEN DATOS</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    {% endfor %}
+{% endblock %}

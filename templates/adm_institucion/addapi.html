@@ -1,0 +1,17 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_nombrecorto").addClass("validate[required]").css({'textTransform': 'none'});
+            $("#id_key, #id_logicaapi").css({'textTransform': 'none'});
+
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion?subseccion=1{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addapi'/>
+{% endblock %}
+{% block formback %}/adm_institucion?t=6{% endblock %}

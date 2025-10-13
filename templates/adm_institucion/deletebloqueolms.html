@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_institucion?action=bloqueolms&id={{ bloqueado.lms.id }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formactionvalue %}deletebloqueolms{% endblock %}
+{% block formobjectid %}{{ bloqueado.id }}{% endblock %}
+{% block formobjectname %}el bloqueo{% endblock %}
+{% block formobjectrepr %}{{ bloqueado }}{% endblock %}

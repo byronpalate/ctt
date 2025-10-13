@@ -1,0 +1,19 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_nombre").addClass("validate[required]");
+
+             $("#id_comienza, #id_termina").timepicker({minuteStep: 1,appendWidgetTo: 'body', showSeconds: false, showMeridian: false, defaultTime: false});
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_institucion?t=6&ac1=2{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion?t=6&ac1=2{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addsesion'/>
+{% endblock %}
+{% block formback %}/adm_institucion?t=6&ac1=2{% endblock %}

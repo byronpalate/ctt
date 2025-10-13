@@ -1,0 +1,613 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+
+{% block extrajavascript %}
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js?v={{ institucion.versionstaticsjs }}"></script>
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen"/>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(".fancybox").fancybox();
+        });
+        var envio = false;
+        $(function () {
+
+            $(".verificarsecretaria").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('mdi');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_institucion",
+                    data: {'action': 'verificarsecretaria', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result !== 'ok') {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $("#contribuyente").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_contribuyenteespecial', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#contabilidad").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_contabilidad', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#costoperiodo").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_costoperiodo', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#costoenmalla").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_costoenmalla', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#factura").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_factura', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#asistencias").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_asistencias', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#notas").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_notas', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#malla").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_malla', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#mishorarios").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_horarios', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#documentos").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_documentos', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#cronograma").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_cronograma', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#matriculacion").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_matriculacion', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#solicitud").change(function () {
+                if (!envio) {
+                    var elemento = $(this);
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    envio = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'act_solicitud', 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                            envio = false;
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.prop('checked', !valor);
+                            envio = false;
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $('.tipourl').click(function () {
+                bloqueointerface();
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(':checked');
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_institucion",
+                    data: {'action': 'tipourl', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block heading %}
+
+{% endblock %}
+{% block atras %}/{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class="col-12">
+        <div class="tabbable col-12">
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item " role="presentation">
+                    <button class="nav-link {% if t == 1 %}active{% endif %}" id="tab1" data-bs-toggle="tab"
+                            data-bs-target="#tab-1"
+                            type="button" role="tab" aria-controls="tab-1" aria-selected="true">Sedes / Coordinaciones
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if t == 2 %}active{% endif %}" id="tab2" data-bs-toggle="tab"
+                            data-bs-target="#tab-2"
+                            type="button" role="tab" aria-controls="tab-2" aria-selected="false">Cargos Institución
+                    </button>
+                </li>
+                <li class="nav-item " role="presentation">
+                    <button class="nav-link {% if t == 4 %}active{% endif %}" id="tab3" data-bs-toggle="tab"
+                            data-bs-target="#tab-3"
+                            type="button" role="tab" aria-controls="tab-3" aria-selected="false">Datos Financieros
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if t == 5 %}active{% endif %}" id="tab4" data-bs-toggle="tab"
+                            data-bs-target="#tab-4"
+                            type="button" role="tab" aria-controls="tab-4" aria-selected="false">Biblioteca
+                    </button>
+                </li>
+                <li class="nav-item " role="presentation">
+                    <button class="nav-link {% if t == 6 %}active{% endif %}" id="tab5" data-bs-toggle="tab"
+                            data-bs-target="#tab-5"
+                            type="button" role="tab" aria-controls="tab-5" aria-selected="false">Datos Académicos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if t == 7 %}active{% endif %}" id="tab6" data-bs-toggle="tab"
+                            data-bs-target="#tab-6"
+                            type="button" role="tab" aria-controls="tab-6" aria-selected="false">Grupos / Permisos y
+                        Reportes
+                    </button>
+                </li>
+                <li class="nav-item " role="presentation">
+                    <button class="nav-link {% if t == 8 %}active{% endif %}" id="tab7" data-bs-toggle="tab"
+                            data-bs-target="#tab-7"
+                            type="button" role="tab" aria-controls="tab-7" aria-selected="false">Correo / Aplicación
+                    </button>
+                </li>
+            </ul>
+
+
+
+
+            <div class="tab-content" id="myTabContent">
+                {#                *******************SEDES COORDINACIONES***********************************#}
+
+                {#                *******************CARGOS INSTITUCION*************************************#}
+                <div class="tab-pane fade {% if t == 2 %}active show{% endif %}" id="tab-2" role="tabpanel"
+                     aria-labelledby="tab2" style="margin-top: 10px">
+                    <div class="tabbable col-12 mb-2">
+                        <ul class="nav nav-tabs" id="myTab" role="tablist">
+                            <li class="nav-item {% if h2 == 0 %}active{% endif %}" role="presentation">
+                                <button class="nav-link active" id="tabcar1" data-bs-toggle="tab"
+                                        data-bs-target="#tabcar-1"
+                                        type="button" role="tab" aria-controls="tabcar-1" aria-selected="true">Cargos
+                                </button>
+                            </li>
+                            <li class="nav-item {% if h2 == 100 %}active{% endif %}" role="presentation">
+                                <button class="nav-link" id="tabcar2" data-bs-toggle="tab" data-bs-target="#tabcar-2"
+                                        type="button" role="tab" aria-controls="tabcar-2" aria-selected="false">Cargos
+                                    de
+                                    la Institución
+                                </button>
+                            </li>
+
+
+                        </ul>
+                        <div class="tab-content" id="myTabContentf" style="margin-top: 10px">
+
+                        </div>
+
+                    </div>
+                </div>
+                {#                *******************DaATOS FINANCIEROS*************************************#}
+                {#                *******************BBIBLIOTE**********************************************#}
+                {#                *******************DATOS ACADEMICOS***************************************#}
+                <div class="tab-pane fade {% if t == 6 %}active show{% endif %}" id="tab-5" role="tabpanel"
+                     aria-labelledby="tab5" style="margin-top: 10px">
+                    <div class="tabbable col-12">
+                        <ul class="nav nav-tabs" id="myTab" role="tablist">
+                            <li class="nav-item {% if ac1 == 1 %}active{% endif %}" role="presentation">
+                                <button class="nav-link active" id="tabac1" data-bs-toggle="tab"
+                                        data-bs-target="#tabac-1"
+                                        type="button" role="tab" aria-controls="tabac-1" aria-selected="true">
+                                    Competencias Genericas
+                                </button>
+                            </li>
+                            <li class="nav-item {% if ac1 == 2 %}active{% endif %}" role="presentation">
+                                <button class="nav-link" id="tabac2" data-bs-toggle="tab" data-bs-target="#tabac-2"
+                                        type="button" role="tab" aria-controls="tabac-2" aria-selected="false">Sesiones
+                                </button>
+                            </li>
+                            <li class="nav-item {% if ac1 == 3 %}active{% endif %}" role="presentation">
+                                <button class="nav-link" id="tabac3" data-bs-toggle="tab" data-bs-target="#tabac-3"
+                                        type="button" role="tab" aria-controls="tabac-3" aria-selected="false">Turnos
+                                </button>
+                            </li>
+                            <li class="nav-item {% if ac1 == 4 %}active{% endif %}" role="presentation">
+                                <button class="nav-link" id="tabac4" data-bs-toggle="tab" data-bs-target="#tabac-4"
+                                        type="button" role="tab" aria-controls="tabac-4" aria-selected="false">
+                                    Párametros generales
+                                </button>
+                            </li>
+                            <li class="nav-item {% if ac1 == 5 %}active{% endif %}" role="presentation">
+                                <button class="nav-link" id="tabac5" data-bs-toggle="tab" data-bs-target="#tabac-5"
+                                        type="button" role="tab" aria-controls="tabac-5" aria-selected="false">Tipos
+                                    Trabajo Titulación
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="myTabContent">
+                            <div class="tab-pane fade {% if ac1 == 1 %}show active{% endif %}" id="tabac-1" role="tabpanel" aria-labelledby="tabac1">
+
+                            </div>
+
+                            <div class="tab-pane fade {% if ac1 == 2 %}show active{% endif %}" id="tabac-2" role="tabpanel" aria-labelledby="tabac2">
+
+                            </div>
+
+                            <div class="tab-pane fade {% if ac1 == 3 %}show active{% endif %}" id="tabac-3" role="tabpanel" aria-labelledby="tabac3">
+
+                            </div>
+
+                            <div class="tab-pane fade {% if ac1 == 4 %}show active{% endif %}" id="tabac-4" role="tabpanel" aria-labelledby="tabac4">
+
+                            </div>
+
+                            <div class="tab-pane fade {% if ac1 == 5 %}show active{% endif %}" id="tabac-5" role="tabpanel" aria-labelledby="tabac5">
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+                {#                *******************GRUPOS/PERMISOS Y REPORTES*****************************#}
+                <div class="tab-pane fade {% if t == 7 %}active show{% endif %}" id="tab-6" role="tabpanel" aria-labelledby="tab6" style="margin-top: 10px">
+
+                </div>
+                {#                *******************CORREO / APLICACION************************************#}
+                <div class="tab-pane fade {% if t == 8 %}active show{% endif %}" id="tab-7" role="tabpanel" aria-labelledby="tab7" style="margin-top: 10px">
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+

@@ -1,0 +1,62 @@
+{% extends "adm_institucion/4.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    {% if perms.ctt.puede_modificar_parametros_institucion %}
+        <div class='row'>
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/adm_institucion?action=addturno" class='formmodal btn btn-sm mb-2 btn-success'><i class="icon-plus tu"></i>Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+    <div class='row'>
+        <div class='col-12'>
+            <table class="table table-bordered">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 80px; text-align: center">Comienza</th>
+                    <th style="width: 80px; text-align: center">Termina</th>
+                    <th style="width: 80px; text-align: center">Horas</th>
+                    <th>Sesión</th>
+                    <th style="width: 40px; text-align: center">En uso</th>
+                    <th style="width: 40px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for turno in turnos %}
+                    <tr>
+                        <td style="text-align: center">{{ turno.comienza|time:"h:i a" }}</td>
+                        <td style="text-align: center">{{ turno.termina|time:"h:i a" }}</td>
+                        <td style="text-align: center">{{ turno.horas }}</td>
+                        <td>{{ turno.sesion.nombre }}</td>
+                        <td style="text-align: center">
+                            {% if turno.en_uso %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="En uso">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="En uso">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                {% if not turno.en_uso %}
+                                    <a href="javascript:;" nhref="/adm_institucion?action=delturno&id={{ turno.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

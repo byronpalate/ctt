@@ -1,0 +1,18 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_nombre").addClass("validate[required]");
+            $("#id_url").css({'text-transform': 'none'});
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_institucion?t=5&h4=0{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion?t=5&h4=0{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addreferenciaweb'/>
+{% endblock %}
+{% block formback %}/adm_institucion?t=5&h4=0{% endblock %}

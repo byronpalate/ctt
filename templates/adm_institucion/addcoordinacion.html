@@ -1,0 +1,19 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_nombre, #id_alias, #id_carrera").addClass("validate[required]");
+
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_institucion{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addcoordinacion'/>
+    <input type='hidden' name='id' value='{{ sede.id }}'/>
+{% endblock %}
+{% block formback %}/adm_institucion{% endblock %}

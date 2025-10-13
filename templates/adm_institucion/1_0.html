@@ -1,0 +1,48 @@
+{% extends "adm_institucion/1.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    {% if perms.ctt.puede_modificar_parametros_institucion %}
+        <a href="javascript:;" nhref="/adm_institucion?action=addcargo" class='formmodal btn btn-sm mb-2 btn-success'><i class="icon-plus tu"></i> Adicionar</a>
+    {% endif %}
+    <table class="table table-bordered">
+        <thead class="table-light">
+        <tr>
+            <th>Cargo</th>
+            <th style="width: 50px; text-align: center">Múltiples</th>
+            <th style="width: 50px"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for cargo in cargos %}
+            <tr>
+                <td>{{ cargo }}</td>
+                <td style="text-align: center">
+                    {% if cargo.multiples %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Uso multiples">Si</span>
+                    {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Uso multiples">No</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center">
+                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                        {% if not cargo.en_uso %}
+                            <a href="javascript:;" nhref="/adm_institucion?action=delcargo&id={{ cargo.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="20">NO EXISTEN DATOS</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

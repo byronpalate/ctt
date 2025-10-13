@@ -1,0 +1,73 @@
+{% extends "adm_institucion/view.html" %}
+{% block contenidosubseccion %}
+    {% if perms.ctt.puede_modificar_parametros_institucion %}
+        <div class='col-12 mb-2'>
+            <a href="javascript:;" nhref="/adm_institucion?action=add" class='btn btn-sm btn-success formmodal'><i class="icon-plus tu"></i>Adicionar</a>
+        </div>
+    {% endif %}
+    {% for sede in sedes %}
+        <table class="table table-bordered" style="margin-bottom: 0">
+            <thead class="table-light">
+                <th>Sede: {{ sede }}</th>
+                <th style="width: 40px; text-align: center">
+                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                        <a href="javascript:;" nhref="/adm_institucion?action=editar&id={{ sede.id }}" class="btn btn-ssm btn-info formmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                    {% endif %}
+                </th>
+            </thead>
+            <tbody>
+            <tr>
+                <td colspan="2">
+                    <div class='col-12'>
+                        <table class="table table-bordered" style="margin-bottom: 0">
+                            <thead>
+                            <tr>
+                                <th colspan="6">Coordinaciones</th>
+                            </tr>
+                            <tr>
+                                <th>Nombre</th>
+                                <th style="width: 300px">Responsable</th>
+                                <th style="width: 80px">Alias</th>
+                                <th style="width: 80px; text-align: center">Docentes</th>
+                                <th style="width: 80px; text-align: center">Estudiantes</th>
+                                <th style="width: 80px"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for coordinacion in sede.mis_coordinaciones %}
+                                {% with responsable=coordinacion.responsable %}
+                                    <tr>
+                                        <td>{{ coordinacion }}</td>
+                                        <td>{{ responsable|default_if_none:"" }}</td>
+                                        <td>{{ coordinacion.alias }}</td>
+                                        <td style="text-align: center">{{ coordinacion.cantidad_docentes }}</td>
+                                        <td style="text-align: center">{{ coordinacion.cantidad_estudiantes }}</td>
+                                        <td style="text-align: center">
+                                            {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                                <a href="javascript:;" nhref="/adm_institucion?action=editcoordinacion&id={{ coordinacion.id }}&h={{ sede.id }}" class="btn btn-ssm btn-success tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                                {% if not coordinacion.en_uso %}
+                                                    <a href="javascript:;" nhref="/adm_institucion?action=delcoordinacion&id={{ coordinacion.id }}&h={{ sede.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endwith %}
+                                {% empty %}
+                                <tr>
+                                    <td colspan="20">NO EXISTEN DATOS</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class='span12 mt-2'>
+                        {% if perms.ctt.puede_modificar_parametros_institucion %}
+                            <a href="javascript:;" nhref="/adm_institucion?action=addcoordinacion&id={{ sede.id }}" class='formmodal btn btn-ssm btn-success'><i class="icon-plus tu"></i> Adicionar</a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    {% endfor %}
+{% endblock %}

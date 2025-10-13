@@ -1,0 +1,230 @@
+{% extends "adm_institucion/6.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    <div class='row'>
+        <div class='col-12'>
+            <a href="javascript:;" nhref="/adm_institucion?action=addapi&id={{ materia.id }}" class="btn btn-sm mb-2 btn-success formmodal"><i class="icon-arrow-up"></i> Importar Correos</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class='table table-bordered '>
+                <thead class="table-light">
+                <tr>
+                    <th>IP/Host</th>
+                    <th style="width: 250px">Dominio de correo institucional</th>
+                    <th style="width: 250px">Dominio de aplicación</th>
+                    <th style="width: 80px;">Puerto</th>
+                    <th style="width: 200px;">Usuario</th>
+                    <th style="width: 200px;">Contraseña</th>
+                    <th style="width: 70px; text-align: center">TLS</th>
+                    <th style="width: 70px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{{ institucion.emailhost }}</td>
+                    <td>{{ institucion.emaildomain }}</td>
+                    <td>{{ institucion.domainapp }}</td>
+                    <td>{{ institucion.emailport }}</td>
+                    <td>{{ institucion.emailhostuser }}</td>
+                    <td>{{ institucion.emailpassword }}</td>
+                    <td style="text-align: center">
+                        {% if institucion.usatls %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="TLS">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="TLS">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if perms.ctt.puede_modificar_parametros_institucion %}
+                            <a class="formmodal btn btn-ssm btn-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editcorreo"><i class="icon-edit"></i>Editar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class='table table-bordered '>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 150px">Clave por defecto</th>
+                    <th style="width: 120px; text-align: center">Identificación como clave</th>
+                    <th style="width: 120px; text-align: center">Identificación como usuario</th>
+                    <th style="width: 100px; text-align: center">Alumnos actualizan foto</th>
+                    <th style="width: 100px; text-align: center">Administrativos actualizan foto</th>
+                    <th style="width: 100px; text-align: center">Control único credenciales</th>
+                    <th style="width: 100px; text-align: center">Correo privado obligatorio</th>
+                    <th style="width: 100px; text-align: center">Preguntas inscripción</th>
+                    <th></th>
+                    <th style="width: 70px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{{ institucion.defaultpassword }}</td>
+                    <td style="text-align: center">
+                        {% if institucion.claveusuariocedula %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Identificación como clave">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Identificación como clave">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if institucion.nombreusuariocedula %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Identificación como usuario">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Identificación como usuario">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if institucion.actualizarfotoalumnos %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Alumnos actualizan foto">Si</span> 
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Alumnos actualizan foto">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if institucion.actualizarfotoadministrativos %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Administrativos actualizan foto">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Administrativos actualizan foto">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if institucion.controlunicocredenciales %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Control unico de credenciales">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Control unico de credenciales">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if institucion.correoobligatorio %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Correo obligatorio">Si</span> {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Correo obligatorio">No</span> {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if institucion.preguntasinscripcion %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Preguntas en inscripción">Si</span> {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Preguntas en inscripción">No</span> {% endif %}
+                    </td>
+                    <td></td>
+                    <td style="text-align: center">
+                        {% if perms.ctt.puede_modificar_parametros_institucion %}
+                            <a class="formmodal btn btn-ssm btn-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editdatosaplicacion"><i class="icon-edit"></i> Editar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class='table table-bordered '>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 400px;">URL Aplicación para estudiantes (Android)</th>
+                    <th style="width: 400px;">URL Aplicación para estudiantes (IOS)</th>
+                    <th style="width: 400px;">URL Aplicación para estudiantes (Windows)</th>
+                    <th></th>
+                    <th style="width: 70px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{{ institucion.urlaplicacionandroid }}</td>
+                    <td>{{ institucion.urlaplicacionios }}</td>
+                    <td>{{ institucion.urlaplicacionwindows }}</td>
+                    <td></td>
+                    <td style="text-align: center">
+                        {% if perms.ctt.puede_modificar_parametros_institucion %}
+                            <a class="formmodal btn btn-ssm btn-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editdatosurlapp"><i class="icon-edit"></i>Editar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class='table table-bordered '>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 100px; text-align: center">Solicitudes numeradas</th>
+                    <th style="width: 100px; text-align: center">Solicitud número automatico</th>
+                    <th style="width: 100px; text-align: center">Permite alumno registrar</th>
+                    <th style="width: 100px; text-align: center">Permite alumno seleccionar responsable</th>
+                    <th style="width: 100px; text-align: center">Especificar cantidad de solicitudes</th>
+                    <th style="width: 100px; text-align: center">Días vencimiento solicitud</th>
+                    <th style="width: 100px; text-align: center">Solicitudes generadas</th>
+                    <th></th>
+                    <th style="width: 70px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td style="text-align: center">
+                        {% if institucion.solicitudnumeracion %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Numeración en solicitudes">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Numeración en solicitudes">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if institucion.solicitudnumeroautomatico %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Numeración automatica en solicitudes">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Numeración automatica en solicitudes">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if institucion.permitealumnoregistrar %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Alumnos registran solicitudes">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Alumnos registran solicitudes">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if institucion.permitealumnoelegirresponsable %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Alumnos eligen responsable en solicitudes">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Alumnos eligen responsable en solicitudes">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {% if institucion.especificarcantidadsolicitud %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Alumnos eligen cantidad en solicitudes">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Alumnos eligen cantidad en solicitudes">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center">
+                        {{ institucion.diasvencimientosolicitud }}
+                    </td>
+                    <td style="text-align: center">
+                        {{ solicitudes_generadas }}
+                    </td>
+                    <td></td>
+                    <td style="text-align: center">
+                        {% if perms.ctt.puede_modificar_parametros_institucion %}
+                            <a class="formmodal btn btn-ssm btn-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editdatosgeneralessolicitudes"><i class="icon-edit"></i> Editar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion?t=6&ac1=2{% endblock %}
+{% block formactionvalue %}delsesion{% endblock %}
+{% block formobjectid %}{{ sesion.id }}{% endblock %}
+{% block formobjectname %}la sesión {% endblock %}
+{% block formobjectrepr %}{{ sesion.nombre }}{% endblock %}

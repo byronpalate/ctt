@@ -1,0 +1,89 @@
+{% extends "adm_institucion/4.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    {% for sede in sedes %}
+        <div class="row">
+            <div class="col-12">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                    <th>Sede: {{ sede.nombre }}</th>
+                    </thead>
+                    <tr>
+                        <td>
+                            <div class='col-12'>
+                                <table class="table table-bordered" style="margin-bottom: 0">
+                                    <thead>
+                                    <tr>
+                                        <th colspan="6">Aulas</th>
+                                    </tr>
+                                    <tr>
+                                        <th style="width: 300px">Aula</th>
+                                        <th style="width: 150px">Tipo</th>
+                                        <th>Coordinación</th>
+                                        <th style="width: 80px; text-align: center">Capacidad</th>
+                                        <th style="width: 40px; text-align: center">En uso</th>
+                                        <th style="width: 80px"></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for aula in sede.aulas %}
+                                        <tr>
+                                            <td>{{ aula.nombre }}</td>
+                                            <td>{{ aula.tipo|default_if_none:"" }}</td>
+                                            <td>
+                                                {% for c in aula.coordinaciones %}
+                                                    {{ c.alias }}
+                                                    {% if not forloop.last %},
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </td>
+                                            <td style="text-align: center">{{ aula.capacidad }}</td>
+                                            <td style="text-align: center">
+                                                {% if aula.en_uso %}
+                                                    <span class="badge label-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="En uso">Si</span>
+                                                {% else %}
+                                                    <span class="badge label-warning tu" data-bs-toggle="tooltip" data-bs-placement="top" title="En uso">No</span>
+                                                {% endif %}
+                                            </td>
+                                            <td style="text-align: center">
+                                                {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                                    <a href="javascript:;" nhref="/adm_institucion?action=editaula&id={{ aula.id }}&t=2" class="btn btn-ssm btn-success tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                                    {% if not aula.en_uso %}
+                                                        <a href="javascript:;" nhref="/adm_institucion?action=delaula&id={{ aula.id }}&t=2" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="20">NO EXISTEN DATOS</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                    <tr>
+                                        <td colspan="6">
+                                            <div class='row-fluid'>
+                                                <div class='span12'>
+                                                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                                        <a href="javascript:;" nhref="/adm_institucion?action=addaula&id={{ sede.id }}" class='formmodal btn btn-sm btn-success'><i class="icon-plus tu"></i> Adicionar</a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "adm_institucion/2.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    <div class="row">
+        <div class="col-12">
+            {% if perms.ctt.puede_modificar_parametros_institucion %}
+                <a href="javascript:;" nhref="/adm_institucion?action=addiva" class="btn btn-sm btn-success mb-2 formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+        </div>
+    </div>
+    <table class="table table-bordered">
+        <thead class="table-light">
+        <tr>
+            <th colspan="10">Porcentajes de IVA
+            </th>
+        </tr>
+        <tr>
+            <th>Descripción</th>
+            <th style="width: 100px; text-align: center">Porcentaje</th>
+            <th style="width: 100px; text-align: center">Código</th>
+            <th style="width: 100px; text-align: center">Activo</th>
+            <th style="width: 100px; text-align: center"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for iva in ivas %}
+            <tr>
+                <td>{{ iva.descripcion }}</td>
+                <td style="text-align: center">{{ iva.porcientoiva }}</td>
+                <td style="text-align: center">{{ iva.codigo }}</td>
+                <td style="text-align: center">
+                    <span class="badge {% if iva.activo %}text-bg-success{% else %}text-bg-danger{% endif %}">{% if iva.activo %} Si{% else %}No{% endif %}</span>
+                </td>
+                <td style="text-align: center">
+                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                        <a href="javascript:;" nhref="/adm_institucion?action=editiva&id={{ iva.id }}" class="btn btn-ssm btn-success tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                        <a href="javascript:;" nhref="/adm_institucion?action=deliva&id={{ iva.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal " data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                        {% if iva.activo %}
+                            <a href="javascript:;" nhref="/adm_institucion?action=desactivariva&id={{ iva.id }}" class="btn btn-ssm btn-danger tu confirmacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Deshabilitar"><i class="icon-lock"></i></a>
+                        {% else %}
+                            <a href="javascript:;" nhref="/adm_institucion?action=activariva&id={{ iva.id }}" class="btn btn-ssm btn-success tu confirmacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitar"><i class="icon-unlock"></i></a>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
