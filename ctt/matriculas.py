@@ -55,7 +55,7 @@ def view(request):
                         mo = {'nombre': u"%s" % matricula.inscripcion.persona.nombre_completo(), 'id': matricula.id}
                         cantidad += 1
                         matriculas.append(mo)
-                    return ok_json({"cantidad": cantidad, "matriculas": matriculas})
+                    return ok_json({"cantidad": cantidad, "matriculas 2": matriculas})
                 except Exception as ex:
                     return bad_json(error=3)
 
