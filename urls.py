@@ -44,7 +44,7 @@ urlpatterns = [
     path('pass', commonviews.passwd),
 
     # path('adm_generacionbancos', adm_generacionbancos.view),
-    # INSCRIPCIONES Y MATRICULAS
+    # INSCRIPCIONES Y MATRICULAS d
     path('inscripciones', inscripciones.view),
     path('matriculas', matriculas.view),
 
