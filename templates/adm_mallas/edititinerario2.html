@@ -1,0 +1,12 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+{% endblock %}
+{% block atras %}/adm_mallas{% endblock %}
+{% block formdestination %}/adm_mallas?action=itinerariosmalla&id={{ itinerario.malla.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_mallas?action=itinerariosmalla&id={{ itinerario.malla.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='edititinerarios'/>
+    <input type='hidden' name='id' value='{{ itinerario.id }}'/>
+{% endblock %}
+{% block formback %}/adm_mallas?action=itinerariosmalla&id={{ itinerario.malla.id }}{% endblock %}

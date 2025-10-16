@@ -22,7 +22,7 @@ from ctt.forms import NivelForm, NivelFormEdit, ProfesorMateriaForm, MateriaDivi
     RubricaTallerPlanificacionForm
 from ctt.funciones import log, convertir_fecha, url_back, bad_json, ok_json, detectar_cambios, diff_log
 from ctt.models import Nivel, Materia, ProfesorMateria, MateriaAsignada, AsignaturaMalla, \
-    Malla, NivelMalla, EvaluacionGenerica, Leccion, AlumnosPracticaMateria, ModuloMalla, \
+    Malla, NivelMalla, EvaluacionGenerica, Leccion, AlumnosPracticaMateria, \
     ParaleloMateria, LeccionGrupo, Matricula, RecordAcademico, HistoricoRecordAcademico, Carrera, \
     Asignatura, null_to_numeric, NivelEstudiantesMatricula, TallerPlanificacionMateria, \
     ActividadesAprendizajeCondocenciaAsistida, ActividadesAprendizajeColaborativas, PlanificacionMateria, Persona, \
@@ -229,42 +229,22 @@ def view(request):
                 mnm = 0
                 if form.is_valid():
                     listado = request.POST['seleccionados']
-                    listadomodulos = request.POST['seleccionadosmodulos']
-                    listadointensivos = request.POST['seleccionadosintensivos']
-                    usalms = form.cleaned_data['usalms']
-                    lmsdesdemalla = form.cleaned_data['lmsdesdemalla']
                     if listado:
                         for materiamalla in AsignaturaMalla.objects.filter(id__in=[int(x) for x in listado.split(',')]):
-                            if (nivel.coordinacion() and listadointensivos and (nivel.coordinacion().id == 16 or nivel.coordinacion().id == 17)):
-                                for materiamalla in AsignaturaMalla.objects.filter(id__in=[int(x) for x in listadointensivos.split(',')]):
-                                    if Materia.objects.filter(asignaturamalla=materiamalla, nivel=nivel, paralelomateria=form.cleaned_data['paralelomateria'], intensivo=True).exists():
+                            if (nivel.coordinacion()  and (nivel.coordinacion().id == 16 or nivel.coordinacion().id == 17)):
+                                for materiamalla in AsignaturaMalla.objects.filter():
+                                    if Materia.objects.filter(asignaturamalla=materiamalla, nivel=nivel, paralelomateria=form.cleaned_data['paralelomateria']).exists():
                                         return bad_json(mensaje=u'Ya se encuentra registrada la materia como intensivo: %s en el paralelo: %s' % (materiamalla.asignatura, form.cleaned_data['paralelomateria']))
                             else:
-                                if Materia.objects.filter(asignaturamalla=materiamalla, nivel=nivel, paralelomateria=form.cleaned_data['paralelomateria'], intensivo=False).exists():
+                                if Materia.objects.filter(asignaturamalla=materiamalla, nivel=nivel, paralelomateria=form.cleaned_data['paralelomateria']).exists():
                                     return bad_json(mensaje=u'Ya se encuentra registrada la materia: %s en el paralelo: %s' % (materiamalla.asignatura, form.cleaned_data['paralelomateria']))
-                    if listadomodulos:
-                        if (nivel.coordinacion() and (nivel.carrera.posgrado)):
-                            mnm = NivelMalla.objects.get(pk=int(request.POST['modulonivelmalla']))
-                            for modulo in ModuloMalla.objects.filter(id__in=[int(x) for x in listadomodulos.split(',')]):
-                                if Materia.objects.filter(modulomalla=modulo, nivel=nivel, paralelomateria=form.cleaned_data['paralelomateria'], modulonivelmalla=mnm).exists():
-                                    return bad_json(mensaje=u'Ya se encuentra registrada la materia: %s en el paralelo: %s' % (modulo.asignatura, form.cleaned_data['paralelomateria']))
-                        else:
-                            for modulo in ModuloMalla.objects.filter(id__in=[int(x) for x in listadomodulos.split(',')]):
-                                if Materia.objects.filter(modulomalla=modulo, nivel=nivel, paralelomateria=form.cleaned_data['paralelomateria']).exists():
-                                    return bad_json(mensaje=u'Ya se encuentra registrada la materia: %s en el paralelo: %s' % (modulo.asignatura, form.cleaned_data['paralelomateria']))
+
                     if listado:
                         for materiamalla in AsignaturaMalla.objects.filter(id__in=[int(x) for x in listado.split(',')]):
-                            if (nivel.coordinacion() and listadointensivos and (nivel.coordinacion().id == 16 or nivel.coordinacion().id == 17)):
-                                for materiamalla in AsignaturaMalla.objects.filter(id__in=[int(x) for x in listadointensivos.split(',')]):
-                                    lms = None
-                                    plantillalms = None
-                                    if usalms:
-                                        if lmsdesdemalla:
-                                            lms = materiamalla.lms
-                                            plantillalms = materiamalla.plantillaslms
-                                        else:
-                                            lms = form.cleaned_data['lms']
-                                            plantillalms = form.cleaned_data['plantillalms']
+                            if (nivel.coordinacion() and (nivel.coordinacion().id == 16 or nivel.coordinacion().id == 17)):
+                                for materiamalla in AsignaturaMalla.objects.filter():
+
+
                                     materia = Materia(asignatura=materiamalla.asignatura,
                                                       asignaturamalla=materiamalla,
                                                       tipomateria=materiamalla.tipomateria,
@@ -284,23 +264,12 @@ def view(request):
                                                       validacreditos=True,
                                                       validapromedio=True,
                                                       modeloevaluativo=form.cleaned_data['modelo'],
-                                                      cupo=CAPACIDAD_MATERIA_INICIAL,
-                                                      intensivo=True,
-                                                      lms=lms,
-                                                      plantillaslms=plantillalms)
+                                                      cupo=CAPACIDAD_MATERIA_INICIAL)
                                     materia.save(request)
                                     materia.actualiza_identificacion()
                                     log(u'Adiciono materia en nivel: %s' % materia, request, "add")
                             else:
-                                lms = None
-                                plantillalms = None
-                                if usalms:
-                                    if lmsdesdemalla:
-                                        lms = materiamalla.lms
-                                        plantillalms = materiamalla.plantillaslms
-                                    else:
-                                        lms = form.cleaned_data['lms']
-                                        plantillalms = form.cleaned_data['plantillalms']
+
                                 materia = Materia(asignatura=materiamalla.asignatura,
                                                   asignaturamalla=materiamalla,
                                                   tipomateria=materiamalla.tipomateria,
@@ -320,50 +289,11 @@ def view(request):
                                                   validacreditos=True,
                                                   validapromedio=True,
                                                   modeloevaluativo=form.cleaned_data['modelo'],
-                                                  cupo=CAPACIDAD_MATERIA_INICIAL,
-                                                  intensivo=False,
-                                                  lms=lms,
-                                                  plantillaslms=plantillalms)
+                                                  cupo=CAPACIDAD_MATERIA_INICIAL)
                                 materia.save(request)
                                 materia.actualiza_identificacion()
                                 log(u'Adiciono materia en nivel: %s' % materia, request, "add")
-                    if listadomodulos:
-                        for modulo in ModuloMalla.objects.filter(id__in=[int(x) for x in listadomodulos.split(',')]):
-                            lms = None
-                            plantillalms = None
-                            if usalms:
-                                if lmsdesdemalla:
-                                    lms = modulo.lms
-                                    plantillalms = modulo.plantillaslms
-                                else:
-                                    lms = form.cleaned_data['lms']
-                                    plantillalms = form.cleaned_data['plantillalms']
-                            materia = Materia(asignatura=modulo.asignatura,
-                                              modulomalla=modulo,
-                                              tipomateria=modulo.tipomateria,
-                                              nivel=nivel,
-                                              horas=modulo.horas,
-                                              creditos=modulo.creditos,
-                                              horassemanales=0,
-                                              paralelomateria=form.cleaned_data['paralelomateria'],
-                                              inicio=nivel.inicio,
-                                              fin=nivel.fin,
-                                              cerrado=False,
-                                              rectora=True,
-                                              sinasistencia=modulo.sinasistencia,
-                                              practicas=False,
-                                              tutoria=False,
-                                              grado=False,
-                                              validacreditos=modulo.validacreditos,
-                                              validapromedio=modulo.validapromedio,
-                                              modeloevaluativo=form.cleaned_data['modelo'],
-                                              cupo=CAPACIDAD_MATERIA_INICIAL,
-                                              modulonivelmalla=mnm,
-                                              lms=lms,
-                                              plantillaslms=plantillalms)
-                            materia.save(request)
-                            materia.actualiza_identificacion()
-                            log(u'Adiciono materia en nivel: %s' % materia, request, "add")
+
                     return ok_json()
                 else:
                     return bad_json(error=6)
@@ -470,7 +400,7 @@ def view(request):
                                          horassemanales=materia.horassemanales,
                                          motivo=form.cleaned_data['motivo'])
                     pm.save(request)
-                    pm.profesor.actualizar_distributivo_horas(pm.materia.nivel.periodo)
+                    # pm.profesor.actualizar_distributivo_horas(pm.materia.nivel.periodo)
                     if pm.materia.nivel.distributivoaprobado:
                         for per in Persona.objects.filter(usuario__groups__id=RESPONSABLES_DISTRIBUTIVO_GRUPO_ID):
                             pm.mail_notificacion_distributivo(persona, per)
@@ -484,93 +414,7 @@ def view(request):
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
-        if action == 'addprofesorficticio':
-            try:
-                materia = Materia.objects.get(pk=request.POST['mid'])
-                form = ProfesorMateriaFicticioForm(request.POST)
-                if form.is_valid():
-                    inicio = form.cleaned_data['desde']
-                    fin = form.cleaned_data['hasta']
-                    if materia.profesorficticiomateria_set.filter(profesor_ficticio=form.cleaned_data['profesor']).exists():
-                        return bad_json(mensaje=u"El docente ya esta registrado en la materia.")
-                    if not materia.profesorficticiomateria_set.filter(es_principal=True).exists():
-                        principal = True
-                    pm = ProfesorFicticioMateria(materia=materia,
-                                         profesor_ficticio=form.cleaned_data['profesor'],
-                                         es_principal=principal,
-                                         fecha_inicio=inicio,
-                                         fecha_fin=fin,
-                                         horas_semanales=materia.horassemanales)
-                    pm.save(request)
-                    log(u'Adiciono profesor fictico de materia: %s' % pm, request, "add")
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
 
-        if action == 'addprofesorpractica':
-            try:
-                grupo = GruposPracticas.objects.get(pk=request.POST['mid'])
-                form = ProfesorMateriaPracticaForm(request.POST)
-                if form.is_valid():
-                    inicio = form.cleaned_data['desde']
-                    fin = form.cleaned_data['hasta']
-                    if grupo.profesormateriapracticas_set.filter(profesor=form.cleaned_data['profesor']).exists():
-                        return bad_json(mensaje=u"El docente ya esta registrado en la materia.")
-                    principal = False
-                    if not grupo.profesormateriapracticas_set.filter(principal=True).exists():
-                        principal = True
-                    pm = ProfesorMateriaPracticas(grupo=grupo,
-                                                  profesor_id=form.cleaned_data['profesor'],
-                                                  principal=principal,
-                                                  desde=inicio,
-                                                  hasta=fin,
-                                                  horassemanales=grupo.materia.horassemanales,
-                                                  motivo=form.cleaned_data['motivo'])
-                    pm.save(request)
-                    pm.profesor.actualizar_distributivo_horas(pm.grupo.materia.nivel.periodo)
-                    if pm.grupo.materia.nivel.distributivoaprobado:
-                        for per in Persona.objects.filter(usuario__groups__id=RESPONSABLES_DISTRIBUTIVO_GRUPO_ID):
-                            pm.mail_notificacion_distributivo(persona, per)
-                        log(u'Adiciono profesor al grupo de practicas de la materia luego de estar aprobado el distributivo: %s' % pm.profesor, request, "add")
-                    else:
-                        log(u'Adiciono profesor al grupo de practicas de la  materia: %s' % pm, request, "add")
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
-
-
-        if action == 'addprofesorficticiopractica':
-            try:
-                grupo = GruposPracticas.objects.get(pk=request.POST['mid'])
-                form = ProfesorMateriaFicticioForm(request.POST)
-                if form.is_valid():
-                    inicio = form.cleaned_data['desde']
-                    fin = form.cleaned_data['hasta']
-                    if grupo.profesorficticiomateriapracticas_set.filter(profesor_ficticio=form.cleaned_data['profesor']).exists():
-                        return bad_json(mensaje=u"El docente ya esta registrado en la materia.")
-                    principal = False
-                    if not grupo.profesorficticiomateriapracticas_set.filter(es_principal=True).exists():
-                        principal = True
-                    pm = ProfesorFicticioMateriaPracticas(grupo=grupo,
-                                                  profesor_ficticio=form.cleaned_data['profesor'],
-                                                  es_principal=principal,
-                                                  fecha_inicio=inicio,
-                                                  fecha_fin=fin,
-                                                  horas_semanales=grupo.materia.horassemanales)
-                    pm.save(request)
-                    log(u'Adiciono profesor fictico al grupo de practicas de la materia: %s' % pm, request, "add")
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
 
         if action == 'editprofesor':
             try:
@@ -1309,7 +1153,6 @@ def view(request):
             try:
                 malla = Malla.objects.get(pk=request.POST['mid'])
                 data['materiasmalla'] = malla.asignaturamalla_set.all().order_by('nivelmalla', '-itinerario__id')
-                data['materiasmodulo'] = malla.modulomalla_set.all().order_by('asignatura')
                 data['coordinacion'] = coordinacion = request.session['coordinacionseleccionada']
                 data['modulonivelesmalla'] = NivelMalla.objects.filter(pk__in=[1,2,3,4])
                 segmento = render(request, "niveles/materiasmalla.html", data)
@@ -1903,7 +1746,7 @@ def view(request):
                     if 'paralelomateriaid' in request.GET:
                         request.session['paralelomateriaid'] = paralelomateriaid = int(request.GET['paralelomateriaid'])
                     mallas = Malla.objects.filter(carrera__id=carreraid)
-                    materias = nivel.materia_set.filter(Q(asignaturamalla__malla__in=mallas) | Q(modulomalla__malla__in=mallas)).distinct().order_by('asignaturamalla', 'modulomalla', 'paralelomateria', 'asignatura__nombre', 'inicio', 'identificacion', 'id')
+                    materias = nivel.materia_set.filter(Q(asignaturamalla__malla__in=mallas)).distinct().order_by('asignaturamalla', 'paralelomateria', 'asignatura__nombre', 'inicio', 'identificacion', 'id')
                     if nivelmallaid >= 0:
                         materias = materias.filter(asignaturamalla__nivelmalla__id=nivelmallaid)
                     if paralelomateriaid > 0:
@@ -2407,59 +2250,10 @@ def view(request):
                 except Exception as ex:
                     pass
 
-            if action == 'tomandompracticas':
-                try:
-                    data['title'] = u'Tomando la Practica'
-                    data['grupo'] = grupo = GruposPracticas.objects.get(pk=request.GET['id'])
-                    data['materiasasignadas'] = grupo.materiaasignadagrupopracticas_set.all().order_by('materiaasignada__matricula__inscripcion__persona')
-                    return render(request, "niveles/tomandompracticas.html", data)
-                except Exception as ex:
-                    pass
 
-            if action == 'addgrupopractica':
-                try:
-                    data['title'] = u'Grupo'
-                    data['materia'] = materia = Materia.objects.get(pk=request.GET['id'])
-                    data['form']  = GrupoMateriaForm()
-                    return render(request, "niveles/addgrupopractica.html", data)
-                except Exception as ex:
-                    pass
 
-            if action == 'cambiargrupo':
-                try:
-                    data['title'] = u'Grupo'
-                    data['materia'] = materia = MateriaAsignadaGrupoPracticas.objects.get(pk=request.GET['id'])
-                    data['form']  = form = CambiarGrupoPracticaForm()
-                    form.addgrupo(materia)
-                    return render(request, "niveles/cambiargrupo.html", data)
-                except Exception as ex:
-                    pass
 
-            if action == 'editgrupopractica':
-                try:
-                    data['title'] = u'Grupo'
-                    data['grupo'] = grupo = GruposPracticas.objects.get(pk=request.GET['id'])
-                    data['form'] = GrupoMateriaForm(initial={'nombre': grupo.nombre})
-                    return render(request, "niveles/editgrupopractica.html", data)
-                except Exception as ex:
-                    pass
 
-            if action == 'addestudiantegrupopractica':
-                try:
-                    data['title'] = u'Añadir estudiantes grupo'
-                    data['grupo'] = grupo = GruposPracticas.objects.get(pk=request.GET['id'])
-                    data['alumnos'] = MateriaAsignada.objects.filter(materia=grupo.materia).exclude(materiaasignadagrupopracticas__isnull=False).order_by('matricula__inscripcion')
-                    return render(request, "niveles/addestudiantegrupopractica.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'delestudiantepractica':
-                try:
-                    data['title'] = u'Elimninar del grupo'
-                    data['materiasi']  = MateriaAsignadaGrupoPracticas.objects.get(pk=request.GET['id'])
-                    return render(request, "niveles/delestudiantepractica.html", data)
-                except Exception as ex:
-                    pass
 
             if action == 'horashibridas':
                 try:

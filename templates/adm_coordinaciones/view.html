@@ -1,0 +1,168 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            busqueda = function(tipo){
+                var term = '';
+               term = $("#searchinput").val().trim().toUpperCase();
+                if (term.length>0){
+                    location.href = "/adm_coordinaciones?s="+term;
+                } else {
+                    location.href = "/adm_coordinaciones";
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda(1);
+            });
+
+             $('.busqueda').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    busqueda();
+                }
+            }).focus();
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class='col-12 col-md-6 mb-2'>
+            {% if perms.ctt.puede_modificar_coordinaciones %}
+                <a href="javascript:;" nhref="/adm_coordinaciones?action=add" class='btn btn-sm btn-success formmodal'><i class="icon-plus tu"></i> Adicionar</a>
+            {% endif %}
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="searchinput" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/adm_coordinaciones" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}{% block canvas %}
+    <div class='row'>
+        <div class="col-12">
+            <table class='table table-bordered'>
+                <thead class="table-light">
+                <tr class="autoheight">
+                    <th>Nombre</th>
+                    <th>Nombre en Ingles</th>
+                    <th style="width: 80px">Alias</th>
+                    <th style="width: 80px">Sede</th>
+                    <th style="width: 30px; text-align: center;">
+                        <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" badge-height="90" style="white-space: nowrap;">Inscritos totales</span></div>
+                    </th>
+                     <th style="width: 30px; text-align: center;">
+                        <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" badge-height="90" style="white-space: nowrap;">Inscritos período</span></div>
+                    </th>
+                   <th style="width: 30px; text-align: center;">
+                        <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" badge-height="90" style="white-space: nowrap;">Matrículas período</span></div>
+                    </th>
+                    <th style="width: 500px">Responsable y Firma Dignidad</th>
+                     <th style="width: 30px; text-align: center;">
+                        <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" badge-height="90" style="white-space: nowrap;">Estado</span></div>
+                    </th>
+                   
+
+
+                    <th style="width: 60px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for coordinacion in coordinaciones %}
+                    <tr>
+                        <td>{{ coordinacion.nombre }}</td>
+                        <td>{{ coordinacion.nombreingles }}</td>
+                        <td>{{ coordinacion.alias }}</td>
+                        <td>{{ coordinacion.sede }} </td>
+                        <td style="text-align: center">{{ coordinacion.total_inscritos }}</td>
+                        {% with matriculados=coordinacion|args:periodo|call:'total_matriculados' inscritos=coordinacion|args:periodo|call:'total_inscritos_periodo' %}
+                            <td style="text-align: center">{{ inscritos }}</td>
+                            <td style="text-align: center">{{ matriculados }}</td>
+                        {% endwith %}
+                    
+<td>
+    <table class="table table-sm">
+        <tr>
+            <td><strong>Decano:</strong></td>
+            <td>{{ coordinacion.responsable|default_if_none:"" }}</td>
+
+        </tr>
+        <tr>
+            <td><strong>Director:</strong></td>
+            <td>{{ coordinacion.director|default_if_none:"" }}</td>
+
+        </tr>
+    </table>
+</td>
+                        <td style="text-align: center;">
+                            {% if  coordinacion.estado %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activa">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activa">No</span>
+                            {% endif %}</td>
+
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {% if perms.ctt.puede_modificar_coordinaciones %}
+                                        <li class="smaller"><a href="javascript:;" nhref="/adm_coordinaciones?action=editar&id={{ coordinacion.id }}" class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
+                                        <li class="smaller"><a href="javascript:;" nhref="/adm_coordinaciones?action=editresponsablecoordinacion&id={{ coordinacion.id }}" class="formmodal dropdown-item"><i class="icon-user"></i> Responsable</a></li>
+                                        <li class="smaller"><a href="javascript:;" nhref="/adm_coordinaciones?action=editresponsabledirector&id={{ coordinacion.id }}" class="formmodal dropdown-item"><i class="icon-user"></i> Director</a></li>
+                                    {% endif %}
+                                    <li class="smaller"><a href="/adm_coordinaciones?action=carreras&id={{ coordinacion.id }}" class="dropdown-item"><i class="icon-list"></i> Carreras</a></li>
+                                    <li class="smaller"><a href="/adm_coordinaciones?action=personalsecretaria&id={{ coordinacion.id }}" class="dropdown-item"><i class="icon-list"></i> Personal secretaria</a></li>
+                                    {% if perms.ctt.puede_modificar_coordinaciones %}
+                                        {% if coordinacion.puede_eliminarse %}
+                                            <li class="dropdown-divider"></li>
+                                            <li class="smaller"><a href="javascript:;" nhref="/adm_coordinaciones?action=delcoordinacion&id={{ coordinacion.id }}" class="eliminacionmodal dropdown-item"><i class="icon-remove"></i> Eliminar</a></li>
+                                        {% endif %}
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item"><a href="/adm_coordinaciones?{% if search %}s={{ search }}&{% endif %}page=1" class="page-link">1</a></li>
+                            <li class="page-item"><a href="/adm_coordinaciones?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="page-link">...</a></li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_coordinaciones?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item"><a href="/adm_coordinaciones?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="page-link">...</a></li>
+                            <li class="page-item"><a href="/adm_coordinaciones?{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}" class="page-link">{{ paging.num_pages }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_coordinaciones?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

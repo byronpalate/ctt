@@ -1,0 +1,90 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $(".verificarsecretaria").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('mdi');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_coordinaciones",
+                    data: {'action': 'verificarsecretaria', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result !== 'ok') {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_coordinaciones?id={{ coordinacion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class='row mb-2'>
+            <h4>{{ title }}<br>Coordinación: {{ coordinacion }}</h4>
+    </div>
+    {% if perms.ctt.puede_modificar_coordinaciones %}
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/adm_coordinaciones?action=addtecnico&id={{ coordinacion.id }}" class="btn btn-sm btn-success formmodal"><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class="table table-bordered">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 300px">Responsable</th>
+                    <th>Carrera</th>
+                    <th style="width: 150px">Modalidad</th>
+                    <th style="text-align: center; width: 60px">Principal</th>
+                    <th style="width: 40px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for secretaria in secretarias %}
+                    <tr>
+                        <td>{{ secretaria }}</td>
+                        <td>{{ secretaria.carrera|default_if_none:"" }}</td>
+                        <td>{{ secretaria.modalidad|default_if_none:"" }}</td>
+                        <td style="text-align: center;">
+                            {% if perms.ctt.puede_modificar_coordinaciones %}
+                                <input type="checkbox" {% if secretaria.principal %}checked{% endif %} class="verificarsecretaria tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Principal" mdi="{{ secretaria.id }}">
+                            {% else %}
+                                {% if secretaria.principal %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Principal">Si</span>
+                                {% else%}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Principal">No</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_cargos %}
+                                <a href="javascript:;" nhref="/adm_coordinaciones?action=deltecnico&id={{ secretaria.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

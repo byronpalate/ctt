@@ -1,0 +1,145 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function(){
+            verificar=function(){
+                var valor = $("#seleccionado").val();
+                if (parseInt(valor) === 0){
+                    $("#formbutton").hide();
+                }else{
+                    $("#formbutton").show();
+                }
+            };
+
+            $(".selector").click(function() {
+                var id = $(this).attr("idm");
+                var ida = $(this).attr("ida");
+                if  (  $(this).is(":checked")){
+                    $(".selector").prop('checked', false);
+                    $(".selectorhorario").prop('checked', false).attr({'disabled':'disabled'});
+                    $(this).prop('checked', true);
+                    $('#mh_'+id).removeAttr('disabled');
+                    $('#seleccionado').val(id);
+                    $('#asignatura').val(ida);
+                }
+                else{
+                    $(this).prop('checked', false);
+                    $('#seleccionado').val(0);
+                    $('#asignatura').val(0);
+                    $('#mh_'+id).attr({'disabled':'disabled'});
+                }
+                verificar();
+            });
+
+            $("#guardar").click(function () {
+                var seleccion = parseInt($('#seleccionado').val());
+                var seleccionadoasis = parseInt($('#seleccionadoasis').val());
+                var tiponominacion = $('#tiponominacion').val();
+                if (seleccion > 0){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/matriculas",
+                        data: {'action': 'promote', 'id': {{ matricula.id }}, 'idm': seleccion, 'seleccionadoasis': seleccionadoasis,'tiponominacion': tiponominacion, 'asignaturareal': {{ asignatura.id }}, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            if (data.result == 'ok') {
+                                location.href = '/matriculas?action=materias&id={{ matricula.id }}';
+                            } else {
+                                desbloqueointerface();
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+            $('.selector, .selectorhorario').prop('checked', false);
+            $('#asignatura').val(0);
+            $('#seleccionado').val(0);
+
+            $(".selectorhorario").click(function() {
+                var id = $(this).attr("ida");
+                if  ($(this).is(":checked")){
+                    $('#seleccionadoasis').val(1);
+                }
+                else{
+                    $('#seleccionadoasis').val(0);
+                }
+            });
+
+            verificar();
+
+        });
+    </script>
+{% endblock %}
+{% block formaction %}/matriculas{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 400px;">Materia</th>
+                    <th>Horarios</th>
+                    <th style="width: 50px; text-align: center; {% if not matricular_con_conflicto_horario %}display: none{% endif %}">S.H.</th>
+                    <th style="width: 50px; text-align: center">Selec.</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for materia in materias.materias %}
+                    <tr>
+                        <td>
+                            <b>{{ materia.nombre }} - {{ materia.extra }} - {{ materia.codigo }} - [{{ materia.id }}] - {{ materia.modulonivelmalla }}</b><br>
+                            {{ materia.coordcarrera }} - {{ materia.carrera }}<br>
+                            <span class='smaller'>{{ materia.paralelo }} - {{ materia.session }} - {{ materia.sede }} - {{ materia.nivel }}</span><br/>
+                            <span class="smaller"> {{ materia.inicio }} - {{ materia.fin }}</span>
+                            <span class="smaller label label-info">{{ materia.cupo }} - DISP. </span>
+                            <span class="smaller label label-info">{{ materia.matriculados }} - MATRICULADOS </span>
+                            {% if materia.intensivo %}<span class="smaller label label-warning">INTENSIVO</span>{% endif %}
+                        </td>
+                        <td><span class="smaller">{{ materia.horario|safe }}</span></td>
+                        <td style="text-align: center{% if not matricular_con_conflicto_horario %};display: none{% endif %}">
+                            <input type="checkbox" disabled="disabled" ida="{{ materia.id }}" id="mh_{{ materia.id }}" class="selectorhorario">
+                        </td>
+                        <td style="text-align: center">
+                            <input type="checkbox" ida="{{ materias.idd }}" idm="{{ materia.id }}"  id="m_{{ materia.id }}" class="selector">
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <a href="/matriculas?action=materias&id={{ matricula.id }}" class="btn btn-danger pull-right">Cancelar</a>
+            <a href="javascript:;" class="btn btn-success pull-right" id="guardar" style="margin-right: 5px">Guardar</a>
+        </div>
+    </div>
+    <input type='hidden' name='action' value='promote'/>
+    <input type='hidden' name='idma' value='{{ matricula.id }}'/>
+    <input type='hidden' id='tiponominacion' value='{{ tiponominacion }}'/>
+    <input type='hidden' name='seleccionado' id="seleccionado" value='0'/>
+    <input type='hidden' name='seleccionadoasis' id="seleccionadoasis" value='0'/>
+    <input type='hidden' name='asignatura' id="asignatura" value='0'/>
+{% endblock %}
+{% block footerextra %}
+    <input type='hidden' name='action' value='promote'/>
+    <input type='hidden' name='idma' value='{{ matricula.id }}'/>
+    <input type='hidden' id='tiponominacion' value='{{ tiponominacion }}'/>
+    <input type='hidden' name='seleccionado' id="seleccionado" value='0'/>
+    <input type='hidden' name='seleccionadoasis' id="seleccionadoasis" value='0'/>
+    <input type='hidden' name='asignatura' id="asignatura" value='0'/>
+{% endblock %}
+{% block atras %}/matriculas?action=materias&id={{ matricula.id }}{% endblock %}

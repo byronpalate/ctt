@@ -1,0 +1,61 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/matriculas?action=calificaciontardia&id={{ materiaasignada.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Estudiante: {{ materiaasignada.matricula.inscripcion.persona }}
+            <br>Materia: {{ materiaasignada.materia }}</h4>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <a href="javascript:;" nhref="/matriculas?action=addevidenciamateria&id={{ materiaasignada.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus tu"></i> Adicionar</a>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row'>
+        <div class="col-12">
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 70px; text-align: center">Fecha</th>
+                    <th>Descripción</th>
+                    <th style="width: 80px; text-align: center;">Archivo</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for evidencia in evidencias %}
+                    <tr>
+                        <td style="text-align: center;">{{ evidencia.fecha|date:"Y-m-d" }}</td>
+                        <td>{{ evidencia.descripcion }}</td>
+                        <td style="text-align: center">
+                            {% if evidencia.archivo %}
+                                <a href='{{ evidencia.archivo.url }}' class='btn btn-ssm btn-success tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar" target="_blank"><i class="icon-download-alt"></i></a>
+                            {% endif %}
+                            <a class="btn btn-ssm btn-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Subir archivo" href="/matriculas?action=addarchivoevidencia&id={{ evidencia.id }}&ma={{ materiaasignada.id }}"><i class="icon-arrow-up"></i></a>
+                        </td>
+                        <td style="text-align: center">
+                            <a class="btn btn-ssm btn-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="/matriculas?action=editevidenciamateria&id={{ evidencia.id }}&ma={{ materiaasignada.id }}"><i class="icon-edit"></i> </a>
+                            <a class="btn btn-ssm btn-danger eliminacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar" href="javascript:;" nhref="/matriculas?action=delevidenciamateria&id={{ evidencia.id }}&ma={{ materiaasignada.id }}"><i class="icon-remove"></i></a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_nombre").addClass("validate[required]");
+
+        });
+    </script>
+{% endblock %}
+{% block formdestination %}/adm_carreras?action=competencias&id={{ competencia.carrera.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_carreras{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editcompetencia'/>
+    <input type='hidden' name='id' value='{{ competencia.id }}'/>
+{% endblock %}

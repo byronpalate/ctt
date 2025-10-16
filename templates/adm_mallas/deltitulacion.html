@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_mallas?action=titulacion&id={{ trabajo.malla.id }}{% endblock %}
+{% block formdestination %}/adm_mallas?action=titulacion&id={{ trabajo.malla.id }}{% endblock %}}
+{% block formactionvalue %}deltitulacion{% endblock %}
+{% block formobjectid %}{{ trabajo.id }}{% endblock %}
+{% block formobjectname %}el trabajo de titulacion{% endblock %}
+{% block formobjectrepr %}{{ trabajo.tipotrabajotitulacion }}{% endblock %}

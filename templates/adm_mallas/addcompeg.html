@@ -1,0 +1,18 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_competencia").addClass("validate[required]");
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas?action=competenciasg&id={{ malla.id }}{% endblock %}
+{% block formdestination %}/adm_mallas?action=competenciasg&id={{ malla.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_mallas{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addcompeg'/>
+    <input type='hidden' name='id' value='{{ malla.id }}'/>
+{% endblock %}
+{% block formback %}/adm_mallas?action=competenciasg&id={{ malla.id }}{% endblock %}

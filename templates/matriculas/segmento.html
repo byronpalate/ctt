@@ -1,0 +1,53 @@
+<tr><td>
+    {% if materia.cerrado %}
+        <div class="alert alert-danger">
+            MATERIA CERRADA EL {{ materia.fechacierre|date:'Y-m-d' }}
+        </div>
+    {% endif %}
+    <table class="table table-bordered table-striped">
+        <thead class="table-light">
+        <tr>
+            <th>Estudiantes</th>
+            <!-- GENERICO -->
+            {% include "calificaciones/generico/encabezado.html" %}
+            <th style="text-align: center; width: 50px;">Nota Final</th>
+            <th style="text-align: center; width: 50px;">Asist.</th>
+            <th style="text-align: center; width: 50px;">Clases</th>
+            <th style="text-align: center; width: 100px;">Estado</th>
+            <th style="width: 60px;">Observ</th>
+            <th style="text-align: center; width: 50px;">Cierre</th>
+            <th style="text-align: center; width: 120px;"></th>
+            <th style="text-align: center; width: 120px;"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for asignadomateria in materiaasignada %}
+            <tr id='materiaasignadarow{{ asignadomateria.id }}'>
+                <td data-bs-toggle="tooltip" data-bs-placement="top" title="{% if asignadomateria.matricula.inscripcion.persona.email %}{{ asignadomateria.matricula.inscripcion.persona.email }}{% else %}No tiene Email{% endif %}">
+                    {{ asignadomateria.matricula.inscripcion }}<br/>
+                    {% if asignadomateria.valida_pararecord %}
+                        <span class='badge text-bg-info tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Pasa al record">VALIDA</span>
+                    {% else %}
+                        <span class='badge text-bg-danger tu' data-bs-toggle="tooltip" data-bs-placement="top" title="No pasa al record">NO VALIDA</span>
+                    {% endif %}
+                    {% if asignadomateria.homologada or asignadomateria.convalidada %}
+                        <span class='badge text-bg-danger'>HOMOLOGADA</span>
+                    {% endif %}
+                    {% if asignadomateria.retirado %}
+                        <span class='badge text-bg-danger'>RETIRADO</span>
+                    {% endif %}
+                </td>
+                <!-- GENERICO -->
+                {% include "calificaciones/generico/filanotas.html" %}
+                {# DATOS ADICIONALES #}
+                {% include "calificaciones/generico/extradata.html" %}
+                <td>
+                </td>
+                <td style="text-align: center">
+                    <a class="btn btn-ssm btn-success" style="vertical-align: middle" href="/matriculas?action=evidenciasmateria&id={{ asignadomateria.id }}"><i class="icon-list"></i> Evidencias</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</td></tr>

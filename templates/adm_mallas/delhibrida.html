@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_mallas?action=hibrida&id={{ hibrida.asignaturamalla.id }}{% endblock %}
+{% block formaction %}/adm_mallas{% endblock %}
+{% block formactionvalue %}delhibrida{% endblock %}
+{% block formobjectid %}{{ hibrida.id }}{% endblock %}
+{% block formobjectname %}la modalidad{% endblock %}
+{% block formobjectrepr %}{{ hibrida.modalidad }}{% endblock %}

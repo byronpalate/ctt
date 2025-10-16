@@ -1,0 +1,43 @@
+{% load ctt_extras %}
+<div class='col-12'>
+    {% if periodo %}
+        <table class='table table-bordered table-striped'  >
+            <thead class="table-light">
+            <tr>
+                {% for dia in semana %}
+                    <th style="text-transform: uppercase;text-align: center;width: 14.2%">{{ dia.1 }}</th>
+                {% endfor %}
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                {% for dia in semana %}
+                    <td>
+                        {% for turno in turnos %}
+                            {% with clases=periodo|args:dia.0|args:turno|args:materiasregulares|call:"clases_horario" %}
+                                {% for clase in clases %}
+                                    <table class='cell table table-bordered' dia='{{ forloop.counter }}' turno='{{ turno.id }}' style="margin-bottom: 5px">
+                                        <tr id='horario_normal_{{ clase.id }}' class='horario_normal'>
+                                            <td style='text-align: center'>
+                                                <span class="badge text-bg-info">{{ clase.turno.nombre_horario }}</span><br>
+                                                <b>{{ clase.materia.asignatura.nombre }}</b>
+                                                <br><b>[{{ clase.materia.identificacion }}]</b>
+                                                        <span class="smaller">
+                                                        <br><b>{{ clase.fechas_horarios }}</b>
+                                                        <br/>{{ clase.materia.nivel.paralelo }}
+                                                        <br/>{{ clase.aula.nombre }}
+                                                        <br/>{{ clase.aula.sede.nombre }}
+                                                    </span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                {% endfor %}
+                            {% endwith %}
+                        {% endfor %}
+                    </td>
+                {% endfor %}
+            </tr>
+            </tbody>
+        </table>
+    {% endif %}
+</div>

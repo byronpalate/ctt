@@ -76,8 +76,7 @@ def view(request):
                             responsable.delete()
                         if form.cleaned_data['responsable']:
                             responsable = ResponsableCoordinacion(coordinacion=coordinacion,
-                                                                  persona_id=int(form.cleaned_data['responsable']),
-                                                                  firmadignidad=form.cleaned_data['firmadignidad'])
+                                                                  persona_id=int(form.cleaned_data['responsable']))
                             responsable.save(request)
                         log(u'Modifico responsable coordinacion: %s' % coordinacion, request, "edit")
                         return ok_json()
@@ -194,8 +193,7 @@ def view(request):
                         decano=CoordinadorCarrera(carrera=form.cleaned_data['carrera'],
                                                   modalidad=form.cleaned_data['modalidad'],
                                                   persona_id=form.cleaned_data['responsable'],
-                                                  coordinacion=coordinacion,
-                                                  firmadignidad=form.cleaned_data['firmadignidad'])
+                                                  coordinacion=coordinacion)
                         decano.save()
                         coordinacion.carrera.add(form.cleaned_data['carrera'])
                         log(u'Adiciono carrera %s a coordinacion: %s' % (form.cleaned_data['carrera'], coordinacion) , request, "edit")

@@ -15,17 +15,29 @@ from settings import FORMA_PAGO_RECIBOCAJAINSTITUCION, ALUMNOS_GROUP_ID, FORMA_P
     FORMA_PAGO_CTAXCRUZAR, CAJAS_DEPOSITOS
 
 from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor, Turno, Sexo, Provincia, Carrera, \
-    Modalidad, Sesion, DIAS_CHOICES, Periodicidad, Nacionalidad, Pais, Parroquia, TipoSangre, Raza, NacionalidadIndigena, \
-    PersonaEstadoCivil, TituloObtenido, TiposMalla, Asignatura, Itinerario, TipoDuraccionMalla, NivelMalla, EjeFormativo,\
-    AreaConocimiento, TipoMateria, CampoFormacion, AsignaturaMalla, Coordinacion, PerfilUsuario, Sede, TiempoDedicacionDocente,\
-    DetalleNivelTitulacion, NivelTitulacion, TipoAlias, CampoAmplioConocimiento, CampoDetalladoConocimiento, CampoEspecificoConocimiento, \
-    TiposBeca, TiposFinanciamientoBeca, Discapacidad, TiposIdentificacion, Inscripcion, FormaDePago, Banco, TipoCheque, TipoEmisorTarjeta, \
-    TipoTarjeta, ProcesadorPagoTarjeta, TipoTarjetaBanco, DiferidoTarjeta, CuentaBanco, TipoTransferencia, ReciboCajaInstitucion, \
-    NotaCredito, TipoPeriodo,CompetenciaGenerica, CompetenciaEspecifica, TallerPlanificacionMateria, FasesActividadesArticulacion, \
-    ContenidosTallerPlanificacionMateria, ClasesTallerPlanificacionMateria, TipoEstudianteCurso, LocacionesCurso, LugarRecaudacion, \
-    PuntoVenta, TIPOS_VALE_CAJA, TipoTecnologicoUniversidad, Cargo, TipoAula, TIPO_REQUEST_CHOICES, TIPO_EMISION_FACTURA, TIPO_AMBIENTE_FACTURACION, \
-    ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, MateriaCursoEscuelaComplementaria, \
-    Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, TipoIntegracion
+    Modalidad, Sesion, DIAS_CHOICES, Periodicidad, Nacionalidad, Pais, Parroquia, TipoSangre, Raza, \
+    NacionalidadIndigena, \
+    PersonaEstadoCivil, TituloObtenido, TiposMalla, Asignatura, Itinerario, TipoDuraccionMalla, NivelMalla, \
+    EjeFormativo, \
+    AreaConocimiento, TipoMateria, CampoFormacion, AsignaturaMalla, Coordinacion, PerfilUsuario, Sede, \
+    TiempoDedicacionDocente, \
+    DetalleNivelTitulacion, NivelTitulacion, TipoAlias, CampoAmplioConocimiento, CampoDetalladoConocimiento, \
+    CampoEspecificoConocimiento, \
+    TiposBeca, TiposFinanciamientoBeca, Discapacidad, TiposIdentificacion, Inscripcion, FormaDePago, Banco, TipoCheque, \
+    TipoEmisorTarjeta, \
+    TipoTarjeta, ProcesadorPagoTarjeta, TipoTarjetaBanco, DiferidoTarjeta, CuentaBanco, TipoTransferencia, \
+    ReciboCajaInstitucion, \
+    NotaCredito, TipoPeriodo, CompetenciaGenerica, CompetenciaEspecifica, TallerPlanificacionMateria, \
+    FasesActividadesArticulacion, \
+    ContenidosTallerPlanificacionMateria, ClasesTallerPlanificacionMateria, TipoEstudianteCurso, LocacionesCurso, \
+    LugarRecaudacion, \
+    PuntoVenta, TIPOS_VALE_CAJA, TipoTecnologicoUniversidad, Cargo, TipoAula, TIPO_REQUEST_CHOICES, \
+    TIPO_EMISION_FACTURA, TIPO_AMBIENTE_FACTURACION, \
+    ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, \
+    MateriaCursoEscuelaComplementaria, \
+    Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, \
+    TipoIntegracion, CodigoEvaluacion
+
 
 class BaseForm(forms.Form):
     formbase = forms.CharField(widget=forms.HiddenInput(), required=False)
@@ -214,7 +226,14 @@ class PersonaForm(BaseForm):
 class MallaForm(BaseForm):
     resolucion = forms.CharField(label=u"Resolución", max_length=100, required=False, widget=forms.TextInput())
     codigo = forms.CharField(label=u"Código", max_length=30, required=False, widget=forms.TextInput())
-    tipo = forms.ChoiceField(label=u'Tipo', choices=TiposMalla, required=False, widget=forms.Select())
+    tipo = forms.TypedChoiceField(
+        label='Tipo',
+        choices=TiposMalla.choices,
+        coerce=int,
+        required=False,
+        empty_value=None,
+        widget=forms.Select()
+    )
     modalidad = ModelChoiceField(label=u'Modalidad', queryset=Modalidad.objects.all(), required=False, widget=forms.Select())
     titulo = ModelChoiceField(label=u'Título obtenido', queryset=TituloObtenido.objects.all(), required=False, widget=forms.Select())
     tipoduraccionmalla = ModelChoiceField(label=u'Tipo duración', queryset=TipoDuraccionMalla.objects.all(), required=False, widget=forms.Select())
@@ -314,8 +333,6 @@ class CambionivelmallaForm(BaseForm):
 
 class AsignaturaMallaForm(BaseForm):
     asignatura = ModelChoiceField(label=u'Proyecto formativo', queryset=Asignatura.objects.all(), required=False)
-    tieneitinerario = forms.BooleanField(label=u'Tiene Itinerario', required=False, initial=False)
-    itinerario = ModelChoiceField(label=u'Itinerario', queryset=Itinerario.objects.all(), required=False, widget=forms.Select())
     nivelmalla = ModelChoiceField(label=u'Nivel de malla', queryset=NivelMalla.objects.all(), required=False, widget=forms.Select())
     ejeformativo = ModelChoiceField(label=u'Unidad de Organización Curricular', queryset=EjeFormativo.objects.all(), required=False, widget=forms.Select())
     areaconocimiento = ModelChoiceField(label=u'Área de conocimiento', queryset=AreaConocimiento.objects.all(), required=False)
@@ -324,7 +341,6 @@ class AsignaturaMallaForm(BaseForm):
     identificacion = forms.CharField(label=u'Identificación', max_length=30, required=False, widget=forms.TextInput())
     practicas = forms.BooleanField(label=u'Prácticas pre-profesionales', required=False, initial=False)
     codigopracticas = forms.CharField(label=u'Código prácticas', max_length=15, required=False, widget=forms.TextInput())
-    practicasasistenciales = forms.BooleanField(label=u'Prácticas asistenciales', required=False, initial=False)
     obligatoria = forms.BooleanField(label=u'Obligatoria', required=False, initial=True)
     matriculacion = forms.BooleanField(label=u'Permite matriculación', required=False, initial=True)
     horassemanales = forms.FloatField(label=u"Horas clases semanales", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
@@ -342,7 +358,6 @@ class AsignaturaMallaForm(BaseForm):
     creditos = forms.FloatField(label=u"Créditos ", required=False, initial="0.0000", widget=forms.TextInput(attrs={'class': 'imp-numbermed-right', 'decimales': '4'}))
     cantidadmatriculas = forms.IntegerField(label=u"Cantidad matrículas", initial=CANTIDAD_MATRICULAS_MAXIMAS, required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '0'}))
     sinasistencia = forms.BooleanField(label=u'No valida asistencia', required=False, initial=False)
-    titulacion = forms.BooleanField(label=u'Para titulación', required=False, initial=False)
     validacreditos = forms.BooleanField(label=u'Válida para créditos', initial=True, required=False)
     validapromedio = forms.BooleanField(label=u'Válida para promedio', initial=True, required=False)
     competencia = forms.CharField(label=u'Competencia', widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), required=False)
@@ -355,7 +370,6 @@ class AsignaturaMallaForm(BaseForm):
         deshabilitar_campo(self, 'itinerario')
 
     def adicionar(self, malla):
-        deshabilitar_campo(self, 'modelonuevo')
         if not malla.nivelacion:
             self.fields['nivelmalla'].queryset = NivelMalla.objects.filter(id__gt=0, id__lte=malla.nivelesregulares)
         else:
@@ -365,14 +379,12 @@ class AsignaturaMallaForm(BaseForm):
         self.fields['plantillalms'].readonly = False
         deshabilitar_campo(self, 'asignatura')
         deshabilitar_campo(self, 'itinerario')
-        deshabilitar_campo(self, 'modelonuevo')
         if not malla.nivelacion:
             self.fields['nivelmalla'].queryset = NivelMalla.objects.filter(id__gt=0, id__lte=malla.nivelesregulares)
         else:
             self.fields['nivelmalla'].queryset = NivelMalla.objects.filter(id__lte=malla.nivelesregulares)
 
     def editarcompetencia(self, malla):
-        deshabilitar_campo(self, 'modelonuevo')
         self.fields['asignatura'].widget.attrs['readonly'] = True
         self.fields['nivelmalla'].widget.attrs['readonly'] = True
         self.fields['identificacion'].widget.attrs['readonly'] = True
@@ -2782,3 +2794,129 @@ class NivelMatriculaForm(BaseForm):
     def editar(self):
         deshabilitar_campo(self, 'carrera')
         deshabilitar_campo(self, 'nivelmalla')
+
+
+
+class EvidenciaMallaForm(BaseForm):
+    fecha = forms.DateField(label=u"Fecha", input_formats=['%d-%m-%Y'], initial=datetime.now().date(), widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
+    nombre = forms.CharField(label=u"Nombre", max_length=300, required=False)
+    descripcion = forms.CharField(label=u'Descripción', widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), required=False)
+    archivo = ExtFileField(label=u'Archivo', help_text=u'Tamaño máximo permitido 40mb, en formato doc, docx, pdf', ext_whitelist=(".doc", ".docx", ".pdf"), max_upload_size=73400320, required=False)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+class InfoMallasedeForm(BaseForm):
+    sede = forms.ModelChoiceField(label=u"Sede", queryset=Sede.objects, required=False, widget=forms.Select())
+    codigo = forms.CharField(label=u"Código", max_length=200, widget=forms.TextInput())
+    lugar = forms.CharField(label=u"Lugar Ejecución", max_length=200, widget=forms.TextInput())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+    def editar(self):
+        deshabilitar_campo(self, 'sede')
+
+
+class CompetenciaForm(BaseForm):
+    carrera = ModelChoiceField(label=u'Carrera', queryset=Carrera.objects.all(), required=False)
+    nombre = forms.CharField(label=u'Descripción', widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), required=False)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+    def adicionar(self, miscarreras):
+        self.fields['carrera'].queryset = miscarreras
+
+
+class CompetenciaEspecificaMallaForm(BaseForm):
+    competencia = forms.ModelChoiceField(label=u'Competencia', queryset=CompetenciaEspecifica.objects.all(), required=False, widget=forms.Select())
+
+    def extra_paramaters(self):
+        self.fields['formtype'].initial = 'vertical'
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+    def adicionar(self, carrera):
+        self.fields['competencia'].queryset = CompetenciaEspecifica.objects.filter(carrera=carrera).distinct()
+
+
+class CompetenciaGenericaMallaForm(BaseForm):
+    competencia = forms.ModelChoiceField(label=u'Competencia', queryset=CompetenciaGenerica.objects.all(), required=False, widget=forms.Select())
+
+    def extra_paramaters(self):
+        self.fields['formtype'].initial = 'vertical'
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class InformacionSedeMallaForm(BaseForm):
+    codigo = forms.CharField(label=u'Código', required=False, max_length=30, widget=forms.TextInput())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class AsignaturaForm(BaseForm):
+    nombre = forms.CharField(label=u'Nombre', max_length=600, required=False)
+    codigo = forms.CharField(label=u'Código', max_length=30, required=False, widget=forms.TextInput())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+    def editar(self, asignatura):
+        if asignatura.en_uso():
+            deshabilitar_campo(self, 'nombre')
+
+
+class UnificarAsignaturaForm(BaseForm):
+    origen = ModelChoiceField(label=u'Asignatura origen', required=False, queryset=Asignatura.objects.all())
+    asignatura = ModelChoiceField(label=u'Asignatura final', queryset=Asignatura.objects.all())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+    def editar(self, asignatura):
+        deshabilitar_campo(self, 'origen')
+        self.fields['asignatura'].queryset = Asignatura.objects.all().exclude(id=asignatura.id)
+
+
+class ModeloEvaluativoForm(BaseForm):
+    nombre = forms.CharField(label=u"Nombre", max_length=100)
+    principal = forms.BooleanField(label=u"Principal", required=False, initial=False)
+    activo = forms.BooleanField(label=u"Activo", required=False, initial=True)
+    notamaxima = forms.FloatField(label=u"Nota Máxima", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '2'}))
+    notaaprobar = forms.FloatField(label=u"Nota para Aprobar", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '2'}))
+    notarecuperacion = forms.FloatField(label=u"Nota para Recup.", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '2'}))
+    asistenciaaprobar = forms.FloatField(label=u"% Asist. para Aprobar.", initial='0', required=False, widget=forms.TextInput(attrs={'class': 'imp-number'}))
+    asistenciarecuperacion = forms.FloatField(label=u"% Asist. para Recup.", initial='0', required=False, widget=forms.TextInput(attrs={'class': 'imp-number'}))
+    notafinaldecimales = forms.FloatField(label=u"Decimales N.Final", initial='0', required=False, widget=forms.TextInput(attrs={'class': 'imp-numbersmall'}))
+    observaciones = forms.CharField(label=u'Observaciones', widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), required=False)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+class DetalleModeloEvaluativoForm(BaseForm):
+    nombre = forms.CharField(label=u"Nombre", max_length=10, required=False, widget=forms.TextInput())
+    alternativa = forms.ModelChoiceField(label=u"Alternativas", queryset=CodigoEvaluacion.objects, widget=forms.Select())
+    orden = forms.IntegerField(label=u"Orden en Acta", required=False, initial='0', widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '0'}))
+    notaminima = forms.FloatField(label=u"Nota Mínima", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '2'}))
+    notamaxima = forms.FloatField(label=u"Nota Máxima", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '2'}))
+    decimales = forms.FloatField(label=u"Decimales", initial='0', required=False, widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '0'}))
+    dependiente = forms.BooleanField(label=u"Campo Dependiente?", required=False, initial=False)
+    actualizaestado = forms.BooleanField(label=u"Actualiza Estado?", required=False, initial=False)
+    determinaestadofinal = forms.BooleanField(label=u"Determina Estado final?", required=False, initial=False)
+    dependeasistencia = forms.BooleanField(label=u"Depende de asisencia?", required=False, initial=False)
+
+    def editar(self):
+        deshabilitar_campo(self, 'nombre')
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+class LogicaModeloEvaluativoForm(BaseForm):
+    logica = forms.CharField(label=u'Lógica', widget=forms.Textarea(attrs={'rows': '15', 'class': 'form-control'}), required=False)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+

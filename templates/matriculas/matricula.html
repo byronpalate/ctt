@@ -1,0 +1,349 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            var nivel = {{ nivel.id }};
+            busqueda = function(){
+                var term = $("#searchinput").val().toUpperCase();
+                if (term.length>0){
+                    bloqueointerface();
+                    location.href = "/matriculas?action=matricula&id={{ nivel.id }}&s="+term;
+                } else {
+                    $("#busqueda").focus();
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda();
+            });
+
+            $('#searchinput').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    busqueda();
+                }
+            }).focus();
+
+            $(".verificariece").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('mdi');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/matriculas",
+                    data: {'action': 'verificariece', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result !== 'ok') {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            filtros = function(){
+                var carreraid = $("#carrera").val();
+                var nivelmallaid = $("#nivelmalla").val();
+                var paralelomateriaid = $("#paralelomateria").val();
+                bloqueointerface();
+                location.href = '/matriculas?action=matricula&id='+nivel+'&carreraid='+carreraid+'&nivelmallaid='+nivelmallaid+'&paralelomateriaid='+paralelomateriaid;
+            };
+
+            $("#carrera, #nivelmalla, #paralelomateria").change(filtros);
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/matriculas{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>{{ nivel }}
+                <br>Fechas: {{ nivel.inicio|date:"Y-m-d" }} - {{ nivel.fin|date:"Y-m-d" }}
+                <br>Fecha Tope Matrícula Ordinaria:  {{ nivel.fechatopematricula|date:"Y-m-d" }} {% if nivel.matricula_cerrada %}<span class="badge text-bg-danger"> CERRADA</span>{% endif %}
+                <br>Fecha Tope Matrícula Extraordinaria: {{ nivel.fechatopematriculaex|date:"Y-m-d" }} {% if nivel.matriculaextraordinaria_cerrada %} <span class="badge text-bg-danger"> CERRADA</span>{% endif %}
+                <br>Fecha Tope Matrícula Especial: {{ nivel.fechatopematriculaes|date:"Y-m-d" }} {% if nivel.matriculaespecial_cerrada %} <span class="badge text-bg-danger"> CERRADA</span>{% endif %}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            {% if not nivel.cerrado %}
+                {% if perms.ctt.puede_matricular and nivel.periodo.matriculacionactiva %}
+                    <a href='/matriculas?action=addmatriculalibre&id={{ nivel.id }}' class="btn btn-sm btn-success"><i class="icon-plus"></i> Matricular</a>
+                {% endif %}
+            {% endif %}
+            <a href="/niveles?action=materias&id={{ nivel.id }}" class="btn btn-sm btn-primary"><i class="icon-table"></i> Materias</a>
+            {% if reporte_0 %}
+                <a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&nivel={{ nivel.id }}&detallado=false" class='btn reportedirecto btn-warning'><i class="icon-print"></i> Imprimir</a>
+            {% endif %}
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="searchinput" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/matriculas?action=matricula&id={{ nivel.id }}" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="row mb-2">
+        <div class="col-12">
+            <form class="form-search">
+                <select id='carrera' nid="{{ nivel.id }}" class="form-select form-select-sm">
+                    <option value="-1" selected="selected">TODOS</option>
+                    {% for carrera in carreras %}
+                        <option value="{{ carrera.id }}" {% if carreraid == carrera.id %}
+                                selected="selected" {% endif %}>{{ carrera }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <form class="form-search">
+                <select id='nivelmalla' nid="{{ nivel.id }}" class="form-select form-select-sm">
+                    <option value="-1" selected="selected">TODOS LOS NIVELES</option>
+                    {% for nivelmalla in nivelesmalla %}
+                        <option value="{{ nivelmalla.id }}" {% if nivelmallaid == nivelmalla.id %}
+                                selected="selected" {% endif %}>{{ nivelmalla }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <form class="form-search">
+                <select id='paralelomateria' pid="{{ paralelomateria.id }}" class="form-select form-select-sm">
+                    <option value="-1" selected="selected">TODOS LOS PARALELOS</option>
+                    {% for paralelosmateria in paralelosmaterias %}
+                        <option value="{{ paralelosmateria.id }}" {% if paralelomateriaid == paralelosmateria.id %}
+                                selected="selected" {% endif %}>{{ paralelosmateria }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class="row-fluid">
+        <div class='col-12 responsive'>
+            <table class="table table-bordered table-striped" id="MyTable">
+                <thead class="table-light">
+                <tr>
+                    <th>Estudiante</th>
+                    <th style="width: 100px">Carrera</th>
+                    <th style="width: 100px">Nivel Mat./Prom.</th>
+                    <th style="width: 50px; text-align: center">Malla</th>
+                    <th style="width: 120px">Tipo</th>
+                    <th style="width: 80px;text-align: center;">Fecha / Hora</th>
+                    <th style="width: 80px;text-align: center;">Fecha Límite</th>
+                    <th style="width: 50px;text-align: center;">Materias</th>
+                    <th style="width: 40px;text-align: center;">Form.</th>
+                    <th style="width: 40px;text-align: center;">Beca</th>
+                    <th style="width: 40px;text-align: center;">IECE</th>
+                    <th style="width: 90px;"></th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for matricula in matriculas %}
+                    <tr>
+                        <td>
+                            {{ matricula.inscripcion.persona }}<br>
+                            {% if not matricula.cerrada %}
+                                {% if matricula.inscripcion.tiene_deuda_vencida %}
+                                    <span class='badge text-bg-danger'>DEUDA: ${{ matricula.inscripcion.adeuda_a_la_fecha|floatformat:2 }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge text-bg-danger tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Retirado de matricula">CERRADA</span>
+                            {% endif %}
+                            {% if matricula.retirado %}
+                                <span class="badge text-bg-warning tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Retirado de matricula">RETIRADO {{ matricula.retiro_ultimo.subtipo }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ matricula.inscripcion.carrera.alias }}<br>{{ matricula.paraleloprincipal }}</td>
+                        <td>{{ matricula.nivelmalla }}{% if matricula.cerrada %}<br>{{ matricula.mi_promocion.nivelmalla }}{% endif %}</td>
+                        <td style="text-align: center">{{ matricula.inscripcion.mi_malla.inicio.year }}</td>
+                        <td>{{ matricula.tipomatricula }}</td>
+                        <td style="text-align:center;">{{ matricula.fecha|date:"Y-m-d" }}<br>{{ matricula.hora|time:"h:i a" }}</td>
+                        <td style="text-align:center;">{{ matricula.fechatope|date:"Y-m-d" }}</td>
+                        <td style="text-align:center;">{{ matricula.cantidad_materias }}</td>
+                        <td style="text-align:center;">
+                            {% if matricula.formalizada %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Formalizada">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Formalizada">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:center;">
+                            {% if matricula.becado %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Becado">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Becado">No</span>
+                            {% endif %}
+                        </td>
+                        <td  style="text-align:center;">
+                            {% if not matricula.cerrada %}
+                                <input type="checkbox" {% if matricula.iece %}checked{% endif %} class="verificariece" mdi="{{ matricula.id }}"  {% if not perms.ctt.puede_matricular or matricula.cerrada %}disabled="disabled"{% endif %}>
+                            {% else %}
+                                {% if matricula.iece %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="IECE">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="IECE">No</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            <a href='/matriculas?action=materias&id={{ matricula.id }}{% if ret %}&ret_nivel=1{% endif %}' class="btn btn-primary btn-ssm"><i class="icon-list-alt"></i> Materias</a>
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {% if perms.ctt.puede_modificar_matriculas %}
+                                        {% if not matricula.retirado %}
+                                            {% if not matricula.cerrada %}
+                                                <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/matriculas?action=cambiarfechamatricula&id={{ matricula.id }}"><i class="icon-calendar"></i> Fecha de matrícula</a></li>
+                                                {% if formaliza and not PERSONA_ADMINS_ACADEMICO_ID%}
+                                                    {% if not matricula.formalizada %}
+                                                        <li class="smaller"><a href="javascript:;" nhref='/matriculas?action=formalizar&id={{ matricula.id }}' class="confirmacionmodal dropdown-item"><i class="icon-refresh"></i> Formalizar</a></li>
+                                                    {% else %}
+                                                        <li class="smaller"><a href="javascript:;" nhref='/matriculas?action=noformalizar&id={{ matricula.id }}' class="confirmacionmodal dropdown-item"><i class="icon-remove"></i> No Formalizar</a></li>
+                                                    {% endif %}
+                                                {% endif %}
+                                                {% if not PERSONA_ADMINS_ACADEMICO_ID %}
+                                                    <!-- Retiro de matricula -->
+                                                    {% if not matricula.retirado and usa_retiro_matricula %}
+                                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/matriculas?action=retirar&id={{ matricula.id }}"><i class="icon-minus"></i> Retirar</a></li>
+                                                    {% endif %}
+                                                    <!-- Generar Rubros -->
+                                                    {#                                                {% if not matricula.tiene_rubros %}#}
+                                                    <li class="smaller"><a href="javascript:;" nhref="/matriculas?action=generarrubros&id={{ matricula.id }}" class="confirmacionmodal dropdown-item"><i class="icon-money"></i> Generar Rubros</a></li>
+                                                    {#                                                {% endif %}#}
+                                                    <!-- Aplicar beca -->
+                                                    {% if not matricula.becado %}
+                                                        <li class="smaller"><a href='/adm_becarios?action=asignarbeca&id={{ matricula.inscripcion.id }}' class="dropdown-item"><i class="icon-asterisk"></i> Aplicar Beca</a></li>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endif %}
+                                            <!-- Retiro de matricula -->
+                                            <li class="smaller"><a href='/finanzas?action=rubros&id={{ matricula.inscripcion.id }}&nivel={{ matricula.nivel.id }}' class="dropdown-item"><i class="icon-money"></i> Finanzas</a></li>
+                                            {% if not matricula.cerrada and not PERSONA_ADMINS_ACADEMICO_ID %}
+                                                {% if lista_forma_calculo and not matricula.cerrada %}
+                                                    <li class="dropdown smaller dropstart">
+                                                        <a href="javascript:;" class="dropdown-item"><i class="icon-refresh"></i> Recalcular Rubros</a>
+                                                        <ul class="dropdown-menu">
+                                                            {% for forma_calculo in  lista_forma_calculo %}
+                                                                <li class="smaller"><a href="javascript:;" nhref='/matriculas?action=recalcular&id={{ matricula.id }}&idf={{ forma_calculo.0 }}' class="confirmacionmodal dropdown-item"><i class="icon-money"></i> {{ forma_calculo.1 }}</a></li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </li>
+                                                {% endif %}
+                                            {% endif %}
+                                            <!-- Impresiones -->
+                                            <li class="dropdown smaller dropstart">
+                                                <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Impresi&oacute;n</a>
+                                                <ul class="dropdown-menu">
+                                                    {% if reporte_1 %}
+                                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_1.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_1.nombre }}&matricula={{ matricula.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certificado de matrícula</a></li>
+                                                    {% endif %}
+                                                    {% if reporte_2 %}
+                                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_2.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_2.nombre }}&matricula={{ matricula.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Compromiso de pago</a></li>
+                                                    {% endif %}
+                                                    {% if matricula.cerrada and reporte_3 %}
+                                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_3.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_3.nombre }}&inscripcion={{ matricula.inscripcion.id }}&periodo={{ periodoseleccionado.id  }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certificado de promoción</a></li>
+                                                    {% endif %}
+                                                    {% if matricula.cerrada and reporte_4 %}
+                                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_4.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_4.nombre }}&matricula={{ matricula.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certificado de promoción inglés</a></li>
+                                                    {% endif %}
+                                                </ul>
+                                            </li>
+                                            {% if not matricula.cerrada and not PERSONA_ADMINS_ACADEMICO_ID%}
+                                                {% if perms.ctt.puede_anular_matriculas %}
+                                                    {% if not matricula.permiteanular %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=activaranular&id={{ matricula.id }}'><i class="icon-unlock"></i> Permitir Anular</a></li>
+                                                    {% else %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=desactivaranular&id={{ matricula.id }}'><i class="icon-lock"></i> Desactivar Anular</a></li>
+                                                    {% endif %}
+                                                {% endif %}
+                                                <!-- Eliminar matricula -->
+                                                {% if perms.ctt.puede_eliminar_matriculas %}
+                                                    {% if not matricula.tiene_rubros_pagados %}
+                                                        <li class="dropdown-divider"></li>
+                                                        <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=delmatricula&id={{ matricula.id }}'><i class="icon-remove"></i> Eliminar</a></li>
+                                                    {% else %}
+                                                        {% if matricula.permiteanular %}
+                                                            <li class="dropdown-divider"></li>
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=anularmatricula&id={{ matricula.id }}'><i class="icon-remove"></i> Anular</a></li>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% else %}
+                                            <li class="smaller"><a href="/matriculas?action=continua&id={{ matricula.id }}" class="btn-form dropdown-item"><i class="icon-refresh"></i> Continuar</a></li>
+                                        {% endif %}
+                                        </ul>
+                                    {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                <tr>
+                    <td colspan="15">
+                        Total de Matriculados: <span class="badge text-bg-info">{{ matriculados_total }}</span>
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item"><a href="/matriculas?action=matricula&id={{ nivel.id }}&{% if search %}s={{ search }}&{% endif %}page=1" class= "page-link">1</a></li>
+                            <li class="page-item"><a href="/matriculas?action=matricula&id={{ nivel.id }}&{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="active">...</a></li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/matriculas?action=matricula&id={{ nivel.id }}&{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item"><a href="/matriculas?action=matricula&id={{ nivel.id }}&{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="active">...</a></li>
+                            <li class="page-item"><a href="/matriculas?action=matricula&id={{ nivel.id }}&{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}">{{ paging.num_pages }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/matriculas?action=matricula&id={{ nivel.id }}&{% if search %}idm={{ search }}&{% endif %}page={{ pagenumber }}">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

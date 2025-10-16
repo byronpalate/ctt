@@ -25,7 +25,8 @@ from ctt.forms import PersonaForm, CambioClaveForm, CargarFotoForm, CambioPerfil
 from ctt.funciones import generar_nombre, log, fechatope, ok_json, bad_json, url_back, generar_clave, \
     convertir_fecha
 from ctt.models import Persona, Periodo, FotoPersona, Noticia, Profesor, Inscripcion, Archivo,  GruposModulos, mi_institucion, \
-Persona, Incidencia, PerfilUsuario, Modulo, Encuesta, Matricula, DatoTransferenciaDeposito, years_ago, Materia, Actividad, InscripcionFlags
+Persona, Incidencia, PerfilUsuario, Modulo, Encuesta, Matricula, DatoTransferenciaDeposito, years_ago, Materia, Actividad,\
+    InscripcionFlags, Reporte
 
 from ctt.tasks import send_mail
 
@@ -396,7 +397,8 @@ def panel(request):
                 profesor = perfilprincipal.profesor
                 data['es_profesor'] = True
                 data['necesita_evaluarse'] = False
-                data['proceso'] = proceso = periodo.proceso_evaluativo()
+                # data['proceso'] = proceso = periodo.proceso_evaluativo()
+                data['proceso'] = None
                 data['materias_sin_planificacion'] = Materia.objects.filter(Q(planificacionmateria__isnull=True) | Q(planificacionmateria__aprobado=False), profesormateria__profesor=profesor, profesormateria__principal=True, cerrado=False).exists()
                 data['solicitud_notas'] = Materia.objects.filter(solicitudingresonotasatraso__fechalimite__gte=datetime.now().date(), profesormateria__profesor=profesor, profesormateria__principal=True, solicitudingresonotasatraso__estado=2).distinct()
 

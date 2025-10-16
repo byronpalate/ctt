@@ -2242,6 +2242,11 @@ class Persona(ModeloBase):
     def mis_datosbancarios(self):
         return self.informacionbancariapersona_set.first()
 
+    def documentos_sin_entregar(self):
+        cantidadsinentregar = 0
+        return cantidadsinentregar
+
+
     def save(self, *args, **kwargs):
         self.nombre1 = null_to_text(self.nombre1)
         self.nombre2 = null_to_text(self.nombre2)
@@ -2905,7 +2910,7 @@ class Asignatura(ModeloBase):
         return self.asignaturamalla_set.exists()
 
     def cantidad_mallas(self):
-        return Malla.objects.filter(Q(asignaturamalla__asignatura=self) | Q(modulomalla__asignatura=self)).distinct().count()
+        return Malla.objects.filter(asignaturamalla__asignatura=self).distinct().count()
 
     def en_nivel_propedeutico(self, inscripcion):
         return inscripcion.mi_malla().asignaturamalla_set.filter(asignatura=self, nivelmalla_id=NIVEL_MALLA_CERO).exists()
@@ -3573,10 +3578,8 @@ class Malla(ModeloBase):
         return self.informacionsedemalla_set.all()
 
     def cantidad_materias(self, inscripcion):
-        return self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=inscripcion.mi_itinerario())).count()
+        return self.asignaturamalla_set.filter().count()
 
-    def cantidad_modulos(self):
-        return self.modulomalla_set.count()
 
     def cantidad_itinerarios(self):
         return Itinerario.objects.filter(asignaturamalla__malla=self).distinct().count()
@@ -3616,28 +3619,26 @@ class Malla(ModeloBase):
 
     def cantidad_creditos(self):
         creditosmalla = null_to_numeric(self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario__id=1)).aggregate(valor=Sum('creditos'))['valor'], 4)
-        creditosmodulos = null_to_numeric(self.modulomalla_set.all().aggregate(valor=Sum('creditos'))['valor'], 4)
-        return null_to_numeric(creditosmalla + creditosmodulos, 4)
+        return null_to_numeric(creditosmalla , 4)
 
     def cantidad_creditos_solo_malla(self, inscripcion):
-        return null_to_numeric(self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=inscripcion.mi_itinerario())).aggregate(valor=Sum('creditos'))['valor'], 4)
+        return null_to_numeric(self.asignaturamalla_set.filter().aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def cantidad_materiascompletar(self):
         materiasmalla = self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario_id=1)).count()
-        materiasmodulos = self.modulomalla_set.all().count()
-        return materiasmalla + materiasmodulos
+        return materiasmalla
 
     def total_ceditos_nivel(self, nivel):
         return null_to_numeric(self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario__id=1), nivelmalla=nivel).aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def total_ceditos_nivel_debe_matricularse(self, nivel, inscripcion):
-        return null_to_numeric(self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=inscripcion.mi_itinerario()), nivelmalla=nivel).filter(matriculacion=True).exclude(titulacion=True).aggregate(valor=Sum('creditos'))['valor'], 4)
+        return null_to_numeric(self.asignaturamalla_set.filter(nivelmalla=nivel).filter(matriculacion=True).aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def total_ceditos_eje(self, eje):
-        return null_to_numeric(self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario__id=1), ejeformativo=eje).aggregate(valor=Sum('creditos'))['valor'], 4)
+        return null_to_numeric(self.asignaturamalla_set.filter( ejeformativo=eje).aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def horas(self):
-        return null_to_numeric(self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario__id=1)).aggregate(valor=Sum('horas'))['valor'], 1)
+        return null_to_numeric(self.asignaturamalla_set.filter().aggregate(valor=Sum('horas'))['valor'], 1)
 
     def total_totales(self):
         return null_to_numeric(self.horaspracticas + self.horasvinculacion + self.horas(), 1)
@@ -3678,7 +3679,7 @@ class Malla(ModeloBase):
         return self.asignaturamalla_set.filter(nivelmalla=nivelmalla, ejeformativo=eje)
 
     def asignatura_malla_itinerario(self, eje, nivelmalla, inscripcion):
-        return self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=inscripcion.mi_itinerario()), nivelmalla=nivelmalla, ejeformativo=eje).distinct()
+        return self.asignaturamalla_set.filter( nivelmalla=nivelmalla, ejeformativo=eje).distinct()
 
     def asignaturas_malla_sin_itinerario(self, eje, nivelmalla):
         return self.asignaturamalla_set.filter(itinerario__isnull=True, nivelmalla=nivelmalla, ejeformativo=eje)
@@ -3691,8 +3692,6 @@ class Malla(ModeloBase):
         if self.inscripcionmalla_set.exists():
             return False
         elif self.asignaturamalla_set.exists():
-            return False
-        elif self.modulomalla_set.exists():
             return False
         return True
 
@@ -3725,8 +3724,6 @@ class Malla(ModeloBase):
         if self.materia_set.exists():
             return False
         elif self.inscripcionmalla_set.exists():
-            return False
-        elif self.detallefechapreinscripcion_set.exists():
             return False
         elif self.nivel_set.exists():
             return False
@@ -3882,107 +3879,6 @@ class AreaConocimiento(ModeloBase):
 
 
 
-
-
-class ModuloMalla(ModeloBase):
-    malla = models.ForeignKey(Malla, verbose_name=u'Malla', on_delete=models.CASCADE)
-    asignatura = models.ForeignKey(Asignatura, verbose_name=u'Asignatura', on_delete=models.CASCADE)
-    areaconocimiento = models.ForeignKey(AreaConocimiento, verbose_name=u'Area de conocimiento', blank=True, null=True, on_delete=models.CASCADE)
-    tipomateria = models.ForeignKey(TipoMateria, verbose_name=u'Tipo de materia', blank=True, null=True, on_delete=models.CASCADE)
-    campoformacion = models.ForeignKey(CampoFormacion, verbose_name=u'Campo formacion', blank=True, null=True, on_delete=models.CASCADE)
-    identificacion = models.CharField(default='', max_length=30, verbose_name=u'Identificación')
-    matriculacion = models.BooleanField(default=True, verbose_name=u'Matriculación')
-    horassemanales = models.FloatField(default=0, verbose_name=u'Horas Semanales')
-    horas = models.FloatField(default=0, verbose_name=u'Horas')
-    horasdocencia = models.FloatField(default=0, verbose_name=u'Horas docencia')
-    horascolaborativas = models.FloatField(default=0, verbose_name=u'Horas colaborativas')
-    horasasistidas = models.FloatField(default=0, verbose_name=u'Horas asistidas')
-    horasorganizacionaprendizaje = models.FloatField(default=0, verbose_name=u'Horas Organizacion aprendizaje')
-    horasautonomas = models.FloatField(default=0, verbose_name=u'Horas autonomas')
-    horaspracticas = models.FloatField(default=0, verbose_name=u'Horas practicas')
-    totalhorasaprendizajecontactodocente = models.FloatField(default=0, verbose_name=u"Total de horas de aprendizaje en contrato con el docente")
-    totalhorasaprendizajepracticoexperimental = models.FloatField(default=0, verbose_name=u"Total de horas de aprendizaje práctico-experimental")
-    totalhorasaprendizajeautonomo = models.FloatField(default=0, verbose_name=u"Total de horas del aprendizaje autónomo")
-    creditos = models.FloatField(default=0, verbose_name=u'créditos')
-    cantidadmatriculas = models.IntegerField(default=0, verbose_name=u'Cantidad Matrículas')
-    sinasistencia = models.BooleanField(default=False, verbose_name=u'Sin asistencia')
-    validacreditos = models.BooleanField(default=False)
-    validapromedio = models.BooleanField(default=False)
-    competencia = models.TextField(verbose_name=u'Competencia')
-
-    def __str__(self):
-        return u'%s' % self.asignatura.nombre
-
-    class Meta:
-        verbose_name_plural = u"Modulos de mallas"
-        ordering = ['asignatura']
-        unique_together = ('malla', 'asignatura',)
-
-    def cantidad_predecesoras(self):
-        return self.modulomallapredecesora_set.count()
-
-    def tiene_predecesoras(self):
-        return self.modulomallapredecesora_set.exists()
-
-    def lista_predecesoras(self):
-        return self.modulomallapredecesora_set.all()
-
-    def cantidad_record(self):
-        return self.historicorecordacademico_set.count()
-
-    def puede_modificarse(self):
-        if self.materia_set.exists():
-            return False
-        elif self.historicorecordacademico_set.exists():
-            return False
-        elif ModuloMallaPredecesora.objects.filter(predecesora=self).exists():
-            return False
-        return True
-
-    def verifica_predecesora(self, modulo):
-        for prede in ModuloMallaPredecesora.objects.filter(modulomalla=self):
-            if prede.predecesora == modulo:
-                return True
-            else:
-                return prede.predecesora.verifica_predecesora(modulo)
-        return False
-
-    def tiene_syllabus_aprobados(self):
-        return self.silabomodulomalla_set.filter(habilitado=True).exists()
-
-    def tiene_syllabus_pendiente(self):
-        return self.silabomodulomalla_set.filter(habilitado=False).exists()
-
-    def cantidad_syllabus_aprobados(self):
-        return self.silabomodulomalla_set.filter(habilitado=True).count()
-
-    def syllabus_actual(self):
-        if self.tiene_syllabus_aprobados():
-            return self.silabomodulomalla_set.filter(habilitado=True).order_by('-fecha')[0]
-        return None
-
-    def save(self, *args, **kwargs):
-        self.identificacion = null_to_text(self.identificacion)
-        self.competencia = null_to_text(self.competencia)
-        super(ModuloMalla, self).save(*args, **kwargs)
-
-
-
-class ModuloMallaPredecesora(ModeloBase):
-    modulomalla = models.ForeignKey(ModuloMalla, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
-    predecesora = models.ForeignKey(ModuloMalla, related_name='predecesora', verbose_name=u'Predecesora', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return u'%s' % self.predecesora.asignatura.nombre
-
-    class Meta:
-        verbose_name_plural = u"Precedencias de modulo de malla"
-        unique_together = ('modulomalla', 'predecesora',)
-
-    def save(self, *args, **kwargs):
-        super(ModuloMallaPredecesora, self).save(*args, **kwargs)
-
-
 class EjeFormativo(ModeloBase):
     nombre = models.CharField(default='', max_length=100, verbose_name=u'Nombre')
 
@@ -4044,7 +3940,6 @@ class AsignaturaMalla(ModeloBase):
     validacreditos = models.BooleanField(default=True, verbose_name=u'Valida para créditos')
     validapromedio = models.BooleanField(default=True, verbose_name=u'Valida para promedio')
     practicas = models.BooleanField(default=False, verbose_name=u'Practicas en materia')
-    practicasasistenciales = models.BooleanField(default=False, verbose_name=u'Practicas asistenciales')
     codigopracticas = models.CharField(verbose_name=u'Código practicas', blank=True, null=True, max_length=15)
     obligatoria = models.BooleanField(default=True, verbose_name=u'Debe tomar materia')
     matriculacion = models.BooleanField(default=True, verbose_name=u'Matriculación')
@@ -4083,17 +3978,11 @@ class AsignaturaMalla(ModeloBase):
     def cantidad_predecesoras(self):
         return self.asignaturamallapredecesora_set.count()
 
-    def cantidad_predecesorasmodulo(self):
-        return self.asignaturamodulomallapredecesora_set.count()
-
     def tiene_predecesoras(self):
         return AsignaturaMallaPredecesora.objects.filter(predecesora=self).exists()
 
     def lista_predecesoras(self):
         return self.asignaturamallapredecesora_set.all()
-
-    def lista_predecesorasmodulo(self):
-        return self.asignaturamodulomallapredecesora_set.all()
 
     def cantidad_matriculas_asignatura(self, inscripcion):
         return inscripcion.historicorecordacademico_set.filter(asignatura=self.asignatura).count()
@@ -4313,13 +4202,10 @@ class Coordinacion(ModeloBase):
         return self.carrera.all()
 
     def mis_carreras_periodo(self, periodo):
-        return self.carrera.filter(Q(malla__asignaturamalla__materia__nivel__periodo=periodo) | Q(malla__modulomalla__materia__nivel__periodo=periodo)).distinct()
+        return self.carrera.filter(Q(malla__asignaturamalla__materia__nivel__periodo=periodo)).distinct()
 
     def mis_secretarias(self):
         return SecretariaCoordinacion.objects.filter(coordinacion=self).distinct()
-
-    def mis_tecnicos(self):
-        return TecnicoCoordinacion.objects.filter(coordinacion=self).distinct()
 
     def carreras_activas(self):
         return self.carrera.filter(activa=True)
@@ -5196,26 +5082,23 @@ class Inscripcion(ModeloBase):
 
     def materia_sinasistencia(self, asignatura):
         malla = self.mi_malla()
-        itinerario = self.mi_itinerario()
-        if malla.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=itinerario), asignatura=asignatura, sinasistencia=True).exists():
+
+        if malla.asignaturamalla_set.filter(asignatura=asignatura, sinasistencia=True).exists():
             return True
-        if malla.modulomalla_set.filter(asignatura=asignatura, sinasistencia=True).exists():
-            return True
+
         return False
 
     def materia_verificahorario(self, asignatura):
         malla = self.mi_malla()
-        itinerario = self.mi_itinerario()
-        if malla.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=itinerario), asignatura=asignatura, obligatoria=True).exists():
+
+        if malla.asignaturamalla_set.filter( asignatura=asignatura, obligatoria=True).exists():
             return True
-        if malla.modulomalla_set.filter(asignatura=asignatura, obligatoria=True).exists():
-            return True
+
         return False
 
     def asignatura_en_asignaturamalla(self, asignatura):
         malla = self.mi_malla()
-        itinerario = self.mi_itinerario()
-        if malla.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=itinerario), asignatura=asignatura).exists():
+        if malla.asignaturamalla_set.filter(asignatura=asignatura).exists():
             return malla.asignaturamalla_set.filter(asignatura=asignatura)[0]
         return None
 
@@ -5644,14 +5527,6 @@ class Inscripcion(ModeloBase):
                 im.save()
             return malla
 
-    def mi_itinerario(self):
-        if self.inscripcionitinerarrio_set.exists():
-            return self.inscripcionitinerarrio_set.all()[0].itinerario
-        else:
-            itinerario = InscripcionItinerarrio(inscripcion=self,
-                                                itinerario_id=1)
-            itinerario.save()
-            return itinerario.itinerario
 
     def matriculado(self):
         return self.matricula_set.filter(cerrada=False).exists()
@@ -5742,18 +5617,14 @@ class Inscripcion(ModeloBase):
 
     def puede_tomar_materia(self, asignatura):
         mi_nivel = self.mi_nivel().nivel.id
-        if self.mi_malla().asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=self.mi_itinerario()), asignatura=asignatura).exists():
-            asignaturamalla = self.mi_malla().asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=self.mi_itinerario()), asignatura=asignatura)[0]
+        if self.mi_malla().asignaturamalla_set.filter( asignatura=asignatura).exists():
+            asignaturamalla = self.mi_malla().asignaturamalla_set.filter( asignatura=asignatura)[0]
             if mi_nivel > 0 and asignaturamalla.nivelmalla.id > 0:
-                if not self.intercambio:
-                    for precedencias in asignaturamalla.asignaturamallapredecesora_set.filter(Q(predecesora__itinerario__isnull=True) | Q(predecesora__itinerario=self.mi_itinerario())):
+
+                    for precedencias in asignaturamalla.asignaturamallapredecesora_set.filter():
                         if not self.recordacademico_set.filter(asignatura=precedencias.predecesora.asignatura, aprobada=True).exists():
                             return False
-                    for precedencias in asignaturamalla.asignaturamodulomallapredecesora_set.all():
-                        if not self.recordacademico_set.filter(asignatura=precedencias.predecesoramodulo.asignatura, aprobada=True).exists():
-                            return False
-                    return True
-                return True
+
             elif mi_nivel == 0 and asignaturamalla.nivelmalla.id > 0:
                 return False
             elif mi_nivel == 0 and asignaturamalla.nivelmalla.id == 0:
@@ -5762,21 +5633,12 @@ class Inscripcion(ModeloBase):
             pass
         return False
 
-    def puede_tomar_materia_asignatura_modulo(self, asignatura):
-        mi_nivel = self.mi_nivel().nivel.id
-        if self.mi_malla().asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=self.mi_itinerario()), asignatura=asignatura).exists():
-            asignaturamalla = self.mi_malla().asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=self.mi_itinerario()), asignatura=asignatura)[0]
-            for precedencias in asignaturamalla.asignaturamodulomallapredecesora_set.all():
-                if not self.recordacademico_set.filter(asignatura=precedencias.predecesoramodulo.asignatura, aprobada=True).exists():
-                    return False
-            return True
-        else:
-            return False
+
 
     def puede_tomar_materia_asignatura(self, asignatura):
         mi_nivel = self.mi_nivel().nivel.id
-        if self.mi_malla().asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=self.mi_itinerario()), asignatura=asignatura).exists():
-            asignaturamalla = self.mi_malla().asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=self.mi_itinerario()), asignatura=asignatura)[0]
+        if self.mi_malla().asignaturamalla_set.filter( asignatura=asignatura).exists():
+            asignaturamalla = self.mi_malla().asignaturamalla_set.filter( asignatura=asignatura)[0]
             for precedencias in asignaturamalla.asignaturamallapredecesora_set.all():
                 if not self.recordacademico_set.filter(asignatura=precedencias.predecesora.asignatura, aprobada=True).exists():
                     return False
@@ -6041,8 +5903,8 @@ class Inscripcion(ModeloBase):
         numeronivel = NIVEL_MALLA_CERO
         if not malla.nivelacion:
             numeronivel = NIVEL_MALLA_UNO
-        if self.documentos_entregados().pre:
-            numeronivel = NIVEL_MALLA_UNO
+        # if self.documentos_entregados().pre:
+        #     numeronivel = NIVEL_MALLA_UNO
         if self.nivelhomologado:
             numeronivel = self.nivelhomologado.id
         cantidad_arrastres = 0
@@ -6206,14 +6068,6 @@ class Inscripcion(ModeloBase):
     def tiene_record(self):
         return self.recordacademico_set.exists()
 
-    def tiene_preinscripcion(self):
-        return self.registrofechapreinscripcion_set.exists()
-
-    def mi_preinscripcion(self):
-        if self.tiene_preinscripcion():
-            return self.registrofechapreinscripcion_set.all()[0]
-        return None
-
     def rindio_examen(self, examen):
         if examen:
             return RespuestaExamenAdmision.objects.filter(exameninscripcion=examen, exameninscripcion__inscripcion=self).exists()
@@ -6301,16 +6155,6 @@ class Inscripcion(ModeloBase):
             return True
         return False
 
-    def mi_estado_titulacion(self):
-        hoy = datetime.now().date()
-        if self.fechainicioestadotitulacion and self.fechalimiteprorrogauno and self.fechalimiteprorrogados and self.fechalimiteactualizacionc:
-            if hoy <= self.fechalimiteprorrogauno:
-                return TipoEstadoTitulacion.objects.get(pk=TIPO_ESTADO_TITULACION_PRORROGA_UNO)
-            if self.fechalimiteprorrogauno < hoy <= self.fechalimiteprorrogados:
-                return TipoEstadoTitulacion.objects.get(pk=TIPO_ESTADO_TITULACION_PRORROGA_DOS)
-            if self.fechalimiteprorrogados < hoy <= self.fechalimiteactualizacionc:
-                return TipoEstadoTitulacion.objects.get(pk=TIPO_ESTADO_TITULACION_ESPECIAL)
-        return TipoEstadoTitulacion.objects.get(pk=TIPO_ESTADO_NO_TITULACION)
 
     def fecha_inicio_titulacion(self):
         if self.matricula_set.exists():
@@ -6319,8 +6163,7 @@ class Inscripcion(ModeloBase):
 
     def cumplio_malla(self):
         malla = self.mi_malla()
-        itinerario = self.mi_itinerario()
-        return malla.asignaturamalla_set.filter(Q(itinerario=itinerario) | Q(itinerario__isnull=True), titulacion=False).distinct().count() == self.recordacademico_set.filter(asignaturamalla__isnull=False, aprobada=True).count()
+        return malla.asignaturamalla_set.filter().distinct().count() == self.recordacademico_set.filter(asignaturamalla__isnull=False, aprobada=True).count()
 
     def proxima_fecha_prorroga(self, fecha, periocidad):
         month = fecha.month
@@ -6657,7 +6500,7 @@ class Inscripcion(ModeloBase):
         if self.id:
             self.nivelado = self.esta_nivelado()
             self.promediogeneral = self.promedio_record()
-            self.promedionivelacion = self.promedio_nota_nivelacion()
+            # self.promedionivelacion = self.promedio_nota_nivelacion()
             self.promediomalla = self.promedio_malla()
             if not self.cumplimiento:
                 self.cumplimiento = self.cumplio_malla()
@@ -6671,12 +6514,9 @@ class Inscripcion(ModeloBase):
                 if not self.fechalimiteactualizacionc:
                     self.fechalimiteactualizacionc = self.proxima_fecha_prorroga(self.fechalimiteprorrogados, TIEMPO_ACTUALIZAON_CONOCIMIENTO)
                 self.datos_egresado()
-            self.estadotitulacion = self.mi_estado_titulacion()
             self.valoracioncalificacion = valoracion_calificacion(self.promediogeneral)
         if not self.tipoinscripcion:
             self.tipoinscripcion_id = TIPO_INSCRIPCION_REGULAR
-        if not self.tipogratuidad:
-            self.tipogratuidad_id = TIPO_GRATUIDAD_NINGUNA
         super(Inscripcion, self).save(*args, **kwargs)
 
 
@@ -6703,18 +6543,6 @@ class InscripcionMalla(ModeloBase):
 
     class Meta:
         verbose_name_plural = u"Mallas de inscripciones"
-        unique_together = ('inscripcion',)
-
-
-class InscripcionItinerarrio(ModeloBase):
-    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
-    itinerario = models.ForeignKey(Itinerario, verbose_name=u'Itinerario', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return u'%s - %s' % (self.inscripcion, self.itinerario)
-
-    class Meta:
-        verbose_name_plural = u"Itinerios de inscripciones"
         unique_together = ('inscripcion',)
 
 
@@ -6776,6 +6604,22 @@ class ParaleloMateria(ModeloBase):
         self.nombre = null_to_text(self.nombre)
         super(ParaleloMateria, self).save(*args, **kwargs)
 
+class CodigoEvaluacion(ModeloBase):
+    nombre = models.CharField(default='', max_length=200, verbose_name=u'Nombre')
+    alias = models.CharField(default='', max_length=50, verbose_name=u'Alias')
+
+    def __str__(self):
+        return u'%s' % self.nombre
+
+    class Meta:
+        verbose_name_plural = u"Códigos de evaluación"
+        ordering = ['nombre']
+        unique_together = ('nombre',)
+
+    def save(self, *args, **kwargs):
+        self.nombre = null_to_text(self.nombre)
+        self.alias = null_to_text(self.alias)
+        super(CodigoEvaluacion, self).save(*args, **kwargs)
 
 class ModeloEvaluativo(ModeloBase):
     nombre = models.CharField(default='', max_length=100, verbose_name=u"Nombre")
@@ -6949,7 +6793,7 @@ class Materia(ModeloBase):
     nivel = models.ForeignKey(Nivel, verbose_name=u'Nivel', on_delete=models.CASCADE)
     asignatura = models.ForeignKey(Asignatura, verbose_name=u'Asignatura', on_delete=models.CASCADE)
     asignaturamalla = models.ForeignKey(AsignaturaMalla, blank=True, null=True, verbose_name=u'Asignatura malla', on_delete=models.CASCADE)
-    modulomalla = models.ForeignKey(ModuloMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
+    # modulomalla = models.ForeignKey(ModuloMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
     periodo = models.ForeignKey(Periodo, blank=True, null=True, verbose_name=u'Periodo', on_delete=models.CASCADE)
     carrera = models.ForeignKey(Carrera, related_name='+', blank=True, null=True, verbose_name=u'Carrera', on_delete=models.CASCADE)
     malla = models.ForeignKey(Malla, blank=True, null=True, verbose_name=u'Malla', on_delete=models.CASCADE)
@@ -6969,7 +6813,6 @@ class Materia(ModeloBase):
     fechacierre = models.DateField(null=True, blank=True, verbose_name=u'Fecha de cierre')
     tutoria = models.BooleanField(default=False, verbose_name=u'Materia de tutoria')
     practicas = models.BooleanField(default=False, verbose_name=u'Materia practica')
-    practicasasistenciales = models.BooleanField(default=False, verbose_name=u'Materia practica asistencial')
     grado = models.BooleanField(default=False, verbose_name=u'Materia de grado')
     cupo = models.IntegerField(default=0, verbose_name=u'Cupo')
     cupocompartido = models.IntegerField(default=0, verbose_name=u'Cupo compartido')
@@ -6983,8 +6826,6 @@ class Materia(ModeloBase):
     sinasistencia = models.BooleanField(default=False, verbose_name=u'Sin asistencia')
     modulonivelmalla = models.ForeignKey(NivelMalla, blank=True, null=True, verbose_name=u'Nivel modulo', on_delete=models.CASCADE)
     asistenciaremota = models.BooleanField(default=False, verbose_name=u'')
-    intensivo = models.BooleanField(default=False, verbose_name=u'')
-    integracioncurricular = models.BooleanField(default=False, verbose_name=u"Integracion")
     permite_modificar = models.BooleanField(default=False, verbose_name=u'Permite Modificar')
     bloqueado = models.BooleanField(default=False)
 
@@ -6994,7 +6835,7 @@ class Materia(ModeloBase):
 
     class Meta:
         verbose_name_plural = u"Materias"
-        unique_together = ('nivel', 'modulomalla', 'asignaturamalla', 'paralelomateria',)
+        unique_together = ('nivel', 'asignaturamalla', 'paralelomateria',)
 
     @staticmethod
     def flexbox_query(q, filtro=None, exclude=None, cantidad=None):
@@ -8829,7 +8670,7 @@ class CausaHomologacion(ModeloBase):
 class RecordAcademico(ModeloBase):
     inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
     matriculas = models.IntegerField(default=0, verbose_name=u'Matriculas')
-    modulomalla = models.ForeignKey(ModuloMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
+    # modulomalla = models.ForeignKey(ModuloMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
     asignaturamalla = models.ForeignKey(AsignaturaMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
     asignatura = models.ForeignKey(Asignatura, verbose_name=u'Asignatura', on_delete=models.CASCADE)
     nota = models.FloatField(default=0, verbose_name=u'Nota')
@@ -9036,7 +8877,7 @@ class MateriaAsignada(ModeloBase):
     materia = models.ForeignKey(Materia, verbose_name=u"Materia", on_delete=models.CASCADE)
     asignaturareal = models.ForeignKey(Asignatura, blank=True, null=True, verbose_name=u"Representa", on_delete=models.CASCADE)
     asignaturamalla = models.ForeignKey(AsignaturaMalla, blank=True, null=True, verbose_name=u'Asignatura malla', on_delete=models.CASCADE)
-    modulomalla = models.ForeignKey(ModuloMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
+    # modulomalla = models.ForeignKey(ModuloMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
     notafinal = models.FloatField(default=0, verbose_name=u"Nota final")
     asistenciafinal = models.FloatField(default=100, verbose_name=u"Asistencia final")
     cerrado = models.BooleanField(default=False, verbose_name=u'Cerrada')
@@ -12203,6 +12044,16 @@ class InscripcionFlags(ModeloBase):
 
 
 
+class GrupoCoordinadorCarrera(ModeloBase):
+    group = models.ForeignKey(Group, verbose_name=u'Grupo', on_delete=models.CASCADE)
+    carrera = models.ForeignKey(Carrera, verbose_name=u'Carrera', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return u'Grupos responsables de carreras'
+
+    class Meta:
+        verbose_name_plural = u"Grupos responsables de carreras"
+        unique_together = ('group', 'carrera',)
 
 
 class Cargo(ModeloBase):
@@ -12587,7 +12438,7 @@ class EstudioPersona(ModeloBase):
 class HistoricoRecordAcademico(ModeloBase):
     recordacademico = models.ForeignKey(RecordAcademico, blank=True, null=True, verbose_name=u'Record academico', on_delete=models.CASCADE)
     inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
-    modulomalla = models.ForeignKey(ModuloMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
+    # modulomalla = models.ForeignKey(ModuloMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
     asignaturamalla = models.ForeignKey(AsignaturaMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
     asignatura = models.ForeignKey(Asignatura, verbose_name=u'Asignatura', on_delete=models.CASCADE)
     nota = models.FloatField(default=0, verbose_name=u'Nota')
@@ -14258,6 +14109,21 @@ class CriterioVinculacionPeriodo(ModeloBase):
     def usada_en_docente(self):
         return self.detalledistributivo_set.exists()
 
+class NivelEscalafonDocente(ModeloBase):
+    nombre = models.CharField(default='', max_length=100, verbose_name=u'Nombre')
+
+    def __str__(self):
+        return u'%s' % self.nombre
+
+    class Meta:
+        verbose_name_plural = u" Niveles de escalafón docente"
+        ordering = ['nombre']
+        unique_together = ('nombre',)
+
+    def save(self, *args, **kwargs):
+        self.nombre = null_to_text(self.nombre)
+        super(NivelEscalafonDocente, self).save(*args, **kwargs)
+
 class Profesor(ModeloBase):
     persona = models.ForeignKey(Persona, verbose_name=u"Persona", on_delete=models.CASCADE)
     fechainiciodocente = models.DateField(verbose_name=u'Fecha inicio actividades como docente')
@@ -14278,6 +14144,7 @@ class Profesor(ModeloBase):
     indicehautor = models.CharField(default='', max_length=2000, verbose_name=u'Indice H Autor')
     documentoidentificacion = models.FileField(upload_to='documentosprofesor/%Y/%m/%d', blank=True, null=True, verbose_name=u'Escaneado de Cedula')
     validoth = models.BooleanField(default=False, verbose_name=u"Verificado TH")
+    nivelescalafon = models.ForeignKey(NivelEscalafonDocente, null=True, blank=True, verbose_name=u"Nivel escalafon", on_delete=models.CASCADE)
 
     def __str__(self):
         return u'%s' % self.persona
@@ -14732,6 +14599,189 @@ class Profesor(ModeloBase):
 
     def numero_capitulos(self, anio):
         return self.publicaciones_set.filter(tipopublicacion__id=3, fechapublicacion__year=anio).count()
+
+    def actualizar_distributivo_horas(self, periodo):
+        if not periodo.cerrado:
+            distributivo = self.distributivohoras(periodo)
+            if distributivo.dedicacion.id == TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID:
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_HORAS_CLASE_MEDIO_TIEMPO_ID, CRITERIO_HORAS_CLASE_PARCIAL_ID, CRITERIO_HORAS_CLASE_TECNICO_DOCENTE_ID]).delete()
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_PRACTICAS_MEDIO_TIEMPO_ID, CRITERIO_PRACTICAS_PARCIAL_ID, CRITERIO_PRACTICAS_TECNICO_DOCENTE_ID]).delete()
+            if distributivo.dedicacion.id == TIEMPO_DEDICACION_MEDIO_TIEMPO_ID:
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_HORAS_CLASE_TIEMPO_COMPLETO_ID, CRITERIO_HORAS_CLASE_PARCIAL_ID, CRITERIO_HORAS_CLASE_TECNICO_DOCENTE_ID]).delete()
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_PRACTICAS_TIEMPO_COMPLETO_ID, CRITERIO_PRACTICAS_PARCIAL_ID, CRITERIO_PRACTICAS_TECNICO_DOCENTE_ID]).delete()
+            if distributivo.dedicacion.id == TIEMPO_DEDICACION_PARCIAL_ID:
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_HORAS_CLASE_TIEMPO_COMPLETO_ID, CRITERIO_HORAS_CLASE_MEDIO_TIEMPO_ID, CRITERIO_HORAS_CLASE_TECNICO_DOCENTE_ID]).delete()
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_PRACTICAS_TIEMPO_COMPLETO_ID, CRITERIO_PRACTICAS_MEDIO_TIEMPO_ID, CRITERIO_PRACTICAS_TECNICO_DOCENTE_ID]).delete()
+            if distributivo.dedicacion.id == TIEMPO_DEDICACION_TECNICO_DOCENTE_ID:
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_HORAS_CLASE_TIEMPO_COMPLETO_ID, CRITERIO_HORAS_CLASE_MEDIO_TIEMPO_ID, CRITERIO_HORAS_CLASE_PARCIAL_ID, ]).delete()
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_PRACTICAS_TIEMPO_COMPLETO_ID, CRITERIO_PRACTICAS_MEDIO_TIEMPO_ID, CRITERIO_PRACTICAS_PARCIAL_ID, ]).delete()
+            if distributivo.dedicacion.id not in (TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID, TIEMPO_DEDICACION_MEDIO_TIEMPO_ID, TIEMPO_DEDICACION_PARCIAL_ID, TIEMPO_DEDICACION_TECNICO_DOCENTE_ID):
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_HORAS_CLASE_TIEMPO_COMPLETO_ID, CRITERIO_HORAS_CLASE_MEDIO_TIEMPO_ID, CRITERIO_HORAS_CLASE_PARCIAL_ID, CRITERIO_HORAS_CLASE_TECNICO_DOCENTE_ID]).delete()
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_PRACTICAS_TIEMPO_COMPLETO_ID, CRITERIO_PRACTICAS_MEDIO_TIEMPO_ID, CRITERIO_PRACTICAS_PARCIAL_ID, CRITERIO_PRACTICAS_TECNICO_DOCENTE_ID]).delete()
+            if not ProfesorMateria.objects.filter(profesor=self, materia__nivel__periodo=periodo).exists():
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_HORAS_CLASE_TIEMPO_COMPLETO_ID, CRITERIO_HORAS_CLASE_MEDIO_TIEMPO_ID, CRITERIO_HORAS_CLASE_PARCIAL_ID, CRITERIO_HORAS_CLASE_TECNICO_DOCENTE_ID]).delete()
+            if not ProfesorMateriaPracticas.objects.filter(profesor=self, grupo__materia__nivel__periodo=periodo).exists():
+                distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo__criterio__id__in=[CRITERIO_PRACTICAS_TIEMPO_COMPLETO_ID, CRITERIO_PRACTICAS_MEDIO_TIEMPO_ID, CRITERIO_PRACTICAS_PARCIAL_ID, CRITERIO_PRACTICAS_TECNICO_DOCENTE_ID]).delete()
+            if distributivo.dedicacion.id == TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID and (CRITERIO_HORAS_CLASE_TIEMPO_COMPLETO_ID or CRITERIO_HORAS_CLASE_TIEMPO_COMPLETO_ID):
+                if ProfesorMateria.objects.filter(profesor=self, materia__nivel__periodo=periodo).exists():
+                    if CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_HORAS_CLASE_TIEMPO_COMPLETO_ID).exists():
+                        distributivoperiodo = CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_HORAS_CLASE_TIEMPO_COMPLETO_ID)[0]
+                    else:
+                        distributivoperiodo = CriterioDocenciaPeriodo(periodo=periodo,
+                                                                      criterio_id=CRITERIO_HORAS_CLASE_TIEMPO_COMPLETO_ID,
+                                                                      minimo=0,
+                                                                      maximo=MAXIMO_HORAS_DOCENCIA_TIEMPO_COMPLETO)
+                        distributivoperiodo.save()
+                    if distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo).exists():
+                        detalle = distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo)[0]
+                        detalle.horas = self.total_horas_periodo(periodo)
+                        detalle.save()
+                    else:
+                        detalle = DetalleDistributivo(distributivo=distributivo,
+                                                      criteriodocenciaperiodo=distributivoperiodo,
+                                                      horas=self.total_horas_periodo(periodo))
+                        detalle.save()
+                    distributivo.save()
+                if ProfesorMateriaPracticas.objects.filter(profesor=self, grupo__materia__nivel__periodo=periodo).exists():
+                    if CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_PRACTICAS_TIEMPO_COMPLETO_ID).exists():
+                        distributivoperiodo = CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_PRACTICAS_TIEMPO_COMPLETO_ID)[0]
+                    else:
+                        distributivoperiodo = CriterioDocenciaPeriodo(periodo=periodo,
+                                                                      criterio_id=CRITERIO_PRACTICAS_TIEMPO_COMPLETO_ID,
+                                                                      minimo=0,
+                                                                      maximo=MAXIMO_HORAS_DOCENCIA_TIEMPO_COMPLETO)
+                        distributivoperiodo.save()
+                    if distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo).exists():
+                        detalle = distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo)[0]
+                        detalle.horas = self.total_horas_periodo_practicas(periodo)
+                        detalle.save()
+                    else:
+                        detalle = DetalleDistributivo(distributivo=distributivo,
+                                                      criteriodocenciaperiodo=distributivoperiodo,
+                                                      horas=self.total_horas_periodo_practicas(periodo))
+                        detalle.save()
+                    distributivo.save()
+
+            if distributivo.dedicacion.id == TIEMPO_DEDICACION_MEDIO_TIEMPO_ID and (CRITERIO_HORAS_CLASE_MEDIO_TIEMPO_ID or CRITERIO_PRACTICAS_MEDIO_TIEMPO_ID):
+                if ProfesorMateria.objects.filter(profesor=self, materia__nivel__periodo=periodo).exists():
+                    if CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_HORAS_CLASE_MEDIO_TIEMPO_ID).exists():
+                        distributivoperiodo = CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_HORAS_CLASE_MEDIO_TIEMPO_ID)[0]
+                    else:
+                        distributivoperiodo = CriterioDocenciaPeriodo(periodo=periodo,
+                                                                      criterio_id=CRITERIO_HORAS_CLASE_MEDIO_TIEMPO_ID,
+                                                                      minimo=0,
+                                                                      maximo=MAXIMO_HORAS_DOCENCIA_MEDIO_TIEMPO)
+                        distributivoperiodo.save()
+                    if distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo).exists():
+                        detalle = distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo)[0]
+                        detalle.horas = self.total_horas_periodo(periodo)
+                        detalle.save()
+                    else:
+                        detalle = DetalleDistributivo(distributivo=distributivo,
+                                                      criteriodocenciaperiodo=distributivoperiodo,
+                                                      horas=self.total_horas_periodo(periodo))
+                        detalle.save()
+                    distributivo.save()
+                if ProfesorMateriaPracticas.objects.filter(profesor=self, grupo__materia__nivel__periodo=periodo).exists():
+                    if CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_PRACTICAS_MEDIO_TIEMPO_ID).exists():
+                        distributivoperiodo = CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_PRACTICAS_MEDIO_TIEMPO_ID)[0]
+                    else:
+                        distributivoperiodo = CriterioDocenciaPeriodo(periodo=periodo,
+                                                                      criterio_id=CRITERIO_PRACTICAS_MEDIO_TIEMPO_ID,
+                                                                      minimo=0,
+                                                                      maximo=MAXIMO_HORAS_DOCENCIA_MEDIO_TIEMPO)
+                        distributivoperiodo.save()
+                    if distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo).exists():
+                        detalle = distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo)[0]
+                        detalle.horas = self.total_horas_periodo_practicas(periodo)
+                        detalle.save()
+                    else:
+                        detalle = DetalleDistributivo(distributivo=distributivo,
+                                                      criteriodocenciaperiodo=distributivoperiodo,
+                                                      horas=self.total_horas_periodo_practicas(periodo))
+                        detalle.save()
+                    distributivo.save()
+            if distributivo.dedicacion.id == TIEMPO_DEDICACION_PARCIAL_ID and (CRITERIO_HORAS_CLASE_PARCIAL_ID or CRITERIO_PRACTICAS_PARCIAL_ID):
+                if ProfesorMateria.objects.filter(profesor=self, materia__nivel__periodo=periodo).exists():
+                    if CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_HORAS_CLASE_PARCIAL_ID).exists():
+                        distributivoperiodo = CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_HORAS_CLASE_PARCIAL_ID)[0]
+                    else:
+                        distributivoperiodo = CriterioDocenciaPeriodo(periodo=periodo,
+                                                                      criterio_id=CRITERIO_HORAS_CLASE_PARCIAL_ID,
+                                                                      minimo=0,
+                                                                      maximo=MAXIMO_HORAS_DOCENCIA_PARCIAL)
+                        distributivoperiodo.save()
+                    if distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo).exists():
+                        detalle = distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo)[0]
+                        detalle.horas = self.total_horas_periodo(periodo)
+                        detalle.save()
+                    else:
+                        detalle = DetalleDistributivo(distributivo=distributivo,
+                                                      criteriodocenciaperiodo=distributivoperiodo,
+                                                      horas=self.total_horas_periodo(periodo))
+                        detalle.save()
+                    distributivo.save()
+                if ProfesorMateriaPracticas.objects.filter(profesor=self, grupo__materia__nivel__periodo=periodo).exists():
+                    if CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_PRACTICAS_PARCIAL_ID).exists():
+                        distributivoperiodo = CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_PRACTICAS_PARCIAL_ID)[0]
+                    else:
+                        distributivoperiodo = CriterioDocenciaPeriodo(periodo=periodo,
+                                                                      criterio_id=CRITERIO_PRACTICAS_PARCIAL_ID,
+                                                                      minimo=0,
+                                                                      maximo=MAXIMO_HORAS_DOCENCIA_PARCIAL)
+                        distributivoperiodo.save()
+                    if distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo).exists():
+                        detalle = distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo)[0]
+                        detalle.horas = self.total_horas_periodo_practicas(periodo)
+                        detalle.save()
+                    else:
+                        detalle = DetalleDistributivo(distributivo=distributivo,
+                                                      criteriodocenciaperiodo=distributivoperiodo,
+                                                      horas=self.total_horas_periodo_practicas(periodo))
+                        detalle.save()
+                    distributivo.save()
+
+            if distributivo.dedicacion.id == TIEMPO_DEDICACION_TECNICO_DOCENTE_ID and (CRITERIO_HORAS_CLASE_TECNICO_DOCENTE_ID or CRITERIO_PRACTICAS_TECNICO_DOCENTE_ID):
+                if ProfesorMateria.objects.filter(profesor=self, materia__nivel__periodo=periodo).exists():
+                    if CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_HORAS_CLASE_TECNICO_DOCENTE_ID).exists():
+                        distributivoperiodo = CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_HORAS_CLASE_TECNICO_DOCENTE_ID)[0]
+                    else:
+                        distributivoperiodo = CriterioDocenciaPeriodo(periodo=periodo,
+                                                                      criterio_id=CRITERIO_HORAS_CLASE_TECNICO_DOCENTE_ID,
+                                                                      minimo=0,
+                                                                      maximo=MAXIMO_HORAS_DOCENCIA_TECNICO_DOCENTE)
+                        distributivoperiodo.save()
+                    if distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo).exists():
+                        detalle = distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo)[0]
+                        detalle.horas = self.total_horas_periodo(periodo)
+                        detalle.save()
+                    else:
+                        detalle = DetalleDistributivo(distributivo=distributivo,
+                                                      criteriodocenciaperiodo=distributivoperiodo,
+                                                      horas=self.total_horas_periodo(periodo))
+                        detalle.save()
+                    distributivo.save()
+                if ProfesorMateriaPracticas.objects.filter(profesor=self, grupo__materia__nivel__periodo=periodo).exists():
+                    if CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_PRACTICAS_TECNICO_DOCENTE_ID).exists():
+                        distributivoperiodo = CriterioDocenciaPeriodo.objects.filter(periodo=periodo, criterio__id=CRITERIO_PRACTICAS_TECNICO_DOCENTE_ID)[0]
+                    else:
+                        distributivoperiodo = CriterioDocenciaPeriodo(periodo=periodo,
+                                                                      criterio_id=CRITERIO_PRACTICAS_TECNICO_DOCENTE_ID,
+                                                                      minimo=0,
+                                                                      maximo=MAXIMO_HORAS_DOCENCIA_TECNICO_DOCENTE)
+                        distributivoperiodo.save()
+                    if distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo).exists():
+                        detalle = distributivo.detalle_horas_docencia().filter(criteriodocenciaperiodo=distributivoperiodo)[0]
+                        detalle.horas = self.total_horas_periodo_practicas(periodo)
+                        detalle.save()
+                    else:
+                        detalle = DetalleDistributivo(distributivo=distributivo,
+                                                      criteriodocenciaperiodo=distributivoperiodo,
+                                                      horas=self.total_horas_periodo_practicas(periodo))
+                        detalle.save()
+                    distributivo.save()
+
+            distributivo.actualiza_detalle_modalidad()
 
     def save(self, *args, **kwargs):
         self.objetivodocente = null_to_text(self.objetivodocente)
@@ -17316,3 +17366,171 @@ class Actividad(ModeloBase):
     def save(self, *args, **kwargs):
         self.nombre = null_to_text(self.nombre)
         super(Actividad, self).save(*args, **kwargs)
+
+class SilaboAsignaturaMalla(ModeloBase):
+    asignaturamalla = models.ForeignKey(AsignaturaMalla, verbose_name=u'Asignatura malla', on_delete=models.CASCADE)
+    planificacionmateria = models.ForeignKey(PlanificacionMateria, verbose_name=u'Taller Materia', on_delete=models.CASCADE)
+    habilitado = models.BooleanField(default=False)
+    fecha = models.DateField(verbose_name=u'fecha', blank=True, null=True)
+    persona = models.ForeignKey(Persona, verbose_name=u'Persona', blank=True, null=True, on_delete=models.CASCADE)
+
+class NivelExtension(ModeloBase):
+    nivel = models.ForeignKey(Nivel, verbose_name=u'Nivel', on_delete=models.CASCADE)
+    modificarcupo = models.BooleanField(default=True, verbose_name=u'Cupo Materia')
+    modificarhorario = models.BooleanField(default=True, verbose_name=u'Horario Visible')
+    modificardocente = models.BooleanField(default=True, verbose_name=u'Modificar docente')
+    modificarplanificacion = models.BooleanField(default=True, verbose_name=u'Modificar planificacion')
+
+    class Meta:
+        unique_together = ('nivel',)
+
+
+class Graduado(ModeloBase):
+    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u"Inscripción", on_delete=models.CASCADE)
+    rector = models.ForeignKey(Persona, blank=True, null=True, verbose_name=u"Rector", on_delete=models.CASCADE)
+    fechagraduado = models.DateField(verbose_name=u"Fecha de acta de grado")
+    numeroactagrado = models.CharField(default='', max_length=50, verbose_name=u"Numero acta de grado")
+    duracion = models.FloatField(default=0, verbose_name=u"Duracion")
+    fecharefrendacion = models.DateField(verbose_name=u"Fecha de refrendación")
+    numerorefrendacion = models.CharField(default='', max_length=50, verbose_name=u"Numero de refrendación")
+    notatrabajotitulacion = models.FloatField(default=0, verbose_name=u"Nota de trabajo titulacion")
+    promediotitulacion = models.FloatField(default=0, verbose_name=u"Nota de sustentación")
+    registro = models.CharField(default='', max_length=50, verbose_name=u'Registro senescyt')
+    observaciones = models.TextField(default='', verbose_name=u'Observaciones')
+    linktesis = models.TextField(default='', verbose_name=u'Link tesis')
+    nombreimpresion = models.TextField(default='', verbose_name=u'Nombres impresión titúlo')
+    numerofolio = models.TextField(default='', max_length=50, verbose_name=u'Numero Folio')
+    codigotitulo = models.TextField(default='', max_length=50, verbose_name=u'Codigo Titulo')
+
+    def __str__(self):
+        return u'%s [graduado]' % self.inscripcion
+
+    class Meta:
+        verbose_name_plural = u"Alumnos graduados"
+        unique_together = ('inscripcion',)
+
+    @staticmethod
+    def flexbox_query(q, filtro=None, exclude=None, cantidad=None):
+        return eval(("Graduado.objects.filter(Q(inscripcion__persona__nombre1__contains='%s') | Q(inscripcion__persona__nombre2__contains='%s') | Q(inscripcion__persona__apellido1__contains='%s') | Q(inscripcion__persona__apellido2__contains='%s') | Q(inscripcion__persona__cedula__contains='%s') | Q(id=id_search('%s')))" % (q, q, q, q, q, q)) + (".filter(%s)" % filtro if filtro else "") + (".exclude(%s)" % exclude if exclude else "") + (".distinct()") + ("[:%s]" % cantidad if cantidad else ""))
+
+    def flexbox_repr(self):
+        return (self.inscripcion.persona.cedula if self.inscripcion.persona.cedula else self.inscripcion.persona.pasaporte) + " - " + self.inscripcion.persona.nombre_completo_inverso() + " - " + self.inscripcion.carrera.nombre + ' - ' + str(self.id)
+
+    def seguimientos(self):
+        return self.inscripcion.persona.trabajopersona_set.all()
+
+    def reconocimiento_estudios(self):
+        if not self.tiporeconocimientograduado_set.exists():
+            c = None
+            if ConvalidacionInscripcion.objects.filter(record__convalidacion=True, record__inscripcion__graduado=self).exists():
+                c = ConvalidacionInscripcion.objects.filter(record__convalidacion=True, record__inscripcion__graduado=self)[0]
+            tr = TipoReconocimientoGraduado(graduado=self,
+                                            tiporeconocimiento=c.tiporeconocimiento if c else None,
+                                            tiemporeconocimiento=c.tiemporeconocimiento if c else 0,
+                                            institucion=c.institucion if c else None,
+                                            carrera=c.carrera if c else '')
+            tr.save()
+        else:
+            tr = self.tiporeconocimientograduado_set.all()[0]
+        return tr
+
+    def save(self, *args, **kwargs):
+        self.observaciones = null_to_text(self.observaciones)
+        self.registro = null_to_text(self.registro)
+        self.numeroactagrado = null_to_text(self.numeroactagrado)
+        self.numerorefrendacion = null_to_text(self.numerorefrendacion)
+        self.nombreimpresion = null_to_text(self.nombreimpresion)
+        self.numerofolio = null_to_text(self.numerofolio)
+        self.codigotitulo = null_to_text(self.codigotitulo)
+        super(Graduado, self).save(*args, **kwargs)
+
+
+class ValoracionCalificacion(ModeloBase):
+    categoria = models.CharField(max_length=100)
+    nominacion = models.CharField(max_length=5)
+    inicio = models.FloatField(default=0)
+    fin = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name_plural = u'Tabla valorativa de calificaciones'
+        ordering = ['-inicio']
+        unique_together = ('nominacion', 'categoria')
+
+    def __str__(self):
+        return self.categoria + ' (' + self.nominacion + ') Rango: De ' + str(self.inicio) + ' a ' + str(self.fin)
+
+    def nombre_corto(self):
+        return self.categoria + ' (' + self.nominacion + ')'
+
+    def save(self, *args, **kwargs):
+        self.categoria = null_to_text(self.categoria)
+        self.nominacion = null_to_text(self.nominacion)
+        super(ValoracionCalificacion, self).save(*args, **kwargs)
+
+
+class DocumentosDeInscripcion(ModeloBase):
+    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    pre = models.BooleanField(default=False, verbose_name=u'Pre nivelación')
+    observaciones_pre = models.CharField(default='', max_length=100, verbose_name=u'Observaciones')
+    homologar = models.BooleanField(default=False, verbose_name=u"Homologa materias")
+    titulo = models.BooleanField(default=False, verbose_name=u'Titulo')
+    cedula = models.BooleanField(default=False, verbose_name=u'Cedula')
+    votacion = models.BooleanField(default=False, verbose_name=u'Certificado de votación')
+    fotos = models.BooleanField(default=False, verbose_name=u'Fotos')
+    cert_med = models.BooleanField(default=False, verbose_name=u'Certificado médico')
+    reingreso = models.BooleanField(default=False, verbose_name=u"Reingreso")
+    eshomologacionexterna = models.BooleanField(default=False, verbose_name=u"Homologación Externa")
+    conveniohomologacion = models.BooleanField(default=False, verbose_name=u"Convenio por Homologación")
+    reconocimientointerno = models.BooleanField(default=False, verbose_name=u"Reconocimiento Interno")
+
+    def __str__(self):
+        return u'%s' % self.inscripcion
+
+    class Meta:
+        verbose_name_plural = u"Documentos de inscripciones"
+        unique_together = ('inscripcion',)
+
+    def save(self, *args, **kwargs):
+        self.observaciones_pre = null_to_text(self.observaciones_pre)
+        super(DocumentosDeInscripcion, self).save(*args, **kwargs)
+
+
+
+class TipoDocumentoInscripcion(ModeloBase):
+    nombre = models.CharField(default='', max_length=100, verbose_name=u'Nombre')
+    estado = models.BooleanField(default=False, verbose_name=u'estado')
+
+    def __str__(self):
+        return u'%s' % self.nombre
+
+    class Meta:
+        verbose_name_plural = u"Tipos de documentos de inscripcion"
+        ordering = ['nombre']
+        unique_together = ('nombre',)
+
+    def existedocumento(self,inscripcion):
+        if ArchivoDocumentoInscripcion.objects.filter(tipodocumentoinscripcion=self, inscripcion=inscripcion).exists():
+            return ArchivoDocumentoInscripcion.objects.filter(tipodocumentoinscripcion=self, inscripcion=inscripcion)[0]
+        else:
+            return False
+
+    def save(self, *args, **kwargs):
+        self.nombre = null_to_text(self.nombre)
+        super(TipoDocumentoInscripcion, self).save(*args, **kwargs)
+
+class ArchivoDocumentoInscripcion(ModeloBase):
+    tipodocumentoinscripcion = models.ForeignKey(TipoDocumentoInscripcion, blank=True, null=True, verbose_name=u'Tipo documento inscripcion', on_delete=models.CASCADE)
+    fecha = models.DateTimeField(verbose_name=u'Fecha')
+    inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    archivo = models.FileField(upload_to='documentos/%Y/%m/%d', verbose_name=u'Archivo')
+    observaciones = models.TextField(default='', blank=True, null=True, verbose_name=u'Observaciones')
+
+    def __str__(self):
+        return u'%s' % self.tipodocumentoinscripcion
+
+    class Meta:
+        verbose_name_plural = u"Archivos"
+
+    def save(self, *args, **kwargs):
+        self.observaciones = null_to_text(self.observaciones)
+        super(ArchivoDocumentoInscripcion, self).save(*args, **kwargs)

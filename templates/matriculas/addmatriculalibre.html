@@ -1,0 +1,616 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        var materiasseleccionadas = [];
+        var lista_verificar = [];
+        var maximo_materia_online = {{ maximo_materia_online }};
+
+        $(function() {
+
+            var timeout;
+
+            $("#fechamatricula").datepicker({format:"dd-mm-yyyy"});
+
+            buscar_alumno = function(query, process) {
+                if(timeout){ clearTimeout(timeout);}
+                timeout = setTimeout(function() {
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a':'data', 'model': 'Inscripcion:coordinacion__id={{ coordinacion.id }}, modalidad__id={{ nivel.modalidad.id }}, habilitadomatricula=True::30','p': 1, 'q': query, 's': 10, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            if (data.result === 'ok') {
+                                $("#searchinput").get(0).results = data.data;
+                                var listing = [];
+                                for (var i in data.data) {
+                                    var dato = data.data[i];
+                                    listing.push(dato.name);
+                                }
+                                process(listing);
+                            }
+                        },
+                        error: function() {
+                        },
+                        dataType: "json"
+                    });
+                },500);
+            };
+
+            $('#searchinput').typeahead({source: buscar_alumno, updater: function(item) {
+                    var results = $("#searchinput").get(0).results;
+                    for (var i in results) {
+                        var datos = results[i];
+                        if (item === datos.name) {
+                            bloqueointerface();
+                            location.href = "/matriculas?action=addmatriculalibre&iid="+datos.id+"&id="+{{ nivel.id }};
+                        }
+                    }
+                    return item;
+                }});
+
+            generar_lista_final = function () {
+                var lista = [];
+                $('.materia').filter('.btn-danger').each(function () {
+                    var asignatura = $(this).attr('ida');
+                    item = {
+                        'idm': asignatura,
+                        'ids': $(this).attr('ids'),
+                        'sinasistencia': $("#horario_"+asignatura).is(":checked")
+                    };
+                    lista.push(item);
+                });
+                return lista;
+            };
+
+            actualizarfuncion = function(){
+                $('.selectmat').click(function () {
+                    $("#materias, #matricular").modal('hide');
+                    var materia = $(this).attr('idm');
+                    var asignatura = $(this).attr('ida');
+                    var noverificahorario = $("#horario_"+asignatura).is(":checked");
+                    $("#horario_"+asignatura).attr({'idm': materia});
+
+                    lista_verificar = [];
+                    $(".verificarhorarios").each(function () {
+                        if (!$(this).is(":checked") && $(this).attr('idm')){
+                            adicionar_lista(lista_verificar, $(this).attr('idm'));
+                        }
+                    });
+
+                    adicionar_lista(materiasseleccionadas, materia);
+
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/matriculas",
+                        data: {'action': 'conflictohorario', 'mismaterias': JSON.stringify(lista_verificar), 'id': '{{ inscripcion.id }}', 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                var elemento =  $("[ida="+asignatura+"]");
+                                elemento.html('REMOVER');
+                                elemento.removeClass('btn-info');
+                                elemento.addClass('btn-danger');
+                                elemento.attr({'ids': materia});
+                                $("#horario_"+asignatura).attr({'disabled': 'disabled'});
+                                $("#id_seleccionadas").html(materiasseleccionadas.length);
+                                horario();
+                            } else {
+                                remover_lista(materiasseleccionadas, materia);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            $("#materias, #matricular").modal('hide');
+                            remover_lista(materiasseleccionadas, materia);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                });
+            };
+
+            horario = function () {
+                $.ajax({
+                    type: "POST",
+                    url: "/matriculas",
+                    data: {'action': 'infohorario', 'lista': JSON.stringify(materiasseleccionadas), 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            $("#horario").html(data.data);
+                        } else {
+                            $("#horario").empty();
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        $("#horario").empty();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            };
+
+            $('.materia').click(function () {
+                if ($(this).is('[ids]')){
+                    var materia = $(this).attr('ids');
+                    var asignatura = $(this).attr('ida');
+                    $(this).removeAttr('ids').removeClass('btn-danger').addClass('btn-info').html('SELECCIONAR');
+                    remover_lista(materiasseleccionadas, materia);
+                    horario();
+                    $("#horario_"+asignatura).removeAttr('disabled').removeAttr('idm');
+                    $("#id_seleccionadas").html(materiasseleccionadas.length);
+                } else {
+                    if (materiasseleccionadas.length < maximo_materia_online){
+                        var asignatura = $(this).attr('ida');
+                        bloqueointerface();
+                        $.ajax({
+                            type: "POST",
+                            url: "/matriculas",
+                            data: {'action': 'materiasabiertas', 'ida': asignatura, 'nivel': '{{ nivel.id }}', 'id': '{{ inscripcion.id }}', 'csrfmiddlewaretoken': csrftoken  },
+                            success: function(data) {
+                                desbloqueointerface();
+                                if (data.result === 'ok') {
+                                    $("#materias #panelcontent").html("<div class='table-responsive'><table class='table table-bordered table-striped' cellpadding='0' cellspacing='0'><tr><th>Coordinacion/Carrera</th><th>Horario</th><th>Sede/Session</th><th>Inicio/Fin</th><th>Disp.</th><th>Ocup.</th><th></th></tr><tbody id='tbody'></tbody></table></div>");
+                                    if (data.disponibles > 0){
+                                        for (var i in data.materias){
+                                            materia = data.materias[i];
+                                            $("#materias #tbody").append("<tr><td>"+materia.coordcarrera+"<br>"+materia.carrera+"</td><td>"+materia.nombre+"<br>"+materia.profesor+"<br><span class='badge text-bg-success'>"+materia.paralelo+"</span>&nbsp;<span class='badge text-bg-warning'>"+materia.intensivo+"</span><br>"+materia.horario+"</td><td>"+materia.session+"<br>"+materia.sede+"</td><td style='text-align: center'>"+materia.inicio+"<br>"+materia.fin+"</td><td style='text-align: center'>"+materia.cupo+"</td><td style='text-align: center'>"+materia.matriculados+"</td><td style='text-align: center'><a href='javascript:;' idm='"+materia.id+"' ida='"+asignatura+"' class='btn btn-sm btn-info btn-mio selectmat'>Seleccionar</a></td></tr>");
+                                        }
+                                        actualizarfuncion();
+                                    } else {
+                                        if(data.abiertas > 0){
+                                            $("#materias #tbody").append("<tr><td colspan='7'>NO EXISTEN CUPOS DISPONIBLES - DEBE COMUNICARSE CON EL COORDINADOR DE CARRERA PARA MODIFICAR EL CUPO</td></tr>");
+                                        } else {
+                                            $("#materias #tbody").append("<tr><td colspan='7'>NO EXISTEN MATERIAS PROGRAMADAS</td></tr>");
+                                        }
+                                    }
+                                    $("#materias").modal('show');
+                                } else {
+                                    NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                                }
+                            },
+                            error: function() {
+                                desbloqueointerface();
+                                NotificacionError('!!!', 'Error de conexión');
+                            },
+                            dataType: "json"
+                        });
+                    } else {
+                        $("#alertas #confmattxt").html("<p>No puede seleccionar mas de la cantidad maxima de materias.</p>");
+                        $("#alertas").modal('show');
+                    }
+                }
+            });
+
+            $('#btnmatricular').click(function () {
+                var fecha = $("#fechamatricula").val();
+                listaasignaturas = [];
+                listamaterias = [];
+                $(".materia").each(function () {
+                    if ($(this).attr('ids')){
+                        adicionar_lista(listaasignaturas, $(this).attr('ida'));
+                        adicionar_lista(listamaterias, $(this).attr('ids'));
+                    }
+                });
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/matriculas",
+                    data: {'action': 'costomatricula', 'asignaturas': JSON.stringify(listaasignaturas), 'materias': JSON.stringify(listamaterias), 'nivel': '{{ nivel.id }}', 'id': '{{ inscripcion.id }}', 'fecha': fecha, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            if (materiasseleccionadas.length > 0) {
+                                texto = "<p>Confirma, que desea matricular al estudiante en <b>" + materiasseleccionadas.length + "</b> materia(s).</p>";
+                            } else {
+                                texto = "<p>Confirma, que desea matricular al estudiante sin materias.</p>";
+                            }
+                            if ((parseFloat(data.costos[8]) === 0) && (data.costos[9] === true)) {
+                                texto += "<p>No se generan valores porque canceló la maestria competa <b>$ " + data.costos[8] + "</b> </p>";
+                                $("#matricular #confmattxt").html(texto);
+                                $("#matricular").modal('show');
+                            }else{
+                                if (data.costos[8] > 0) {
+                                    texto += "<p>Su valor total a pagar es de <b>$ " + data.costos[8] + "</b> </p>";
+                                    $("#matricular #confmattxt").html(texto);
+                                    $("#matricular").modal('show');
+                                } else {
+                                    smoke.alert("No se han establecido valores para su carrera.")
+                                }
+                            }
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.btn-cerrar').click(function () {
+                $("#materias").modal('hide');
+                $("#matricular").modal('hide');
+                $("#alertas").modal('hide');
+                $("#matricularmensajespanel").modal('hide');
+            });
+
+            $('.btn-cerrar2').click(function () {
+                bloqueointerface();
+                location.href = '/matriculas?action=matricula&id={{ nivel.id }}';
+            });
+
+            $('.btn-matricular').click(function(){
+                $("#matricular").modal('hide');
+                $("#matricularmensajespanel").modal('show').find("#confmattxt").html('').append("<p>Espere por favor.</p>");
+                $("#btnfinal1").attr('hidden','hidden');
+                $("#btnfinal2").attr('hidden','hidden');
+                var listafinal = generar_lista_final();
+                var fechamat = $("#fechamatricula").val();
+                var resolucion = $("#resolucion").val();
+                var chkprorroga = $("#chkprorroga").is(':checked');
+                var selprorroga = $("#selprorroga").val();
+                var comprorroga = $("#comprorroga").val();
+                $.ajax({
+                    type: "POST",
+                    url: "/matriculas",
+                    data: { 'action': 'matricular', 'id': '{{ inscripcion.id }}', 'nivel': '{{ nivel.id }}', 'materias':JSON.stringify(listafinal), 'fechamat': fechamat, 'resolucion': resolucion, 'chkprorroga': chkprorroga, 'selprorroga': selprorroga, 'comprorroga': comprorroga, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            $("#matricularmensajespanel").find("#confmattxt").html('').append("<p>Se ha matriculado correctamente.</p>");
+                            $("#btnfinal2").removeAttr('hidden').show();
+                        } else {
+                            $("#matricularmensajespanel").find("#confmattxt").html('').append("<p>"+data.mensaje+"</p>");
+                            $("#btnfinal1").removeAttr('hidden').show();
+                        }
+                    },
+                    error: function() {
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            {#$('.predecesores').popover({#}
+            {#    placement : 'left',#}
+            {#    html : true,#}
+            {#    trigger : 'hover',#}
+            {#    delay: {#}
+            {#        show: "500",#}
+            {#        hide: "100"#}
+            {#    }#}
+            {# });#}
+            {##}
+            {#$('.predecesores').on('shown.bs.popover', function() {#}
+            {#    setTimeout(function() {#}
+            {#        $('.predecesores').popover('hide');#}
+            {#    }, 1000);#}
+            {# });#}
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/matriculas{% endblock %}
+{% block headcanvas %}
+    <div class='row mb-2'>
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row'>
+        <div class='col-12 mb-2'>
+            {% if perms.ctt.puede_matricular %}
+                <input placeholder="Estudiante" class="input-block-level no-marging-bottom form-control" type='text' id="searchinput" value="" autocomplete="off">
+            {% endif %}
+            <table class='table table-bordered' style="width: 100%">
+                <thead class="table-light">
+                <tr>
+                    <th colspan="2">Datos del estudiante</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td style="width: 25%;">Fecha</td>
+                    <td><input type="text" id="fechamatricula" value="{{ hoy|date:"d-m-Y" }}" class="selectorfecha form-control form-control-sm"></td>
+                </tr>
+                <tr>
+                    <td style="width: 25%;">Estudiante</td>
+                    <td>{% if inscripcion %}{{ inscripcion }}{% else %}{% if nombreerroneo %}{{ nombreerroneo }}{% endif %}{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Carrera</td>
+                    <td>{% if inscripcion %}{{ inscripcion.carrera }}  - {{ inscripcion.modalidad }}{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Coordinación/Modalidad</td>
+                    <td>{{ nivel.coordinacion }}</td>
+                </tr>
+                <tr>
+                    <td>Nivel</td>
+                    <td>{{ nivel }} - {{ nivel.modalidad }}</td>
+                </tr>
+                <tr>
+                    <td>Resolución de consejo</td>
+                    <td><input type="text" id="resolucion" class="form-control form-control-sm" style="width: 100%; text-transform: uppercase"></td>
+                </tr>
+                <tr>
+                    <td>Fechas de matrículas</td>
+                    <td>
+                        Tope matrícula regular: {{ nivel.fechatopematricula|date:"Y-m-d" }}, Tope matricula extraordinaria: {{ nivel.fechatopematriculaex|date:"Y-m-d" }}, Tope matricula especial: {{ nivel.fechatopematriculaes|date:"Y-m-d" }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Materias a seleccionar</td>
+                    <td>
+                        Selección: <span style="text-align: center;" id="id_seleccionadas">0</span>
+                        Totales: <span style="text-align: center;">{{ maximo_materia_online }}</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if errmsj %}
+        <div class='row mb-2'>
+            <div class="col-12">
+                <div class="alert alert-danger" role="alert">
+                    {{ errmsj }}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4 class="mb-2">MALLA: {{ inscripcion.mi_malla }}
+                <br>MATERIAS DE MI MALLA</h4>
+            <table class='table table-bordered table-striped'>
+                <tr>
+                    <th>Asignatura</th>
+                    <th style="width: 50px; text-align: center">Mat.</th>
+                    <th style="width: 150px;">Nivel</th>
+                    <th style="width: 150px;">Eje Formativo</th>
+                    <th style="width: 60px; text-align: center;">Cr&eacute;ditos</th>
+                    <th style="width: 60px; text-align: center;">Horas</th>
+                    <th style="width: 60px; text-align: center; {% if not matricular_con_conflicto_horario %}display: none{% endif %}">S.H</th>
+                    <th style="width: 120px; text-align: center;">Disponible</th>
+                    <th style="width: 120px; text-align: center;">Estado</th>
+                </tr>
+                {% for materia in materiasmalla %}
+                    <tr>
+                        {% with programada=materia.asignatura|args:nivel.periodo|call:"disponible_periodo" puedetomar=inscripcion|args:materia.asignatura|call:"puede_tomar_materia" puedetomarasignatura=inscripcion|args:materia.asignatura|call:"puede_tomar_materia_asignatura"   aprobada=inscripcion|args:materia.asignatura|call:"esta_aprobado_asignatura" reprobada=inscripcion|args:materia.asignatura|call:"esta_reprobado_asignatura" %}
+                            <td>
+                                {{ materia.asignatura }}
+                            </td>
+                            {% with matriculas=inscripcion|args:materia.asignatura|call:'cantidad_matriculas' %}
+                                <td style="text-align: center">{% if matriculas > 1 and reprobada %}<span class="badge text-bg-danger">{{ matriculas }}</span>{% endif %}</td>
+                            {% endwith %}
+                            <td>{{ materia.nivelmalla }}</td>
+                            <td>{{ materia.ejeformativo }}</td>
+                            <td style="text-align: center;">{{ materia.creditos|floatformat:4 }}</td>
+                            <td style="text-align: center;">{{ materia.horas|floatformat:1 }}</td>
+                            <td style="text-align: center{% if not matricular_con_conflicto_horario %};display: none{% endif %}">
+                                <input type="checkbox" class="verificarhorarios" id="horario_{{ materia.asignatura.id }}">
+                            </td>
+                            <td style="text-align: center;">
+                                {% if not errmsj %}
+                                    {% if not aprobada %}
+                                        {% if puedetomar %}
+                                            <a style="display: {% if datosincripcion.pre and materia.nivelmalla.id == 0 %} none {% endif %}" id="{{ materia.asignatura.id }}" ida="{{ materia.asignatura.id }}" class="btn btn-info btn-ssm materia">SELECCIONAR</a>
+                                        {% else %}
+                                            {% if not puedetomarasignatura %}
+                                                {% if materia.cantidad_predecesoras  %}
+                                                    <a href="javascript:;" class="smaller btn btn-ssm btn-secondary predecesores" data-bs-toggle="tooltip" data-bs-placement="top" title="Precedencias: {% for precedencia in materia.lista_predecesoras %}{{ precedencia.predecesora.asignatura.nombre }}{% if not forloop.last %},{% endif %}{% endfor %}"> {{ materia.cantidad_predecesoras }} precedencia{% if materia.cantidad_predecesoras > 1 %}s{% endif %} </a>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if not puedetomarasignatura and not puedetomarasignaturamodulo %}
+                                                <br>
+                                            {% endif %}
+                                            {% if not puedetomarasignaturamodulo %}
+                                                {% if materia.cantidad_predecesorasmodulo  %}
+                                                    <a href="javascript:;" class="smaller btn btn-ssm btn-secondary predecesores" data-bs-toggle="tooltip" data-bs-placement="top" title="{% for precedencia in materia.lista_predecesorasmodulo %}{{ precedencia.predecesoramodulo.asignatura.nombre }}{% if not forloop.last %},{% endif %}{% endfor %}"> {{ materia.cantidad_predecesorasmodulo }} precedencia{% if materia.cantidad_predecesorasmodulo > 1 %}s{% endif %} </a>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            {% if aprobada  %}
+                                <td class="estado" style="text-align: center;"><span class="badge text-bg-success">APROBADA</span></td>
+                            {% elif reprobada %}
+                                <td class="estado" style="text-align: center;"><span class="badge text-bg-danger">REPROBADO</span></td>
+                            {% else %}
+                                <td class="estado" style="text-align: center;"><span class="badge text-bg-warning">PENDIENTE</span></td>
+                            {% endif %}
+                        {% endwith %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <table>
+                <tr>
+                    <td style="width: 20px; text-align: center">
+                        <label for="chkprorroga">Prorroga?</label>
+                    </td>
+                    <td style="width: 500px; text-align: left">
+                        <input type="checkbox" class="btn btn-success todos_gruposelectormensaje" name="chkprorroga" id="chkprorroga">
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 20px; text-align: center">
+                        <label for="selprorroga">Asesor</label>
+                    </td>
+                    <td style="width: 20px; text-align: center">
+                        <select id="selprorroga" readonly="" name="selprorroga" class="form-select form-select-sm" style="width: 500px">
+                            {% for secretaria in secretarias %}
+                                <option value='{{ secretaria.id }}'>{{ secretaria.persona }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 20px; text-align: center">
+                        <label for="comprorroga">Comentario</label>
+                    </td>
+                    <td style="width: 600px; text-align: left">
+                        <textarea rows="2" style="margin-top: 5px" id="comprorroga" class="form-control"></textarea>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class='col-12'>
+            {% if not errmsj and inscripcion and perms.ctt.puede_matricular %}
+                <a class="btn btn-sm btn-info btn-large" id="btnmatricular">MATRICULAR</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row" id="horario">
+    </div>
+    <div class="modal fade" id="matricular" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="matricularLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header py-1">
+                    <h4>Confirmar matrícula</h4>
+                </div>
+                <div class="modal-body">
+                    <div id='confmattxt'>
+                    </div>
+                </div>
+                <div class="modal-footer py-1">
+                    <button type="button" class="btn btn-sm btn-success btn-matricular">Confirmar</button>
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {#    <div class="modal fade static" id="matricular" style="display: none;">#}
+    {#        <div class="modal-header">#}
+    {#            <h4>Confirmar matrícula</h4>#}
+    {#        </div>#}
+    {#        <div class="modal-body" style="min-height: 60px;">#}
+    {#            <div id='confmattxt'>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#        <div class="modal-footer">#}
+    {#            <a href="javascript:;" hidden="hidden" class="btn btn-success btn-matricular">Confirmar</a>#}
+    {#            <a href="javascript:;" class="btn btn-cerrar btn-info">Cerrar</a>#}
+    {#        </div>#}
+    {#    </div>#}
+
+
+    <div class="modal fade " id="materias" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="materiasLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header py-1">
+                    <h1 class="modal-title fs-5" id="materiasLabel">Materias abiertas</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="panelcontent">
+                    </div>
+                </div>
+                <div class="modal-footer py-1">
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#    <div class="modal fade static materiasseleccionmodal" id="materias" style="display: none;">#}
+    {#        <div class="modal-header">#}
+    {#            <h4>Materias abiertas</h4>#}
+    {#        </div>#}
+    {#        <div class="modal-body" style="overflow: scroll;">#}
+    {#            <div id="panelcontent">#}
+    {#            </div>#}
+    {#        </div>#}
+    {#        <div class="modal-footer">#}
+    {#            <a href="javascript:;" class="btn btn-cerrar cerrarpanel btn-info">Cerrar</a>#}
+    {#        </div>#}
+    {#    </div>#}
+
+    <div class="modal fade" id="alertas" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="alertasLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header py-1">
+                    <h1 class="modal-title fs-5" id="alertasLabel">Alertas</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id='confmattxt'>
+                    </div>
+                </div>
+                <div class="modal-footer py-1">
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#    <div class="modal fade static" id="alertas" style="display: none;">#}
+    {#        <div class="modal-header">#}
+    {#            <h4>Alertas</h4>#}
+    {#        </div>#}
+    {#        <div class="modal-body" style="height: 60px;">#}
+    {#            <div id='confmattxt'>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#        <div class="modal-footer">#}
+    {#            <a href="javascript:;" class="btn btn-cerrar btn-info">Cerrar</a>#}
+    {#        </div>#}
+    {#    </div>#}
+
+    <div class="modal fade" id="matricularmensajespanel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="matricularmensajespanelLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="matricularmensajespanelLabel">Matriculando</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id='confmattxt'>
+                    </div>
+                </div>
+                <div class="modal-footer" id='btnfinal1' hidden="hidden">
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+                <div class="modal-footer" id='btnfinal2' hidden="hidden">
+                    <button type="button" class="btn btn-sm btn-cerrar2 btn-success" data-bs-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#    <div class="modal fade static" data-keyboard="true" data-backdrop="static" id="matricularmensajespanel">#}
+    {#        <div class="modal-header">#}
+    {#            <h4>Matriculando</h4>#}
+    {#        </div>#}
+    {#        <div class="modal-body" style="height: 60px;">#}
+    {#            <div id='confmattxt'>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#        <div class="modal-footer" id='btnfinal1' hidden="hidden">#}
+    {#            <a href="javascript:;" class="btn btn-cerrar btn-info">Cerrar</a>#}
+    {#        </div>#}
+    {#        <div class="modal-footer" id='btnfinal2' hidden="hidden">#}
+    {#            <a href="javascript:;" class="btn btn-cerrar2 btn-success">Aceptar</a>#}
+    {#        </div>#}
+    {#    </div>#}
+{% endblock %}

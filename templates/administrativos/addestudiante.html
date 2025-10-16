@@ -1,0 +1,213 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_fecha, #id_fechainiciocarrera, #id_fechafincarrera").datepicker({format:"dd-mm-yyyy"});
+
+            $("#id_coordinacion, #id_sede, #id_carrera, #id_modalidad, #id_sesion, #id_malla, #id_periodo").addClass("validate[required]").val(0);
+
+            $('#id_periodo').empty().append('<option value="">---------</option>').val(0);
+
+            $('#id_sede').change(function(){
+                var elemento = $(this);
+                $('#id_coordinacion, #id_carrera, #id_sesion, #id_periodo, #id_nivel').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'coordinacionespersona', 'id': id , 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_coordinacion').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'sesionessede', 'id': id, 'csrfmiddlewaretoken': csrftoken },
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_sesion').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $('#id_coordinacion').change(function(){
+                var elemento = $(this);
+                $('#id_carrera, #id_periodo, #id_nivel').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'carrerascoordinacion', 'id': id , 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_carrera').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            chequehomologacion = function () {
+                if($("#id_prenivelacion").is(":checked")){
+                    $("#id_nivelmalla").addClass("validate[required]").removeAttr('disabled');
+                }else {
+                    $("#id_nivelmalla").removeClass("validate[required]").attr({'disabled':'disabled'});
+                }
+            };
+
+            chequehomologacion();
+
+            $('#id_prenivelacion').click(function () {
+                chequehomologacion();
+            });
+
+                snna = function(){
+                if (!$("#id_rindioexamen").is(':checked')){
+                    $("#id_fechaexamensnna, #id_puntajesnna").attr({"disabled":"disabled"});
+                    $("#id_puntajesnna").removeClass("validate[required]").val('0.00');
+                }else{
+                    $("#id_fechaexamensnna, #id_puntajesnna").removeAttr("disabled");
+                    $("#id_puntajesnna").addClass("validate[required]");
+                    $("#id_fechaexamensnna").val($("#id_fecha").val());
+                }
+            };
+
+            $('#id_puntajesnna').blur(function(){
+                numerico($(this), 0, 1000, 2);
+            });
+
+            snna();
+
+            $("#id_rindioexamen").change(function(){
+                snna();
+            });
+
+            buscarmallas = function () {
+                var idc = parseInt($('#id_carrera').val());
+                var idm = parseInt($('#id_modalidad').val());
+                $('#id_malla').empty().append('<option value="">---------</option>').val(0);
+                if (idc > 0 && idm > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'carrerasmalla', 'idcarrera': idc, 'idmodalidad': idm, 'csrfmiddlewaretoken': csrftoken },
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_malla').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            };
+
+
+            buscaperiodo = function () {
+                var idc = parseInt($('#id_carrera').val());
+                $('#id_periodo').empty().append('<option value="">---------</option>').val(0);
+                if (idc > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/administrativos",
+                        data: {'action': 'periodoscarrera', 'idcarrera': idc, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_periodo').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            };
+
+            $('#id_carrera').change(function(){
+                buscarmallas();
+                buscaperiodo();
+            });
+
+            $('#id_modalidad').change(function(){
+                buscarmallas();
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block atras %}/administrativos{% endblock %}
+{% block formaction %}/administrativos{% endblock %}
+{% block formdestination %}/administrativos{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addestudiante'/>
+    <input type='hidden' name='id' value="{{ administrativo.id }}"/>
+{% endblock %}
+{% block formback %}/administrativos{% endblock %}

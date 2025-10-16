@@ -1,0 +1,115 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas?action=itinerariosmalla&id={{ malla.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Itinerario: {{ itinerarioprincipal }}
+            <br>Titulo Obtenido: {{ itinerarioprincipal.tituloobtenido }}</h4>
+        </div>
+        <div class='col-12'>
+            <h4>Malla: {{ malla }}</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_mallas %}
+        {% if permite_modificar %}
+            <div class="row">
+                <div class='col-6'>
+                    <a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref="/adm_mallas?action=additinerario&id={{ malla.id }}&itinerarioprincipal={{ itinerarioprincipal.id }}"><i class="icon-plus tu"></i> Adicionar</a>
+                </div>
+            </div>
+            <br>
+        {% endif %}
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width:150px;">Itinerario</th>
+                    <th>Asignatura</th>
+                    <th style="width: 100px">Nivel</th>
+                    <th style="width: 60px; text-align: center">Horas Semanales</th>
+                    <th style="width: 60px; text-align: center">Horas</th>
+                    <th style="width: 60px; text-align: center;">Cr&eacute;ditos</th>
+                    <th style="width: 60px; text-align: center;">Prácticas</th>
+                    <th style="width: 60px; text-align: center;">Valida Cr&eacute;ditos</th>
+                    <th style="width: 60px; text-align: center;">Valida Promedio</th>
+                    <th style="width: 60px; text-align: center;">Obligado Asistir</th>
+                    <th style="width: 120px; text-align: center;">Precedencias</th>
+                    <th style="width: 70px; text-align: center;">Sílabo</th>
+                    <th style="width: 80px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for itinerario in itinerarios %}
+                    <tr>
+                        <td>{{ itinerario.itinerario }}</td>
+                        <td>{{ itinerario.asignatura }}</td>
+                        <td>{{ itinerario.nivelmalla }}</td>
+                        <td style="text-align: center">{{ itinerario.horassemanales|floatformat:1 }}</td>
+                        <td style="text-align: center">{{ itinerario.horas|floatformat:1 }}</td>
+                        <td style="text-align: center;">{{ itinerario.creditos|floatformat:4 }}</td>
+                        <td style="text-align: center;">
+                            {% if itinerario.practicas %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Prácticas">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Prácticas">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if itinerario.validacreditos %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Cr&eacute;ditos">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Cr&eacute;ditos">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if itinerario.validapromedio %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Promedio">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Promedio">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if itinerario.obligatoria %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Obligatoria">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Obligatoria">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            <a href="/adm_mallas?action=predecesoraitinerario&id={{ itinerario.id }}" class="btn btn-sm"><i class="icon-list"></i> {{ itinerario.cantidad_predecesoras }} Precedencias</a>
+                        </td>
+                        <td style="text-align: center">
+                            <a href="/adm_mallas?action=syllabus&id={{ itinerario.id }}" class='btn btn-sm {% if itinerario.tiene_syllabus_aprobados %}btn-success{% else %}btn-danger{% endif %} {% if itinerario.tiene_syllabus_pendiente %}blinkimg{% endif %}'><i class='icon-list'></i> {{ asignaturamalla.cantidad_syllabus_aprobados }} Sílabo</a>
+                        </td>
+                        <td style="text-align: center">
+                            {% if permite_modificar %}
+                                {% if perms.ctt.puede_modificar_mallas %}
+                                    <a class="btn btn-info btn-ssm tu formmodal" href="javascript:;" nhref="/adm_mallas?action=edititinerario&id={{ itinerario.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                    <a class="btn btn-danger btn-ssm tu eliminacionmodal" href="javascript:;" nhref="/adm_mallas?action=delitinerario&id={{ itinerario.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                {% endif %}
+                            {% endif %}
+                         <a href="javascript:;" nhref="/adm_mallas?action=edithorasdocencia&id={{ itinerario.id }}" class="btn btn-ssm btn-outline-info tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar horas docencia"><i class="icon-edit"></i></a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

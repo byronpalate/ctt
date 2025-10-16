@@ -1,0 +1,56 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_coordinaciones?action=carreras&id={{ coordinacion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Carrera: {{ carrera }}
+                <br>Coordinación: {{ coordinacion }}
+                <br>Modalidad: {{ modalidad }}</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_coordinaciones %}
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/adm_coordinaciones?action=addaccesopersona&id={{ carrera.id }}&idc={{ coordinacion.id }}&idm={{ modalidad.id }}" class="btn btn-sm btn-success formmodal"><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Personal</th>
+                    <th style="width: 80px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for responsable in responsables%}
+                    <tr>
+                        <td>{{ responsable.persona }}</td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_coordinaciones %}
+                                <a class="btn btn-danger btn-ssm tu eliminacionmodal" href="javascript:;" nhref="/adm_coordinaciones?action=delaccesopersona&id={{ responsable.id }}&idc={{ carrera.id }}&idco={{ coordinacion.id }}&idm={{ modalidad.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_coordinaciones?id={{ coordinacion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class='row mb-2'>
+            <h4>{{ title }}<br>Coordinación: {{ coordinacion }}</h4>
+    </div>
+    {% if perms.ctt.puede_modificar_coordinaciones %}
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/adm_coordinaciones?action=addcarrera&id={{ coordinacion.id }}" class="btn btn-sm btn-success formmodal"><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Carrera</th>
+                    <th>Modalidad</th>
+                    <th style="width: 60px; text-align: center">Inscritos totales</th>
+                    <th style="width: 60px; text-align: center">Inscritos período</th>
+                    <th style="width: 60px; text-align: center">Matriculas período</th>
+                    <th style="width: 130px"></th>
+                    <th style="width: 300px">Responsable</th>
+                    <th style="width: 120px">Firma Dignidad</th>
+                    <th style="width: 70px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for carrera in carreras %}
+                    {% for modalidad in carrera.mis_modalidades %}
+                        <tr>
+                            <td>{{ carrera }}</td>
+                            <td>{{ modalidad }}</td>
+                            {% with matriculados=carrera|args:periodo|args:coordinacion|args:modalidad|call:'total_matriculados_modalidad' inscritos=carrera|args:periodo|args:coordinacion|args:modalidad|call:'total_inscritos_periodo_modalidad' inscritostotales=carrera|args:coordinacion|args:modalidad|call:'total_inscritos_modalidad' responsable=coordinacion|args:carrera|args:modalidad|call:'responsable_carrera' puede_eliminar_carrera=coordinacion|args:carrera|call:'puede_eliminar_carrera' cantidad_personas=coordinacion|args:carrera|args:modalidad|call:'cantidad_personas_acceso_modalidad' %}
+                                <td style="text-align: center">{{ inscritostotales }}</td>
+                                <td style="text-align: center">{{ inscritos }}</td>
+                                <td style="text-align: center">{{ matriculados }}</td>
+                                <td style="text-align: center">
+                                    <a href="/adm_coordinaciones?action=accesocarreras&id={{ carrera.id }}&idc={{ coordinacion.id }}&idm={{ modalidad.id }}" class="btn btn-ssm btn-success"><i class="icon-th-list"></i> {{ cantidad_personas }} - Personal</a>
+                                </td>
+                                <td>{{ responsable|default_if_none:"" }}</td>
+                                <td>{{ responsable.firmadignidad|default_if_none:"" }}</td>
+                                <td style="text-align: center">
+                                    {% if perms.ctt.puede_modificar_coordinaciones %}
+                                        <a class="btn btn-info btn-ssm tu formmodal" href="javascript:;" nhref="/adm_coordinaciones?action=editresponsablecarrera&id={{ carrera.id }}&idc={{ coordinacion.id }}&idm={{ modalidad.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Responsable"><i class="icon-user"></i></a>
+                                        {% if puede_eliminar_carrera %}
+                                            <a class="btn btn-danger btn-ssm tu eliminacionmodal" href="javascript:;" nhref="/adm_coordinaciones?action=delcarrera&id={{ carrera.id }}&idc={{ coordinacion.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            {% endwith %}
+                        </tr>
+                    {% endfor %}
+                {% empty %}
+                    <tr>
+                        <td colspan="5">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

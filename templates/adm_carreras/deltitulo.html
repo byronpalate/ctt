@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_carreras?action=titulosobtenidos{% endblock %}
+{% block formaction %}/adm_carreras{% endblock %}
+{% block formactionvalue %}deltitulo{% endblock %}
+{% block formobjectid %}{{ titulo.id }}{% endblock %}
+{% block formobjectname %}el titulo{% endblock %}
+{% block formobjectrepr %}{{ titulo }}{% endblock %}

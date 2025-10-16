@@ -143,7 +143,7 @@
                                         <li class="smaller"><a href="javascript:;" nhref='/administrativos?action=addgrupo&id={{ administrativo.id }}' class="formmodal dropdown-item"><i class="icon-group"></i> Adicionar a grupo</a></li>
 
                                         <li class="smaller"><a href="javascript:;" nhref='/administrativos?action=asignarsede&id={{ administrativo.id }}' class="formmodal dropdown-item"><i class="icon-home"></i> Asignar sede</a></li>
-                                        {% if not administrativo.persona.id == persona.id %}
+
                                             <li class="dropdown smaller dropstart">
                                                 <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Acceso al sistema</a>
                                                 <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
@@ -166,7 +166,7 @@
                                                     {% endif %}
                                                 </ul>
                                             </li>
-                                        {% endif %}
+
                                         {% if entrar_como_usuario and not administrativo.persona.usuario.is_superuser %}
                                             <li class="smaller"><a class="changeuser dropdown-item" href="javascript:;" idu="{{ administrativo.persona.usuario.id }}"><i class='icon-user'></i> Entrar como este usuario</a></li>
                                         {% endif %}

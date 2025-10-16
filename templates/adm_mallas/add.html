@@ -1,0 +1,34 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_inicio, #id_fin").datepicker({format:"dd-mm-yyyy"});
+            $("#id_nivelproyecto, #id_nivelhorasvinculacion, #id_nivelhoraspracticas, #id_titulo, #id_tipoduraccionmalla, #id_carrera, #id_creditos_completar, #id_libre_opcion, #id_modalidad, #id_optativas, #id_creditos_completar, #id_modelonuevo").addClass("validate[required]");
+
+            $("#id_nivelesregulares, #id_vigencia").blur(function(){
+                numerico($(this), 1, 0, 0);
+            });
+
+            $("#id_maximomateriasonline, #id_libreopcion, #id_optativas, #id_arrastres").blur(function(){
+                numerico($(this), 0, 0, 0);
+            });
+
+            $("#id_horaspracticas, #id_horasvinculacion, #id_vigencia").blur(function(){
+                numerico($(this), 0, 0, 0);
+            });
+
+            $("#id_organizacionaprendizaje").blur(function(){
+                numerico($(this), 0, 0, 1);
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block atras %}/adm_mallas{% endblock %}
+{% block formaction %}/adm_mallas{% endblock %}
+{% block formdestination %}/adm_mallas{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='add'/>
+{% endblock %}
+{% block formback %}/adm_mallas{% endblock %}

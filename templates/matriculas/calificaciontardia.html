@@ -1,0 +1,174 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript" src="/static/js/jquery.editinplace.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript">
+        $(function() {
+
+            actualizar_nota = function() {
+                var elemento;
+                var valor;
+                var maid = $(this).attr("maid");
+                var sel = $(this).attr("sel");
+                var cod = 1;
+                bloqueointerface();
+
+                if ($("#sel"+sel).hasClass('selectorcod')){
+                    cod = $("#sel"+sel).val();
+                }
+
+                elemento = $(this);
+                numerico(elemento, 0, 100, 2);
+                valor = elemento.val();
+                elemento.css({"background-color":"white"});
+
+                $.ajax({
+                    type: "POST",
+                    url: "/matriculas",
+                    data: { 'action':'nota','maid': maid, 'sel': sel, 'val': valor, 'cod': cod, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === "ok") {
+                            elemento.css({"background-color":"rgba(148, 255, 183, 0.23)"});
+                            elemento.val(data.valor);
+                            $("#materiaasignada"+maid).html(data.nota_final);
+                            $("#maestado"+maid).html(data.estado);
+                            if (parseInt(data.estadoid) === 1){
+                                $("#maestado"+maid).css({"color":"#006400"});
+                            }
+                            if (parseInt(data.estadoid) === 2){
+                                $("#maestado"+maid).css({"color":"#ff0000"});
+                            }
+                            if (parseInt(data.estadoid) === 3){
+                                $("#maestado"+maid).css({"color":"#00000"});
+                            }
+                            if (parseInt(data.estadoid) === 4){
+                                $("#maestado"+maid).css({"color":"#FFA500"});
+                            }
+                            if (data.hasOwnProperty('dependientes')) {
+                                for (i = 0; i < data.dependientes.length; i++) {
+                                    elementonombre = data.dependientes[i][0];
+                                    elementovalor = data.dependientes[i][1];
+                                    $("#materiaasignada" + maid + elementonombre).html(elementovalor);
+                                }
+                            }
+                        } else {
+                            elemento.val(0);
+                            elemento.css({"background-color":"rgba(240, 128, 128, 0.21)"});
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.val(0);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            };
+
+            actualizar_observacion = function(){
+                var elemento = $(this);
+                var obs = elemento.attr("obs");
+                var id = elemento.attr("mid");
+                var estado  = elemento.attr('estado');
+                $("#modalobservacionescontenido").attr({"value": obs, "ids": id});
+                $("#modalobservacionesguardar").show();
+                $("#error").empty();
+                $("#modalobservaciones").modal("show");
+            };
+
+            conectacontroles = function() {
+                $(".nota").change(actualizar_nota);
+                $(".btn-observacion").click(actualizar_observacion);
+            };
+
+            actualizaevaluaciones = function(id, idma) {
+                showWaiting("Calculando Evaluaciones", "Espere unos segundos por favor...");
+                $.ajax({
+                    type: "POST",
+                    url: "/matriculas",
+                    data: { 'action':'segmento', 'id': id, 'idma': idma, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        hideWaiting();
+                        if (data.result === "ok") {
+                            $("#segmento").html(data.data);
+                            conectacontroles();
+                            tooltips();
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            $("#segmento").empty();
+                        }
+                    },
+                    error: function() {
+                        $("#segmento").empty();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            };
+
+            $(document).ready(function() {
+                actualizaevaluaciones({{ materiaasignada.materia.id }},{{ materiaasignada.id }});
+            });
+
+            $("#modalobservacionesguardar").click(function() {
+                var observacion = $('#modalobservacionescontenido').val();
+                var id = $('#modalobservacionescontenido').attr("ids");
+                $("#modalobservaciones").modal("hide");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/matriculas",
+                    data: {'action': 'observaciones_tardia', 'id': id, 'observacion': observacion, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok'){
+                            $("#obs_"+id).attr({"obs":observacion});
+                        } else {
+                            $("#error").html("<label hidden class='alert alert-danger' >Error al guardar la observacion, intente de nuevo</label>");
+                            $("#modalobservaciones").modal("show");
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        $("#modalobservacioneserror").html("<label hidden class='alert alert-danger'>Error al guardar la observacion, intente de nuevo</label>");
+                        $("#modalobservaciones").modal("show");
+                    },
+                    dataType: "json"
+                });
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/matriculas?action=materias&id={{ materiaasignada.matricula.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Estudiante: {{ materiaasignada.matricula.inscripcion }}
+            <br>Materia: {{ materiaasignada.materia.asignatura }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table style="width:100%; padding: 0">
+                <tbody id="segmento"></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="modal fade static" data-keyboard="true" data-backdrop="static" id="modalobservaciones" style="display: none;">
+        <div class="modal-header">
+            <h4> Observaciones</h4>
+        </div>
+        <div class="modal-body">
+            <div id="modalobservacioneserror"></div>
+            <textarea id="modalobservacionescontenido" style="width: 100%; text-transform: uppercase" rows="3" class="form-control"></textarea>
+        </div>
+        <div class="modal-footer">
+            <a class="btn btn-sm btn-success" id="modalobservacionesguardar"> Guardar</a>
+            <a class="btn btn-cerrar btn-info" id="modalobservacionescerrar">Cerrar</a>
+        </div>
+    </div>
+{% endblock %}

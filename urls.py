@@ -22,10 +22,11 @@ from django.conf.urls.static import static
 
 
 from ctt import commonviews, inscripciones, matriculas, fecha_evaluaciones, adm_periodos, pro_horarios, pro_asistencias, pro_planificacion, \
-    alu_malla, pro_aperturaclase, alu_automatricula, pro_clases, alu_finanzas, alu_notas, pro_evaluaciones, alu_asistencias, alu_horarios, \
+    adm_mallas, pro_aperturaclase, alu_automatricula, pro_clases, alu_finanzas, alu_notas, pro_evaluaciones, alu_asistencias, alu_horarios, \
     alu_cursoscomplementarios, adm_caja, alu_materias, finanzas, adm_facturas, printdoc, adm_recibopago, adm_notacredito, adm_valecaja, adm_recibo_caja, \
     adm_transferencias, adm_depositos, adm_tecnologicouniversidad, adm_depositoinscripcion, adm_carreras, api, mailbox, adm_coordinaciones, \
-    adm_institucion, adm_colegios, adm_cursoscomplementarios, adm_evaluaciones, niveles, administrativos
+    adm_institucion, adm_colegios, adm_cursoscomplementarios, adm_evaluaciones, niveles, administrativos, adm_asignaturas, adm_modelosevaluativos, docentes, \
+    adm_calculofinanzas
 
 
 import django.views.static
@@ -51,6 +52,7 @@ urlpatterns = [
     path('fecha_evaluaciones', fecha_evaluaciones.view),
     path('adm_periodos', adm_periodos.view),
     path('administrativos', administrativos.view),
+    path('docentes', docentes.view),
     # PROFESORES
     path('pro_clases', pro_clases.view),
     path('pro_horarios', pro_horarios.view),
@@ -75,10 +77,10 @@ urlpatterns = [
 
     path('alu_finanzas', alu_finanzas.view),
 
-    path('alu_malla', alu_malla.view),
-
-
-    path('alu_malla', alu_malla.view),
+    path('adm_asignaturas', adm_asignaturas.view),
+    path('adm_mallas', adm_mallas.view),
+    path('adm_carreras', adm_carreras.view),
+    path('adm_coordinaciones', adm_coordinaciones.view),
 
 
     path('alu_cursoscomplementarios', alu_cursoscomplementarios.view),
@@ -96,6 +98,7 @@ urlpatterns = [
     path('adm_transferencias', adm_transferencias.view),
     path('adm_depositos', adm_depositos.view),
     path('adm_depositoinscripcion', adm_depositoinscripcion.view),
+    path('adm_modelosevaluativos', adm_modelosevaluativos.view),
 
 
     # GESTION DE EVALUACION DE DOCENTES
@@ -122,9 +125,6 @@ urlpatterns = [
     path('mailbox', mailbox.view),
     # BOLSA LABORAL
 
-
-    path('adm_coordinaciones', adm_coordinaciones.view),
-
     path('adm_institucion', adm_institucion.view),
 
     path('adm_cursoscomplementarios', adm_cursoscomplementarios.view),
@@ -134,7 +134,7 @@ urlpatterns = [
     # COLEGIOS E INSTITUCIONES
     path('adm_colegios', adm_colegios.view),
     path('adm_tecnologicouniversidad', adm_tecnologicouniversidad.view),
-    path('nivel', niveles.view),
+    path('niveles', niveles.view),
     # PROYECTO INVESTIGACION
 
 

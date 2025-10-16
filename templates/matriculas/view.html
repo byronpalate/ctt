@@ -1,0 +1,188 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            var intentos = 0;
+            var matriculas;
+
+            fallocierre = function(){
+                desbloqueointerface();
+                $("#cerrarpanel").modal("hide");
+                smoke.alert("Fallo al intentar cerrar las matriculas.");
+            };
+
+            terminarcierre = function(){
+                $("#cerrarpanelprogresshint").html("Finalizando cierre de matriculas");
+                $("#progressbar").css({'width': '100%'});
+                bloqueointerface();
+                location.reload();
+            };
+
+            cierrematricula = function(lista, elemento, cantidad){
+                var matricula = lista[elemento];
+                var cp = (100 / (cantidad+1)) * elemento + '%';
+                if (elemento>cantidad){
+                    terminarcierre();
+                } else {
+                    $("#cerrarpanelprogresshint").html(matricula.nombre);
+                    $("#progressbar").css({'width': cp});
+                    $.ajax({
+                        type: "POST",
+                        url: "/matriculas",
+                        data: {"action": "cierremag", "maid": matricula.id, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            if (data.result === 'ok'){
+                                intentos = 0;
+                                cierrematricula(lista, elemento+1, cantidad);
+                            } else {
+                                intentos += 1;
+                                if (intentos>=100){
+                                    fallocierre();
+                                } else {
+                                    cierrematricula(lista, elemento, cantidad);
+                                }
+                            }
+                        },
+                        error: function() {
+                            intentos += 1;
+                            if (intentos>=100){
+                                fallocierre();
+                            } else {
+                                cierrematricula(lista, elemento, cantidad);
+                            }
+                        },
+                        dataType: "json"
+                    });
+                }
+            };
+
+            $(".cerrarniveltodos").click(function() {
+                var indice;
+                var cantidad;
+                var matriculas;
+                var id = $(this).attr('nivel');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/matriculas",
+                    data: { 'action':'precierretodos', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok'){
+                            $("#cerrarpanel").modal("show");
+                            matriculas = data.matriculas;
+                            cantidad = matriculas.length;
+                            indice = 0;
+                            cierrematricula(matriculas, indice, (cantidad-1));
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row'>
+        <div class="col-12">
+            <table class='table table-bordered cell'>
+                <thead class="table-light">
+                <tr>
+                    <th>Nivel</th>
+                    <th style='text-align: center; width: 60px'>Matrículas</th>
+                    <th style='text-align: center; width: 60px'>Cerradas</th>
+                    <th style='text-align: center; width: 60px'>Pendientes</th>
+                    <th style="width:150px">Sesión/Modalidad</th>
+                    <th style='width:80px;text-align: center;'>Inicio/Fin</th>
+                    <th style='width:80px;text-align: center;'>Mat.Reg.</th>
+                    <th style='width:80px;text-align: center;'>Mat.Ext.</th>
+                    <th style='width:80px;text-align: center;'>Mat.Esp.</th>
+                    <th style="width:100px"></th>
+                    <th style="width:100px"></th>
+                    <th style="width:60px"></th>
+                </tr>
+                </thead>
+                {% with niveles=persona|args:coordinacion|args:periodo|call:"mis_niveles_modalidad" %}
+                    {% for nivel in niveles %}
+                        <tr>
+                            <td>
+                                {{ nivel.paralelo  }}<br>
+                                {% if nivel.cerrado %}
+                                    <span class='badge text-bg-danger'>CERRADO</span>
+                                {% endif %}
+                            </td>
+                            <td style='text-align: center'>{{ nivel.total_matriculados }}</td>
+                            <td style='text-align: center'>{{ nivel.total_matriculados_cerrados }}</td>
+                            <td style='text-align: center'>{{ nivel.total_matriculados_pendientes }}</td>
+                            <td>{{ nivel.sesion.nombre }}<br>{{ nivel.modalidad }}</td>
+                            <td style='text-align: center;'>{{ nivel.inicio|date:'Y-m-d' }}<br>{{ nivel.fin|date:'Y-m-d' }}</td>
+                            <td style='text-align: center;'>{{ nivel.fechatopematricula|date:'Y-m-d' }}</td>
+                            <td style='text-align: center;'>{{ nivel.fechatopematriculaex|date:'Y-m-d' }}</td>
+                            <td style='text-align: center;'>{{ nivel.fechatopematriculaes|date:'Y-m-d' }}</td>
+                            <td style="text-align: center">
+                                <a href='/niveles?action=materias&id={{ nivel.id }}' class='btn btn-ssm btn-success'><i class='icon-list'></i> Materias</a>
+                            </td>
+                            <td style="text-align: center">
+                                <a href='/matriculas?action=matricula&id={{ nivel.id }}' class='btn btn-ssm btn-primary'><i class='icon-user'></i> Matriculados </a>
+                            </td>
+                            <td>
+                                <div class="btn-group dropdown">
+                                    <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                        <li class="smaller"><a href="javascript:;" nivel="{{ nivel.id }}" class="cerrarniveltodos dropdown-item"><i class="icon-folder-close"></i> Cerrar matrículas</a></li>
+                                        <li class="dropdown smaller dropstart">
+                                            <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Reportes</a>
+                                            <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                                {% if reporte_0 %}
+                                                    <li class="smaller"><a class="reportedirecto dropdown-item" href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&nivel={{ nivel.id }}&tiporeporte= {{ reporte.tiporeporte }}"><i class="icon-print"></i> Matriculados</a></li>
+                                                {% endif %}
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="20">NO EXISTEN DATOS</td>
+                        </tr>
+                    {% endfor %}
+                {% endwith %}
+            </table>
+        </div>
+    </div>
+{% endblock %}
+{% block moreblock %}
+    <div class="modal fade" id="cerrarpanel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="cerrarpanelLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header py-1">
+                    <h1 class="modal-title fs-5" id="cerrarpanelLabel">Cerrando Matrículas</h1>
+                </div>
+                <div class="modal-body" id="cerrarpanelpanelbody">
+                    <div class="progress" role="progressbar" aria-label="Animated striped example" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressbar"></div>
+                    </div>
+                    <div id="cerrarpanelprogresshint">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

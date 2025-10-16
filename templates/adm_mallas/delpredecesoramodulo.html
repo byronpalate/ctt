@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}adm_mallas?action=predecesoramodulo&id={{ predecesora.modulomalla.id }}{% endblock %}
+{% block formaction %}/adm_mallas{% endblock %}
+{% block formactionvalue %}delpredecesoramodulo{% endblock %}
+{% block formobjectid %}{{ predecesora.id }}{% endblock %}
+{% block formobjectname %}la precedencia{% endblock %}
+{% block formobjectrepr %}{{ predecesora }}{% endblock %}

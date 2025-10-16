@@ -1,0 +1,79 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            $(".seleccionar").click(function(){
+                var mid = $(this).attr('mid');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/matriculas",
+                    data: {'action': 'movermateriasession', 'maid': {{ materiaasignada.id }}, 'mid': mid, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            location.href = '/matriculas?action=materias&id={{ matricula.id }}';
+                        } else {
+                            desbloqueointerface();
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/matriculas?action=materias&id={{ matricula.id }}{% endblock %}
+{% block headcanvas %}
+    <div class='row'>
+        <div class='col-12'>
+            <h4>Materia: {{ matricula.inscripcion }} -> {{ asignatura }}</h4>
+            <h5>Carrera: {{ matricula.inscripcion.carrera.nombre }}</h5>
+            <h5>Nivel: {{ matricula.nivel }}</h5>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Materias</th>
+                    <th>Horarios</th>
+                    <th style="width: 70px"> </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for materia in materias.materias %}
+                    <tr>
+                        <td>
+                            <b>{{ materia.nombre }} - [{{ materia.id }}]</b><br>
+                            {{ materia.coordcarrera }} - {{ materia.carrera }} - {{ materia.nivelparalelo }}<br>
+                            <span class='smaller'>{{ materia.paralelo }} - {{ materia.session }} - {{ materia.sede }} - {{ materia.nivel }}</span><br/>
+                            <span class="smaller"> {{ materia.inicio }} - {{ materia.fin }}</span>
+                            <span class="smaller label label-info">{{ materia.cupo }} - DISP. </span>
+                            <span class="smaller label label-info">{{ materia.matriculados }} - MATRICULADOS </span>
+                            {% if materia.intensivo %}<span class="smaller label label-warning">INTENSIVO</span>{% endif %}
+                        </td>
+                        <td><span class="smaller">{{ materia.horario|safe }}</span></td>
+                        <td style="text-align: center">
+                            {% if materia.id == materiaasignada.materia.id %}
+                                <span class="badge text-bg-success">ASIGNADA</span>
+                            {% else %}
+                                <a mid='{{ materia.id }}' class='btn btn-sm btn-info seleccionar'><i class="icon-arrow-up"></i> Mover</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

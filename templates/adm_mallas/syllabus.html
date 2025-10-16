@@ -1,0 +1,68 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}{% if asignaturamalla.es_itinerario %}/adm_mallas?action=itinerarios&id={{ asignaturamalla.malla.id }}{% else %}/adm_mallas?action=edit&id={{ asignaturamalla.malla.id }}{% endif %}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Asignatura: {{ asignaturamalla.asignatura }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-hover'>
+                <thead class="table-light">
+                <tr>
+                    <th>Profesor</th>
+                    <th style="width: 130px;text-align: center;"></th>
+                    <th style="width: 80px;text-align: center;">Fecha</th>
+                    <th style="width: 80px;text-align: center;">Habilitado</th>
+                    <th style="width: 80px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for silabo in silabos %}
+                    <tr>
+                        <td>{{ silabo.planificacionmateria.profesor }}</td>
+                        <td style="text-align: center">
+                            <a class="btn btn-sm btn-success"href="/adm_mallas?action=planificacionmodulomalla&id={{ silabo.id }}"><i class="icon-list"></i> Planificación</a>
+                        </td>
+                        <td style="text-align: center;">{{ silabo.fecha|date:"Y-m-d" }}</td>
+                        <td style="text-align: center;">
+                            {% if silabo.habilitado %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitado">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitado">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_mallas %}
+                                {% if not silabo.habilitado %}
+                                    <a href="javascript:;" nhref='/adm_mallas?action=aprobarsyllabus&id={{ silabo.id }}' class="btn btn-danger btn-ssm confirmacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Habilitar"><i class="icon-lock"></i></a>
+                                {% else %}
+                                    <a href="javascript:;" nhref='/adm_mallas?action=desaprobarsyllabus&id={{ silabo.id }}' class="btn btn-success btn-ssm confirmacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Deshabilitar"><i class="icon-unlock"></i></a>
+                                {% endif %}
+                                {% if not silabo.habilitado %}
+                                    <a class="btn btn-ssm btn-danger eliminacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar" href="javascript:;" nhref='/adm_mallas?action=delsyllabus&id={{ silabo.id }}'><i class="icon-remove"></i></a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
