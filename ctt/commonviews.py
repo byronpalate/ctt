@@ -125,6 +125,7 @@ def login_user(request):
                         usuario.save()
                         persona.clave_cambiada()
                         return ok_json()
+
                     else:
                         return bad_json(error=6)
                 except Exception as ex:
