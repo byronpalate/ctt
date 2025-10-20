@@ -22,7 +22,6 @@ from ctt.forms import InscripcionForm, RecordAcademicoForm, HistoricoRecordAcade
     CambiomallaForm, NuevaInscripcionForm, \
     CambionivelmallaForm, EstudioEducacionSuperiorForm, EstudioEducacionBasicaForm, \
     CambiaDatosCarreraForm, ImportarArchivoXLSForm, \
-    CambioitinerarioForm, \
     RetiradoCarreraForm, \
     CambiarFichaInscripcionForm, \
     ImportarArchivoXLSPeriodoForm

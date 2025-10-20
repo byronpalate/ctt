@@ -1260,17 +1260,14 @@ def view(request):
                     if 'modalidad' in request.GET:
                         request.session['modalidad'] = modalidad = Modalidad.objects.get(id=int(request.GET['modalidad']))
                     data['tiposcursos'] = TipoCostoCurso.objects.all()
-                    if ProcesoSolicitudProrrogasSecretaria.objects.filter(periodo=periodo, modalidad=modalidad).exists():
-                        data['procesos'] = proceso = ProcesoSolicitudProrrogasSecretaria.objects.filter(periodo=periodo, modalidad=modalidad)[0]
-                        data['fechasprocesos'] = FechasPeriodoSolicitudProrrogas.objects.filter(proceso=proceso)
-                    else:
-                        data['procesos'] = ""
-                        data['fechasprocesos'] = ""
+
+                    data['procesos'] = ""
+                    data['fechasprocesos'] = ""
                     data['modalidad'] = modalidad
                     return render(request, "adm_pagosnivel/3.html", data)
                 if seccion == 4:
-                    data['costosconvenio'] = PreciosConvenioHomologacion.objects.filter(periodo=periodo)
-                    data['costosparqueadero'] = PreciosServicioParqueadero.objects.filter(periodo=periodo)
+                    data['costosconvenio'] = None
+                    data['costosparqueadero'] = None
                     return render(request, "adm_pagosnivel/4.html", data)
                 if seccion == 5:
                     data['valores'] = ValoresMinimosPeriodoBecaMatricula.objects.all()

@@ -20,7 +20,7 @@ from decorators import secure_module, last_access, db_selector
 from settings import ALUMNOS_GROUP_ID, SEXO_FEMENINO, SEXO_MASCULINO, CONTACTO_EMAIL, ENVIO_CORREO_INICIO_SESION,\
     PIE_PAGINA_CREATIVE_COMMON_LICENCE, CHEQUEAR_CORREO, PROFESORES_GROUP_ID, EMPLEADORES_GRUPO_ID, TIPO_PERIODO_GRADO,\
 NOTIFICACION_DEUDA, ACTUALIZAR_FOTO_PROFESOR, ACTUALIZAR_FOTO_ADMINISTRATIVOS, ARCHIVO_TIPO_PUBLICO, ACTUALIZAR_FOTO_ALUMNOS,\
-    NIVEL_MALLA_CERO, CHEQUEAR_CONFLICTO_HORARIO
+    NIVEL_MALLA_CERO, CHEQUEAR_CONFLICTO_HORARIO, NOTA_ESTADO_EN_CURSO
 from ctt.forms import PersonaForm, CambioClaveForm, CargarFotoForm, CambioPerfilForm, CambioCoordinacionForm, \
     CambioPeriodoForm, CambioClaveSimpleForm,FormTerminos
 from ctt.funciones import generar_nombre, log, fechatope, ok_json, bad_json, url_back, generar_clave, \
@@ -29,7 +29,7 @@ from ctt.models import Persona, Periodo, FotoPersona, Noticia, Profesor, Inscrip
     mi_institucion, \
     Persona, Incidencia, PerfilUsuario, Modulo, Encuesta, Matricula, DatoTransferenciaDeposito, years_ago, Materia, \
     Actividad, \
-    InscripcionFlags, Reporte, Clase, CargoInstitucion, Nivel
+    InscripcionFlags, Reporte, Clase, CargoInstitucion, Nivel, Asignatura, MateriaAsignada
 
 from ctt.tasks import send_mail
 
@@ -1465,13 +1465,15 @@ def calcular_costo(request):
 
 def matricular(request, estudiante=False, generarrubros=True):
     global ex
+    from ctt.models import Asignatura
     try:
         inscripcion = Inscripcion.objects.get(pk=int(request.POST['id']))
         mismaterias = json.loads(request.POST['materias'])
         if not estudiante:
             chkprorroga = request.POST['chkprorroga']
             if request.POST['selprorroga'] != '0':
-                cargoinstitucion = CargoInstitucion.objects.get(pk=request.POST['selprorroga'])
+                # cargoinstitucion = CargoInstitucion.objects.get(pk=request.POST['selprorroga'])
+                cargoinstitucion= None
         else:
             chkprorroga = False
         if 'fechamat' in request.POST:
@@ -1522,19 +1524,15 @@ def matricular(request, estudiante=False, generarrubros=True):
                 representa = Asignatura.objects.get(pk=idrepresenta)
                 matriculas = matricula.inscripcion.historicorecordacademico_set.filter(noaplica=False, convalidacion=False, homologada=False, asignatura=representa, fecha__lt=materia.nivel.fin).count() + 1
                 malla = inscripcion.mi_malla()
-                itinerario = inscripcion.mi_itinerario()
+                # itinerario = inscripcion.mi_itinerario()
                 am = None
                 mm = None
                 horas = materia.horas
                 creditos = materia.creditos
-                if malla.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=itinerario), asignatura=representa).exists():
-                    am = malla.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=itinerario), asignatura=representa).first()
+                if malla.asignaturamalla_set.filter(asignatura=representa).exists():
+                    am = malla.asignaturamalla_set.filter(asignatura=representa).first()
                     horas = am.horas
                     creditos = am.creditos
-                elif malla.modulomalla_set.filter(asignatura=representa).exists():
-                    mm = malla.modulomalla_set.filter(asignatura=representa).first()
-                    horas = mm.horas
-                    creditos = mm.creditos
                 sinasistencia = False
                 verificahorario = True
                 for m in mismaterias:
@@ -1549,7 +1547,6 @@ def matricular(request, estudiante=False, generarrubros=True):
                                                   materia=materia,
                                                   fechaasignacion=materia.inicio,
                                                   asignaturamalla=am,
-                                                  modulomalla=mm,
                                                   asignaturareal=representa,
                                                   horas=horas,
                                                   creditos=creditos,

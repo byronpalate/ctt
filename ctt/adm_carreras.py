@@ -8,10 +8,9 @@ from django.shortcuts import render
 from decorators import secure_module, last_access
 from settings import CUARTO_NIVEL_TITULACION_ID
 from ctt.commonviews import adduserdata
-from ctt.forms import CarreraForm, CompetenciaEspecificaForm, TituloCarreraForm, TituloForm
+from ctt.forms import CarreraForm, CompetenciaEspecificaForm, TituloForm
 from ctt.funciones import MiPaginador, log, ok_json, bad_json, url_back, remover_tildes
-from ctt.models import Carrera, CompetenciaEspecifica, TituloObtenido, \
-    TituloObtenidoCarrera
+from ctt.models import Carrera, CompetenciaEspecifica
 
 
 @login_required(login_url='/login')

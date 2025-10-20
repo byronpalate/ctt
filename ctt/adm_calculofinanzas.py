@@ -232,19 +232,6 @@ def costo_matricula(inscripcion, asignaturas, materias, nivel, fecha):
                 valor_arancel = 0
             else:
                 valor_arancel = null_to_numeric(precioperiodo.precioarancel, 2)
-    for asignaturamodulo in malla.modulomalla_set.filter(asignatura__id__in=asignaturas):
-        costomateria = costo_materia(inscripcion, asignaturamodulo.asignatura, nivel)
-        matriculas = costomateria[1]
-        if Materia.objects.filter(id__in=materias, intensivo=True).exists():
-            if matriculas >= 1 and preciosotros:
-                valor_modulo = null_to_numeric(valor_modulo + preciosotros.precioarrastremodulo, 2)
-            else:
-                valor_modulo = null_to_numeric(valor_modulo + preciosotros.preciomodulo, 2)
-        else:
-            if matriculas >= 1 and preciosotros:
-                valor_modulo = null_to_numeric(valor_modulo + preciosotros.precioarrastremodulo, 2)
-            else:
-                valor_modulo = null_to_numeric(valor_modulo + 0, 2)
     if es_especial:
         if valor_matricula > 0 and porciento_extra_matricula > 0:
             valor_matricula_extra = null_to_numeric(valor_matricula * (porciento_extra_matricula / 100.0), 2)

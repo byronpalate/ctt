@@ -13,7 +13,7 @@ from settings import PERSONA_MODIFICA_MALLA_ID
 from ctt.commonviews import adduserdata
 from ctt.forms import MallaForm, AsignaturaMallaForm,  \
     AsignaturaMallaPredecesoraForm,EvidenciaMallaForm, InformacionSedeMallaForm, InfoMallasedeForm, \
-    CompetenciaEspecificaMallaForm, CompetenciaGenericaMallaForm, AsignaturaMallaCompetenciaForm, ClonarMallaForm, ItinerarioMallaForm, \
+    CompetenciaEspecificaMallaForm, CompetenciaGenericaMallaForm, AsignaturaMallaCompetenciaForm, ClonarMallaForm, \
     AsignaturaMallaHorasDocenciaForm
 from ctt.funciones import log, generar_nombre, ok_json, bad_json, url_back
 from ctt.models import Malla, NivelMalla, EjeFormativo, AsignaturaMalla, Asignatura, AsignaturaMallaPredecesora, Periodo, EvidenciaMalla, InformacionSedeMalla, CompetenciaEspecifica, CompetenciaGenerica, \

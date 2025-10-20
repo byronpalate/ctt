@@ -17,7 +17,7 @@ from settings import FORMA_PAGO_RECIBOCAJAINSTITUCION, ALUMNOS_GROUP_ID, FORMA_P
 from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor, Turno, Sexo, Provincia, Carrera, \
     Modalidad, Sesion, DIAS_CHOICES, Periodicidad, Nacionalidad, Pais, Parroquia, TipoSangre, Raza, \
     NacionalidadIndigena, \
-    PersonaEstadoCivil, TituloObtenido, TiposMalla, Asignatura, Itinerario, TipoDuraccionMalla, NivelMalla, \
+    PersonaEstadoCivil, TiposMalla, Asignatura, TipoDuraccionMalla, NivelMalla, \
     EjeFormativo, \
     AreaConocimiento, TipoMateria, CampoFormacion, AsignaturaMalla, Coordinacion, PerfilUsuario, Sede, \
     TiempoDedicacionDocente, \
@@ -235,7 +235,7 @@ class MallaForm(BaseForm):
         widget=forms.Select()
     )
     modalidad = ModelChoiceField(label=u'Modalidad', queryset=Modalidad.objects.all(), required=False, widget=forms.Select())
-    titulo = ModelChoiceField(label=u'Título obtenido', queryset=TituloObtenido.objects.all(), required=False, widget=forms.Select())
+    # titulo = ModelChoiceField(label=u'Título obtenido', queryset=TituloObtenido.objects.all(), required=False, widget=forms.Select())
     tipoduraccionmalla = ModelChoiceField(label=u'Tipo duración', queryset=TipoDuraccionMalla.objects.all(), required=False, widget=forms.Select())
     inicio = forms.DateField(label=u"Fecha de aprobación", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     fin = forms.DateField(label=u"Fin de vigencia", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
@@ -306,14 +306,14 @@ class CambiomallaForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
 
-class CambioitinerarioForm(BaseForm):
-    itinerario = ModelChoiceField(label=u'Nuevo itinerario', queryset=Itinerario.objects.all())
-
-    def extra_paramaters(self):
-        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
-
-    def itinerarios(self, malla):
-        self.fields['itinerario'].queryset = Itinerario.objects.filter(asignaturamalla__malla=malla).distinct()
+# class CambioitinerarioForm(BaseForm):
+#     itinerario = ModelChoiceField(label=u'Nuevo itinerario', queryset=Itinerario.objects.all())
+#
+#     def extra_paramaters(self):
+#         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+#
+#     def itinerarios(self, malla):
+#         self.fields['itinerario'].queryset = Itinerario.objects.filter(asignaturamalla__malla=malla).distinct()
 
 
 class CambionivelmallaForm(BaseForm):
@@ -421,12 +421,12 @@ class AsignaturaMallaForm(BaseForm):
         del self.fields['itinerario']
 
 
-class ItinerarioMallaForm(BaseForm):
-    nombre = forms.CharField(label=u'Nombre', max_length=150, required=False, widget=forms.TextInput())
-    tituloobtenido = ModelChoiceField(label=u'Titulo Obtenido', queryset=TituloObtenido.objects.all(), required=False)
-
-    def extra_paramaters(self):
-        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+# class ItinerarioMallaForm(BaseForm):
+#     nombre = forms.CharField(label=u'Nombre', max_length=150, required=False, widget=forms.TextInput())
+#     tituloobtenido = ModelChoiceField(label=u'Titulo Obtenido', queryset=TituloObtenido.objects.all(), required=False)
+#
+#     def extra_paramaters(self):
+#         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
 class AsignaturaMallaCompetenciaForm(BaseForm):
     identificacion = forms.CharField(label=u'Identificación', max_length=30, required=False, widget=forms.TextInput())
@@ -1807,11 +1807,11 @@ class CarreraForm(BaseForm):
         self.fields['tiposubgrado'].queryset = DetalleNivelTitulacion.objects.filter(niveltitulacion=carrera.tipogrado)
 
 
-class TituloCarreraForm(BaseForm):
-    titulo = forms.ModelChoiceField(label=u'Título obtenido', queryset=TituloObtenido.objects.all(), required=False, widget=forms.Select())
-
-    def extra_paramaters(self):
-        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+# class TituloCarreraForm(BaseForm):
+#     titulo = forms.ModelChoiceField(label=u'Título obtenido', queryset=TituloObtenido.objects.all(), required=False, widget=forms.Select())
+#
+#     def extra_paramaters(self):
+#         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
 
 class TituloForm(BaseForm):
@@ -1819,14 +1819,6 @@ class TituloForm(BaseForm):
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
-
-
-class TituloCarreraForm(BaseForm):
-    titulo = forms.ModelChoiceField(label=u'Título obtenido', queryset=TituloObtenido.objects.all(), required=False, widget=forms.Select())
-
-    def extra_paramaters(self):
-        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
-
 
 class ResponsableCarreraForm(BaseForm):
     responsable = forms.IntegerField(initial='', required=False, label=u'Responsable', widget=forms.TextInput(attrs={'select2search': 'true', 'class': 'select2advance'}))

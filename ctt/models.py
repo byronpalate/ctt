@@ -140,6 +140,11 @@ ACTIVIDAD_RUCRIMPE = (
     (3, u'Actividades Profesionales (NO relacionadas al perfil de su carrera'),
 )
 
+TIPOS_IDENTIFICACION = (
+    (1, u'CEDULA'),
+    (2, u'RUC'),
+    (3, u'PASAPORTE')
+)
 
 class TiposIdentificacion(models.IntegerChoices):
     CEDULA = 1, 'CEDULA'
@@ -1260,9 +1265,6 @@ class Carrera(ModeloBase):
         if Materia.objects.filter(carrera=self).exists():
             return False
         return True
-
-    def cantidad_titulos(self):
-        return self.tituloobtenidocarrera_set.count()
 
     def cartera_general_posgrado(self):
         hoy = datetime.now().date()
@@ -3259,51 +3261,6 @@ class NombreNivelacion(ModeloBase):
         super(NombreNivelacion, self).save(*args, **kwargs)
 
 
-class TituloObtenido(ModeloBase):
-    nombre = models.CharField(default='', max_length=200, verbose_name=u'Nombre')
-
-    def __str__(self):
-        return u'%s' % self.nombre
-
-    class Meta:
-        verbose_name_plural = u"Titulos obtenidos"
-        ordering = ['nombre']
-        unique_together = ('nombre',)
-
-    @staticmethod
-    def flexbox_query(q, filtro=None, exclude=None, cantidad=None):
-        return eval(("TituloObtenido.objects.filter(Q(nombre__icontains='%s') | Q(id=id_search('%s')))" % (q, q)) + (".filter(%s)" % filtro if filtro else "") + (".exclude(%s)" % exclude if exclude else "") + (".distinct()") + ("[:%s]" % cantidad if cantidad else ""))
-
-    def flexbox_repr(self):
-        return self.nombre + ' - ' + str(self.id)
-
-    def puede_eliminarse(self):
-        return not self.malla_set.exists()
-
-    def save(self, *args, **kwargs):
-        self.nombre = null_to_text(self.nombre)
-        super(TituloObtenido, self).save(*args, **kwargs)
-
-
-class TituloObtenidoCarrera(ModeloBase):
-    carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE)
-    tituloobtenido = models.ForeignKey(TituloObtenido, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return u'%s' % self.tituloobtenido
-
-    def puede_eliminarse(self):
-        return not Malla.objects.filter(carrera=self.carrera, tituloobtenido=self.tituloobtenido).exists()
-
-    def tiene_mallas_usando(self):
-        return Malla.objects.filter(carrera=self.carrera, tituloobtenido=self.tituloobtenido).exists()
-
-    class Meta:
-        verbose_name_plural = u"Titulos obtenidos"
-        ordering = ['tituloobtenido']
-        unique_together = ('tituloobtenido', 'carrera')
-
-
 class Sesion(ModeloBase):
     nombre = models.CharField(default='', max_length=100, verbose_name=u'Nombre')
     sede = models.ForeignKey(Sede, blank=True, null=True, on_delete=models.CASCADE)
@@ -3540,7 +3497,7 @@ class Malla(ModeloBase):
     vigencia = models.IntegerField(default=1, verbose_name=u'Vigencia')
     resolucion = models.CharField(default='', verbose_name=u'Resolucion', max_length=100)
     codigo = models.CharField(default='', verbose_name=u'Codigo', max_length=30)
-    tituloobtenido = models.ForeignKey(TituloObtenido, verbose_name=u"Titulo obtenido", blank=True, null=True, on_delete=models.CASCADE)
+    # tituloobtenido = models.ForeignKey(TituloObtenido, verbose_name=u"Titulo obtenido", blank=True, null=True, on_delete=models.CASCADE)
     tipoduraccionmalla = models.ForeignKey(TipoDuraccionMalla, blank=True, null=True, on_delete=models.CASCADE)
     cantidadsemanas = models.IntegerField(default=0, verbose_name=u"Cantidad semanas")
     cantidadarrastres = models.IntegerField(default=0, verbose_name=u"Cantidad arrastres")
@@ -3885,28 +3842,28 @@ class EjeFormativo(ModeloBase):
         super(EjeFormativo, self).save(*args, **kwargs)
 
 
-
-class Itinerario(ModeloBase):
-    malla = models.ForeignKey(Malla, blank=True, null=True, verbose_name=u'Malla', on_delete=models.CASCADE)
-    nombre = models.CharField(verbose_name=u'Nombre', max_length=255)
-    tituloobtenido = models.ForeignKey(TituloObtenido, blank=True, null=True, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return u'%s' % self.nombre
-
-    class Meta:
-        verbose_name_plural = u"Itinerarios"
-        ordering = ['nombre']
-        unique_together = ('malla', 'nombre',)
-
-    def save(self, *args, **kwargs):
-        self.nombre = null_to_text(self.nombre)
-        super(Itinerario, self).save(*args, **kwargs)
-
+#
+# class Itinerario(ModeloBase):
+#     malla = models.ForeignKey(Malla, blank=True, null=True, verbose_name=u'Malla', on_delete=models.CASCADE)
+#     nombre = models.CharField(verbose_name=u'Nombre', max_length=255)
+#     tituloobtenido = models.ForeignKey(TituloObtenido, blank=True, null=True, on_delete=models.CASCADE)
+#
+#     def __str__(self):
+#         return u'%s' % self.nombre
+#
+#     class Meta:
+#         verbose_name_plural = u"Itinerarios"
+#         ordering = ['nombre']
+#         unique_together = ('malla', 'nombre',)
+#
+#     def save(self, *args, **kwargs):
+#         self.nombre = null_to_text(self.nombre)
+#         super(Itinerario, self).save(*args, **kwargs)
+#
 
 class AsignaturaMalla(ModeloBase):
     malla = models.ForeignKey(Malla, verbose_name=u'Malla', on_delete=models.CASCADE)
-    itinerario = models.ForeignKey(Itinerario, blank=True, null=True, verbose_name=u'Itinerario', on_delete=models.CASCADE)
+    # itinerario = models.ForeignKey(Itinerario, blank=True, null=True, verbose_name=u'Itinerario', on_delete=models.CASCADE)
     asignatura = models.ForeignKey(Asignatura, verbose_name=u'Asignatura malla', on_delete=models.CASCADE)
     tipomateria = models.ForeignKey(TipoMateria, verbose_name=u'Tipo de materia', blank=True, null=True, on_delete=models.CASCADE)
     campoformacion = models.ForeignKey(CampoFormacion, verbose_name=u'Campo formacion', blank=True, null=True, on_delete=models.CASCADE)
@@ -3946,7 +3903,7 @@ class AsignaturaMalla(ModeloBase):
     class Meta:
         verbose_name_plural = u"Asignaturas de mallas"
         ordering = ['asignatura']
-        unique_together = ('malla', 'asignatura', 'itinerario')
+        unique_together = ('malla', 'asignatura')
 
     def nombrecorto(self):
         return self.asignatura.nombre + ((" - [" + self.tipomateria.nombre[0:1] + "]") if self.tipomateria else '')
@@ -4846,8 +4803,6 @@ class TipoInscripcion(ModeloBase):
         self.nombre = null_to_text(self.nombre)
         self.alias = null_to_text(self.alias)
         super(TipoInscripcion, self).save(*args, **kwargs)
-
-
 
 class Inscripcion(ModeloBase):
     persona = models.ForeignKey(Persona, verbose_name=u'Persona', on_delete=models.CASCADE)
@@ -5937,13 +5892,13 @@ class Inscripcion(ModeloBase):
         return null_to_numeric(self.recordacademico_set.filter(validacreditos=True, aprobada=True, asignatura__asignaturamalla__malla=self.mi_malla()).aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def total_creditos_otros(self):
-        return null_to_numeric(self.recordacademico_set.filter(validacreditos=True, aprobada=True).exclude(asignatura__asignaturamalla__malla=self.mi_malla()).exclude(asignatura__modulomalla__malla=self.mi_malla()).aggregate(valor=Sum('creditos'))['valor'], 4)
+        return null_to_numeric(self.recordacademico_set.filter(validacreditos=True, aprobada=True).exclude(asignatura__asignaturamalla__malla=self.mi_malla()).aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def total_creditos_otros_libre_c(self):
-        return null_to_numeric(self.recordacademico_set.filter(aprobada=True, libreconfiguracion=True).exclude(asignatura__asignaturamalla__malla=self.mi_malla()).exclude(asignatura__modulomalla__malla=self.mi_malla()).aggregate(valor=Sum('creditos'))['valor'], 4)
+        return null_to_numeric(self.recordacademico_set.filter(aprobada=True, libreconfiguracion=True).exclude(asignatura__asignaturamalla__malla=self.mi_malla()).aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def total_creditos_otros_optativa(self):
-        return null_to_numeric(self.recordacademico_set.filter(validacreditos=True, aprobada=True, optativa=True).exclude(asignatura__asignaturamalla__malla=self.mi_malla()).exclude(asignatura__modulomalla__malla=self.mi_malla()).aggregate(valor=Sum('creditos'))['valor'], 4)
+        return null_to_numeric(self.recordacademico_set.filter(validacreditos=True, aprobada=True, optativa=True).exclude(asignatura__asignaturamalla__malla=self.mi_malla()).aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def total_horas(self):
         return null_to_numeric(self.recordacademico_set.filter(validacreditos=True, aprobada=True, asignatura__asignaturamalla__malla=self.mi_malla()).aggregate(valor=Sum('horas'))['valor'], 2)
@@ -6062,14 +6017,7 @@ class Inscripcion(ModeloBase):
         malla = self.mi_malla()
         return malla.horaspracticas > self.horas_ppp()
 
-    def tiene_ingles_pendientes(self):
-        malla = self.mi_malla()
-        ingles = malla.modulomalla_set.filter(asignatura__id__in=[4311, 4312, 4313, 4316, 4317, 4318, 4319, 4320])
-        lista = []
-        for asignatura in ingles:
-            if not self.esta_aprobado_asignatura(asignatura.asignatura):
-                lista.append(asignatura.asignatura)
-        return lista
+
 
     def horas_pendientes_practica(self):
         malla = self.mi_malla()
@@ -7071,8 +7019,6 @@ class Materia(ModeloBase):
             return self.nivel.carrera
         elif self.asignaturamalla:
             return self.asignaturamalla.malla.carrera
-        elif self.modulomalla:
-            return self.modulomalla.malla.carrera
         return None
 
     def mi_malla(self):
@@ -7080,8 +7026,6 @@ class Materia(ModeloBase):
             return self.nivel.malla
         elif self.asignaturamalla:
             return self.asignaturamalla.malla
-        elif self.modulomalla:
-            return self.modulomalla.malla
         return None
 
     def mi_alias(self):
@@ -7658,9 +7602,6 @@ class Matricula(ModeloBase):
         from ctt.adm_calculofinanzas import calcular_rubros
         calcular_rubros(self)
 
-    def calcular_rubros_derecho_rotativo(self):
-        from ctt.adm_calculofinanzas import calculo_derecho_rotativo
-        calculo_derecho_rotativo(self)
 
     def calcular_arancel_posgrado(self):
         from ctt.adm_calculofinanzas import calculo_arancel_posgrado
@@ -8677,17 +8618,9 @@ class RecordAcademico(ModeloBase):
     def existe_en_malla(self):
         return self.inscripcion.mi_malla().asignaturamalla_set.filter(asignatura=self.asignatura).exists()
 
-    def existe_en_modulos(self):
-        return self.inscripcion.mi_malla().modulomalla_set.filter(asignatura=self.asignatura).exists()
-
     def asignatura_malla(self):
         if self.existe_en_malla():
             return self.inscripcion.mi_malla().asignaturamalla_set.filter(asignatura=self.asignatura)[0]
-        return None
-
-    def modulo_malla(self):
-        if self.existe_en_modulos():
-            return self.inscripcion.mi_malla().modulomalla_set.filter(asignatura=self.asignatura)[0]
         return None
 
     def nivel_asignatura(self):
@@ -8698,7 +8631,6 @@ class RecordAcademico(ModeloBase):
         if not self.historicorecordacademico_set.filter(fecha=self.fecha).exists():
             nuevohistorico = HistoricoRecordAcademico(recordacademico=self,
                                                       inscripcion=self.inscripcion,
-                                                      modulomalla=self.modulomalla,
                                                       asignaturamalla=self.asignaturamalla,
                                                       trabajotitulacionmalla=self.trabajotitulacionmalla,
                                                       asignatura=self.asignatura,
@@ -8724,7 +8656,6 @@ class RecordAcademico(ModeloBase):
                                                       observaciones=self.observaciones)
             nuevohistorico.save()
         seleccionada = self.historicorecordacademico_set.all().order_by('-aprobada', '-fecha')[0]
-        self.modulomalla = seleccionada.modulomalla
         self.trabajotitulacionmalla = seleccionada.trabajotitulacionmalla
         self.asignaturamalla = seleccionada.asignaturamalla
         self.asignatura = seleccionada.asignatura
@@ -8802,7 +8733,7 @@ class RecordAcademico(ModeloBase):
 
     def save(self, *args, **kwargs):
         self.asignaturamalla = self.asignatura_malla()
-        self.modulomalla = self.modulo_malla()
+
         if not self.aprobada:
             self.creditos = 0
             self.horas = 0
@@ -8937,18 +8868,12 @@ class MateriaAsignada(ModeloBase):
                 asignatura = self.asignaturareal
             else:
                 asignatura = self.materia.asignatura
-            asignaturamodulo = self.matricula.inscripcion.asignatura_en_modulomalla(asignatura)
             asignaturamalla = self.matricula.inscripcion.asignatura_en_asignaturamalla(asignatura)
             if asignaturamalla:
                 validacreditos = asignaturamalla.validacreditos
                 validapromedio = asignaturamalla.validapromedio
                 creditos = asignaturamalla.creditos
                 horas = asignaturamalla.horas
-            elif asignaturamodulo:
-                validacreditos = asignaturamodulo.validacreditos
-                validapromedio = asignaturamodulo.validapromedio
-                creditos = asignaturamodulo.creditos
-                horas = asignaturamodulo.horas
             else:
                 validacreditos = self.materia.validacreditos
                 validapromedio = self.materia.validapromedio
@@ -8971,7 +8896,6 @@ class MateriaAsignada(ModeloBase):
                 existente = HistoricoRecordAcademico.objects.filter(inscripcion=self.matricula.inscripcion, materiaregular=self.materia)[0]
             if existente:
                 existente.nota = self.notafinal
-                existente.modulomalla = self.matricula.inscripcion.asignatura_en_modulomalla(asignatura)
                 existente.asignaturamalla = self.matricula.inscripcion.asignatura_en_asignaturamalla(asignatura)
                 existente.horas = horas
                 existente.creditos = creditos
@@ -8991,7 +8915,6 @@ class MateriaAsignada(ModeloBase):
             else:
                 historico = HistoricoRecordAcademico(inscripcion=self.matricula.inscripcion,
                                                      asignatura=asignatura,
-                                                     modulomalla=self.matricula.inscripcion.asignatura_en_modulomalla(asignatura),
                                                      asignaturamalla=self.matricula.inscripcion.asignatura_en_asignaturamalla(asignatura),
                                                      nota=self.notafinal,
                                                      creditos=creditos,
@@ -9266,9 +9189,6 @@ class MateriaAsignada(ModeloBase):
     def es_materiamalla(self):
         return self.asignaturamalla is not None
 
-    def es_materiamodulo(self):
-        return self.modulomalla is not None
-
     def cantidad_tutorias_solicitadas(self):
         return SolicitudTutoria.objects.filter(materiaasignada=self).count()
 
@@ -9301,18 +9221,13 @@ class MateriaAsignada(ModeloBase):
         asignaturamalla = self.matricula.inscripcion.asignatura_en_asignaturamalla(self.asignaturareal)
         if asignaturamalla:
             return asignaturamalla.validacreditos
-        asignaturamodulo = self.matricula.inscripcion.asignatura_en_modulomalla(self.asignaturareal)
-        if asignaturamodulo:
-            return asignaturamodulo.validacreditos
+
         return self.materia.validacreditos
 
     def valida_para_promedio(self):
         asignaturamalla = self.matricula.inscripcion.asignatura_en_asignaturamalla(self.asignaturareal)
         if asignaturamalla:
             return asignaturamalla.validapromedio
-        asignaturamodulo = self.matricula.inscripcion.asignatura_en_modulomalla(self.asignaturareal)
-        if asignaturamodulo:
-            return asignaturamodulo.validapromedio
         return self.materia.validapromedio
 
     def valor_campos(self):
@@ -9374,13 +9289,7 @@ class MateriaAsignada(ModeloBase):
             self.fechaasignacion = self.matricula.fecha
         if actualiza:
             if self.id:
-                if self.homologada():
-                    self.notafinal = self.datos_homologacion().nota_ant
-                    self.asistenciafinal = 100
-                elif self.convalidada():
-                    self.notafinal = self.datos_convalidacion().nota_ant
-                    self.asistenciafinal = 100
-                elif self.sinasistencia:
+                if self.sinasistencia:
                     self.asistenciafinal = 100
                 else:
                     if not self.asignaturamalla.internado:
@@ -10355,8 +10264,6 @@ class Rubro(ModeloBase):
             return self.rubromateria_set.all()[0].materiaasignada.matricula.nivel.periodo
         if self.rubroderecho_set.exists():
             return self.rubroderecho_set.all()[0].materiaasignada.matricula.nivel.periodo
-        if self.rubroactividadextracurricular_set.exists():
-            return self.rubroactividadextracurricular_set.all()[0].participante.actividad.periodo
         if self.rubrootro_set.exists():
             return self.periodo
         if self.rubroespecievalorada_set.exists():
@@ -10365,8 +10272,6 @@ class Rubro(ModeloBase):
             return self.rubrocuota_set.all()[0].matricula.nivel.periodo if self.rubrocuota_set.all()[0].matricula else self.periodo
         if self.rubrocursoescuelacomplementaria_set.exists():
             return self.rubrocursoescuelacomplementaria_set.all()[0].participante.curso.periodo
-        if self.rubrocursounidadtitulacion_set.exists():
-            return self.rubrocursounidadtitulacion_set.all()[0].participante.curso.periodo
         if self.rubroagregacion_set.exists():
             return self.rubroagregacion_set.all()[0].materiaasignada.matricula.nivel.periodo
         if self.rubronotadebito_set.exists():
@@ -12429,8 +12334,6 @@ class HistoricoRecordAcademico(ModeloBase):
     def existe_en_malla(self):
         return self.inscripcion.mi_malla().asignaturamalla_set.filter(asignatura=self.asignatura).exists()
 
-    def existe_en_modulos(self):
-        return self.inscripcion.mi_malla().modulomalla_set.filter(asignatura=self.asignatura).exists()
 
     def nivel_asignatura(self):
         if self.existe_en_malla():
@@ -12463,7 +12366,6 @@ class HistoricoRecordAcademico(ModeloBase):
             record = RecordAcademico(inscripcion=self.inscripcion,
                                      asignatura=self.asignatura,
                                      matriculas=self.matricula_actual(),
-                                     modulomalla=self.modulomalla,
                                      asignaturamalla=self.asignaturamalla,
                                      trabajotitulacionmalla=self.trabajotitulacionmalla,
                                      nota=self.nota,
@@ -12498,7 +12400,6 @@ class HistoricoRecordAcademico(ModeloBase):
             record = self.inscripcion.recordacademico_set.filter(asignatura=self.asignatura)[0]
             record.matriculas = self.matricula_actual()
             record.asignaturamalla = seleccionada.asignaturamalla
-            record.modulomalla = seleccionada.modulomalla
             record.trabajotitulacionmalla = seleccionada.trabajotitulacionmalla
             record.nota = seleccionada.nota
             record.asistencia = seleccionada.asistencia
@@ -12563,11 +12464,6 @@ class HistoricoRecordAcademico(ModeloBase):
             return self.inscripcion.mi_malla().asignaturamalla_set.filter(asignatura=self.asignatura)[0]
         return None
 
-    def modulo_malla(self):
-        if self.existe_en_modulos():
-            return self.inscripcion.mi_malla().modulomalla_set.filter(asignatura=self.asignatura)[0]
-        return None
-
     def es_nivelacion(self):
         asm = self.asignatura_malla()
         if asm:
@@ -12581,7 +12477,6 @@ class HistoricoRecordAcademico(ModeloBase):
 
     def save(self, *args, **kwargs):
         self.asignaturamalla = self.asignatura_malla()
-        self.modulomalla = self.modulo_malla()
         if not self.aprobada:
             self.creditos = 0
             self.horas = 0
@@ -14253,7 +14148,7 @@ class Profesor(ModeloBase):
         return Asignatura.objects.filter(materia__nivel__periodo=periodo, materia__profesormateria__profesor=self).distinct()
 
     def carreras_imparte_periodo(self, periodo):
-        return Carrera.objects.filter(Q(malla__asignaturamalla__materia__nivel__periodo=periodo, malla__asignaturamalla__materia__profesormateria__profesor=self) | Q(malla__modulomalla__materia__nivel__periodo=periodo, malla__modulomalla__materia__profesormateria__profesor=self)).distinct()
+        return Carrera.objects.filter(Q(malla__asignaturamalla__materia__nivel__periodo=periodo, malla__asignaturamalla__materia__profesormateria__profesor=self) ).distinct()
 
     def me_imparte(self, matricula):
         return MateriaAsignada.objects.filter(materia__profesormateria__profesor=self, matricula=matricula)
@@ -15575,7 +15470,6 @@ class MateriaAsignadaCurso(ModeloBase):
                 elif HistoricoRecordAcademico.objects.filter(inscripcion=self.matricula.inscripcion, asignatura=self.materia.asignatura, materiacurso=self.materia).exists():
                     historico = HistoricoRecordAcademico.objects.filter(inscripcion=self.matricula.inscripcion, asignatura=self.materia.asignatura, materiacurso=self.materia)[0]
                 if historico:
-                    historico.modulomalla = self.matricula.inscripcion.asignatura_en_modulomalla(self.materia.asignatura)
                     historico.asignaturamalla = self.matricula.inscripcion.asignatura_en_asignaturamalla(self.materia.asignatura)
                     historico.nota = self.notafinal
                     historico.horas = self.materia.horas
@@ -15596,7 +15490,6 @@ class MateriaAsignadaCurso(ModeloBase):
                 else:
                     historico = HistoricoRecordAcademico(inscripcion=self.matricula.inscripcion,
                                                          asignatura=self.materia.asignatura,
-                                                         modulomalla=self.matricula.inscripcion.asignatura_en_modulomalla(self.materia.asignatura),
                                                          asignaturamalla=self.matricula.inscripcion.asignatura_en_asignaturamalla(self.materia.asignatura),
                                                          nota=self.notafinal,
                                                          creditos=self.materia.creditos,
@@ -15956,8 +15849,6 @@ class PlanificacionMateria(ModeloBase):
         if self.materia:
             if self.materia.asignaturamalla:
                 return self.silaboasignaturamalla_set.exists()
-            if self.materia.modulomalla:
-                return self.silabomodulomalla_set.exists()
         return False
 
     def profesor(self):
@@ -16468,8 +16359,6 @@ class SolicitudAperturaClase(ModeloBase):
             clase = Clase.objects.filter(turno=self.turno, inicio__lte=self.fecha, fin__gte=self.fecha, dia=self.fecha.isoweekday(), materia__profesormateria__profesor=self.profesor, materia__profesormateria__principal=True)[0]
             if clase.materia.asignaturamalla:
                 return clase.materia.asignaturamalla.malla.carrera
-            elif clase.materia.modulomalla:
-                return clase.materia.modulomalla.malla.carrera
         return None
 
     def actualiza_coordinacion(self):
@@ -17533,7 +17422,7 @@ class PreciosPeriodoModulosInscripcion(ModeloBase):
         return u'%s - %s - %s - %s - %s - %s - %s - %s - %s - %s - %s - %s - %s - %s - %s' % (self.periodo, self.sede, self.carrera, self.modalidad, self.precioinscripcion, self.preciohomologacion, self.preciohomologacionconvenio, self.precioredmaestros, self.preciomodulo, self.precioarrastremodulo, self.porcentajesegundamatricula, self.porcentajeterceramatricula, self.porcentajematriculaextraordinaria, self.preciotitulacion, self.precioadelantoidiomas)
 
     def en_uso_periodo(self):
-        if Materia.objects.filter(Q(asignaturamalla__malla__carrera=self.carrera, asignaturamalla__malla__modalidad=self.modalidad) | Q(modulomalla__malla__carrera=self.carrera, modulomalla__malla__modalidad=self.modalidad), nivel__sede=self.sede, nivel__periodo=self.periodo).exists():
+        if Materia.objects.filter(Q(asignaturamalla__malla__carrera=self.carrera, asignaturamalla__malla__modalidad=self.modalidad), nivel__sede=self.sede, nivel__periodo=self.periodo).exists():
             return True
         elif Matricula.objects.filter(inscripcion__carrera=self.carrera, inscripcion__modalidad=self.modalidad, inscripcion__sede=self.sede, nivel__periodo=self.periodo).exists():
             return True
@@ -17589,3 +17478,41 @@ class ValoresMinimosPeriodoBecaMatricula(ModeloBase):
     activavalorbeca = models.BooleanField(default=False)
     porcentajebeca = models.IntegerField(blank=True, null=True, default=0)
     activaporcentajebeca = models.BooleanField(default=False)
+
+
+class RubroNotaDebito(ModeloBase):
+    rubro = models.ForeignKey(Rubro, verbose_name=u'Rubro', on_delete=models.CASCADE)
+    motivo = models.TextField(default='', verbose_name=u'Motivo')
+    factura = models.ForeignKey(Factura, null=True, blank=True, verbose_name=u'Factura', on_delete=models.CASCADE)
+    anticipado = models.BooleanField(default=False)
+
+    def __str__(self):
+        return u'Rubro: %s %s' % (self.rubro.inscripcion, str(self.rubro.valor))
+
+    class Meta:
+        verbose_name_plural = u"Rubros notas de debito"
+        unique_together = ('rubro',)
+
+    def verifica_estado(self):
+        if self.factura:
+            if self.rubro.cancelado:
+                factura = self.factura
+                factura.cancelada = True
+                factura.save()
+
+    def save(self, *args, **kwargs):
+        self.motivo = null_to_text(self.motivo)
+        super(RubroNotaDebito, self).save(*args, **kwargs)
+
+
+class RubroCursoEscuelaComplementaria(ModeloBase):
+    rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE)
+    participante = models.ForeignKey(MatriculaCursoEscuelaComplementaria, on_delete=models.CASCADE)
+    cuota = models.IntegerField(default=0, verbose_name=u'Cuota')
+
+    def __str__(self):
+        return u'Rubro: %s %s' % (self.rubro.inscripcion, str(self.rubro.valor))
+
+    class Meta:
+        verbose_name_plural = u"Rubros de cursos complementarios"
+        unique_together = ('rubro',)
