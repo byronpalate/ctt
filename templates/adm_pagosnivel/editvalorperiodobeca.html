@@ -1,0 +1,38 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+    $(document).ready(function(){
+        $('#id_activavalormatricula').on('click', function(){
+        $('#id_activaporcentajematricula').prop('checked', false);
+        $('#id_activavalormatricula').prop('checked', true);
+    });
+
+        $('#id_activaporcentajematricula').on('click', function(){
+        $('#id_activavalormatricula').prop('checked', false);
+        $('#id_activaporcentajematricula').prop('checked', true);
+    });
+        $('#id_activavalorbeca').on('click', function(){
+        $('#id_activaporcentajebeca').prop('checked', false);
+        $('#id_activavalorbeca').prop('checked', true);
+    });
+
+        $('#id_activaporcentajebeca').on('click', function(){
+        $('#id_activavalorbeca').prop('checked', false);
+        $('#id_activaporcentajebeca').prop('checked', true);
+    });
+});
+        $(function() {
+            $("#id_periodo").addClass('validate[required]');
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_pagosnivel{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_pagosnivel?section=5{% endblock %}
+{% block formdestination %}/adm_pagosnivel?section=5{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editvalorperiodobeca'/>
+    <input type='hidden' name='valor' value='{{ valor.id }}' />
+{% endblock %}
+{% block formback %}/adm_pagosnivel?section=5{% endblock %}

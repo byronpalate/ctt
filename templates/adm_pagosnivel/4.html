@@ -1,0 +1,137 @@
+{% extends "adm_pagosnivel/view.html" %}
+{% load ctt_extras %}
+{% block headcontenidoseccion %}
+    <script type="text/javascript">
+        $(function () {
+
+            $("#sel_grado").change(function () {
+                var elemento = $(this);
+                var id = parseInt(elemento.val());
+                bloqueointerface();
+                location.href = "/adm_pagosnivel?seccion=4&grado="+id;
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block contenidotab %}
+    <div class="tab-pane fade {% if seccion == 4 %}show active{% endif %}" id="tab4" role="tabpanel" aria-labelledby="tab4" tabindex="0">
+        <div class='row mb-2'>
+            <div class='col-12'>
+                <h4>Costo convenio por homologación</h4>
+            </div>
+        </div>
+        <div class='row mb-2'>
+            <div class='col-2'>
+                <a href="javascript:;" nhref="/adm_pagosnivel?action=addcostoconvenio" class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar costo</a>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th style="width: 200px;">Período</th>
+                        <th style="width: 80px;">Costo convenio</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for costo in costosconvenio %}
+                        <tr>
+                            <td>{{ costo.nombre }}</td>
+                            <td>{{ costo.periodo }}</td>
+                            <td>$ {{ costo.costoconvenio }}</td>
+                            <td style="text-align: center">
+                                <a href="javascript:;" nhref="/adm_pagosnivel?action=editcostoconvenio&id={{ costo.id }}" class='formmodal btn btn-success btn-ssm tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="20">NO EXISTEN DATOS</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class='row mb-2'>
+            <div class='col-12'>
+                <h4>Costos por parqueadero</h4>
+            </div>
+        </div>
+        <div class='row mb-2'>
+            <div class='col-2'>
+                <a href="javascript:;" nhref="/adm_pagosnivel?action=addcostoparqueadero" class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar costo parqueo</a>
+            </div>
+            <div class='col-2'>
+                <a href="javascript:;" nhref="/adm_pagosnivel?action=clonarvaloresparqueo" class='formmodal btn btn-sm btn-success'><i class="icon-magic"></i> Clonar Valores Parqueo</a>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th style="width: 200px;">Sede</th>
+                        <th style="width: 50px;">Período</th>
+                        <th style="width: 100px;">Modalidad</th>
+                        <th style="width: 80px;">Costo Subtotal</th>
+                        <th style="width: 80px;">Costo IVA</th>
+                        <th style="width: 80px;">Costo Total</th>
+                        <th style="width: 80px;">Costo Subtotal adicional/pérdida</th>
+                        <th style="width: 80px;">Tiempo</th>
+                        <th style="width: 80px;">Tipo vehículo</th>
+                        <th style="width: 80px;">Es Posgrado</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for costoparqueo in costosparqueadero %}
+                        <tr>
+                            <td>{{ costoparqueo.nombre }}</td>
+                            <td><div class="alert {% if costoparqueo.sede.id == 1 %}alert-success{% else %}alert-warning{% endif %}"><i class="icon-home"></i>{{ costoparqueo.sede }}</div></td>
+                            <td class="text-center">{{ costoparqueo.periodo.nombre }}</td>
+                            <td style="font-weight: bold">
+                                <div class="alert {% if costoparqueo.modalidad.id == 1 %}alert-info{% endif %}{% if costoparqueo.modalidad.id == 2 %}alert-primary{% endif %}{% if costoparqueo.modalidad.id == 3 %}alert-success{% endif %}">
+                                    {{ costoparqueo.modalidad }}
+                                </div>
+                            </td>
+                            <td>$ {{ costoparqueo.costosubtotal }}</td>
+                            <td>$ {{ costoparqueo.iva }}</td>
+                            <td>$ {{ costoparqueo.costototal }}</td>
+                            <td>$ {{ costoparqueo.costoadicionalperdida }}</td>
+                            <td style="text-align: center">
+                                {% if costoparqueo.tiempo.id == 1 %}
+                                    <span class="badge text-bg-info tu" data-original-data-bs-toggle="tooltip" data-bs-placement="top" title="Tiempo parqueo">MENSUAL</span>
+                                {% else %}
+                                    <span class="badge text-bg-warning tu" data-original-data-bs-toggle="tooltip" data-bs-placement="top" title="Tiempo parqueo">SEMESTRAL</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if costoparqueo.tipovehiculo == 1 %}
+                                    <span class="badge text-bg-info tu" data-original-data-bs-toggle="tooltip" data-bs-placement="top" title="Tipo vehículo">AUTO</span>
+                                {% else %}
+                                    <span class="badge text-bg-warning tu" data-original-data-bs-toggle="tooltip" data-bs-placement="top" title="Tipo vehículo">MOTO</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if costoparqueo.posgrado %}
+                                    <span class="badge text-bg-info tu" data-original-data-bs-toggle="tooltip" data-bs-placement="top" title="Es posgrado">SI</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-original-data-bs-toggle="tooltip" data-bs-placement="top" title="Es posgrado">NO</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                <a href="javascript:;" nhref="/adm_pagosnivel?action=editcostoparqueadero&id={{ costoparqueo.id }}" class='formmodal btn btn-success btn-ssm tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="20">NO EXISTEN DATOS</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

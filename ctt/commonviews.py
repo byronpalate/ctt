@@ -19,14 +19,17 @@ from django.shortcuts import render
 from decorators import secure_module, last_access, db_selector
 from settings import ALUMNOS_GROUP_ID, SEXO_FEMENINO, SEXO_MASCULINO, CONTACTO_EMAIL, ENVIO_CORREO_INICIO_SESION,\
     PIE_PAGINA_CREATIVE_COMMON_LICENCE, CHEQUEAR_CORREO, PROFESORES_GROUP_ID, EMPLEADORES_GRUPO_ID, TIPO_PERIODO_GRADO,\
-NOTIFICACION_DEUDA, ACTUALIZAR_FOTO_PROFESOR, ACTUALIZAR_FOTO_ADMINISTRATIVOS, ARCHIVO_TIPO_PUBLICO, ACTUALIZAR_FOTO_ALUMNOS
+NOTIFICACION_DEUDA, ACTUALIZAR_FOTO_PROFESOR, ACTUALIZAR_FOTO_ADMINISTRATIVOS, ARCHIVO_TIPO_PUBLICO, ACTUALIZAR_FOTO_ALUMNOS,\
+    NIVEL_MALLA_CERO, CHEQUEAR_CONFLICTO_HORARIO
 from ctt.forms import PersonaForm, CambioClaveForm, CargarFotoForm, CambioPerfilForm, CambioCoordinacionForm, \
     CambioPeriodoForm, CambioClaveSimpleForm,FormTerminos
 from ctt.funciones import generar_nombre, log, fechatope, ok_json, bad_json, url_back, generar_clave, \
     convertir_fecha
-from ctt.models import Persona, Periodo, FotoPersona, Noticia, Profesor, Inscripcion, Archivo,  GruposModulos, mi_institucion, \
-Persona, Incidencia, PerfilUsuario, Modulo, Encuesta, Matricula, DatoTransferenciaDeposito, years_ago, Materia, Actividad,\
-    InscripcionFlags, Reporte
+from ctt.models import Persona, Periodo, FotoPersona, Noticia, Profesor, Inscripcion, Archivo, GruposModulos, \
+    mi_institucion, \
+    Persona, Incidencia, PerfilUsuario, Modulo, Encuesta, Matricula, DatoTransferenciaDeposito, years_ago, Materia, \
+    Actividad, \
+    InscripcionFlags, Reporte, Clase, CargoInstitucion, Nivel
 
 from ctt.tasks import send_mail
 
@@ -1317,38 +1320,19 @@ def materias_abiertas(asignatura, inscripcion, nivel, estudiante=False):
         malla = inscripcion.mi_malla()
         materiasabiertas = []
         am = inscripcion.asignatura_en_asignaturamalla(asignatura)
-        mm = malla.modulomalla_set.filter(asignatura=asignatura)
         if inscripcion.mi_nivel().nivel.id == NIVEL_MALLA_CERO:
             materiasabiertas = Materia.objects.filter(asignaturamalla__nivelmalla__id=NIVEL_MALLA_CERO, nivel__sesion=inscripcion.sesion, fin__gte=hoy, nivel__sede=nivel.sede, nivel__modalidad=inscripcion.modalidad, nivel__cerrado=False, asignatura=asignatura, nivel__periodo=nivel.periodo).distinct().order_by('paralelomateria')
         else:
             if am:
                 if estudiante:
-                    materiasabiertas = Materia.objects.filter(Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, materiascompartidas__materiaotracarreramodalidadsede__asignatura=asignatura, rectora=True) | Q(asignaturamalla=am, nivel=nivel) | Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, asignatura=asignatura, rectora=True), fin__gte=hoy, nivel__cerrado=False, nivel__periodo=nivel.periodo, nivel__modalidad=inscripcion.modalidad).distinct().order_by('paralelomateria')
+                    materiasabiertas = Materia.objects.filter(Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, rectora=True) | Q(asignaturamalla=am, nivel=nivel) | Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, asignatura=asignatura, rectora=True), fin__gte=hoy, nivel__cerrado=False, nivel__periodo=nivel.periodo, nivel__modalidad=inscripcion.modalidad).distinct().order_by('paralelomateria')
                 else:
-                    materiasabiertas = Materia.objects.filter(Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, materiascompartidas__materiaotracarreramodalidadsede__asignatura=asignatura, rectora=True) | Q(asignaturamalla=am, nivel=nivel) | Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, asignatura=asignatura, rectora=True), fin__gte=hoy, nivel__cerrado=False, nivel__periodo=nivel.periodo).distinct().order_by('paralelomateria')
-            mm = inscripcion.asignatura_en_modulomalla(asignatura)
-            if mm:
-                if estudiante:
-                    materiasabiertas = Materia.objects.filter(Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, materiascompartidas__materiaotracarreramodalidadsede__asignatura=asignatura, rectora=True) |
-                                                              Q(modulomalla=mm, nivel=nivel) |
-                                                              Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, asignatura=asignatura, rectora=True),
-                                                              fin__gte=hoy,
-                                                              nivel__modalidad=inscripcion.modalidad,
-                                                              nivel__cerrado=False,
-                                                              nivel__periodo=nivel.periodo, cerrado=False).distinct().order_by('paralelomateria')
-                else:
-                    materiasabiertas = Materia.objects.filter(Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, materiascompartidas__materiaotracarreramodalidadsede__asignatura=asignatura, rectora=True) |
-                                                              Q(modulomalla=mm, nivel=nivel) |
-                                                              Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, asignatura=asignatura, rectora=True),
-                                                              fin__gte=hoy, nivel__cerrado=False,
-                                                              nivel__periodo=nivel.periodo, cerrado=False).distinct().order_by('paralelomateria')
+                    materiasabiertas = Materia.objects.filter(Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, rectora=True) | Q(asignaturamalla=am, nivel=nivel) | Q(materiascompartidas__sede=inscripcion.sede, materiascompartidas__carrera=inscripcion.carrera, materiascompartidas__modalidad=inscripcion.modalidad, asignatura=asignatura, rectora=True), fin__gte=hoy, nivel__cerrado=False, nivel__periodo=nivel.periodo).distinct().order_by('paralelomateria')
         materias = []
         for materia in materiasabiertas:
             adicionar = False
             verificacupocompartido = False
             if materia.asignaturamalla == am and am:
-                adicionar = True
-            elif materia.modulomalla == mm and mm:
                 adicionar = True
             elif materia.rectora and materia.materiascompartidas_set.filter(sede=inscripcion.sede,carrera=inscripcion.carrera,modalidad=inscripcion.modalidad).exists():
                 adicionar = True
@@ -1358,7 +1342,7 @@ def materias_abiertas(asignatura, inscripcion, nivel, estudiante=False):
                     adicionar = False
             if adicionar:
                 coordinacion = materia.nivel.nivellibrecoordinacion_set.all().first().coordinacion.alias
-                mat = {'nombre': materia.asignatura.__str__(), 'nivel': materia.asignaturamalla.nivelmalla.__str__() if materia.asignaturamalla else "", 'sede': materia.nivel.sede.__str__(), 'profesor': materia.profesor_principal().persona.__str__() if materia.profesor_principal() else 'SIN DEFINIR', 'horario': "<br>".join(x for x in materia.clases_informacion()), 'id': materia.id, 'inicio': materia.inicio.strftime("%d-%m-%Y"), 'session': materia.nivel.sesion.__str__(), 'fin': materia.fin.strftime("%d-%m-%Y"), 'paralelo': materia.paralelomateria.__str__(), 'idparalelo': (materia.paralelomateria.id if materia.paralelomateria else ''), 'identificacion': materia.identificacion, 'coordcarrera': '%s - %s' % (coordinacion, materia.nivel), 'carrera': materia.carrera.alias, 'cupo': materia.capacidad_disponible(), 'matriculados': materia.cantidad_matriculas_materia(), 'nivelparalelo': materia.nivel.paralelo, 'modulonivelmalla': materia.modulonivelmalla.__str__() if materia.modulonivelmalla else '', 'intensivo': 'INTENSIVO' if materia.intensivo else '' }
+                mat = {'nombre': materia.asignatura.__str__(), 'nivel': materia.asignaturamalla.nivelmalla.__str__() if materia.asignaturamalla else "", 'sede': materia.nivel.sede.__str__(), 'profesor': materia.profesor_principal().persona.__str__() if materia.profesor_principal() else 'SIN DEFINIR', 'horario': "<br>".join(x for x in materia.clases_informacion()), 'id': materia.id, 'inicio': materia.inicio.strftime("%d-%m-%Y"), 'session': materia.nivel.sesion.__str__(), 'fin': materia.fin.strftime("%d-%m-%Y"), 'paralelo': materia.paralelomateria.__str__(), 'idparalelo': (materia.paralelomateria.id if materia.paralelomateria else ''), 'identificacion': materia.identificacion, 'coordcarrera': '%s - %s' % (coordinacion, materia.nivel), 'carrera': materia.carrera.alias, 'cupo': materia.capacidad_disponible(), 'matriculados': materia.cantidad_matriculas_materia(), 'nivelparalelo': materia.nivel.paralelo, 'modulonivelmalla': materia.modulonivelmalla.__str__() if materia.modulonivelmalla else ''}
                 materias.append(mat)
         return {"idd": asignatura.id, "asignatura": asignatura.__str__(), "abiertas": materiasabiertas.__len__(), "disponibles": materias.__len__(), "materias": materias}
     except Exception as ex:

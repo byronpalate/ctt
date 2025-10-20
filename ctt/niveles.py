@@ -2032,12 +2032,9 @@ def view(request):
                                                      'practicas': materia.practicas,
                                                      'validacreditos': materia.validacreditos,
                                                      'validapromedio': materia.validapromedio,
-                                                     'intensivo': materia.intensivo,
                                                      'rectora': materia.rectora,
                                                      'inicio': materia.inicio,
-                                                     'fin': materia.fin,
-                                                     'integracioncurricular':materia.integracioncurricular,
-                                                     'tipointegracion':materia.tipointegracion})
+                                                     'fin': materia.fin})
                     form.editar(materia)
                     data['form'] = form
                     return render(request, "niveles/editmateria.html", data)

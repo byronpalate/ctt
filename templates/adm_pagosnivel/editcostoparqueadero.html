@@ -1,0 +1,18 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_nombre, #id_costosubtotal, #id_costoadicionalperdida").addClass('validate[required]');
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_pagosnivel{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_pagosnivel{% endblock %}
+{% block formdestination %}/adm_pagosnivel?seccion=4{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editcostoparqueadero' />
+    <input type='hidden' name='id' value='{{ precioparqueo.id }}' />
+{% endblock %}
+{% block formback %}/adm_pagosnivel{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_nombre").addClass('validate[required]');
+
+            verificar_tipo = function () {
+                if ($("#id_titulacion ").is(":checked")){
+                    $('#id_cursos, #id_actualizacionconocimiento').prop('checked', false);
+                }
+                if ($("#id_costodiferenciado").is(":checked") || $("#id_costolibre ").is(":checked")){
+                    $('#id_titulacion, #id_actualizacionconocimiento').prop('checked', false).attr({'disabled': 'disabled'});
+                }else{
+                    $('#id_titulacion, #id_actualizacionconocimiento').removeAttr('disabled');
+                }
+                if ($("#id_cursos").is(":checked")){
+                    $('#id_titulacion, #id_actualizacionconocimiento').prop('checked', false);
+                }
+                if ($("#id_actualizacionconocimiento").is(":checked")){
+                    $('#id_titulacion, #id_cursos').prop('checked', false);
+                }
+            };
+
+            $('#id_titulacion').click(function () {
+                $('#id_costodiferenciado, #id_costolibre').prop('checked', false).attr({'disabled': 'disabled'});
+                verificar_tipo();
+            });
+
+            $('#id_costolibre').click(function () {
+                $('#id_costodiferenciado').prop('checked', false);
+                 verificar_tipo();
+            });
+
+            $('#id_costodiferenciado').click(function () {
+                $('#id_titulacion, #id_actualizacionconocimiento').prop('checked', false).attr({'disabled': 'disabled'});
+                $('#id_costolibre').prop('checked', false);
+                $('#id_cursos').prop('checked', true);
+                 verificar_tipo();
+            });
+
+            $('#id_cursos').click(function () {
+                $('#id_titulacion, #id_actualizacionconocimiento').prop('checked', false);
+                $('#id_costodiferenciado, #id_costolibre').removeAttr('disabled');
+                verificar_tipo();
+                $(this).prop('checked', true);
+            });
+
+            $('#id_actualizacionconocimiento').click(function () {
+                $('#id_titulacion, #id_cursos').prop('checked', false);
+                $('#id_costodiferenciado, #id_costolibre').prop('checked', false).attr({'disabled': 'disabled'});
+                verificar_tipo();
+                $(this).prop('checked', true);
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_pagosnivel{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_pagosnivel{% endblock %}
+{% block formdestination %}/adm_pagosnivel{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addcostoscursos'/>
+{% endblock %}
+{% block formback %}/adm_pagosnivel{% endblock %}

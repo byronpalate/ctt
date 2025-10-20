@@ -658,32 +658,6 @@ def calcular_agregacion(matricula, asignatura, tiponominacion):
 #             ro.save()
 #             rubro.actulizar_nombre()
 
-
-def calculo_derecho_rotativo(matricula):
-    fecha_pagos = matricula.fecha
-    es_posgrado = True if (matricula.inscripcion.carrera.posgrado) else False
-    # CALCULO DE LA MATRICULA
-    asignaturas = [x.asignaturareal.id for x in matricula.materiaasignada_set.all()]
-    materias = [x.materia.id for x in matricula.materiaasignada_set.all()]
-    costomatricula = costo_matricula(matricula.inscripcion, asignaturas, materias, matricula.nivel, matricula.fecha)
-    if costomatricula[11] > 0:
-        valor_derechorotativo = null_to_numeric(costomatricula[11], 2)
-        rubro = Rubro(fecha=fecha_pagos,
-                      fechavence=fecha_pagos,
-                      valor=valor_derechorotativo,
-                      iva_id=TIPO_IVA_0_ID,
-                      periodo=matricula.nivel.periodo,
-                      valoriva=0,
-                      valortotal=valor_derechorotativo,
-                      saldo=valor_derechorotativo,
-                      inscripcion=matricula.inscripcion)
-        rubro.save()
-        ro = RubroOtro(rubro=rubro,
-                       tipo_id=15)
-        ro.save()
-        rubro.actulizar_nombre('DERECHO INTERNADO ROTATIVO')
-
-
 def calculo_eliminacionmateria(materiaasignada, responsable, motivo):
     if materiaasignada.matricula.inscripcion.carrera.tipogrado.id == CUARTO_NIVEL_TITULACION_ID:
         costomateria = costo_materia(materiaasignada.matricula.inscripcion, materiaasignada.asignaturareal, materiaasignada.matricula.nivel)

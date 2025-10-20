@@ -761,6 +761,8 @@ class GruposModulos(ModeloBase):
         return self.modulos.filter(activo=True)
 
 
+
+
 class Carrera(ModeloBase):
     nombre = models.CharField(default='', max_length=100, verbose_name=u'Nombre')
     nombreingles = models.CharField(default='', max_length=100, verbose_name=u'Nombre Ingles')
@@ -3744,12 +3746,6 @@ class Malla(ModeloBase):
     def precio_modulo_inscripcion(self, periodo, sede, carrera, modalidad, malla):
         if self.preciosperiodomodulosinscripcion_set.filter(periodo=periodo, sede=sede, carrera=carrera, modalidad=modalidad,malla=malla).exists():
             prec_periodo = self.preciosperiodomodulosinscripcion_set.filter(periodo=periodo, sede=sede, carrera=carrera, modalidad=modalidad,malla=malla)[0]
-            if not PreciosTipoTribunal.objects.filter(periodo=periodo).exists():
-                for i in TIPO_TRIBUNAL:
-                    prec_tipotribunal = PreciosTipoTribunal(periodo=periodo,
-                                                            tienepago=False,
-                                                            nombre=i[1])
-                    prec_tipotribunal.save()
         else:
             prec_periodo = PreciosPeriodoModulosInscripcion(periodo=periodo,
                                                             malla=self,
@@ -3765,12 +3761,6 @@ class Malla(ModeloBase):
                                                             preciotitulacion=0,
                                                             precioadelantoidiomas=0)
             prec_periodo.save()
-            if not PreciosTipoTribunal.objects.filter(periodo=periodo).exists():
-                for i in TIPO_TRIBUNAL:
-                    prec_tipotribunal = PreciosTipoTribunal(periodo=periodo,
-                                                            tienepago=False,
-                                                            nombre=i[1])
-                    prec_tipotribunal.save()
         return prec_periodo
 
     def save(self, *args, **kwargs):
@@ -4957,8 +4947,7 @@ class Inscripcion(ModeloBase):
     def existe_en_malla(self, asignatura):
         return self.mi_malla().asignaturamalla_set.filter(asignatura=asignatura).exists()
 
-    def existe_en_modulos(self, asignatura):
-        return self.mi_malla().modulomalla_set.filter(asignatura=asignatura).exists()
+
 
     def es_regular(self):
         return self.tipoinscripcion_id == TIPO_INSCRIPCION_REGULAR
@@ -5102,28 +5091,10 @@ class Inscripcion(ModeloBase):
             return malla.asignaturamalla_set.filter(asignatura=asignatura)[0]
         return None
 
-    def asignatura_en_modulomalla(self, asignatura):
-        malla = self.mi_malla()
-        if malla.modulomalla_set.filter(asignatura=asignatura).exists():
-            return malla.modulomalla_set.filter(asignatura=asignatura)[0]
-        return None
+
 
     def promedio_talleres(self):
         return null_to_numeric(self.participanteactividadextracurricular_set.filter(actividad__cerrado=True).aggregate(valor=Avg('nota'))['valor'], 2)
-
-    def practicas(self):
-        return ParticipantePracticaPreProfesional.objects.filter(materiaasignada__matricula__inscripcion=self, practica__cerrado=True)
-
-
-    def horas_practicas(self):
-        horas = 0
-        for practica in ParticipantePracticaPreProfesional.objects.filter(materiaasignada__matricula__inscripcion=self, practica__cerrado=True):
-            if practica.nota >= practica.practica.nota_aprobar and practica.asistencia:
-                horas += practica.practica.horas
-        return horas
-
-    def promedio_practicas(self):
-        return null_to_numeric(ParticipantePracticaPreProfesional.objects.filter(materiaasignada__matricula__inscripcion=self, practica__cerrado=True).aggregate(valor=Avg('nota'))['valor'], 2)
 
     def vcc(self):
         return self.participanteproyectovinculacion_set.filter()
@@ -5455,18 +5426,13 @@ class Inscripcion(ModeloBase):
             validapromedio = historico.validapromedio
             asignatura = historico.asignatura
             am = self.asignatura_en_asignaturamalla(asignatura)
-            mm = self.asignatura_en_modulomalla(asignatura)
+
             if am:
                 creditos = am.creditos
                 horas = am.horas
                 validacreditos = am.validacreditos
                 validapromedio = am.validapromedio
-            elif mm:
-                creditos = mm.creditos
-                horas = mm.horas
-                validacreditos = mm.validacreditos
-                validapromedio = mm.validapromedio
-            historico.modulomalla = mm
+
             historico.asignaturamalla = am
             historico.creditos = creditos
             historico.horas = horas
@@ -5604,9 +5570,6 @@ class Inscripcion(ModeloBase):
         malla = self.mi_malla()
         if malla.asignaturamalla_set.filter(asignatura=asignatura, sinasistencia=True).exists():
             return True
-        if malla.modulomalla_set.filter(asignatura=asignatura, sinasistencia=True).exists():
-            return True
-        return False
 
     def estado_asignatura(self, asignatura):
         if self.recordacademico_set.filter(asignatura=asignatura).exists():
@@ -5624,7 +5587,7 @@ class Inscripcion(ModeloBase):
                     for precedencias in asignaturamalla.asignaturamallapredecesora_set.filter():
                         if not self.recordacademico_set.filter(asignatura=precedencias.predecesora.asignatura, aprobada=True).exists():
                             return False
-
+                    return True
             elif mi_nivel == 0 and asignaturamalla.nivelmalla.id > 0:
                 return False
             elif mi_nivel == 0 and asignaturamalla.nivelmalla.id == 0:
@@ -5641,17 +5604,6 @@ class Inscripcion(ModeloBase):
             asignaturamalla = self.mi_malla().asignaturamalla_set.filter( asignatura=asignatura)[0]
             for precedencias in asignaturamalla.asignaturamallapredecesora_set.all():
                 if not self.recordacademico_set.filter(asignatura=precedencias.predecesora.asignatura, aprobada=True).exists():
-                    return False
-            return True
-        else:
-            return False
-
-    def puede_tomar_materia_modulo(self, asignatura):
-        mi_nivel = self.mi_nivel().nivel.id
-        modulomalla = self.mi_malla().modulomalla_set.filter(asignatura=asignatura)[0]
-        if mi_nivel > 0:
-            for precedencia in modulomalla.modulomallapredecesora_set.all():
-                if not self.recordacademico_set.filter(asignatura=precedencia.predecesora.asignatura, aprobada=True).exists():
                     return False
             return True
         else:
@@ -5980,9 +5932,6 @@ class Inscripcion(ModeloBase):
 
     def total_creditos(self):
         return null_to_numeric(self.recordacademico_set.filter(validacreditos=True, aprobada=True).aggregate(valor=Sum('creditos'))['valor'], 4)
-
-    def total_creditos_modulos(self):
-        return null_to_numeric(self.recordacademico_set.filter(validacreditos=True, aprobada=True, asignatura__modulomalla__malla=self.mi_malla()).aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def total_creditos_malla(self):
         return null_to_numeric(self.recordacademico_set.filter(validacreditos=True, aprobada=True, asignatura__asignaturamalla__malla=self.mi_malla()).aggregate(valor=Sum('creditos'))['valor'], 4)
@@ -17534,3 +17483,109 @@ class ArchivoDocumentoInscripcion(ModeloBase):
     def save(self, *args, **kwargs):
         self.observaciones = null_to_text(self.observaciones)
         super(ArchivoDocumentoInscripcion, self).save(*args, **kwargs)
+
+class MateriasCompartidas(ModeloBase):
+    materia = models.ForeignKey(Materia, verbose_name=u"Materia", on_delete=models.CASCADE)
+    sede = models.ForeignKey(Sede, verbose_name=u'Sede', on_delete=models.CASCADE)
+    carrera = models.ForeignKey(Carrera, blank=True, null=True, verbose_name=u'Carrera', on_delete=models.CASCADE)
+    modalidad = models.ForeignKey(Modalidad, blank=True, null=True, verbose_name=u'Modalidad', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return u'%s - %s - %s' % (self.sede, self.carrera, self.modalidad)
+
+    class Meta:
+        verbose_name_plural = u"Materias compartidas"
+
+    @staticmethod
+    def flexbox_query(q, filtro=None, exclude=None, cantidad=None):
+        return eval(("MateriasCompartidas.objects.filter(Q(materia__contains='%s') | Q(id=id_search('%s')))" % (q, q)) + (".filter(%s)" % filtro if filtro else "") + (".exclude(%s)" % exclude if exclude else "") + (".distinct()") + ("[:%s]" % cantidad if cantidad else ""))
+
+    def flexbox_repr(self):
+        return self.materia.asignatura.nombre + ' - ' + str(self.id)
+
+
+
+class PreciosPeriodoModulosInscripcion(ModeloBase):
+    periodo = models.ForeignKey(Periodo, verbose_name=u'Periodo', on_delete=models.CASCADE)
+    sede = models.ForeignKey(Sede, verbose_name=u'Sede', on_delete=models.CASCADE)
+    carrera = models.ForeignKey(Carrera, blank=True, null=True, verbose_name=u'Carrera', on_delete=models.CASCADE)
+    modalidad = models.ForeignKey(Modalidad, blank=True, null=True, verbose_name=u'Modalidad', on_delete=models.CASCADE)
+    malla = models.ForeignKey(Malla, blank=True, null=True, verbose_name=u'Malla', on_delete=models.CASCADE)
+    cortes = models.ForeignKey(Nivel, blank=True, null=True, verbose_name=u'Nivel Cortes', on_delete=models.CASCADE)
+    precioinscripcion = models.FloatField(default=0, verbose_name=u"Precio inscripcion")
+    preciohomologacion = models.FloatField(default=0, verbose_name=u"Precio homologacion")
+    preciohomologacionconvenio = models.FloatField(default=0, verbose_name=u"Precio homologacion convenio")
+    precioredmaestros = models.FloatField(default=0, verbose_name=u"Precio maestros")
+    preciomodulo = models.FloatField(default=0, verbose_name=u"Precio modulo")
+    porcentajesegundamatricula = models.IntegerField(default=0, verbose_name=u"Precio modulo")
+    porcentajeterceramatricula = models.IntegerField(default=0, verbose_name=u"Precio modulo")
+    porcentajematriculaextraordinaria = models.IntegerField(default=0, verbose_name=u"Precio modulo")
+    precioinduccion = models.FloatField(default=0, verbose_name=u"Precio inducción")
+    precioreingreso = models.FloatField(default=0, verbose_name=u"Precio reingreso")
+    preciotitulacion = models.FloatField(default=0, verbose_name=u"Precio titulación")
+    precioadelantoidiomas = models.FloatField(default=0, verbose_name=u"Precio adelanto idiomas")
+    precioarrastremodulo = models.FloatField(default=0, verbose_name=u"Precio arrastre modulo")
+    clonado = models.BooleanField(default=False, verbose_name=u'Clonado')
+    sininscripcion = models.BooleanField(default=False, verbose_name=u'Sin inscripción')
+    tipocalculo = models.IntegerField(choices=TIPO_CALCULO_MALLAS, default=1, verbose_name=u"Tipo calculo")
+
+    def __str__(self):
+        return u'%s - %s - %s - %s - %s - %s - %s - %s - %s - %s - %s - %s - %s - %s - %s' % (self.periodo, self.sede, self.carrera, self.modalidad, self.precioinscripcion, self.preciohomologacion, self.preciohomologacionconvenio, self.precioredmaestros, self.preciomodulo, self.precioarrastremodulo, self.porcentajesegundamatricula, self.porcentajeterceramatricula, self.porcentajematriculaextraordinaria, self.preciotitulacion, self.precioadelantoidiomas)
+
+    def en_uso_periodo(self):
+        if Materia.objects.filter(Q(asignaturamalla__malla__carrera=self.carrera, asignaturamalla__malla__modalidad=self.modalidad) | Q(modulomalla__malla__carrera=self.carrera, modulomalla__malla__modalidad=self.modalidad), nivel__sede=self.sede, nivel__periodo=self.periodo).exists():
+            return True
+        elif Matricula.objects.filter(inscripcion__carrera=self.carrera, inscripcion__modalidad=self.modalidad, inscripcion__sede=self.sede, nivel__periodo=self.periodo).exists():
+            return True
+        return False
+
+    def tiene_valor_adelanto_idiomas(self):
+        costoadelantoidiomas = self.objects.filter(nivel__periodo=self.periodo, nivel__sede=self.sede, asignaturamalla__malla__carrera=self.carrera, asignaturamalla__malla__modalidad=self.modalidad)
+        return costoadelantoidiomas
+    #
+    # class Meta:
+    #     unique_together = ('periodo', 'sede', 'malla')
+
+
+class TipoCostoCursoPeriodo(ModeloBase):
+    periodo = models.ForeignKey(Periodo, verbose_name=u'Periodo', on_delete=models.CASCADE)
+    sede = models.ForeignKey(Sede, verbose_name=u'Sede', on_delete=models.CASCADE)
+    tipocostocurso = models.ForeignKey(TipoCostoCurso, blank=True, null=True, verbose_name=u'Tipo Costo Curso', on_delete=models.CASCADE)
+    costomatricula = models.FloatField(default=0, verbose_name=u'Costo de matrícula')
+    costocuota = models.FloatField(default=0, verbose_name=u'Costo arancel')
+    cuotas = models.IntegerField(default=1, verbose_name=u'Número de cuotas')
+    activo = models.BooleanField(default=True, verbose_name=u"Activo")
+
+    def mi_costo_dif(self):
+        if self.costodiferenciadocursoperiodo_set.exists():
+            return self.costodiferenciadocursoperiodo_set.all()[0]
+        return None
+
+
+class CostodiferenciadoCursoPeriodo(ModeloBase):
+    tipocostocursoperiodo = models.ForeignKey(TipoCostoCursoPeriodo, verbose_name=u'Curso', on_delete=models.CASCADE)
+    tipo = models.ForeignKey(TipoEstudianteCurso, verbose_name=u'Tipo', on_delete=models.CASCADE)
+    costomatricula = models.FloatField(default=0, verbose_name=u'Costo de matrícula')
+    costocuota = models.FloatField(default=0, verbose_name=u'Costo por cuota')
+    cuotas = models.IntegerField(default=0, verbose_name=u'Número de cuotas')
+
+    def costototal(self):
+        return null_to_numeric(self.costomatricula + (self.costocuota * self.cuotas), 2)
+
+    def __str__(self):
+        return u'%s' % self.tipo
+
+    class Meta:
+        verbose_name_plural = u"Tipos de costo del curso"
+        ordering = ['tipo']
+
+class ValoresMinimosPeriodoBecaMatricula(ModeloBase):
+    periodo = models.ForeignKey(Periodo, on_delete=models.CASCADE)
+    valormatricula = models.IntegerField(blank=True, null=True, verbose_name=u"Centidad de cupo Cupo", default=0)
+    activavalormatricula = models.BooleanField(default=False)
+    porcentajematricula = models.IntegerField(blank=True, null=True, default=0)
+    activaporcentajematricula = models.BooleanField(default=False)
+    valorbeca = models.IntegerField(blank=True, null=True, default=0)
+    activavalorbeca = models.BooleanField(default=False)
+    porcentajebeca = models.IntegerField(blank=True, null=True, default=0)
+    activaporcentajebeca = models.BooleanField(default=False)

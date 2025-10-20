@@ -1,0 +1,141 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            {% if perms.ctt.puede_modificar_precioperiodo %}
+                $(".preciomatri_curso").change(function () {
+                    var elemento = $(this);
+                    numerico(elemento, 0, 0 ,2);
+                    var valor = elemento.val();
+                    var precio_periodo = elemento.attr('idp');
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_pagosnivel",
+                        data: { 'action': 'act_precio_mat_curso_dif', 'valor': valor, 'id': precio_periodo, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok'){
+                                elemento.attr({'va': valor});
+                                {#                            $("#totalperiodo_"+precio_periodo).html(parseFloat(data.valor).toFixed(2));#}
+                            } else {
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                                elemento.val(elemento.attr('va'));
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                            elemento.val(elemento.attr('va'));
+                        },
+                        dataType: "json"
+                    });
+                    return false;
+                });
+
+                $(".precioarancel_curso").change(function () {
+                    var elemento = $(this);
+                    numerico(elemento, 0, 0 ,2);
+                    var valor = elemento.val();
+                    var precio_periodo = elemento.attr('idp');
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_pagosnivel",
+                        data: { 'action': 'act_precio_ara_curso_dif', 'valor': valor, 'id': precio_periodo, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok'){
+                                elemento.attr({'va': valor});
+                            } else {
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                                elemento.val(elemento.attr('va'));
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                            elemento.val(elemento.attr('va'));
+                        },
+                        dataType: "json"
+                    });
+                    return false;
+                });
+
+                $(".preciocuotas_curso").change(function () {
+                    var elemento = $(this);
+                    numerico(elemento, 0, 0 ,0);
+                    var valor = elemento.val();
+                    var precio_periodo = elemento.attr('idp');
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_pagosnivel",
+                        data: { 'action': 'act_precio_cuotas_curso_dif', 'valor': valor, 'id': precio_periodo, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok'){
+                                elemento.attr({'va': valor});
+                            } else {
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                                elemento.val(elemento.attr('va'));
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                            elemento.val(elemento.attr('va'));
+                        },
+                        dataType: "json"
+                    });
+                    return false;
+                });
+            {% endif %}
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_pagosnivel?action=tipocursos{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}<br>Tipo Costo Curso: {{ tipo.tipocostocurso.nombre }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Tipo</th>
+                    <th style="width:60px; text-align: center">Matrícula</th>
+                    <th style="width:60px; text-align: center">Arancel</th>
+                    <th style="width:50px; text-align: center">Cuotas</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for costo in costos %}
+                    <tr>
+                        <td>{{ costo.tipo }}</td>
+                        <td style="text-align: center">
+                            <input {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %} {% if tipo.activo %}disabled="disabled"{% endif %} type="text" id="precio_mat_curso" idn="{{ nivel.id }}" va="{{ costo.costomatricula|floatformat:2 }}" idp="{{ costo.id }}" class="imp-numbermed-right preciomatri_curso form-control-sm" value="{{ costo.costomatricula|floatformat:2 }}">
+                        </td>
+                        <td style="text-align: center">
+                            <input {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %} {% if tipo.activo %}disabled="disabled"{% endif %} type="text" id="precio_aran_curso" va="{{ costo.costocuota|floatformat:2 }}" idp="{{ costo.id }}" class="imp-numbermed-right precioarancel_curso form-control-sm" value="{{ costo.costocuota|floatformat:2 }}">
+                        </td>
+                        <td style="text-align: center">
+                            <input {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %} {% if tipo.activo %}disabled="disabled"{% endif %} type="text" id="precio_cuotas_curso" va="{{ costo.cuotas|floatformat:0 }}" idp="{{ costo.id }}" class="imp-numbersmall preciocuotas_curso form-control-sm" value="{{ costo.cuotas|floatformat:0 }}">
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

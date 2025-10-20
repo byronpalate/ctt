@@ -1,0 +1,12 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/inscripciones{% endblock %}
+{% block formdestination %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block formactionvalue %}generarrubrosparqueoadicional{% endblock %}
+{% block formobjectid %}{{ inscripcion.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea generar los rubros para el parqueo ADICIONAL / PERDIDA al estudiante:{% endblock %}
+{% block formobjectrepr %}{{ inscripcion }}{% endblock %}
+{% block fieldsextra %}
+     <input type='hidden' name="tipovehiculo" value="{{ tipovehiculo }}"/>
+     <input type='hidden' name="tiempo" value="{{ tiempo }}"/>
+{% endblock %}

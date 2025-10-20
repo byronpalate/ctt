@@ -36,7 +36,7 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor
     ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, \
     MateriaCursoEscuelaComplementaria, \
     Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, \
-    TipoIntegracion, CodigoEvaluacion
+    TipoIntegracion, CodigoEvaluacion, IvaAplicado
 
 
 class BaseForm(forms.Form):
@@ -2920,3 +2920,31 @@ class LogicaModeloEvaluativoForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
         self.fields['formtype'].initial = 'vertical'
 
+class TipoEspecieForm(BaseForm):
+    nombre = forms.CharField(label=u"Nombre", max_length=100)
+    iva = ModelChoiceField(label=u'IVA', queryset=IvaAplicado.objects.all(), required=False, widget=forms.Select())
+    precio = forms.FloatField(label=u'Precio', initial='0.00', required=False, widget=forms.TextInput(attrs={'class': 'imp-moneda', 'decimales': '2'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class TipoCostoCursoForm(BaseForm):
+    nombre = forms.CharField(label=u"Nombre", max_length=100)
+    cursos = forms.BooleanField(initial=True, required=False, label=u'Cursos y escuelas')
+    titulacion = forms.BooleanField(initial=False, required=False, label=u'Unidad de titulación')
+    actualizacionconocimiento = forms.BooleanField(initial=False, required=False, label=u'Actualización de conocimientos')
+    costodiferenciado = forms.BooleanField(initial=False, required=False, label=u'Diferenciado')
+    costolibre = forms.BooleanField(initial=False, required=False, label=u'Costo libre')
+    validapromedio = forms.BooleanField(label=u'Válida para promedio', initial=False, required=False)
+
+    def edit(self, tipo):
+        if tipo.tiene_uso():
+            del self.fields['cursos']
+            del self.fields['titulacion']
+            del self.fields['actualizacionconocimiento']
+            del self.fields['costodiferenciado']
+            del self.fields['costolibre']
+            del self.fields['validapromedio']
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
