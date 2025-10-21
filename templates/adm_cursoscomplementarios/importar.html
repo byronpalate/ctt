@@ -1,0 +1,18 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_archivo").addClass("validate[required]");
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='registromasivo'/>
+    <input type='hidden' name='idcurso' value='{{curso.id}}'/>
+
+{% endblock %}
+{% block formback %}/adm_cursoscomplementarios{% endblock %}

@@ -366,8 +366,6 @@ class AsignaturaMallaForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
         self.fields['formwidth'].initial = 'lg'
 
-    def adicionaritinerario(self):
-        deshabilitar_campo(self, 'itinerario')
 
     def adicionar(self, malla):
         if not malla.nivelacion:
@@ -376,9 +374,7 @@ class AsignaturaMallaForm(BaseForm):
             self.fields['nivelmalla'].queryset = NivelMalla.objects.filter(id__lte=malla.nivelesregulares)
 
     def editar(self, malla):
-        self.fields['plantillalms'].readonly = False
         deshabilitar_campo(self, 'asignatura')
-        deshabilitar_campo(self, 'itinerario')
         if not malla.nivelacion:
             self.fields['nivelmalla'].queryset = NivelMalla.objects.filter(id__gt=0, id__lte=malla.nivelesregulares)
         else:
@@ -2265,10 +2261,6 @@ class CursoEscuelaForm(BaseForm):
     departamento = forms.CharField(label=u'Departamento', required=False, max_length=250)
     codigo = forms.CharField(label=u'Código', max_length=15, required=False, widget=forms.TextInput())
     record = forms.BooleanField(label=u'Pasar al record', initial=False, required=False)
-    examencomplexivo = forms.BooleanField(label=u'Examen Complexivo', initial=False, required=False)
-    libreconfiguracion = forms.BooleanField(label=u'Libre configuración', initial=False, required=False)
-    optativa = forms.BooleanField(label=u'Optativa', initial=False, required=False)
-    nivelacion = forms.BooleanField(label=u'Nivelación', initial=False, required=False)
     fechainicio = forms.DateField(label=u"Fecha Inicio", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), )
     fechafin = forms.DateField(label=u"Fecha Fin", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), )
     sesion = forms.ModelChoiceField(label=u"Sesión", queryset=Sesion.objects.all(), required=False, widget=forms.Select())
@@ -2295,15 +2287,12 @@ class CursoEscuelaForm(BaseForm):
 
     def adicionar(self, coordinacion, periodo):
         self.fields['sesion'].queryset = Sesion.objects.filter(sede=coordinacion.sede)
-        if coordinacion.id in (22, 23, 50):
-            self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(cursos=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=periodo, tipocostocursoperiodo__sede=coordinacion.sede).distinct()
-        else:
-            self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(cursos=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=periodo, tipocostocursoperiodo__sede=coordinacion.sede).exclude(id=1).distinct()
+        self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(cursos=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=periodo, tipocostocursoperiodo__sede=coordinacion.sede).distinct()
 
     def adicionar_con(self, coordinacion, periodo):
         self.fields['sesion'].queryset = Sesion.objects.filter(sede=coordinacion.sede)
         self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(actualizacionconocimiento=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=periodo, tipocostocursoperiodo__sede=coordinacion.sede).distinct()
-        del self.fields['mallacurso']
+
         del self.fields['libreconfiguracion']
         del self.fields['optativa']
         del self.fields['costodiferenciado']
@@ -2316,11 +2305,6 @@ class CursoEscuelaForm(BaseForm):
             self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(cursos=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=actividad.periodo, tipocostocursoperiodo__sede=actividad.coordinacion.sede).exclude(id=1).distinct()
         deshabilitar_campo(self, 'usamodeloevaluativo')
         deshabilitar_campo(self, 'modeloevaluativo')
-        if not actividad.mallacurso:
-            del self.fields['mallacurso']
-        else:
-            deshabilitar_campo(self, 'mallacurso')
-            del self.fields['tema']
         if actividad.matriculacursoescuelacomplementaria_set.exists():
             deshabilitar_campo(self, 'examencomplexivo')
             deshabilitar_campo(self, 'registrootrasede')
@@ -2350,11 +2334,6 @@ class CursoEscuelaForm(BaseForm):
         del self.fields['optativa']
         del self.fields['nivelacion']
         del self.fields['costodiferenciado']
-        if not actividad.mallacurso:
-            del self.fields['mallacurso']
-        else:
-            deshabilitar_campo(self, 'mallacurso')
-            del self.fields['tema']
         self.fields['solicitante'].widget.attrs['descripcion'] = actividad.solicitante.flexbox_repr() if actividad.solicitante else ""
         if Clase.objects.filter(materiacurso__curso=actividad).exists():
             del self.fields['sesion']

@@ -1,0 +1,74 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Curso: {{ curso }}
+            </h4>
+        </div>
+    </div>
+    {% if not curso.cerrado %}
+        <div class='row mb-2'>
+            <div class='col-12'>
+                <a href="javascript:;" nhref="adm_cursoscomplementarios?action=adddescuento&id={{ curso.id }}" class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped filterable1'>
+                <thead class="table-light">
+                <tr>
+                    <th>Descuento</th>
+                    <th style="width: 220px;">Porcentaje</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for descuento in descuentos %}
+                    <tr>
+                        <td>
+                            {% if descuento.descuento == 1 %}
+                                ALUMNOS
+                            {% elif descuento.descuento == 2 %}
+                                EGRESADOS
+                            {% elif descuento.descuento == 3 %}
+                                ADMINISTRATIVOS
+                            {% elif descuento.descuento == 4 %}
+                                DOCENTES
+                            {% elif descuento.descuento == 5 %}
+                                EXTERNOS
+                            {% endif %}
+                        </td>
+                        <td>{{ descuento.porcentaje }}</td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {% if not curso.cerrado %}
+                                        <li><a href="javascript:;" nhref="/adm_cursoscomplementarios?action=editdescuento&id={{ descuento.id }}&cid={{ curso.id }}" class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
+                                        <li><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=deldescuento&id={{ descuento.id }}'><i class="icon-remove"></i> Eliminar</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

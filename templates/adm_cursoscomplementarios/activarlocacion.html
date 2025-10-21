@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios?action=sububicaciones&id={{ locacion.curso.id }}{% endblock %}
+{% block formactionvalue %}activarlocacion{% endblock %}
+{% block formobjectid %}{{ locacion.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea habilitar la locación:{% endblock %}
+{% block formobjectrepr %}{{ locacion.locacion.nombre }}{% endblock %}

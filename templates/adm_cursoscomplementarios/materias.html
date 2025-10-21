@@ -1,0 +1,344 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function () {
+
+            $(".horasapagar").change(function () {
+                numerico($(this), 0, 0, 0);
+                calculo_salario($(this));
+            });
+
+            $(".costohora").change(function () {
+                numerico($(this), 0, 0, 2);
+                calculo_salario($(this));
+            });
+
+            calculo_salario = function (elemento) {
+                var id = elemento.attr('idd');
+                var ch = $("#costohora_" + id).val();
+                var hp = $("#horasapagar_" + id).val();
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_cursoscomplementarios",
+                    data: {'action': 'calculosalario', 'id': id, 'ch': ch, 'hp': hp, 'csrfmiddlewaretoken': csrftoken},
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            $("#salario_" + id).html(parseFloat(data.salario).toFixed(2));
+                        } else {
+                            elemento.val(0);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(0);
+                    },
+                    dataType: "json"
+                });
+            };
+
+
+            $(".aprobado_financiero").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('idd');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_cursoscomplementarios",
+                    data: {'action': 'aprobado_financiero', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result == 'ok') {
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $(".aprobado_decano").click(function () {
+                var elemento = $(this);
+                var id = elemento.attr('idd');
+                var valor = elemento.is(":checked");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_cursoscomplementarios",
+                    data: {'action': 'aprobado_decano', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result == 'ok') {
+                            $(".aprobado_decano").attr("disabled", "disabled");
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+
+            $(".codigocontrato_doc").blur(function () {
+                var elemento = $(this);
+                var id = elemento.attr('idd');
+                var va = elemento.attr('va');
+                var valor = elemento.val();
+                if (va != valor) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_cursoscomplementarios",
+                        data: {
+                            'action': 'codigocontrato_doc',
+                            'id': id,
+                            "valor": valor,
+                            'csrfmiddlewaretoken': csrftoken
+                        },
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                elemento.attr({'va': valor});
+                            } else {
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                                elemento.val(elemento.attr('va'));
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                            elemento.val(elemento.attr('va'));
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios{% endblock %}
+{% block headcanvas %}
+    <div class='row mb-2'>
+        <div class="col-12">
+            <p><h4>{{ title }}
+            <br>Curso: {{ curso }} - {{ curso.sesion }}</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_cursos and not curso.cerrado %}
+        <div class='row mb-2'>
+            <div class='col-12'>
+                <a href="javascript:;" nhref="adm_cursoscomplementarios?action=addmateria&id={{ curso.id }}"
+                   class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Materia</th>
+                    <th style="width: 300px;">Profesor/Aula</th>
+                    <th style="width: 80px; text-align: center;">Inicio/Fin</th>
+                    <th style="width: 60px; text-align: center;">Horas</th>
+                    <th style="width: 60px; text-align: center;">Créditos</th>
+                    <th style="width: 60px; text-align: center;">Calif. Max.</th>
+                    <th style="width: 60px; text-align: center;">Calif. Aprob.</th>
+                    <th style="width: 60px; text-align: center;">Asist. Aprob.</th>
+                    <th style="width: 40px; text-align: center;">Calif.</th>
+                    <th style="width: 40px; text-align: center;">Req.</th>
+                    <th style="width:50px; text-align: center">H.Dictadas a pagar</th>
+                    {% if perms.ctt.puede_aprobar_contrato_docente %}
+                        <th style="width:80px; text-align: center">Costo Hora Dictada</th>
+                        <th style="width:50px; text-align: center">Salario</th>
+                    {% endif %}
+                    {% if perms.ctt.puede_aprobar_criterios_decano %}
+                        <th style="width: 35px; text-align: center">Apr.<br>Dec.</th>
+                    {% endif %}
+                    {% if perms.ctt.puede_aprobar_contrato_docente or perms.ctt.puede_ingresar_contrato_docente %}
+                        <th style="width: 35px; text-align: center">Apr.<br>Fin.</th>
+                    {% endif %}
+                    <th style="width: 60px; text-align: center;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for materia in materias %}
+                    <tr>
+                        <td>
+                            {{ materia.asignatura }}<br>
+                            {% if materia.validacreditos %}
+                                <span class="badge text-bg-warning tu" data-bs-toggle="tooltip" data-bs-placement="top"
+                                      title="creditos">C</span>
+                            {% endif %}
+                            {% if materia.validapromedio %}
+                                <span class="badge text-bg-warning tu" data-bs-toggle="tooltip" data-bs-placement="top"
+                                      title="Promedio">P</span>
+                            {% endif %}
+                            {% if materia.cerrada %}
+                                <span class="badge text-bg-danger">CERRADA</span>
+                            {% endif %}
+                            {% if materia.lms %}
+                                {% if materia.exportadolms %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Exportado a LMS">LMS</span>
+                                {% else %}
+                                    <span class="badge text-bg-warning tu blinkimg" data-bs-toggle="tooltip" data-bs-placement="top" title="Exportado a LMS">LMS</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0">
+                            {% if materia.profesor %}
+                                <table class="table table-condensed">
+                                    <tr>
+                                        <td>
+                                            {% if materia.profesor %}
+                                                {{ materia.profesor|default_if_none:'' }}
+                                                {% if materia.lms %}
+                                                    {% if materia.profesorexportadolms %}
+                                                        <br><span class="badge text-bg-success tu" style="margin-top: 10px" data-bs-toggle="tooltip" data-bs-placement="top" title="Exportado a LMS">LMS</span>
+                                                    {% else %}
+                                                        <br><span class="badge text-bg-warning tu blinkimg" style="margin-top: 10px" data-bs-toggle="tooltip" data-bs-placement="top" title="Exportado a LMS">LMS</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                                {% if materia.profesor and materia.tiene_horario %}<br>{% endif %}
+                                                {% if materia.tiene_horario %}
+                                                    {% for aula in materia.aulas %}{{ aula.nombre }}{% if not forloop.last %},
+                                                    {% endif %}{% endfor %}-({{ materia.cantidad_clases }})
+                                                    {% for turnos in materia.horarios_asignados %}
+                                                        <br>{{ turnos.turno }}
+                                                    {% endfor %}
+                                                    <br>{{ materia.dias_programados }}
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                        <td style="width: 40px">
+                                            <a style="margin-top: 10px" href="javascript:;" nhref="/adm_cursoscomplementarios?action=delprofesor&id={{ materia.id }}" class='btn btn-ssm btn-danger eliminacionmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            {% else %}
+                                <a href="javascript:;" nhref="/adm_cursoscomplementarios?action=addprofesor&mid={{ materia.id }}" class="formmodal btn btn-ssm btn-success" style="margin: 3px"><i class="icon-plus"></i> Profesor</a>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">{{ materia.fecha_inicio|date:'Y-m-d' }}
+                            <br> {{ materia.fecha_fin|date:'Y-m-d' }}</td>
+                        <td style="text-align: center;">{{ materia.horas|floatformat:0 }}</td>
+                        <td style="text-align: center;">{{ materia.creditos|floatformat:4 }}</td>
+                        <td style="text-align: center;">{{ materia.calfmaxima|floatformat:0 }}</td>
+                        <td style="text-align: center;">{{ materia.calfminima|floatformat:2 }}</td>
+                        <td style="text-align: center;">{{ materia.asistminima|floatformat:2 }}</td>
+                        <td style="text-align: center;">
+                            {% if materia.calificar %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Se califica">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Se califica">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if materia.requiereaprobar %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Requerida para aprobar">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Requerida para aprobar">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if perms.ctt.puede_aprobar_criterios_decano %}
+                                <input type="text" class="horasapagar imp-numbersmall form-control form-control-sm" id="horasapagar_{{ materia.id }}" idd="{{ materia.id }}" {% if materia.aprobadodecano %}disabled="disabled"{% endif %} va="{{ materia.horasapagar|default_if_none:0 }}" value="{{ materia.horasapagar|default_if_none:0 }}"></td>
+                            {% else %}
+                                <td style="text-align: right">
+                                    $ <span class=" imp-moneda">{{ materia.horasapagar|floatformat:2 }}</span>
+                                </td>
+                            {% endif %}
+                        {% if perms.ctt.puede_modificar_datos_financieros %}
+                            <td style="text-align: center">
+                                <input type="text" class="costohora imp-moneda form-control form-control-sm" id="costohora_{{ materia.id }}" idd="{{ materia.id }}" {% if not materia.aprobadodecano or materia.aprobadofinanciero %}disabled="disabled"{% endif %} va="{{ materia.costohora|floatformat:2 }}" value="{{ materia.costohora|floatformat:2 }}">
+                            </td>
+                        {% else %}
+                            <td style="text-align: right">
+                                $ <span class="salario imp-moneda" id="salario_{{ materia.id }}">{{ materia.salario|floatformat:2 }}</span>
+                            </td>
+                        {% endif %}
+                        <td style="text-align: center">
+                            {{ materia.salario }}
+                        </td>
+                        <td style="text-align: center">
+                            <input type="checkbox" class="aprobado_decano" idd="{{ materia.id }}" {% if materia.aprobadodecano %}checked="checked" {% endif %} {% if materia.aprobadofinanciero or materia.materiadistributivo_tienecontrato %}disabled="disabled"{% endif %}>
+                        </td>
+                        <td style="text-align: center">
+                            <input type="checkbox" class="aprobado_financiero" idd="{{ materia.id }}" {% if materia.aprobadofinanciero %} checked="checked" {% endif %} {% if not perms.ctt.puede_modificar_datos_financieros or materia.materiadistributivo_tienecontrato or not materia.aprobadodecano %}disabled="disabled"{% endif %}>
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {% if perms.ctt.puede_modificar_cursos %}
+                                        {% if not materia.cerrada %}
+                                            <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/adm_cursoscomplementarios?action=editmateria&id={{ materia.id }}"><i class="icon-edit"></i> Editar</a></li>
+                                        {% endif %}
+                                        {% if materia.cerrada %}
+                                            {% if not curso.cerrado %}
+                                                <li class="smaller"><a href="javascript:;" nhref="/adm_cursoscomplementarios?action=abrirmateria&id={{ materia.id }}" class="confirmacionmodal dropdown-item"><i class="icon-folder-open"></i> Abrir la Materia</a></li>
+                                            {% endif %}
+                                        {% else %}
+                                            <li class="smaller"><a href="/adm_cursoscomplementarios?action=horariomateria&id={{ materia.id }}" class="dropdown-item"><i class="icon-time"></i> Horario</a></li>
+                                            <li class="smaller"><a href="javascript:;" nhref='/adm_cursoscomplementarios?action=cambiaraulaclase&id={{ materia.id }}' class="dropdown-item formmodal"><i class="icon-home"></i> Cambiar Aula</a></li>
+                                            <li class="smaller"><a href="javascript:;" nhref="/adm_cursoscomplementarios?action=cerrarmateria&id={{ materia.id }}" class="confirmacionmodal dropdown-item"><i class="icon-folder-close"></i> Cerrar la Materia</a></li>
+                                        {% endif %}
+                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=asignarlms&id={{ materia.id }}'><i class="icon-retweet"></i> Asignar Lms</a></li>
+                                        {% if materia.lms %}
+                                            <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=exportaralms&id={{ materia.id }}'><i class="icon-retweet"></i> Exportar a Lms</a></li>
+                                        {% endif %}
+                                    {% endif %}
+                                    <li class="smaller"><a href='/adm_cursoscomplementarios?action=tomandom&id={{ materia.id }}' class="dropdown-item"><i class="icon-user"></i> Tomaron la Materia</a></li>
+                                    <li class="dropdown smaller dropstart"><a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Impresi&oacute;n</a>
+                                        <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                            {% if reporte_0 and materia.cerrada %}
+                                                <li class="smaller"><a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&materia={{ materia.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Acta de Notas</a></li>
+                                            {% endif %}
+                                            {% if reporte_1 %}
+                                                <li class="smaller"><a href="javascript:;" tipos="{{ reporte_1.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_1.nombre }}&materia={{ materia.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Lista de Calificaciones</a></li>
+                                            {% endif %}
+                                            {% if materia.codigocontrato and reporte_2 %}
+                                                <li class="smaller"><a href="javascript:;" tipos="{{ reporte_1.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_1.nombre }}&profesor={{ profesor.id }}&periodo={{ periodo.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i>Formato Unico de contrato</a></li>
+                                            {% endif %}
+                                        </ul>
+                                    </li>
+                                    {% if not materia.cerrada %}
+                                        {% if perms.ctt.puede_modificar_cursos %}
+                                            <li class="dropdown-divider"></li>
+                                            <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=delmateria&id={{ materia.id }}'><i class="icon-remove"></i> Eliminar</a></li>
+                                        {% endif %}
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

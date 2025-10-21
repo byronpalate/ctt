@@ -1,0 +1,102 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            $(".btn-conflicto").click(function(){
+                var mensaje = $(this).attr("mensaje");
+                $("#observacion").html("<p>"+mensaje+"</p>");
+                $("#observacionespanel").modal("show");
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios?action=materias&id={{ materiacurso.curso.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Curso: {{ materiacurso.curso }}
+            <br>Materia: {{ materiacurso.asignatura }}
+            <br>Fechas: {{ materiacurso.fecha_inicio|date:"Y-m-d" }} - {{ materiacurso.fecha_fin|date:"Y-m-d" }}
+            {% if materiacurso.cerrada %}
+                <span class='badge text-bg-danger'>CERRADO</span>
+            {% endif %}
+        </h4>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            {% if not materiacurso.cerrada %}
+                <a class='btn btn-sm btn-success formmodal adicionarclase' href="javascript:;" nhref="/adm_cursoscomplementarios?action=addclase&id={{ materiacurso.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Adicionar"><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    {% for dia in dias %}
+                        <th style="width: 14.2%; text-align: center">{{ dia.1 }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    {% for dia in dias %}
+                        <td>
+                            {% with clases=materiacurso|args:forloop.counter|call:"clases_activas_horario" %}
+                                {% for clase in clases %}
+                                    <table class='cell' dia='{{ forloop.counter }}' turno='{{ turno.id }}' style="margin-bottom: 5px">
+                                        <tr id='horario_normal_{{ clase.id }}'>
+                                            <td style='{% if clase.conflicto_aula %}background-color: #ebcccc; border: 1px solid red;{% endif %}; text-align: center'>
+                                                <div style='float: left; width: 100%'>
+                                                    <span class="badge text-bg-info">{{ clase.turno.nombre_horario }}</span>
+                                                    <br><span class="smaller"><b>{{ clase.fechas_horarios }}</b></span>
+                                                    <br><span class="smaller">Paralelo: {{ clase.materiacurso.curso.paralelo }}</span>
+                                                    <br><span class="smaller">Aula: {{ clase.aula }}</span>
+                                                    {% if clase.materiacurso.profesor %}
+                                                        <br/><p class="smaller" style='color: red;'>Docente: {{ clase.materiacurso.profesor }}</p>
+                                                    {% endif %}
+                                                </div>
+                                                <div class='btn-toolbar' style='float: left; width: 100%; text-align: left'>
+                                                    {% if not clase.materiacurso.cerrado %}
+                                                        {% if not clase.tiene_lecciones %}
+                                                            <div class='btn-group' style='float: left;'>
+                                                                <a href="/adm_cursoscomplementarios?action=editclase&id={{ clase.id }}" class='btn btn-info btn-sm tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class='icon-edit '></i></a>
+                                                                <a href='/adm_cursoscomplementarios?action=right&id={{ clase.id }}' class='btn btn-sm btn-form tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Duplicar"><i class='icon-arrow-right'></i></a>
+                                                            </div>
+                                                            <a href="javascript:;" class="eliminacionmodal btn btn-sm btn-danger btn-form tu" nhref='/adm_cursoscomplementarios?action=delclase&id={{ clase.id }}' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class='icon-remove'></i></a>
+                                                        {% else %}
+                                                            <a href='/adm_cursoscomplementarios?action=hideclase&id={{ clase.id }}{% if materiaid %}&materiaid={{ materiaid }}{% endif %}' class='btn btn-sm btn-danger btn-form tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class='icon-remove'></i>-{{ clase.cantidad_lecciones }}</a>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                    {% if clase.conflicto_aula %}
+                                                        <a class='btn btn-sm btn-warning btn-conflicto tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Conflicto en el horario" mensaje='{{ clase.conflicto_aula.nombre_conflicto }}'>Aula</a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                {% endfor %}
+                            {% endwith %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="modal fade static" id="observacionespanel">
+        <div class="modal-header">
+            <h4>Alerta - Conflicto en horario</h4>
+        </div>
+        <div class="modal-body" style="overflow: auto;">
+            <div id='observacion'></div>
+        </div>
+    </div>
+{% endblock %}

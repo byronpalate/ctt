@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios?action=materias&id={{ materia.curso.id }}{% endblock %}
+{% block formactionvalue %}abrirmateria{% endblock %}
+{% block formobjectid %}{{ materia.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea abrir la materia: {% endblock %}
+{% block formobjectrepr %}{{ materia }}{% endblock %}

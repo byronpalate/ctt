@@ -1,0 +1,51 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+            <h5>Curso: {{ actividad }}</h5>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Tipo</th>
+                    <th style="width: 120px; text-align: center">Valor Matrícula</th>
+                    <th style="width: 120px; text-align: center">Valor Cuotas</th>
+                    <th style="width: 120px; text-align: center">Cant. Cuotas</th>
+                    <th style="width: 120px; text-align: center">Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for costo in costos %}
+                    <tr>
+                        <td>{{ costo.tipo }}</td>
+                        <td style="text-align: right">$ {{ costo.costomatricula|floatformat:2 }}</td>
+                        <td style="text-align: right">$ {{ costo.costocuota|floatformat:2 }}</td>
+                        <td style="text-align: center">{{ costo.cuotas|floatformat:0 }}</td>
+                        <td style="text-align: right">$ {{ costo.costototal|floatformat:2 }}</td>
+
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

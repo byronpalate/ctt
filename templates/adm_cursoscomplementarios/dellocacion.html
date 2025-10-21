@@ -1,0 +1,7 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios?action=sububicaciones&id={{ locacion.curso.id }}{% endblock %}
+{% block formactionvalue %}dellocacion{% endblock %}
+{% block formobjectid %}{{ locacion.id }}{% endblock %}
+{% block formobjectrepr %}{{ locacion.locacion }}{% endblock %}

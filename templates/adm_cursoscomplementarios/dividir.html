@@ -1,0 +1,92 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        var lista_items1 = [];
+        $(function() {
+            seleccionados = $(".seleccionados");
+
+            $("#selector").click(function(){
+                if ($(this).prop('checked')){
+                    seleccionados.prop('checked', true);
+                } else {
+                    seleccionados.prop('checked', false);
+                }
+                actualizar_lista();
+            });
+
+            actualizar_lista = function () {
+                lista_items1 = [];
+                if ($(".seleccionados:checked").length > 0){
+                    $("#salvar").show();
+                }else{
+                    $("#salvar").hide();
+                }
+
+                $(".seleccionados:checked").each(function () {
+                    var ida = $(this).attr('id');
+                    var item = {
+                        id: ida
+                    };
+                    lista_items1.push(item);
+                });
+            };
+
+            $(".seleccionados").click(function () {
+                actualizar_lista();
+            });
+
+            $("#id_paralelo, #id_alumnos").addClass("validate[required]");
+
+            $(".filterable tr:has(td)").each(function(){
+                var t = $(this).text().toLowerCase();
+                $("<td class='indexColumn'></td>").hide().text(t).appendTo(this);
+            });
+            $("#FilterTextBox").keyup(function(){
+                var s = $(this).val().toLowerCase().split(" ");
+                $(".filterable tr:hidden").show();
+                $.each(s, function(){
+                    $(".filterable tr:visible .indexColumn:not(:contains('" + this + "'))").parent().hide();
+                });
+                $(".filterable3 tr:hidden").show();
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='dividir'/>
+    <input type='hidden' name='id' value='{{ actividad.id }}'/>
+{% endblock %}
+{% block formback %}/adm_cursoscomplementarios{% endblock %}
+
+{% block formsuffix %}
+    <input type="search" style="text-transform: uppercase; margin-bottom: 0px" class="input-block-level form-control form-control-sm" id="FilterTextBox" name="FilterTextBox">
+    <div class="row" style="max-height: 700px; overflow: auto">
+        <table class="table table-bordered filterable">
+            <thead class="table-light">
+            <tr>
+                <th style="width: 40px; text-align: center"><input type="checkbox" id="selector"></th>
+                <th style="width: 100px">Identificación</th>
+                <th>Estudiante</th>
+            </tr>
+            </thead>
+            <tbody id="contenidosbasica">
+            {% for registrado in registrados %}
+                <tr>
+                    <td style="text-align: center">
+                        <input type="checkbox" id="{{ registrado.id }}" name="matricula" class="seleccionados">
+                    </td>
+                    <td>{{ registrado.inscripcion.persona.identificacion }}</td>
+                    <td>
+                        {{ registrado.inscripcion.persona }}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

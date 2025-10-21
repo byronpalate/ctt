@@ -1,0 +1,92 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script>
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios?action=materias&id={{ materia.curso.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Materia: {{ materia }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 50px;text-align: center;">No.</th>
+                    <th>Inscripci&oacute;n</th>
+                    <th style="width: 400px">Carrera</th>
+                    <th style="width: 90px;">Identificación</th>
+                    <th style="width: 200px;">Email / Teléfono</th>
+                    <th style="width: 80px;text-align: center">Fecha / Hora</th>
+                    <th style="width: 50px;text-align: center">Prom.</th>
+                    <th style="width: 70px;text-align: center">%Asis.</th>
+                    <th style="width:60px;text-align: center">Foto</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for materiaasignada in materiasasignadas %}
+                    <tr>
+                        <td style="text-align: center;">{{ forloop.counter }}</td>
+                        <td>{{ materiaasignada.matricula.inscripcion.persona }}
+                            {% if nivel != materiaasignada.matricula.nivel %}
+                                <br><span class="badge">{{ materiaasignada.matricula.nivel.paralelo }}</span>
+                            {% endif %}
+                            {% if materiaasignada.retirado %}
+                                <br><span class="badge text-bg-danger">RETIRADO</span>
+                            {% endif %}
+                            {% if materia.lms %}
+                                <br>
+                                {% if materiaasignada.exportadolms %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Exportado a LMS">LMS</span>
+                                {% else %}
+                                    <span class="badge text-bg-warning tu blinkimg" data-bs-toggle="tooltip" data-bs-placement="top" title="Exportado a LMS">LMS</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ materiaasignada.matricula.inscripcion.mi_malla }}<br>{{ materiaasignada.matricula.inscripcion.mi_itinerario }}, {{ materiaasignada.matricula.inscripcion.sesion.nombre }}, {{ materiaasignada.matricula.inscripcion.sede }}</td>
+                        <td>{{ materiaasignada.matricula.inscripcion.persona.identificacion }}</td>
+                        <td>
+                            {%  for email in materiaasignada.matricula.inscripcion.persona.lista_emails %}
+                                <a href="mailto:{{ email }}">{{ email }}</a><br/>
+                            {% endfor %}
+                            <br>
+                            {% for telefono in materiaasignada.matricula.inscripcion.persona.lista_telefonos %}
+                                {{ telefono }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td style="text-align: center">{{ materiaasignada.matricula.fecha|date:"Y-m-d" }} <br>{{ materiaasignada.matricula.hora|time:"h:i a" }}</td>
+                        <td style="text-align: center">{{ materiaasignada.notafinal|floatformat:2 }}</td>
+                        <td style="text-align: center">{{ materiaasignada.asistenciafinal|floatformat:2 }}</td>
+                        <td style="text-align: center">
+                            {% if materiaasignada.matricula.inscripcion.persona.foto %}
+                                <a data-bs-toggle="tooltip" data-bs-placement="top" title="{{ materiaasignada.matricula.inscripcion.persona.nombre_completo }}" href='{{ materiaasignada.matricula.inscripcion.persona.foto.foto.url }}' class="fancybox" rel="group"><img src="{{ materiaasignada.matricula.inscripcion.persona.foto.foto.url }}" width="30px"></a>
+                            {% else %}
+                                {% if materiaasignada.matricula.inscripcion.persona.es_mujer %}
+                                    <img src="/static/images/iconos/mujer_small.png" width="30">
+                                {% else %}
+                                    <img src="/static/images/iconos/hombre_small.png" width="30">
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

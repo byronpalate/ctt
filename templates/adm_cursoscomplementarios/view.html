@@ -1,0 +1,329 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            busqueda = function(){
+                var term = $("#busqueda").val().trim().toUpperCase();
+                if (term.length>0){
+                    location.href = "/adm_cursoscomplementarios?s="+term;
+                } else {
+                    $("#busqueda").focus();
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda();
+            });
+
+            $('#busqueda').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    busqueda();
+                }
+            }).focus();
+
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class='row mb-2'>
+        <div class="col-12">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <h4 class="alert-heading">Comunicado:</h4>
+                Atención: Se eliminarán automáticamente las matrículas en cualquier tipo de curso, si el alumno no cancela dentro de 5 días hábiles.
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class='col-6'>
+            {% if perms.ctt.puede_modificar_cursos and not periodo.esta_cerrado %}
+                <a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref="adm_cursoscomplementarios?action=add"><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="busqueda" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/adm_cursoscomplementarios" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <div class="table-responsive-lg">
+
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th>Curso / Sesion / Modalidad / Carrera</th>
+                        <th style="width: 80px;text-align: center;">Inicio / Fin</th>
+                        <th style="width: 40px;text-align: center;">Número<br>Materias</th>
+                        <th style="width: 40px;text-align: center;">Reg. Online</th>
+                        <th style="width: 40px;text-align: center;">Reg. Interno</th>
+                        <th style="width: 85px">Paralelo</th>
+                        <th style="text-align: center; width: 50px;">Difenc.</th>
+                        <th style="text-align: center; width: 60px;">Total</th>
+                        <th style="text-align: center; width: 60px;">Cupo</th>
+                        <th style="text-align: center; width: 40px;">Descuentos</th>
+                        <th style="text-align: center; width: 60px;">Registro</th>
+                        <th style="text-align: center; width: 40px;">Mod. Eval.</th>
+                        <th style="text-align: center; width: 40px;">Libre Conf.</th>
+                        <th style="text-align: center; width: 40px;">Optat.</th>
+                        <th style="text-align: center; width: 40px;">Prereq.</th>
+                        <th style="text-align: center; width: 40px;">Penal.</th>
+                        <th style="text-align: center; width: 40px;">Activo</th>
+                        <th style="text-align: center; width: 40px;">Rec.</th>
+                        <th style="text-align: center; width: 40px;">Finan.</th>
+                        <th style="text-align: center; width: 10px;">Reg. Otra Sede</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for actividad in actividades %}
+                        <tr>
+                            <td>
+                                {{ actividad.nombre }}<br>
+                                <span class="smaller">{{ actividad.sesion.nombre }} - {{ actividad.modalidad }} - {{ actividad.tipo }} - {{ actividad.coordinacion }}</span>
+                                {% if actividad.cerrado %}
+                                    <br><span class="badge text-bg-danger">CERRADA</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">{{ actividad.fecha_inicio|date:"Y-m-d" }}<br>{{ actividad.fecha_fin|date:"Y-m-d" }}</td>
+                            <td style="text-align: center">
+                                {% if actividad.tiene_materias %}
+                                    {{ actividad.cantidad_materias }}
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Materias">0</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if actividad.registroonline %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Registro externo">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Registro externo">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if actividad.registrointerno %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Registro interno">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Registro interno">No</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ actividad.paralelo }}</td>
+                            <td style="text-align: center">
+                                {% if actividad.costodiferenciado %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Costo diferenciado">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Costo diferenciado">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right">$ {{ actividad.costo|floatformat:2 }} </td>
+                            <td style="text-align: center">{% if actividad.cupo %}{{ actividad.cupo }}{% else %}<span class="badge text-bg-info">ILIMITADO</span>{% endif %}</td>
+                            <td style="text-align: center">{{ actividad.total_descuentos }}</td>
+                            <td style="text-align: center">{{ actividad.registros_validos }}</td>
+                            <td style="text-align: center">
+                                {% if actividad.usamodeloevaluativo %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Usa modelo evaluativo">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Usa modelo evaluativo">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if actividad.libreconfiguracion %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Libre configuración">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Libre configuración">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if actividad.optativa %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Optativa">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Optativa">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if actividad.prerequisitos %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cumple requisitos de malla">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cumple requisitos de malla">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if actividad.penalizar %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Penalizar">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Penalizar">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if actividad.activo %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activo">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activo">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if actividad.record %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Pasa al record">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Pasa al record">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if actividad.aprobacionfinanciero %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Aprobado por financiero">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Aprobado por financiero">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if actividad.registrootrasede %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Aprobado por financiero">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Aprobado por financiero">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group dropdown">
+                                    <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                        {% if perms.ctt.puede_modificar_cursos %}
+                                            {% if not actividad.cerrado and not PERSONA_ADMINS_ACADEMICO_ID %}
+                                                <li class="smaller"><a href="javascript:;" nhref="/adm_cursoscomplementarios?action=editar&id={{ actividad.id }}" class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
+                                                <li class="smaller"><a href="javascript:;" nhref="/adm_cursoscomplementarios?action=dividir&id={{ actividad.id }}" class="formmodal dropdown-item"><i class="icon-resize-vertical"></i> Dividir</a></li>
+                                                <li class="smaller"><a href="javascript:;" nhref="/adm_cursoscomplementarios?action=mover&id={{ actividad.id }}" class="formmodal dropdown-item"><i class="icon-retweet"></i> Mover</a></li>
+                                                {% if actividad.activo %}
+                                                    <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cursoscomplementarios?action=desactivar&id={{ actividad.id }}"><i class="icon-lock"></i> Deshabilitar</a></li>
+                                                {% else %}
+                                                    {% if actividad.aprobacionfinanciero %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cursoscomplementarios?action=activar&id={{ actividad.id }}"><i class="icon-unlock"></i> Habilitar</a></li>
+                                                    {% endif %}
+                                                {% endif %}
+                                                {% if actividad.permite_cerrar %}
+                                                    <li class="smaller"><a href="/adm_cursoscomplementarios?action=cerrar&id={{ actividad.id }}" class="btn-form dropdown-item"><i class="icon-folder-close"></i> Cerrar</a></li>
+                                                {% endif %}
+                                            {% else %}
+                                                <li class="smaller"><a href="/adm_cursoscomplementarios?action=abrir&id={{ actividad.id }}" class="btn-form dropdown-item"><i class="icon-folder-open"></i> Abrir</a></li>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if perms.ctt.puede_aprobarubro_cursos and not PERSONA_ADMINS_ACADEMICO_ID %}
+                                            {% if actividad.aprobacionfinanciero %}
+                                                <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cursoscomplementarios?action=desaprobarfin&id={{ actividad.id }}"><i class="icon-lock"></i> Desaprobar Financiero</a></li>
+                                            {% else %}
+                                                <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cursoscomplementarios?action=aprobarfin&id={{ actividad.id }}"><i class="icon-unlock"></i> Aprobar Financiero</a></li>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if actividad.costodiferenciado %}
+                                            <li class="smaller"><a href="/adm_cursoscomplementarios?action=costodiferenciado&id={{ actividad.id }}" class="dropdown-item"><i class="icon-list"></i> Tabla de costos</a></li>
+                                        {% endif %}
+                                        <li class="smaller"><a href="/adm_cursoscomplementarios?action=registrados&id={{ actividad.id }}" class="dropdown-item"><i class="icon-list"></i> Registrados</a></li>
+                                        <li class="smaller"><a href="/adm_cursoscomplementarios?action=descuentos&id={{ actividad.id }}" class="dropdown-item"><i class="icon-list"></i> Descuentos</a></li>
+                                        {% if actividad.registros_validos <= 20 %}
+                                            <li class="smaller"><a class="mensajecorreomodal dropdown-item" href="javascript:;" nhref="{% for m in actividad.mis_registrados %}{{ m.inscripcion.persona.id }}{% if not forloop.last %},{% endif %}{% endfor %}"><i class="icon-envelope-alt"></i> Notificar</a></li>
+                                        {% endif %}
+                                        <li class="smaller"><a href="/adm_cursoscomplementarios?action=materias&id={{ actividad.id }}" class="dropdown-item"><i class="icon-list"></i> Materias</a></li>
+                                        <li class="smaller"><a href="/adm_cursoscomplementarios?action=sububicaciones&id={{ actividad.id }}" class="dropdown-item"><i class="icon-list"></i> Locaciones</a></li>
+                                        {% if PERSONA_ADMINS_ACADEMICO_ID %}
+                                            {% if not actividad.record %}
+                                                <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=pasarrecord&estado=1&id={{ actividad.id }}'><i class="icon-list"></i> Activar Pasar al Record</a></li>
+                                            {% else %}
+                                                <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=pasarrecord&estado=2&id={{ actividad.id }}'><i class="icon-list"></i> Desactivar Pasar al Record</a></li>
+                                            {% endif %}
+                                            {% if not actividad.examencomplexivo %}
+                                                <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=activarcomplexivo&estado=1&id={{ actividad.id }}'><i class="icon-list-alt"></i> Activar Examen Complexivo</a></li>
+                                            {% else %}
+                                                <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=activarcomplexivo&estado=2&id={{ actividad.id }}'><i class="icon-list-alt"></i> Desactivar Examen Complexivo</a></li>
+                                            {% endif %}
+                                            {% if not actividad.libreconfiguracion  %}
+                                                <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=activarlibreconfiguracion&estado=1&id={{ actividad.id }}'><i class="icon-check"></i> Activar Libre Configuración</a></li>
+                                            {%  else %}
+                                                <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=activarlibreconfiguracion&estado=2&id={{ actividad.id }}'><i class="icon-check"></i> Desactivar Libre Configuración</a></li>
+                                            {%  endif %}
+                                        {% endif %}
+                                        {% if not actividad.cerrado %}
+                                            {% if actividad.usamodeloevaluativo and actividad.puede_cambiar_modelo %}
+                                                <li class="smaller"><a href="javascript:;" nhref="/adm_cursoscomplementarios?action=cambiarmodelo&id={{ actividad.id }}" class="formmodal dropdown-item"><i class="icon-refresh"></i> Cambiar Modelo</a></li>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if reporte_0 or reporte_1 or reporte_2 or reporte_3 %}
+                                            <li class="dropdown smaller dropstart"><a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Impresi&oacute;n</a>
+                                                <ul class="dropdown-menu">
+                                                    {% if reporte_0 %}
+                                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&curso={{ actividad.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Lista de registrados</a></li>
+                                                    {% endif %}
+                                                    {% if reporte_1 %}
+                                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_1.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_1.nombre }}&curso={{ actividad.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Lista de calificaciones</a></li>
+                                                    {% endif %}
+                                                    {% if reporte_2 %}
+                                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_2.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_2.nombre }}&curso={{ actividad.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Lista de registrados plataforma virtual</a></li>
+                                                    {% endif %}
+                                                    {% if reporte_3 %}
+                                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_3.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_3.nombre }}&curso={{ actividad.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Lista de registrados detallado</a></li>
+                                                    {% endif %}
+                                                    {% if reporte_4 %}
+                                                        <li class="smaller"><a href="javascript:;" tipos="{{ reporte_4.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_4.nombre }}&curso={{ actividad.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certif. Masivo de promoción inglés.</a></li>
+                                                    {% endif %}
+                                                </ul>
+                                            </li>
+                                        {% endif %}
+                                        {% if not actividad.registrados and perms.ctt.puede_modificar_cursos and not actividad.cerrado and not PERSONA_ADMINS_ACADEMICO_ID %}
+                                            <li class="dropdown-divider"></li>
+                                            <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref="/adm_cursoscomplementarios?action=eliminar&id={{ actividad.id }}"><i class="icon-remove"></i> Eliminar</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="20">NO EXISTEN DATOS</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item"><a href="/adm_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page=1" class="page-link">1</a></li>
+                            <li class="page-item"><a href="/adm_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="page-link">...</a></li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item"><a href="/adm_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="page-link">...</a></li>
+                            <li class="page-item"><a href="/adm_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}" class="page-link">{{ paging.num_pages }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

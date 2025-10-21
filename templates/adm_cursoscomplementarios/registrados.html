@@ -1,0 +1,302 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            $(".sel_tiporegistro").change(function () {
+                var elemento = $(this);
+                var id = elemento.attr('idr');
+                var va = parseInt(elemento.attr('va'));
+                var valor = parseInt(elemento.val());
+                if (valor !== va){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_cursoscomplementarios",
+                        data: {'action': 'set_tiporegistro', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                elemento.attr({'va': valor});
+                                if (valor==1){
+                                    $("#nota_practica_"+id).removeAttr('disabled').attr({'va': '0.0'});
+                                    $("#nota_teoria_"+id).removeAttr('disabled').attr({'va': '0.0'});
+                                    $("#nota_final_"+id).html('0.0');
+                                }else{
+                                    $("#nota_practica_"+id).val('0.0').attr({'disabled': 'disabled'});
+                                    $("#nota_teoria_"+id).val('0.0').attr({'disabled': 'disabled'});
+                                    $("#nota_final_"+id).html('0.0');
+                                }
+                            } else {
+                                elemento.val(elemento.attr('va'));
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.val(elemento.attr('va'));
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $(".nota_pract").blur(function () {
+                numerico($(this), 0, 0, 1);
+                var elemento = $(this);
+                var id = elemento.attr('idr');
+                var va = parseFloat(elemento.attr('va'));
+                var valor = parseFloat(elemento.val());
+                if (valor !== va){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_cursoscomplementarios",
+                        data: {'action': 'set_nota_pract', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                elemento.attr({'va': valor});
+                                $("#nota_final_"+id).html(data.final);
+                            } else {
+                                elemento.val(va);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.val(elemento.attr('va'));
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $(".nota_teo").blur(function () {
+                numerico($(this), 0, 0, 1);
+                var elemento = $(this);
+                var id = elemento.attr('idr');
+                var va = parseFloat(elemento.attr('va'));
+                var valor = parseFloat(elemento.val());
+                if (valor !== va){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_cursoscomplementarios",
+                        data: {'action': 'set_nota_teo', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                elemento.attr({'va': valor});
+                                $("#nota_final_"+id).html(data.final);
+                            } else {
+                                elemento.val(va);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.val(elemento.attr('va'));
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $("#FilterTextBox1").keyup(function(){
+                var s = $(this).val().toUpperCase();
+                $(".filterable1 tr").show();
+                if (s.length > 0){
+                    $(".filterable1 tr .SearchColumn:not(:contains('" + s + "'))").parent().hide();
+                }
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Curso: {{ actividad }}
+            </h4>
+        </div>
+    </div>
+    {% if not actividad.cerrado %}
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <div class="btn-group dropdown">
+                    <a class="btn btn-sm dropdown-toggle btn-success" data-bs-toggle="dropdown" href="javascript:;"><i class="icon-plus"></i> Registrar <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="adm_cursoscomplementarios?action=registrar&id={{ actividad.id }}">Existente</a></li>
+                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="adm_cursoscomplementarios?action=registrarn&id={{ actividad.id }}">Estudiante externo</a></li>
+                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="adm_cursoscomplementarios?action=registromasivo&id={{ actividad.id }}">Registro Masivo</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <input type="search" style="text-transform: uppercase; margin-bottom: 0px" class="input-block-level form-control form-control-sm" id="FilterTextBox1" name="FilterTextBox1">
+            <table class='table table-bordered table-striped filterable1'>
+                <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th style="width: 220px;">Tipo</th>
+                    <th style="width: 230px;">Locación</th>
+                    <th style="width: 120px;">Identificaci&oacute;n</th>
+                    <th style="width: 120px;">Correo</th>
+                    <th style="width: 50px;">Carrera</th>
+                    <th style="width: 100px;">C&oacute;digo</th>
+                    <th style="width: 80px; text-align: center">Estado</th>
+                    {% if actividad.actualizacionconocimiento %}
+                        <th style="width: 230px; text-align: center">Tipo Registro</th>
+                        <th style="width: 80px; text-align: center">Nota Comp. Practico</th>
+                        <th style="width: 80px; text-align: center">Nota Comp. Teórico</th>
+                        <th style="width: 80px; text-align: center">Nota Exam. Compl.</th>
+                    {% endif %}
+                    <th style="width: 80px;text-align: center;">Fecha Límite</th>
+                    <th style="width: 40px;text-align: center;">Form.</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for registrado in registrados %}
+                    <tr>
+                        <td class="SearchColumn">
+                            {{ registrado.inscripcion.persona }}
+                            {% if materia.lms %}
+                                <br>
+                                {% if materiaasignada.exportadolms %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Exportado a LMS">LMS</span>
+                                {% else %}
+                                    <span class="badge text-bg-warning tu blinkimg" data-bs-toggle="tooltip" data-bs-placement="top" title="Exportado a LMS">LMS</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ registrado.tipoestudiantecurso|default_if_none:"" }}</td>
+                        <td>{{ registrado.locacion|default_if_none:"" }}</td>
+                        <td>
+                            {% for identificacion in registrado.inscripcion.persona.lista_identificaciones %}
+                                {{ identificacion }}{% if not forloop.last %}<br/>{% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {{registrado.inscripcion.persona.email}}
+                        </td>
+                        <td>{{ registrado.inscripcion.carrera.alias }}</td>
+                        <td>{{ registrado.codigo }}</td>
+                        <td style="text-align: center">
+                            {% if not registrado.esta_retirado %}
+                                <span class='badge {% if registrado.aprobada %}text-bg-success{% endif %}{% if registrado.reprobado %}text-bg-danger{% endif %}{% if registrado.encurso %}text-bg-warning{% endif %}'>{{ registrado.estado }}</span>
+                            {% else %}
+                                <span class='badge text-bg-danger'>RETIRADO</span>
+                            {% endif %}
+                        </td>
+                        {% if actividad.actualizacionconocimiento %}
+                            <td style="width: 120px; text-align: center">
+                                <select class="input-block-level sel_tiporegistro" idr="{{ registrado.id }}" va="{{ registrado.tiporegistro }}">
+                                    <option {% if registrado.tiporegistro == 1 %}selected="selected"{% endif %} value="1">EXAMEN COMPLEXIVO</option>
+                                    <option {% if registrado.tiporegistro == 2 %}selected="selected"{% endif %} value="2">CULMINO DE TRABAJO DE TITULACIÓN</option>
+                                </select>
+                            </td>
+                            <td style="width: 80px; text-align: center">
+                                <input {% if registrado.tiporegistro == 2 %}disabled="disabled"{% endif %} type="text" class="imp-numbermed-center nota_pract" id="nota_practica_{{ registrado.id }}" idr="{{ registrado.id }}" value="{{ registrado.notapractica }}" va="{{ registrado.notapractica }}">
+                            </td>
+                            <td style="width: 80px; text-align: center">
+                                <input {% if registrado.tiporegistro == 2 %}disabled="disabled"{% endif %} type="text" class="imp-numbermed-center nota_teo" id="nota_teoria_{{ registrado.id }}"  idr="{{ registrado.id }}" value="{{ registrado.notateoria }}" va="{{ registrado.notateoria }}">
+                            </td>
+                            <td style="width: 80px; text-align: center; vertical-align: middle"><p style="vertical-align: middle" id="nota_final_{{ registrado.id }}">{{ registrado.nota_final }}</p></td>
+                        {% endif %}
+                        <td style="text-align:center;">{{ registrado.fechatope|date:"Y-m-d" }}</td>
+                        <td style="text-align:center;">
+                            {% if registrado.formalizada %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Formalizada">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Formalizada">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li class="smaller"><a href="/finanzas?action=rubros&id={{ registrado.inscripcion.id }}" class="btn-form dropdown-item"><i class="icon-money"></i> Finanzas</a></li>
+                                    {% if not registrado.formalizada %}
+                                        <li class="smaller"><a href="javascript:;" nhref='/adm_cursoscomplementarios?action=formalizar&id={{ registrado.id }}' class="confirmacionmodal dropdown-item"><i class="icon-refresh"></i> Formalizar</a></li>
+                                    {% else %}
+                                        <li class="smaller"><a href="javascript:;" nhref='/adm_cursoscomplementarios?action=noformalizar&id={{ registrado.id }}' class="confirmacionmodal dropdown-item"><i class="icon-remove"></i> No Formalizar</a></li>
+                                    {% endif %}
+                                    <li class="smaller"><a href="/adm_cursoscomplementarios?action=registradosmaterias&id={{ registrado.id }}" class="btn-form dropdown-item"><i class="icon-list"></i> Materias</a></li>
+                                    {% if perms.ctt.puede_modificar_cursos and not registrado.curso.cerrado %}
+                                        {% if not registrado.inscripcion.egresado %}
+                                            <li class="smaller"><a href="javascript:;" nhref="/adm_cursoscomplementarios?action=cambiarinscripcion&id={{ registrado.id }}" class="formmodal dropdown-item"><i class="icon-refresh"></i> Cambiar Ficha</a></li>
+                                        {% endif %}
+                                        {% if not registrado.esta_retirado %}
+                                            <li class="smaller"><a href="javascript:;" nhref="/adm_cursoscomplementarios?action=retirar&id={{ registrado.id }}" class="dropdown-item formmodal"><i class="icon-remove"></i> Retirar</a></li>
+                                            {% if not PERSONA_ADMINS_ACADEMICO_ID %}
+                                                <li class="smaller"><a href="javascript:;" nhref="/adm_cursoscomplementarios?action=cambiarlocacion&id={{ registrado.id }}" class="dropdown-item formmodal"><i class="icon-retweet"></i> Cambiar locación</a></li>
+                                            {% endif %}
+                                            <li class="smaller"><a href="/adm_cursoscomplementarios?action=verdocumentos&id={{ registrado.id }}" class="dropdown-item"><i class="icon-folder-close"></i> Ver Documentación</a></li>
+
+                                        {% else %}
+                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=continuar&id={{ registrado.id }}'><i class="icon-retweet"></i> Continuar</a></li>
+                                        {% endif %}
+                                    {% endif %}
+                                    <li class="dropdown smaller dropstart">
+                                        <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Imprimir</a>
+                                        <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                            {% if reporte_0 %}
+                                                <li class="smaller"><a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&registro={{ registrado.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Registro</a></li>
+                                            {% endif %}
+                                            {% if reporte_1 %}
+                                                <li class="smaller"><a href="javascript:;" tipos="{{ reporte_1.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_1.nombre }}&inscripcion={{ registrado.inscripcion.id }}&curso={{ registrado.curso.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Registro Matrícula</a></li>
+                                            {% endif %}
+                                            {% if reporte_2 %}
+                                                {% if registrado.curso.libreconfiguracion or registrado.curso.optativa %}
+                                                    <li class="smaller"><a href="javascript:;" tipos="{{ reporte_2.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_2.nombre }}&matricula={{ registrado.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certif. Créditos Libre Conf.</a></li>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if reporte_3 %}
+                                                <li class="smaller"><a href="javascript:;" tipos="{{ reporte_3.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_3.nombre }}&matricula={{ registrado.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certif. de promoción inglés.</a></li>
+                                            {% endif %}
+                                            {% if reporte_4 %}
+                                                <li class="smaller"><a href="javascript:;" tipos="{{ reporte_4.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_4.nombre }}&matricula={{ registrado.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certif. de promoción.</a></li>
+                                            {% endif %}
+                                        </ul>
+                                    </li>
+                                    {% if registrado.curso.cerrado  %}
+                                        {% if reporte_0 %}
+                                            <li class="smaller"><a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&actividad={{ registrado.actividad.id }}&participante={{ registrado.inscripcion.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certificado</a></li>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if not registrado.curso.cerrado and perms.ctt.puede_modificar_cursos and not PERSONA_ADMINS_ACADEMICO_ID %}
+                                        {% if not registrado.tiene_rubros_pagados %}
+                                            <li class="dropdown-divider"></li>
+                                            <li class="smaller"><a href="javascript:;" nhref='/adm_cursoscomplementarios?action=cambiartiporegistro&id={{ registrado.id }}' class="dropdown-item formmodal"><i class="icon-retweet"></i> Cambiar tipo registro</a></li>
+                                            <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=delmatricula&id={{ registrado.id }}'><i class="icon-remove"></i> Eliminar</a></li>
+                                        {% else %}
+                                            <li class="dropdown-divider"></li>
+                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/adm_cursoscomplementarios?action=anularmatricula&id={{ registrado.id }}'><i class="icon-remove"></i> Anular</a></li>
+                                        {% endif %}
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

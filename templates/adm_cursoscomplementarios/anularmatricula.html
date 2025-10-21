@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios?action=registrados&id={{ matricula.curso.id }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formactionvalue %}anularmatricula{% endblock %}
+{% block formobjectid %}{{ matricula.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea confirmar la anulacion de la matricula:{% endblock %}
+{% block formobjectrepr %}{{ matricula }}{% endblock %}

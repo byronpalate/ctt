@@ -3002,8 +3002,6 @@ class Periodo(ModeloBase):
     def puede_eliminarse(self):
         if self.nivel_set.exists():
             return False
-        elif self.actividadextracurricular_set.exists():
-            return False
         return True
 
     def auto_evaluacion(self, profesor):
@@ -8363,14 +8361,6 @@ class CursoEscuelaComplementaria(ModeloBase):
             return null_to_numeric(self.pagoscursoescuelacomplementaria_set.aggregate(valor=Sum('valor'))['valor'], 2)
         return null_to_numeric(self.costomatricula + (self.costocuota), 2)
 
-    def tipo(self):
-        return u'ESPECIALIDAD' if self.mallacurso else u'CORTO'
-
-    def tipo_exp(self):
-        return u'CUR_E' if self.mallacurso else u'CUR_C'
-
-    def especial(self):
-        return self.mallacurso
 
     def clases_activas_horario(self, dia, turno, materia):
         return Clase.objects.filter(activo=True, dia=dia, turno=turno, materiacurso=materia).order_by('inicio')
@@ -9435,8 +9425,6 @@ class MatriculaCursoEscuelaComplementaria(ModeloBase):
         costocuota = curso.costocuota
         cuotas = curso.cuotas
         tipocurso = None
-        if self.curso.mallacurso:
-            tipocurso = self.curso.mallacurso.curso.id
         if curso.costodiferenciado:
             tipo = self.tipoestudiantecurso
             if CostodiferenciadoCursoPeriodo.objects.filter(tipocostocursoperiodo__tipocostocurso__cursoescuelacomplementaria=curso, tipo=tipo, tipocostocursoperiodo__periodo=curso.periodo, tipocostocursoperiodo__sede=curso.coordinacion.sede).exists():
@@ -10233,8 +10221,6 @@ class Rubro(ModeloBase):
             return "MATERIA"
         if self.rubroderecho_set.exists():
             return "DERECHO DE EXAMEN"
-        if self.rubroactividadextracurricular_set.exists():
-            return "ACTIVIDAD EXTRA-CURRICULAR"
         if self.rubrootro_set.exists():
             return "OTRO - " + self.rubrootro_set.all()[0].tipo.nombre
         if self.rubroespecievalorada_set.exists():
@@ -10291,8 +10277,6 @@ class Rubro(ModeloBase):
             return "MAR"
         if self.rubroderecho_set.exists():
             return "DER"
-        if self.rubroactividadextracurricular_set.exists():
-            return "ACT"
         if self.rubrootro_set.exists():
             return "OTR"
         if self.rubroespecievalorada_set.exists():
@@ -10341,8 +10325,6 @@ class Rubro(ModeloBase):
             return self.rubromateria_set.all()[0]
         if self.rubroderecho_set.exists():
             return self.rubroderecho_set.all()[0]
-        if self.rubroactividadextracurricular_set.exists():
-            return self.rubroactividadextracurricular_set.all()[0]
         if self.rubrootro_set.exists():
             return self.rubrootro_set.all()[0]
         if self.rubroespecievalorada_set.exists():
@@ -10373,8 +10355,6 @@ class Rubro(ModeloBase):
             return u"MATRICULA: %s"[:299] % self.rubromatricula_set.all()[0].nombre_corto()
         if self.rubrootromatricula_set.exists():
             return u"%s"[:299] % self.rubrootromatricula_set.all()[0].descripcion
-        if self.rubroactividadextracurricular_set.exists():
-            return u"ACTIVIDAD EXTRA-CURRICULAR %s"[:299] % self.rubroactividadextracurricular_set.all()[0].participante.actividad.nombre
         if self.rubromateria_set.exists():
             return u"ARANCEL: %s"[:299] % self.rubromateria_set.all()[0].materiaasignada.materia.asignatura.nombre
         if self.rubroderecho_set.exists():

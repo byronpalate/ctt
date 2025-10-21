@@ -1,0 +1,7 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios?action=descuentos&id={{ descuento.curso.id }}{% endblock %}
+{% block formactionvalue %}deldescuento{% endblock %}
+{% block formobjectid %}{{ descuento.id }}{% endblock %}
+{% block formobjectrepr %}{{ descuento.curso }} - {{ descuento.porcentaje }}%{% endblock %}
