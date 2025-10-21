@@ -41,9 +41,6 @@ def view(request):
     adduserdata(request, data)
     persona = request.session['persona']
     coordinacion = request.session['coordinacionseleccionada']
-    data['PERSONA_ADMINS_ACADEMICO_ID'] = False
-    if persona.id in PERSONA_ADMINS_ACADEMICO_ID:
-        data['PERSONA_ADMINS_ACADEMICO_ID'] = True
 
     if request.method == 'POST':
         if 'action' in request.POST:
@@ -146,7 +143,6 @@ def view(request):
                                                                prerequisitos=form.cleaned_data['prerequisitos'],
                                                                permiteregistrootramodalidad=form.cleaned_data['permiteregistrootramodalidad'],
                                                                modeloevaluativo=form.cleaned_data['modeloevaluativo'],
-                                                               mallacurso=form.cleaned_data['mallacurso'],
                                                                tema=form.cleaned_data['tema'],
                                                                fecha_inicio=form.cleaned_data['fechainicio'],
                                                                fecha_fin=form.cleaned_data['fechafin'],
@@ -154,10 +150,7 @@ def view(request):
                                                                codigo=form.cleaned_data['codigo'],
                                                                departamento=remover_tildes(form.cleaned_data['departamento']),
                                                                tipocurso=form.cleaned_data['tipocurso'],
-                                                               optativa=form.cleaned_data['optativa'],
-                                                               nivelacion=form.cleaned_data['nivelacion'],
                                                                periodo=request.session['periodo'],
-                                                               libreconfiguracion=form.cleaned_data['libreconfiguracion'],
                                                                solicitante_id=form.cleaned_data['solicitante'] if form.cleaned_data['solicitante'] > 0 else None,
                                                                carrera=form.cleaned_data['carrera'],
                                                                modalidad=form.cleaned_data['modalidad'],
@@ -171,29 +164,12 @@ def view(request):
                                                                costocuota=null_to_numeric(costocuota, 2),
                                                                cuotas=null_to_numeric(cuotas, 0),
                                                                cupo=form.cleaned_data['cupo'],
-                                                               examencomplexivo=form.cleaned_data['examencomplexivo'],
                                                                aprobacionfinanciero=False,
                                                                costodiferenciado=diferenciado,
                                                                coordinacion=request.session['coordinacionseleccionada'])
                         actividad.save(request)
                         actividad.actualiza_deposito_requerido()
                         validapromedio = tipocurso.validapromedio
-                        if actividad.mallacurso:
-                            for asignatura in actividad.mallacurso.asignaturacurso_set.all():
-                                materia = MateriaCursoEscuelaComplementaria(curso=actividad,
-                                                                            asignaturamallacurso=asignatura,
-                                                                            asignatura=asignatura.asignatura,
-                                                                            fecha_inicio=actividad.fecha_inicio,
-                                                                            fecha_fin=actividad.fecha_fin,
-                                                                            requiereaprobar=asignatura.requiereaprobar,
-                                                                            calificar=asignatura.calificar,
-                                                                            calfmaxima=asignatura.notamaxima,
-                                                                            calfminima=asignatura.notaaprobar,
-                                                                            asistminima=asignatura.asistenciaaprobar,
-                                                                            validapromedio=validapromedio,
-                                                                            horas=asignatura.horas,
-                                                                            creditos=asignatura.creditos)
-                                materia.save(request)
                         log(u"Adiciono curso corto: %s" % actividad, request, "add")
                         return ok_json({"id": actividad.id})
                     else:
@@ -318,9 +294,7 @@ def view(request):
                                                                      calfmaxima=calfmaxima,
                                                                      calfminima=calfminima,
                                                                      asistminima=asistminima,
-                                                                     curso=curso,
-                                                                     lms=lms,
-                                                                     plantillaslms=plantillalms)
+                                                                     curso=curso)
                         materias.save()
                         for participante in curso.matriculacursoescuelacomplementaria_set.all():
                             materiaasignada = MateriaAsignadaCurso(matricula=participante,
