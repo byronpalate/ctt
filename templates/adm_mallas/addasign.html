@@ -77,111 +77,13 @@
                 numerico($(this), 1, 0, 0);
             });
 
-            const modelomalla = function (mm) {
-                // Create variables for DOM elements to avoid repetitive lookups
-                const campoformacion = $("#fieldset_campoformacion");
-                const horascolaborativas = $("#fieldset_horascolaborativas");
-                const organizacionaprendizaje = $("#fieldset_organizacionaprendizaje");
-                const horasorganizacionaprendizaje = $("#fieldset_horasorganizacionaprendizaje");
-                const horasdocencia = $("#fieldset_horasdocencia");
-                const horasautonomas = $("#fieldset_horasautonomas");
-                const horaspracticas = $("#fieldset_horaspracticas");
-                const horasasistidas = $("#fieldset_horasasistidas");
-                const totalhorasaprendizajecontactodocente = $("#fieldset_totalhorasaprendizajecontactodocente");
-                const totalhorasaprendizajeautonomo = $("#fieldset_totalhorasaprendizajeautonomo");
-                const totalhorasaprendizajepracticoexperimental = $("#fieldset_totalhorasaprendizajepracticoexperimental");
 
-                switch (mm) {
-                    case "1":
-                        // Validate
-                        $("#id_campoformacion").addClass("validate[required]");
-                        // Hide
-                        totalhorasaprendizajecontactodocente.hide();
-                        totalhorasaprendizajeautonomo.hide();
-                        totalhorasaprendizajepracticoexperimental.hide();
-                        // Show
-                        campoformacion.show();
-                        horascolaborativas.show();
-                        organizacionaprendizaje.show();
-                        horasorganizacionaprendizaje.show();
-                        horasdocencia.show();
-                        horasautonomas.show();
-                        horaspracticas.show();
-                        horasasistidas.show();
-                        break;
-                    case "2":
-                        // Remove validation
-                        $("#id_campoformacion").removeClass("validate[required]");
-                        // Hide
-                        campoformacion.hide();
-                        horascolaborativas.hide();
-                        organizacionaprendizaje.hide();
-                        horasorganizacionaprendizaje.hide();
-                        horasasistidas.hide();
-                        horasdocencia.hide();
-                        horasautonomas.hide();
-                        horaspracticas.hide();
-                        // Show
-                        totalhorasaprendizajecontactodocente.show();
-                        totalhorasaprendizajepracticoexperimental.show();
-                        totalhorasaprendizajeautonomo.show();
-                        break;
-                    default:
-                        // Hide
-                        totalhorasaprendizajecontactodocente.hide();
-                        totalhorasaprendizajeautonomo.hide();
-                        totalhorasaprendizajepracticoexperimental.hide();
-                        // Show
-                        campoformacion.show();
-                        horascolaborativas.show();
-                        organizacionaprendizaje.show();
-                        horasorganizacionaprendizaje.show();
-                        horasdocencia.show();
-                        horasautonomas.show();
-                        horaspracticas.show();
-                        horasasistidas.show();
-                }
-            };
 
-            $('#id_modelonuevo').change(function () {
-                modelomalla($(this).val());
-            });
 
             practicas();
 
-            // Initial modelomalla setup
-            modelomalla($('#id_modelonuevo').val());
-            
-            $('#id_lms').change(function(){
-                $('#id_plantillalms').children().remove().end().append('<option selected="selected" value="">---------</option>');
-                var id = parseInt($('#id_lms').val());
-                if (id > 0){
-                    bloqueointerface();
-                    $.ajax({
-                        type: "POST",
-                        url: "/adm_mallas",
-                        data: {'action': 'plantillalms', 'id': id, 'csrfmiddlewaretoken': csrftoken},
-                        success: function(data) {
-                            desbloqueointerface();
-                            if (data.result === 'ok') {
-                                for (i in data.lista){
-                                    elemento = data.lista[i];
-                                    $('#id_plantillalms').append('<option value="'+elemento.id+'">'+elemento.nombre+'</option>');
-                                }
-                            } else {
-                                $('#id_lms').val(0);
-                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
-                            }
-                        },
-                        error: function() {
-                            desbloqueointerface();
-                            $('#id_lms').val(0);
-                            NotificacionError('!!!', 'Error de conexión');
-                        },
-                        dataType: "json"
-                    });
-                }
-            });
+
+
         });
     </script>
 {% endblock %}

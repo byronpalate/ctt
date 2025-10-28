@@ -22,14 +22,7 @@
             $("#fieldset_mocs,#fieldset_trabaja,#fieldset_otraubicacionsalesforce").hide();
 
 
-            document.getElementById('id_ubicacionresidenciasalesforce').addEventListener('change', function () {
-                var fieldset = document.getElementById('fieldset_otraubicacionsalesforce');
-                if (this.value === '6') {
-                   $("#fieldset_otraubicacionsalesforce").show();
-                } else {
-                    $("#fieldset_otraubicacionsalesforce").hide();
-                }
-            });
+
 
 
             validarcedula = function () {
@@ -216,11 +209,8 @@
                 }
             };
 
-            comoseinformo();
 
-            $("#id_comoseinformo").change(function () {
-                comoseinformo();
-            });
+
 
             $("#fieldset_fechaexamensnna, #fieldset_puntajesnna").hide();
 
@@ -235,7 +225,7 @@
                 }
             };
 
-            snna();
+
 
             $("#id_rindioexamen").change(function () {
                 snna();

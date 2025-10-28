@@ -3538,8 +3538,6 @@ class Malla(ModeloBase):
         return self.asignaturamalla_set.filter().count()
 
 
-    def cantidad_itinerarios(self):
-        return Itinerario.objects.filter(asignaturamalla__malla=self).distinct().count()
 
     def cantidad_estudiantes_usando(self):
         return self.inscripcionmalla_set.count()
@@ -3575,18 +3573,18 @@ class Malla(ModeloBase):
         return self.inicio.year
 
     def cantidad_creditos(self):
-        creditosmalla = null_to_numeric(self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario__id=1)).aggregate(valor=Sum('creditos'))['valor'], 4)
+        creditosmalla = null_to_numeric(self.asignaturamalla_set.filter().aggregate(valor=Sum('creditos'))['valor'], 4)
         return null_to_numeric(creditosmalla , 4)
 
     def cantidad_creditos_solo_malla(self, inscripcion):
         return null_to_numeric(self.asignaturamalla_set.filter().aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def cantidad_materiascompletar(self):
-        materiasmalla = self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario_id=1)).count()
+        materiasmalla = self.asignaturamalla_set.filter().count()
         return materiasmalla
 
     def total_ceditos_nivel(self, nivel):
-        return null_to_numeric(self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario__id=1), nivelmalla=nivel).aggregate(valor=Sum('creditos'))['valor'], 4)
+        return null_to_numeric(self.asignaturamalla_set.filter(nivelmalla=nivel).aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def total_ceditos_nivel_debe_matricularse(self, nivel, inscripcion):
         return null_to_numeric(self.asignaturamalla_set.filter(nivelmalla=nivel).filter(matriculacion=True).aggregate(valor=Sum('creditos'))['valor'], 4)
@@ -3601,10 +3599,10 @@ class Malla(ModeloBase):
         return null_to_numeric(self.horaspracticas + self.horasvinculacion + self.horas(), 1)
 
     def total_horas_nivel(self, nivel):
-        return null_to_numeric(self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario__id=1), nivelmalla=nivel).aggregate(valor=Sum('horas'))['valor'], 1)
+        return null_to_numeric(self.asignaturamalla_set.filter(nivelmalla=nivel).aggregate(valor=Sum('horas'))['valor'], 1)
 
     def total_horas_eje(self, eje):
-        return null_to_numeric(self.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario__id=1), ejeformativo=eje).aggregate(valor=Sum('horas'))['valor'], 1)
+        return null_to_numeric(self.asignaturamalla_set.filter( ejeformativo=eje).aggregate(valor=Sum('horas'))['valor'], 1)
 
     def total_valor_nivel(self, nivel):
         return null_to_numeric(self.asignaturamalla_set.filter(nivelmalla=nivel).aggregate(valor=Sum('costo'))['valor'], 2)
@@ -6591,24 +6589,6 @@ class ModeloEvaluativo(ModeloBase):
         self.nombre = null_to_text(self.nombre)
         self.observaciones = null_to_text(self.observaciones)
         super(ModeloEvaluativo, self).save(*args, **kwargs)
-
-
-class CodigoEvaluacion(ModeloBase):
-    nombre = models.CharField(default='', max_length=200, verbose_name=u'Nombre')
-    alias = models.CharField(default='', max_length=50, verbose_name=u'Alias')
-
-    def __str__(self):
-        return u'%s' % self.nombre
-
-    class Meta:
-        verbose_name_plural = u"Códigos de evaluación"
-        ordering = ['nombre']
-        unique_together = ('nombre',)
-
-    def save(self, *args, **kwargs):
-        self.nombre = null_to_text(self.nombre)
-        self.alias = null_to_text(self.alias)
-        super(CodigoEvaluacion, self).save(*args, **kwargs)
 
 
 
@@ -17496,3 +17476,20 @@ class RubroCursoEscuelaComplementaria(ModeloBase):
     class Meta:
         verbose_name_plural = u"Rubros de cursos complementarios"
         unique_together = ('rubro',)
+
+
+class TipoTerminosAcuerdos(ModeloBase):
+    nombre = models.TextField(default='', blank=True, null=True, verbose_name=u"Tipo de terminos y acuerdos")
+    textomostrar = models.TextField(default='', blank=True, null=True, verbose_name=u"Texto a mostrar")
+    paraprofesores = models.BooleanField(default=False, verbose_name=u'Para profesores')
+    paraalumnos = models.BooleanField(default=False, verbose_name=u'Para alumnos')
+    paraadministrativos = models.BooleanField(default=False, verbose_name=u'Para administrativos')
+    estado = models.BooleanField(default=False, verbose_name=u'Para Estado')
+    archivo = models.FileField(upload_to='terminosycondiciones/%Y', blank=True, null=True, verbose_name=u'Archivo')
+    url = models.TextField(default='', blank=True, null=True, verbose_name=u"Url con politicas")
+
+
+class AceptacionTerminosAcuerdos(ModeloBase):
+    persona = models.ForeignKey(Persona, verbose_name=u'personaaceptaterminos', on_delete=models.CASCADE)
+    tipoacuerdo = models.ForeignKey(TipoTerminosAcuerdos, verbose_name=u'Tipo de terminos y acuerdos', on_delete=models.CASCADE)
+    fechaaceptacion = models.DateField(default=timezone.now, blank=True, null=True, verbose_name=u'Fecha aceptacion')

@@ -259,11 +259,7 @@ class MallaForm(BaseForm):
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
-    def adicionar(self, carrera):
-        self.fields['titulo'].queryset = TituloObtenido.objects.filter(tituloobtenidocarrera__carrera=carrera)
-
     def editar(self, malla):
-        self.fields['titulo'].queryset = TituloObtenido.objects.filter(tituloobtenidocarrera__carrera=malla.carrera)
         deshabilitar_campo(self, 'modalidad')
         deshabilitar_campo(self, 'tipo')
         if not malla.puede_eliminarse() and malla.tiene_estudiantes_usando():
@@ -337,7 +333,6 @@ class AsignaturaMallaForm(BaseForm):
     ejeformativo = ModelChoiceField(label=u'Unidad de Organización Curricular', queryset=EjeFormativo.objects.all(), required=False, widget=forms.Select())
     areaconocimiento = ModelChoiceField(label=u'Área de conocimiento', queryset=AreaConocimiento.objects.all(), required=False)
     tipomateria = ModelChoiceField(label=u'Tipo de asignatura', queryset=TipoMateria.objects.all(), required=False, widget=forms.Select())
-    campoformacion = ModelChoiceField(label=u'Campo formación', queryset=CampoFormacion.objects.all(), required=False, widget=forms.Select())
     identificacion = forms.CharField(label=u'Identificación', max_length=30, required=False, widget=forms.TextInput())
     practicas = forms.BooleanField(label=u'Prácticas pre-profesionales', required=False, initial=False)
     codigopracticas = forms.CharField(label=u'Código prácticas', max_length=15, required=False, widget=forms.TextInput())
@@ -345,15 +340,8 @@ class AsignaturaMallaForm(BaseForm):
     matriculacion = forms.BooleanField(label=u'Permite matriculación', required=False, initial=True)
     horassemanales = forms.FloatField(label=u"Horas clases semanales", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
     horas = forms.FloatField(label=u"Horas Totales", initial='0.0', required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
-    horasdocencia = forms.FloatField(label=u"Horas docencia", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
     totalhorasaprendizajecontactodocente = forms.FloatField(label=u"Horas de aprendizaje en contacto con el docente", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
-    horascolaborativas = forms.FloatField(label=u"Horas colaborativas", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
-    horasasistidas = forms.FloatField(label=u"Horas asistidas por el docente", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
-    organizacionaprendizaje = forms.FloatField(label=u"Organización aprendizaje", initial='0.0', required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1', 'disabled': 'disabled'}))
-    horasorganizacionaprendizaje = forms.FloatField(label=u"Horas Organización aprendizaje", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
     totalhorasaprendizajeautonomo = forms.FloatField(label=u"Horas del aprendizaje autónomo", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
-    horasautonomas = forms.FloatField(label=u"Horas autonomas", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
-    horaspracticas = forms.FloatField(label=u"Horas practicas", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
     totalhorasaprendizajepracticoexperimental = forms.FloatField(label=u"Horas del aprendizaje práctico-experimental", required=False, initial='0.0', widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
     creditos = forms.FloatField(label=u"Créditos ", required=False, initial="0.0000", widget=forms.TextInput(attrs={'class': 'imp-numbermed-right', 'decimales': '4'}))
     cantidadmatriculas = forms.IntegerField(label=u"Cantidad matrículas", initial=CANTIDAD_MATRICULAS_MAXIMAS, required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '0'}))
@@ -821,7 +809,7 @@ class InscripcionForm(BaseForm):
     # telefono_trabajo = forms.CharField(label=u"Teléfono del trabajo", max_length=100, required=False,widget=forms.TextInput())
     fecha_ingreso = forms.DateField(label=u"Comenzo a trabajar", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], required=False, widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha','onkeydown': 'return false;'}))
     facturaidentificacion = forms.CharField(max_length=20, label=u'Factura-Identificación', widget=forms.TextInput(attrs={'style':'background-color:#9fb5fe'}))
-    facturatipoidentificacion = forms.ChoiceField(label=u'Factura-Tipo identificación', choices=TiposIdentificacion, widget=forms.Select(attrs={'style':'background-color:#9fb5fe'}))
+    facturatipoidentificacion = forms.ChoiceField(label=u'Factura-Tipo identificación', choices=TiposIdentificacion.choices, widget=forms.Select(attrs={'style':'background-color:#9fb5fe'}))
     facturanombre = forms.CharField(max_length=100, label=u'Factura-Nombre beneficiario', widget=forms.TextInput(attrs={'style':'background-color:#9fb5fe'}))
     facturadireccion = forms.CharField(max_length=100, label=u"Factura-Dirección", widget=forms.TextInput(attrs={'style':'background-color:#9fb5fe'}))
     facturatelefono = forms.CharField(max_length=50, label=u"Factura-Teléfono", widget=forms.TextInput(attrs={'class': 'imp-telefono','style':'background-color:#9fb5fe'}))
@@ -1865,7 +1853,7 @@ class CarreraCoordinacionForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
     def adicionar(self, coordinacion):
-        self.fields['carrera'].queryset = Carrera.objects.exclude(coordinacion__sede=coordinacion.sede).distinct()
+        self.fields['carrera'].queryset = Carrera.objects.exclude().distinct()
 
 
 class CoordinacionForm(BaseForm):

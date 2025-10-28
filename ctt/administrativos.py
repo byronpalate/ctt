@@ -559,8 +559,8 @@ def view(request):
                 data['grupo_empleadores'] = EMPLEADORES_GRUPO_ID
                 data['grupo_administrativo'] = ADMINISTRATIVOS_GROUP_ID
                 data['grupo_estudiantes'] = ALUMNOS_GROUP_ID
-                if persona.id in PERM_ENTRAR_COMO_USUARIO:
-                    data['entrar_como_usuario']=True
+
+                data['entrar_como_usuario']=True
                 return render(request, "administrativos/view.html", data)
             except Exception as ex:
                 return HttpResponseRedirect('/')

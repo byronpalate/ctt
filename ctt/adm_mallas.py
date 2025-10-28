@@ -31,9 +31,6 @@ def view(request):
     persona = request.session['persona']
     periodo = Periodo.objects.all().order_by('-fin')[0]
     miscarreras = persona.lista_carreras_coordinacion(data['coordinacionseleccionada'])
-    #PERSONA_MODIFICA_MALLA_ID ---> EN ESTA VARIABLE DEL SETTINGS ESTAN ALS PERSONAS QUE PUEDEN MODIFICAR CAMPOS DENTRO DE LA MALLA
-    #NO AGREGAR A MAS A MENOS DE QUE SEA NECESARIO Y CONSULTARLO CON BYRON O EDISON
-    data['modificamalla']= puede_modificar_admin  = True if persona.id in PERSONA_MODIFICA_MALLA_ID else False
 
     if request.method == 'POST':
         action = request.POST['action']
@@ -55,7 +52,6 @@ def view(request):
                                   codigo=form.cleaned_data['codigo'],
                                   tipo=form.cleaned_data['tipo'],
                                   modalidad=form.cleaned_data['modalidad'],
-                                  tituloobtenido=form.cleaned_data['titulo'],
                                   tipoduraccionmalla=form.cleaned_data['tipoduraccionmalla'],
                                   inicio=form.cleaned_data['inicio'],
                                   fin=form.cleaned_data['fin'],
@@ -222,7 +218,7 @@ def view(request):
                     else:
                         nivel = form.cleaned_data['nivelmalla']
                         eje = form.cleaned_data['ejeformativo']
-                    if AsignaturaMalla.objects.filter(itinerario__isnull=True, asignatura=form.cleaned_data['asignatura'], malla_id=request.POST['malla']).exists():
+                    if AsignaturaMalla.objects.filter(asignatura=form.cleaned_data['asignatura'], malla_id=request.POST['malla']).exists():
                         return bad_json(mensaje=u'Ya existe registrada la asignatura en ese itinerario, o en las comunes.')
 
                     horastotales = form.cleaned_data['horas']
@@ -230,22 +226,14 @@ def view(request):
                     asignaturamalla = AsignaturaMalla(malla=malla,
                                                       asignatura=form.cleaned_data['asignatura'],
                                                       tipomateria=form.cleaned_data['tipomateria'],
-                                                      campoformacion=form.cleaned_data['campoformacion'],
                                                       areaconocimiento=form.cleaned_data['areaconocimiento'],
                                                       nivelmalla=nivel,
                                                       ejeformativo=eje,
                                                       horassemanales=form.cleaned_data['horassemanales'],
                                                       horas=horastotales,
-                                                      horasdocencia=form.cleaned_data['horasdocencia'],
-                                                      horascolaborativas=form.cleaned_data['horascolaborativas'],
-                                                      horasasistidas=form.cleaned_data['horasasistidas'],
-                                                      horasorganizacionaprendizaje=form.cleaned_data['horasorganizacionaprendizaje'],
-                                                      horasautonomas=form.cleaned_data['horasautonomas'],
-                                                      horaspracticas=form.cleaned_data['horaspracticas'],
                                                       creditos=form.cleaned_data['creditos'],
                                                       cantidadmatriculas=form.cleaned_data['cantidadmatriculas'],
                                                       sinasistencia=form.cleaned_data['sinasistencia'],
-
                                                       validacreditos=form.cleaned_data['validacreditos'],
                                                       validapromedio=form.cleaned_data['validapromedio'],
                                                       obligatoria=form.cleaned_data['obligatoria'],
@@ -722,7 +710,6 @@ def view(request):
                 try:
                     data['title'] = u'Adicionar malla curricular'
                     form = MallaForm()
-                    form.adicionar(request.session['carreraseleccionada'])
                     data['form'] = form
                     return render(request, "adm_mallas/add.html", data)
                 except Exception as ex:
@@ -792,25 +779,6 @@ def view(request):
                     pass
 
 
-            if action == 'addpredecesoraitinerario':
-                try:
-                    data['title'] = u'Predecesora de asignatura'
-                    data['asignaturamalla'] = asignaturamalla = AsignaturaMalla.objects.get(pk=request.GET['id'])
-                    form = AsignaturaMallaPredecesoraForm()
-                    form.for_exclude_asignaturaitinerario(asignaturamalla)
-                    data['form'] = form
-                    return render(request, "adm_mallas/addpredecesoraitinerario.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'delpredecesoraitinerario':
-                try:
-                    data['title'] = u'Eliminar predecesora malla'
-                    data['predecesora'] = AsignaturaMallaPredecesora.objects.get(pk=request.GET['id'])
-                    return render(request, "adm_mallas/delpredecesoraitinerario.html", data)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    pass
 
 
             if action == 'predecesora':

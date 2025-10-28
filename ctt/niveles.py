@@ -1152,9 +1152,8 @@ def view(request):
         if action == 'materiasmalla':
             try:
                 malla = Malla.objects.get(pk=request.POST['mid'])
-                data['materiasmalla'] = malla.asignaturamalla_set.all().order_by('nivelmalla', '-itinerario__id')
+                data['materiasmalla'] = malla.asignaturamalla_set.all().order_by('nivelmalla')
                 data['coordinacion'] = coordinacion = request.session['coordinacionseleccionada']
-                data['modulonivelesmalla'] = NivelMalla.objects.filter(pk__in=[1,2,3,4])
                 segmento = render(request, "niveles/materiasmalla.html", data)
                 return ok_json({"segmento": segmento.content.decode('utf-8')})
             except Exception as ex:

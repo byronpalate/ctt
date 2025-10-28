@@ -16,7 +16,9 @@ from dateutil.relativedelta import relativedelta
 
 from decorators import secure_module, last_access
 
-from settings import ALUMNOS_GROUP_ID, EMAIL_DOMAIN, CONTROL_UNICO_CREDENCIALES
+from settings import ALUMNOS_GROUP_ID, EMAIL_DOMAIN, CONTROL_UNICO_CREDENCIALES, EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES,\
+EMAIL_DOMAIN_ESTUDIANTES, NACIONALIDAD_INDIGENA_ID, PAIS_ECUADOR_ID,MODALIDAD_DISTANCIA
+
 from ctt.commonviews import adduserdata, obtener_reporte
 from ctt.forms import InscripcionForm, RecordAcademicoForm, HistoricoRecordAcademicoForm, CargarFotoForm, \
     CambiomallaForm, NuevaInscripcionForm, \
@@ -999,17 +1001,17 @@ def view(request):
                     flag.permitepagoparcial = True
                     flag.save()
                     # SEGUIMIENTO LABORAL
-                    if form.cleaned_data['trabaja']:
-                        trabajo = TrabajoPersona(persona=estudiante,
-                                                 empresa=form.cleaned_data['empresa'],
-                                                 ocupacion=form.cleaned_data['ocupacion'],
-                                                 titulogrado=form.cleaned_data['titulogrado'],
-                                                 universidadgrado=form.cleaned_data['universidadgrado'],
-                                                 responsabilidades='',
-                                                 personascargo=0,
-                                                 ejerce=False,
-                                                 fecha=form.cleaned_data['fecha_ingreso'])
-                        trabajo.save(request)
+                    # if form.cleaned_data['trabaja']:
+                    #     trabajo = TrabajoPersona(persona=estudiante,
+                    #                              empresa=form.cleaned_data['empresa'],
+                    #                              ocupacion=form.cleaned_data['ocupacion'],
+                    #                              titulogrado=form.cleaned_data['titulogrado'],
+                    #                              universidadgrado=form.cleaned_data['universidadgrado'],
+                    #                              responsabilidades='',
+                    #                              personascargo=0,
+                    #                              ejerce=False,
+                    #                              fecha=form.cleaned_data['fecha_ingreso'])
+                    #     trabajo.save(request)
                     # DATOS DE FACTURACION
                     clientefacturacion = inscripcion.clientefacturacion(request)
                     clientefacturacion.nombre = remover_tildes(form.cleaned_data['facturanombre'])

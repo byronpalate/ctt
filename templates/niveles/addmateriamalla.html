@@ -116,66 +116,10 @@
 
             materias();
             
-            verifica_lmsmalla = function () {
-                $("#fieldset_lms, #fieldset_plantillalms").hide();
-                $("#id_lms, #id_plantillalms").removeClass('validate[required]');
-                if (!$("#id_lmsdesdemalla").is(':checked')){
-                    $("#fieldset_lms, #fieldset_plantillalms").show();
-                    $("#id_lms, #id_plantillalms").addClass('validate[required]');
-                }
-            };
 
-            $("#id_lmsdesdemalla").change(function () {
-                verifica_lmsmalla();
-            });
 
-            verifica_lmsmalla();
 
-            usa_lms = function () {
-                if ($("#id_usalms").is(':checked')){
-                    $("#fieldset_lmsdesdemalla").show();
-                    verifica_lmsmalla();
-                }else{
-                    $("#fieldset_lmsdesdemalla, #fieldset_lms, #fieldset_plantillalms").hide();
-                }
-            };
 
-            $("#id_usalms").change(function () {
-                usa_lms();
-            });
-
-            usa_lms();
-
-            $('#id_lms').change(function(){
-                $('#id_plantillalms').children().remove().end().append('<option selected="selected" value="">---------</option>');
-                var id = parseInt($('#id_lms').val());
-                if (id > 0){
-                    bloqueointerface();
-                    $.ajax({
-                        type: "POST",
-                        url: "/adm_mallas",
-                        data: {'action': 'plantillalms', 'id': id, 'csrfmiddlewaretoken': csrftoken},
-                        success: function(data) {
-                            desbloqueointerface();
-                            if (data.result === 'ok') {
-                                for (i in data.lista){
-                                    elemento = data.lista[i];
-                                    $('#id_plantillalms').append('<option value="'+elemento.id+'">'+elemento.nombre+'</option>');
-                                }
-                            } else {
-                                $('#id_lms').val(0);
-                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
-                            }
-                        },
-                        error: function() {
-                            desbloqueointerface();
-                            $('#id_lms').val(0);
-                            NotificacionError('!!!', 'Error de conexión');
-                        },
-                        dataType: "json"
-                    });
-                }
-            });
         });
     </script>
 {% endblock %}
