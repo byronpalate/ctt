@@ -1,0 +1,159 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script>
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>Pagos del Rubro: {{ rubro.nombre }}{% if rubro.es_notadebito %}({{ rubro.id }}){% endif %}
+                <br>Estudiante: {{ rubro.inscripcion }} - C.I.: {{ ci }} </h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 130px;">Numero</th>
+                    <th style="width: 100px;">Tipo</th>
+                    <th style="width: 80px;text-align: center;">Fecha</th>
+                    <th style="width: 80px;text-align: center;">SubTotal</th>
+                    <th style="width: 80px;text-align: center;">Descuento</th>
+                    <th style="width: 80px;text-align: center;">IVA</th>
+                    <th style="width: 80px;text-align: center;">Total</th>
+                    <th>Tipo</th>
+                    <th style="width: 300px;">Caja</th>
+                    <th style="width: 60px;text-align: center;">Pagada</th>
+                    <th style="width: 60px;text-align: center;">Anulada</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for pago in pagos %}
+                    {% with factura=pago.factura recibopago=pago.recibopago %}
+                        <tr>
+                            <td>
+                                {% if factura %}
+                                    <a href="/adm_facturas?action=rubros&id={{ factura.id }}">{{ factura.numero }}</a><br/>
+                                {% elif recibopago %}
+                                    <a href="/adm_recibopago?action=rubros&id={{ recibopago.id }}">{{ recibopago.numero }}</a><br/>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if factura %}FACTURA{% elif recibopago %}RECIBO PAGO{% endif %}
+                            </td>
+                            <td style="text-align: center;">{{ pago.fecha|date:"Y-m-d" }}</td>
+                            <td style="text-align: right;">$ {{ rubro.valor|floatformat:2 }}</td>
+                            <td style="text-align: right;">$ {{ pago.descuento|floatformat:2 }}</td>
+                            <td style="text-align: right;">$ {{ pago.iva|floatformat:2 }}</td>
+                            <td style="text-align: right;">$ {{ pago.valor|floatformat:2 }}</td>
+                            <td>
+                                {% if pago.anticipado %}
+                                    PREFACTURADO
+                                {% else %}
+                                    {{ pago.tipo }}
+                                    {% if pago.es_cheque %}
+                                        {% with dato=pago.dato_cheque %}
+                                            NO: {{ dato.numero }}, CTA: {{ dato.cuenta }}, {{ dato.banco }}, VALOR: {{ dato.valor|floatformat:2 }}
+                                        {% endwith %}
+                                    {% endif %}
+                                    {% if pago.es_deposito %}
+                                        {% with dato=pago.dato_deposito %}
+                                            {{ dato.referencia }}, {{ dato.cuentabanco.banco }}, CTA: {{ dato.cuentabanco.numero }}, {{ dato.fechabanco|date:'Y-m-d' }}, VALOR: {{ dato.valor|floatformat:2 }}
+                                        {% endwith %}
+                                    {% endif %}
+                                    {% if pago.es_transferencia %}
+                                        {% with dato=pago.dato_transferencia %}
+                                            {{ dato.referencia }}, {{ dato.cuentabanco.banco }}, CTA: {{ dato.cuentabanco.numero }}, {{ dato.fechabanco|date:'Y-m-d' }}, VALOR: {{ dato.valor|floatformat:2 }}
+                                        {% endwith %}
+                                    {% endif %}
+                                    {% if pago.es_tarjeta %}
+                                        {% with dato=pago.dato_tarjeta %}
+                                            {{ dato.tipotarjeta }}, LOT: {{ dato.lote }}, REF: {{ dato.referencia }}, AUT: {{ dato.autorizacion }}, VALOR: {{ dato.valor|floatformat:2 }}
+                                        {% endwith %}
+                                    {% endif %}
+                                    {% if pago.es_notacredito %}
+                                        {% with dato=pago.dato_notacredito %}
+                                            NO: {{ dato.numero }}, VALOR: {{ dato.valorinicial|floatformat:2 }}
+                                        {% endwith %}
+                                    {% endif %}
+                                    {% if pago.es_recibocajainst %}
+                                        {% with dato=pago.dato_recibocajainst %}
+                                            VALOR: {{ dato.valorinicial|floatformat:2 }}
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ pago.sesion.caja.persona }}</td>
+                            <td style="text-align: center;">
+                                {% if factura %}
+                                    {% if factura.pagada %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Pagada">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Pagada">No</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if factura %}
+                                    {% if not factura.valida %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida">No</span>
+                                    {% endif %}
+                                {% elif recibopago %}
+                                    {% if not recibopago.valido %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valido">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valido">No</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endwith %}
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 80px;text-align: center;">Fecha</th>
+                    <th style="width: 100px;text-align: center;">Valor</th>
+                    <th style="width: 100px;text-align: center;">Porciento</th>
+                    <th style="width: 350px;">Responsable</th>
+                    <th>Motivo</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for descuento in descuentos %}
+                    <tr>
+                        <td style="text-align: center;">{{ descuento.fecha|date:"Y-m-d" }}</td>
+                        <td style="text-align: right;">$ {{ descuento.valordescuento|floatformat:2 }}</td>
+                        <td style="text-align: center;">{{ descuento.porciento|floatformat:0 }}%</td>
+                        <td>{{ descuento.responsable }}</td>
+                        <td>{{ descuento.motivo|upper }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_fechavence").datepicker({format:"dd-mm-yyyy"});
+
+            function validarMotivoAjuste() {
+                let valorAjuste = parseFloat($("#id_valorajuste").val()) || 0;
+                if (valorAjuste > 0) {
+                    $("#id_motivoajuste").addClass("validate[required]");
+                } else {
+                    $("#id_motivoajuste").removeClass("validate[required]");
+                }
+            }
+
+            validarMotivoAjuste();
+
+            $("#id_valorajuste").on("input", function() {
+                validarMotivoAjuste();
+            });
+
+            $('#formulariomodaldinamico').on('shown.bs.modal', function () {
+                let input = $('#id_valorajuste');
+                input.focus();
+                input.select();
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editrubro'/>
+    <input type='hidden' name='id' value='{{ rubro.id }}'/>
+{% endblock %}
+{% block formback %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}

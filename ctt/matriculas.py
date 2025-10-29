@@ -618,9 +618,6 @@ def view(request):
                     fecha = convertir_fecha(request.POST['fecha'])
                     asignaturas = json.loads(request.POST['asignaturas'])
                     materias = json.loads(request.POST['materias'])
-                    if inscripcion.carrera.posgrado:
-                        if not materias:
-                            return bad_json(mensaje=u"No puede matricular sin nignuna materia, escoja todas las materias respectivas del nivel para poder continuar.")
                     costo = costo_matricula(inscripcion=inscripcion, asignaturas=asignaturas, materias=materias, nivel=nivel, fecha=fecha)
                     return ok_json(data={'costos': costo})
                 except Exception as ex:

@@ -1,0 +1,17 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_estadoprocesado").addClass("validate[required]");
+        });
+    </script>
+{% endblock %}
+{% block atras %}/finanzas{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='procesado'/>
+    <input type='hidden' name='id' value='{{ deposito.id }}'/>
+{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formback %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}

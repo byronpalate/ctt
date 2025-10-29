@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}
+{% block formactionvalue %}revertirajuste{% endblock %}
+{% block formobjectid %}{{ rubro.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea REVERTIR el ajuste del rubro:{% endblock %}
+{% block formobjectrepr %}{{ rubro }}{% endblock %}

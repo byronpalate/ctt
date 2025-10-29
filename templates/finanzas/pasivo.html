@@ -1,0 +1,13 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formactionvalue %}pasivo{% endblock %}
+{% block formobjectid %}{{ rubro.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea DAR DE BAJA este rubro:{% endblock %}
+{% block formobjectrepr %}{{ rubro }}{% endblock %}
+{% block fieldsextra %}
+    <input type='hidden' name='action' value='pasivo'/>
+    <input type='hidden' name='id' value="{{ rubro.id }}"/>
+    <textarea name="motivopasivo" id="motivopasivo" cols="5" rows="5" required></textarea>
+{% endblock %}

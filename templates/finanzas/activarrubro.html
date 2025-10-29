@@ -1,0 +1,22 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_fechavence").datepicker({format:"dd-mm-yyyy"});
+            $("#id_fechavence, #id_valor").addClass("validate[required]");
+
+            $("#id_valor").blur(function(){
+                numerico($(this), 0, 0, 2);
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='activarrubro'/>
+    <input type='hidden' name='id' value='{{ rubro.id }}'/>
+{% endblock %}
+{% block formback %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editdeposito'/>
+    <input type='hidden' name='id' value='{{ deposito.id }}'/>
+{% endblock %}
+{% block formback %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}

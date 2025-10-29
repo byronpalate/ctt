@@ -1,0 +1,475 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% load humanize %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_fechacobro").datepicker({format:"dd-mm-yyyy"});
+
+            busqueda = function(){
+                var term = $("#busqueda").val().trim().toUpperCase();
+                if (term.length>0){
+                    bloqueointerface();
+                    location.href = "/finanzas?s="+term;
+                } else {
+                    $("#busqueda").focus();
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda();
+            });
+
+            $('#busqueda').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    busqueda();
+                }
+            }).focus();
+
+            $('.autorizarcobro').click(function () {
+                bloqueointerface();
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(':checked');
+                $.ajax({
+                    type: "POST",
+                    url: "/finanzas",
+                    data: {'action': 'autorizarcobros', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.autorizarsupletorio').click(function () {
+                bloqueointerface();
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(':checked');
+                $.ajax({
+                    type: "POST",
+                    url: "/finanzas",
+                    data: {'action': 'autorizarsupletorios', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.deudaanterior').click(function () {
+                bloqueointerface();
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(':checked');
+                $.ajax({
+                    type: "POST",
+                    url: "/finanzas",
+                    data: {'action': 'deudaanterior', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.matriculardeuda').click(function () {
+                bloqueointerface();
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(':checked');
+                $.ajax({
+                    type: "POST",
+                    url: "/finanzas",
+                    data: {'action': 'matriculardeuda', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.pagoparcial').click(function () {
+                bloqueointerface();
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(':checked');
+                $.ajax({
+                    type: "POST",
+                    url: "/finanzas",
+                    data: {'action': 'pagoparcial', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.pagocheque').click(function () {
+                bloqueointerface();
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(':checked');
+                $.ajax({
+                    type: "POST",
+                    url: "/finanzas",
+                    data: {'action': 'pagocheque', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $('.notificaciondeuda').click(function () {
+                bloqueointerface();
+                var elemento = $(this);
+                var id = elemento.attr('ida');
+                var valor = elemento.is(':checked');
+                $.ajax({
+                    type: "POST",
+                    url: "/finanzas",
+                    data: {'action': 'notificardeuda', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop('checked', !valor);
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop('checked', !valor);
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    {% if caja %}
+        <div class="row">
+            <div class="col-12">
+                <div style="float: right;">
+                    <table class='table table-bordered table-condensed'>
+                        <thead class="table-light">
+                        <tr style="font-weight: bold;">
+                            <th colspan="2" style="text-align: center;width: 80px;">Dep.Proc.</th>
+                            <th colspan="2" style="text-align: center;width: 80px;">Fond.I.</th>
+                            <th colspan="2" style="text-align: center;width: 80px;">Efectivo</th>
+                            <th colspan="2" style="text-align: center;width: 80px;">Not.Cred.</th>
+                            <th colspan="2" style="text-align: center;width: 160px;">Vales Caja</th>
+                            <th colspan="2" style="text-align: center;width: 100px;">Cheque</th>
+                            <th colspan="2" style="text-align: center;width: 100px;">Tarjeta</th>
+                            <th colspan="2" style="text-align: center;width: 100px;">Dep&oacute;sito</th>
+                            <th colspan="2" style="text-align: center;width: 100px;">Transferencia</th>
+                            <th colspan="2" style="text-align: center;width: 100px;">Recibo Caja</th>
+                            <th colspan="2" style="text-align: center;width: 80px;">TOTAL</th>
+                            <th colspan="2" style="text-align: center;width: 80px;">FACTURAS</th>
+                            <th colspan="2" style="text-align: center;width: 80px;">R.PAGO</th>
+                        </tr>
+                        <tr>
+                            <th colspan="2" style="text-align: center; width: 80px;">Cant.</th>
+                            <th colspan="2" style="text-align: center; width: 80px;">Valor</th>
+                            <th colspan="2" style="text-align: center; width: 80px;">Valor</th>
+                            <th colspan="2" style="text-align: center; width: 80px;">Valor</th>
+                            <th style="text-align: center;width: 80px;">Ing.</th>
+                            <th style="text-align: center;width: 80px;">Egr.</th>
+                            <th style="text-align: center;width: 20px;">Cant.</th>
+                            <th style="text-align: center;width: 80px;">Valor</th>
+                            <th style="text-align: center;width: 20px;">Cant.</th>
+                            <th style="text-align: center;width: 80px;">Valor</th>
+                            <th style="text-align: center;width: 20px;">Cant.</th>
+                            <th style="text-align: center;width: 80px;">Valor</th>
+                            <th style="text-align: center;width: 20px;">Cant.</th>
+                            <th style="text-align: center;width: 80px;">Valor</th>
+                            <th style="text-align: center;width: 20px;">Cant.</th>
+                            <th style="text-align: center;width: 80px;">Valor</th>
+                            <th style="text-align: center;width: 80px;" colspan="2">Valor</th>
+                            <th style="text-align: center;width: 80px;" colspan="2">Cantidad</th>
+                            <th style="text-align: center;width: 80px;" colspan="2">Cantidad</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td colspan="2" style="text-align: center;">{% if depositos_pendientes_procesar %}<a href="/finanzas?action=depositosnuevos">{{ depositos_pendientes_procesar }} Dep.</a>{% else %}0{% endif %}</td>
+                            <td colspan="2" style="text-align: center;">{{ sesion_caja.fondo|floatformat:2 }}</td>
+                            <td colspan="2" style="text-align: center;">{{ total_efectivo_sesion|floatformat:2 }}</td>
+                            <td colspan="2" style="text-align: center;">{{ total_notacredito_sesion|floatformat:2 }}</td>
+                            <td style="text-align: center;">{{ total_otros_ingresos|floatformat:2 }}</td>
+                            <td style="text-align: center;">{{ total_otros_egresos|floatformat:2 }}</td>
+                            <td style="text-align: center;">{{ cantidad_cheques_sesion }}</td>
+                            <td style="text-align: center;">{{ total_cheque_sesion|floatformat:2 }}</td>
+                            <td style="text-align: center;">{{ cantidad_tarjetas_sesion }}</td>
+                            <td style="text-align: center;">{{ total_tarjeta_sesion|floatformat:2 }}</td>
+                            <td style="text-align: center;">{{ cantidad_depositos_sesion }}</td>
+                            <td style="text-align: center;">{{ total_deposito_sesion|floatformat:2 }}</td>
+                            <td style="text-align: center;">{{ cantidad_transferencias_sesion }}</td>
+                            <td style="text-align: center;">{{ total_transferencia_sesion|floatformat:2 }}</td>
+                            <td style="text-align: center;">{{ cantidad_recibocaja_sesion }}</td>
+                            <td style="text-align: center;">{{ total_recibocaja_sesion|floatformat:2 }}</td>
+                            <td style="text-align: center;color: green;" colspan="2" class="larger"><b>{{ total_sesion|floatformat:2 }}</b></td>
+                            <td style="text-align: center;color: blue;" colspan="2" class="larger"><b>{{ cantidad_facturas_sesion }}</b></td>
+                            <td style="text-align: center;color: blue;" colspan="2" class="larger"><b>{{ cantidad_recibopago_sesion }}</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <br/>
+            </div>
+        </div>
+    {% endif %}
+    <div class="row mt-2">
+        <div class='col-12 col-md-6 mb-2'>
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="busqueda" placeholder="Ingrese el nombre o identificación" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/finanzas" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th style="width: 80px;">Identificaci&oacute;n</th>
+                    <th style="width: 350px;">Carrera</th>
+                    <th style="width: 70px;text-align: center;">Valor Total</th>
+                    <th style="width: 70px;text-align: center;">Pagado</th>
+                    <th style="width: 70px;text-align: center;">Por Pagar</th>
+                    <th style="width: 70px;text-align: center;">Vencido</th>
+                    {% if perms.ctt.puede_autorizar_cobros %}
+                        <th style="width: 35px; text-align: center; vertical-align: middle;">
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Tiene deuda historica fuera del sistema">DH</span></th>
+                    {% endif %}
+                    {% if perms.ctt.puede_autorizar_cobros %}
+                        <th style="width: 35px; text-align: center; vertical-align: middle;">
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Puede pagar deudas no antiguas primero">ND</span></th>
+                    {% endif %}
+{#                    {% if perms.ctt.puede_autorizar_matricula_deuda and not persona.usuario.is_superuser %}#}
+                        <th style="width: 35px; text-align: center; vertical-align: middle;">
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Matricular con deuda">MD</span></th>
+{#                    {% endif %}#}
+                    {% if perms.ctt.puede_autorizar_cobros_parciales %}
+                        <th style="width: 35px; text-align: center; vertical-align: middle;">
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Autorizado a pagos parciales">PP</span>
+                        </th>
+                    {% endif %}
+                    {% if perms.ctt.puede_autorizar_cobros %}
+                        <th style="width: 35px; text-align: center; vertical-align: middle;">
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Puede Pagar con cheque">CH</span>
+                        </th>
+                    {% endif %}
+                    {% if perms.ctt.puede_autorizar_cobros_parciales %}
+                        <th style="width: 35px; text-align: center; vertical-align: middle;">
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activar notificación deuda">DE</span>
+                        </th>
+                    {% endif %}
+                    {% if perms.ctt.puede_autorizar_cobros_parciales %}
+                        <th style="width: 35px; text-align: center; vertical-align: middle;">
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Puede tomar supletorios con deudas pendientes">SP</span></th>
+                    {% endif %}
+
+                    <th style="width: 80px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for inscripcion in inscripciones %}
+                    {% with matriculado=inscripcion.matriculado matricula=inscripcion|args:periodo|call:"matricula_periodo" retirocarrera=inscripcion.retiro_carrera malla=inscripcion.mi_malla %}
+                        <tr>
+                            <td>
+                                {{ inscripcion.persona }}
+                                {% if inscripcion.orientacion %}
+                                    - <span class="badge text-bg-warning tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Orientación Vocacional Profesional">OVP</span>
+                                {% endif %} <br/>
+                                {% if inscripcion.matriculado %}
+                                    <br><span class="badge text-bg-success">MATRICULADO</span>
+                                {% endif %}
+                                <span class="badge text-bg-info tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Nivel academico actual">{{ inscripcion.mi_nivel.nivel }}</span><br>
+                                {% if inscripcion.tipoinscripcion %}
+                                    <span class="badge {% if inscripcion.es_regular %}text-bg-success{% else %}text-bg-danger{% endif %} tr" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ inscripcion.tipoinscripcion }}">{{ inscripcion.tipoinscripcion.alias }}</span>
+                                {% endif %}
+                                {% if inscripcion.tipogratuidad %}
+                                    <span class="badge {% if inscripcion.es_gratuidad_total %}text-bg-success{% elif inscripcion.es_gratuidad_parcial %}text-bg-warning{% else %}text-bg-danger{% endif %} tr" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ inscripcion.tipogratuidad }}">{{ inscripcion.tipogratuidad.alias }}</span>
+                                {% endif %}
+                                <!-- DATOS INCOMPLETOS -->
+                                {% if inscripcion.persona.datos_incompletos %}
+                                    <span class="badge text-bg-danger tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Datos Incompletos">DI</span>
+                                {% endif %}
+                                <!-- EGRESADO O GRADUADO -->
+
+                                <!-- RETIRO DE CARRERA -->
+                                {% if retirocarrera %}
+                                    <span class="badge text-bg-warning tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Retiro de Carrera">RC</span>
+                                {% endif %}
+                                <!-- BECA ASIGNADA -->
+                                {% if matricula.becado %}
+                                    <span class="badge text-bg-success tr" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ matricula.tipobeca.nombre }}">BECARIO</span>
+                                {% endif %}
+                                <!-- MALLA DEL ESTUDIANTE -->
+                                {% if not inscripcion.tiene_malla %}
+                                    <span class="badge text-bg-info tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Sin malla asignada">SM</span>
+                                {% endif %}
+                                <!-- CONDICIONADO -->
+                                {% if inscripcion.condicionado %}
+                                    <span class="badge text-bg-info tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Condicionado">C</span>
+                                {% endif %}
+                                <!-- PRESTAMOS EN BIBLIOTECA DEL ESTUDIANTE -->
+                                {% if inscripcion.persona.documentos_sin_entregar %}
+                                    <span class="badge text-bg-danger tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Libro Pendiente de Entrega">LPE</span>
+                                {% endif %}
+                                <!-- CONVENIO MOVILIDAD ACADÉMICA -->
+                                {% if inscripcion.persona.intercambio %}
+                                    <span class="badge text-bg-dark tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Movilidad Academica">M</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ inscripcion.persona.identificacion }}</td>
+                            <td>{{ inscripcion.mi_malla }}<br>{{ inscripcion.mi_itinerario }}, {{ inscripcion.sesion.nombre }}, {{ inscripcion.sede }}-{{ inscripcion.id }}</td>
+                            <td style="text-align: right;">$ {{ inscripcion.total_rubros|floatformat:2 }}</td>
+                            <td style="text-align: right;">$ {{ inscripcion.total_pagado|floatformat:2 }}</td>
+                            <td style="text-align: right;">$ {{ inscripcion.total_rubros_pendientes|floatformat:2 }}</td>
+                            <td style="text-align: right;">{% if inscripcion.tiene_deuda_vencida %}<span class="badge text-bg-danger">$ {{ inscripcion.adeuda_a_la_fecha|floatformat:2 }}</span>{% else %}$0.00{% endif %}</td>
+                            {% if perms.ctt.puede_autorizar_cobros %}
+                                <th style="text-align: center; vertical-align: middle;"><input class="deudaanterior sizecheckmd" ida="{{ inscripcion.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Tiene deuda historica fuera del sistema" type="checkbox" {% if inscripcion.persona.deudahistorica %}checked{% endif %}></th>
+                            {% endif %}
+                            {% if perms.ctt.puede_autorizar_cobros %}
+                                <th style="text-align: center; vertical-align: middle;"><input class="autorizarcobro sizecheckmd" ida="{{ inscripcion.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Puede pagar deudas no antiguas primero" type="checkbox" {% if inscripcion.mis_flag.puedecobrar %}checked{% endif %}></th>
+                            {% endif %}
+{#                            {% if perms.ctt.puede_autorizar_matricula_deuda and not persona.usuario.is_superuser %}#}
+                                <th style="text-align: center; vertical-align: middle;"><input class="matriculardeuda sizecheckmd" ida="{{ inscripcion.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Matricular con deuda" type="checkbox" {% if inscripcion.permitematriculacondeuda %}checked{% endif %}></th>
+{#                            {% endif %}#}
+                            {% if perms.ctt.puede_autorizar_cobros_parciales %}
+                                <th style="text-align: center; vertical-align: middle;"><input class="pagoparcial sizecheckmd" ida="{{ inscripcion.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Autorizado a pagos parciales" type="checkbox" {% if inscripcion.mis_flag.permitepagoparcial %}checked{% endif %}></th>
+                            {% endif %}
+                            {% if perms.ctt.puede_autorizar_cobros %}
+                                <th style="text-align: center; vertical-align: middle;"><input class="pagocheque sizecheckmd" ida="{{ inscripcion.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Puede Pagar con cheque" type="checkbox" {% if inscripcion.mis_flag.tienechequeprotestado %}checked{% endif %}></th>
+                            {% endif %}
+                            {% if perms.ctt.puede_autorizar_cobros_parciales %}
+                                <th style="text-align: center; vertical-align: middle;"><input class="notificaciondeuda sizecheckmd" ida="{{ inscripcion.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Activar notificación deuda" type="checkbox" {% if inscripcion.mis_flag.notificardeuda %}checked{% endif %}></th>
+                            {% endif %}
+                         {% if perms.ctt.puede_autorizar_cobros_parciales %}
+                                <th style="text-align: center; vertical-align: middle;"><input class="autorizarsupletorio sizecheckmd" ida="{{ inscripcion.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Puede generar derechos para supletorios" type="checkbox" {% if inscripcion.mis_flag.puedetomarsupletorio %}checked{% endif %}></th>
+                            {% endif %}
+
+                            <td style="text-align: center">
+                                <a href="/finanzas?action=rubros&id={{ inscripcion.id }}" class="btn btn-ssm btn-success"><i class="icon-money"></i> Rubros</a>
+                            </td>
+                        </tr>
+                    {% endwith %}
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item"><a href="/finanzas?{% if search %}s={{ search }}&{% endif %}page=1" class="page-link">1</a></li>
+                            <li class="page-item"><a href="/finanzas?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="page-link">...</a></li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/finanzas?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item"><a href="/finanzas?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="page-link">...</a></li>
+                            <li class="page-item"><a href="/finanzas?{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}" class="page-link">{{ paging.num_pages }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/finanzas?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

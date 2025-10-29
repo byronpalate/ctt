@@ -1,0 +1,11 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formactionvalue %}valido{% endblock %}
+{% block formobjectid %}{{ deposito.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea validar el documento del deposito{% endblock %}
+{% block fieldsextra %}
+    <input type='hidden' name='action' value='valido'/>
+    <input type='hidden' name='id' value="{{ deposito.id }}"/>
+{% endblock %}

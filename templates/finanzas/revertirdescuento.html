@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}
+{% block formactionvalue %}revertirdescuento{% endblock %}
+{% block formobjectid %}{{ rubro.id }}{% endblock %}
+{% block formobjectname %}el descuento aplicado al rubro{% endblock %}
+{% block formobjectrepr %}{{ rubro.nombre }}{% endblock %}

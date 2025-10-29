@@ -27,7 +27,7 @@ from ctt.models import Inscripcion, Rubro, Pago, Banco, TipoOtroRubro, RubroOtro
     PagoCheque, RubroEspecieValorada, PagoTransferenciaDeposito, TipoEspecieValorada, DepositoInscripcion, \
     InscripcionFlags, RubroLiquidado, ValeCaja, \
     TipoCheque, TipoEmisorTarjeta, IvaAplicado, null_to_numeric, DatoCheque, DatoTransferenciaDeposito, Periodo, \
-    RubroAnticipado, TipoTarjetaBanco, RubroCuota, FormaDePago
+    RubroAnticipado, TipoTarjetaBanco, RubroCuota, FormaDePago, RubroNotaDebito, DescuentoRecargoRubro
 
 from ctt.printdoc import imprimir_contenido
 
@@ -1305,7 +1305,6 @@ def view(request):
                     data['reporte_0'] = obtener_reporte('listado_deuda_xinscripcion')
                     data['periodos_rubros'] = Periodo.objects.all()
                     data['cobro_deuda_anterior_primero'] = COBRO_DEUDA_ANTERIOR_PRIMERO
-                    data['guayas'] = True if inscripcion.persona.provincia_id == 9 else False
                     return render(request, "finanzas/rubros.html", data)
                 except Exception as ex:
                     transaction.set_rollback(True)

@@ -1,0 +1,18 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_motivo").addClass("validate[required]");
+        });
+    </script>
+{% endblock %}
+{% block atras %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}
+{% block titulo %} {{ title }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='delrubro'/>
+    <input type='hidden' name='id' value="{{ rubro.id }}"/>
+{% endblock %}
+{% block formback %}/finanzas?action=rubros&id={{ rubro.inscripcion.id }}{% endblock %}
+{% block buttonname %}Eliminar{% endblock %}
