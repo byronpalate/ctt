@@ -10835,6 +10835,8 @@ class PrecioTipoOtroRubro(ModeloBase):
 class RubroOtro(ModeloBase):
     rubro = models.ForeignKey(Rubro, verbose_name=u'Rubro', on_delete=models.CASCADE)
     tipo = models.ForeignKey(TipoOtroRubro, verbose_name=u'Tipo', on_delete=models.CASCADE)
+    solicitud = models.ForeignKey(SolicitudSecretariaDocente, blank=True, null=True, verbose_name=u'Solicitud', on_delete=models.CASCADE)
+
 
     def __str__(self):
         return u'Rubro: %s %s' % (self.rubro.inscripcion, str(self.rubro.valor))
