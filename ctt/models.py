@@ -10832,6 +10832,174 @@ class PrecioTipoOtroRubro(ModeloBase):
         unique_together = ('tipo', 'fecha',)
 
 
+class SolicitudSecretariaDocente(ModeloBase):
+    inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True, verbose_name=u'Solicitante', on_delete=models.CASCADE)
+    tipo = models.ForeignKey(TipoSolicitudSecretariaDocente, verbose_name=u'Tipo de solicitud', on_delete=models.CASCADE)
+    fecha = models.DateField(verbose_name=u'Fecha de solictud')
+    hora = models.TimeField(verbose_name=u'Hora')
+    descripcion = models.TextField(default='', verbose_name=u'Descripción')
+    respuesta = models.TextField(default='', blank=True, null=True, verbose_name=u'Respuesta')
+    cerrada = models.BooleanField(default=False, verbose_name=u'Cerrada')
+    siendoatendida = models.BooleanField(default=False, verbose_name=u'Siendo Atendida')
+    fechacierre = models.DateField(null=True, blank=True, verbose_name=u'Fecha de entrega')
+    numero_tramite = models.IntegerField(default=0, verbose_name=u'Numero de Trámite')
+    matricula = models.ForeignKey(Matricula, blank=True, null=True, verbose_name=u'Matrícula', on_delete=models.CASCADE)
+    materiaasignada = models.ForeignKey(MateriaAsignada, blank=True, null=True, verbose_name=u'Materia Asignada', on_delete=models.CASCADE)
+    responsable = models.ForeignKey(Persona, related_name='responsable', blank=True, null=True, verbose_name=u'Responsable', on_delete=models.CASCADE)
+    archivado = models.CharField(default='', max_length=100, verbose_name=u'Archivado en')
+    archivo = models.FileField(upload_to='archivo/%Y/%m/%d', blank=True, null=True, verbose_name=u'Solicitudes')
+    valorprorroga = models.FloatField(default=0, blank=True, null=True, verbose_name=u'Valor prorroga')
+
+    def __str__(self):
+        return u'%s %s %s' % (self.inscripcion.persona, self.tipo, self.fecha.strftime("%d-%m-%Y"))
+
+    class Meta:
+        verbose_name_plural = u"Solicitudes"
+        ordering = ['cerrada', '-numero_tramite', '-fecha', '-hora']
+        unique_together = ('inscripcion', 'tipo', 'fecha', 'hora',)
+
+    def rubrootro(self):
+        if self.rubrootro_set.exists():
+            return self.rubrootro_set.all()[0]
+        return None
+
+    def verificar_gratuidad(self):
+        if SOLICITUD_SECRETARIA_MATRICULA_GRATUITAS:
+            if self.rubrootro_set.exists() and self.matricula:
+                if self.matricula.solicitudsecretariadocente_set.filter(tipo=self.tipo).count() <= self.tipo.gratismatricula:
+                    rubro = self.rubro()
+                    rubro.liquidar('SOLICITUD GRATUITA')
+
+    def rubro(self):
+        rubrootro = self.rubrootro()
+        return rubrootro.rubro if rubrootro else None
+
+    def especie(self):
+        if RubroEspecieValorada.objects.filter(solicitud=self).exists():
+            return RubroEspecieValorada.objects.filter(solicitud=self)[0]
+        return None
+
+    def especiepagada(self):
+        rubro = self.especie().rubro
+        return rubro.cancelado if rubro else True
+
+    def valor(self):
+        rubro = self.rubro()
+        return rubro.valor if rubro else 0
+
+    def pagada(self):
+        rubro = self.rubro()
+        return rubro.cancelado if rubro else True
+
+    def vencida(self):
+        if DIAS_VENCIMIENTO_SOLICITUD:
+            return not self.siendoatendida and datetime.now().date() > (datetime(self.fecha.year, self.fecha.month, self.fecha.day, 0, 0, 0) + timedelta(days=DIAS_VENCIMIENTO_SOLICITUD)).date()
+        return False
+
+    def mail_subject_nuevo(self):
+        send_mail(subject='Nueva solicitud a registrada.',
+                  html_template='emails/nuevasolicitud.html',
+                  data={'d': self},
+                  recipient_list=[self.inscripcion.persona])
+
+    def mail_subject_cierre(self):
+        send_mail(subject='Su solicitud ya fue atendida y cerrada.',
+                  html_template='emails/respuestasolicitud.html',
+                  data={'d': self},
+                  recipient_list=[self.inscripcion.persona])
+
+    def mail_asignacion(self):
+        send_mail(subject='Solicitud asiganda.',
+                  html_template='emails/asignarsolicitud.html',
+                  data={'d': self},
+                  recipient_list=[self.inscripcion.persona])
+
+    def mail_reenvio(self):
+        send_mail(subject='Solicitud asiganda.',
+                  html_template='emails/reasignarsolicitud.html',
+                  data={'d': self},
+                  recipient_list=[self.inscripcion.persona])
+
+    def mail_subject_comentar(self):
+        send_mail(subject='La solicitud recibida ha sido atendida.',
+                  html_template='emails/comentarsolicitud.html',
+                  data={'d': self},
+                  recipient_list=[self.inscripcion.persona])
+
+    def ultima_respuesta(self):
+        if self.historialsolicitud_set.exists():
+            return self.historialsolicitud_set.all().order_by('-fecha')[0]
+        else:
+            historial = HistorialSolicitud(solicitud=self,
+                                           fecha=self.fecha,
+                                           )
+            historial.save()
+            return historial
+        return None
+
+    def asignaciones(self):
+        return self.historialsolicitud_set.all()
+
+    def tiene_costo(self):
+        rubro = self.rubro()
+        if rubro:
+            return rubro.valor > 0
+        return False
+
+    def tiene_rubros_pagados(self):
+        return Pago.objects.filter(rubro__rubrootro__solicitud=self).exists()
+
+    def eliminar_rubros(self):
+        for rubro in RubroOtro.objects.filter(solicitud=self):
+            r = rubro.rubro
+            rubro.delete()
+            r.verifica_rubro_otro(RUBRO_OTRO_SOLICITUD_ID)
+
+    def valorprorrogar(self, periodo):
+        rm = null_to_decimal(self.inscripcion.rubro_set.filter(rubromatricula__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        rc = null_to_decimal(self.inscripcion.rubro_set.filter(rubrocuota__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        rg = null_to_decimal(self.inscripcion.rubro_set.filter(rubroagregacion__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        rom = null_to_decimal(self.inscripcion.rubro_set.filter(rubrootromatricula__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        roa = null_to_decimal(self.inscripcion.rubro_set.filter(rubrootro__isnull=False, rubrootro__tipo__id__in=(10, 11, 12, 13, 14, 18), cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        rnd = null_to_decimal(self.inscripcion.rubro_set.filter(rubronotadebito__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        return null_to_decimal(rm+rc+rg+rom+roa+rnd, 2)
+
+    def total_cuotas(self):
+        return null_to_decimal(self.diferimientosolicitudprorrogasecretaria_set.aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def tiene_requisitos(self):
+        return self.requisitossolicitudsecretariadocente_set.exists()
+
+    def es_medica(self):
+        return self.solicitudsecretariafaltas_set.filter(medica=True).exists()
+
+    def responsablen(self):
+        return PersonalSolicitudProrroga.objects.filter(carrera=self.inscripcion.carrera,modalidad=self.inscripcion.modalidad,sede=self.inscripcion.sede,nivel=self.matricula.nivelmalla).last()
+
+
+    def save(self, *args, **kwargs):
+        self.descripcion = null_to_text(self.descripcion)
+        self.respuesta = null_to_text(self.respuesta)
+        self.archivado = null_to_text(self.archivado)
+        super(SolicitudSecretariaDocente, self).save(*args, **kwargs)
+
+
+
+class HistorialSolicitud(ModeloBase):
+    solicitud = models.ForeignKey(SolicitudSecretariaDocente, verbose_name=u'Solicitud', on_delete=models.CASCADE)
+    fecha = models.DateTimeField(verbose_name=u'Fecha de solictud')
+    persona = models.ForeignKey(Persona, verbose_name=u'Persona', on_delete=models.CASCADE,blank=True,null=True)
+    respuesta = models.TextField(default='', blank=True, null=True, verbose_name=u'Respuesta')
+
+    class Meta:
+        ordering = ['fecha']
+        unique_together = ('solicitud', 'fecha', 'persona',)
+
+    def save(self, *args, **kwargs):
+        self.respuesta = null_to_text(self.respuesta)
+        super(HistorialSolicitud, self).save(*args, **kwargs)
+
+
 class RubroOtro(ModeloBase):
     rubro = models.ForeignKey(Rubro, verbose_name=u'Rubro', on_delete=models.CASCADE)
     tipo = models.ForeignKey(TipoOtroRubro, verbose_name=u'Tipo', on_delete=models.CASCADE)
@@ -17505,175 +17673,6 @@ class RubroCursoEscuelaComplementaria(ModeloBase):
     class Meta:
         verbose_name_plural = u"Rubros de cursos complementarios"
         unique_together = ('rubro',)
-
-
-class SolicitudSecretariaDocente(ModeloBase):
-    inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True, verbose_name=u'Solicitante', on_delete=models.CASCADE)
-    tipo = models.ForeignKey(TipoSolicitudSecretariaDocente, verbose_name=u'Tipo de solicitud', on_delete=models.CASCADE)
-    fecha = models.DateField(verbose_name=u'Fecha de solictud')
-    hora = models.TimeField(verbose_name=u'Hora')
-    descripcion = models.TextField(default='', verbose_name=u'Descripción')
-    respuesta = models.TextField(default='', blank=True, null=True, verbose_name=u'Respuesta')
-    cerrada = models.BooleanField(default=False, verbose_name=u'Cerrada')
-    siendoatendida = models.BooleanField(default=False, verbose_name=u'Siendo Atendida')
-    fechacierre = models.DateField(null=True, blank=True, verbose_name=u'Fecha de entrega')
-    numero_tramite = models.IntegerField(default=0, verbose_name=u'Numero de Trámite')
-    matricula = models.ForeignKey(Matricula, blank=True, null=True, verbose_name=u'Matrícula', on_delete=models.CASCADE)
-    materiaasignada = models.ForeignKey(MateriaAsignada, blank=True, null=True, verbose_name=u'Materia Asignada', on_delete=models.CASCADE)
-    responsable = models.ForeignKey(Persona, related_name='responsable', blank=True, null=True, verbose_name=u'Responsable', on_delete=models.CASCADE)
-    archivado = models.CharField(default='', max_length=100, verbose_name=u'Archivado en')
-    archivo = models.FileField(upload_to='archivo/%Y/%m/%d', blank=True, null=True, verbose_name=u'Solicitudes')
-    valorprorroga = models.FloatField(default=0, blank=True, null=True, verbose_name=u'Valor prorroga')
-
-    def __str__(self):
-        return u'%s %s %s' % (self.inscripcion.persona, self.tipo, self.fecha.strftime("%d-%m-%Y"))
-
-    class Meta:
-        verbose_name_plural = u"Solicitudes"
-        ordering = ['cerrada', '-numero_tramite', '-fecha', '-hora']
-        unique_together = ('inscripcion', 'tipo', 'fecha', 'hora',)
-
-    def rubrootro(self):
-        if self.rubrootro_set.exists():
-            return self.rubrootro_set.all()[0]
-        return None
-
-    def verificar_gratuidad(self):
-        if SOLICITUD_SECRETARIA_MATRICULA_GRATUITAS:
-            if self.rubrootro_set.exists() and self.matricula:
-                if self.matricula.solicitudsecretariadocente_set.filter(tipo=self.tipo).count() <= self.tipo.gratismatricula:
-                    rubro = self.rubro()
-                    rubro.liquidar('SOLICITUD GRATUITA')
-
-    def rubro(self):
-        rubrootro = self.rubrootro()
-        return rubrootro.rubro if rubrootro else None
-
-    def especie(self):
-        if RubroEspecieValorada.objects.filter(solicitud=self).exists():
-            return RubroEspecieValorada.objects.filter(solicitud=self)[0]
-        return None
-
-    def especiepagada(self):
-        rubro = self.especie().rubro
-        return rubro.cancelado if rubro else True
-
-    def valor(self):
-        rubro = self.rubro()
-        return rubro.valor if rubro else 0
-
-    def pagada(self):
-        rubro = self.rubro()
-        return rubro.cancelado if rubro else True
-
-    def vencida(self):
-        if DIAS_VENCIMIENTO_SOLICITUD:
-            return not self.siendoatendida and datetime.now().date() > (datetime(self.fecha.year, self.fecha.month, self.fecha.day, 0, 0, 0) + timedelta(days=DIAS_VENCIMIENTO_SOLICITUD)).date()
-        return False
-
-    def mail_subject_nuevo(self):
-        send_mail(subject='Nueva solicitud a registrada.',
-                  html_template='emails/nuevasolicitud.html',
-                  data={'d': self},
-                  recipient_list=[self.inscripcion.persona])
-
-    def mail_subject_cierre(self):
-        send_mail(subject='Su solicitud ya fue atendida y cerrada.',
-                  html_template='emails/respuestasolicitud.html',
-                  data={'d': self},
-                  recipient_list=[self.inscripcion.persona])
-
-    def mail_asignacion(self):
-        send_mail(subject='Solicitud asiganda.',
-                  html_template='emails/asignarsolicitud.html',
-                  data={'d': self},
-                  recipient_list=[self.inscripcion.persona])
-
-    def mail_reenvio(self):
-        send_mail(subject='Solicitud asiganda.',
-                  html_template='emails/reasignarsolicitud.html',
-                  data={'d': self},
-                  recipient_list=[self.inscripcion.persona])
-
-    def mail_subject_comentar(self):
-        send_mail(subject='La solicitud recibida ha sido atendida.',
-                  html_template='emails/comentarsolicitud.html',
-                  data={'d': self},
-                  recipient_list=[self.inscripcion.persona])
-
-    def ultima_respuesta(self):
-        if self.historialsolicitud_set.exists():
-            return self.historialsolicitud_set.all().order_by('-fecha')[0]
-        else:
-            historial = HistorialSolicitud(solicitud=self,
-                                           fecha=self.fecha,
-                                           )
-            historial.save()
-            return historial
-        return None
-
-    def asignaciones(self):
-        return self.historialsolicitud_set.all()
-
-    def tiene_costo(self):
-        rubro = self.rubro()
-        if rubro:
-            return rubro.valor > 0
-        return False
-
-    def tiene_rubros_pagados(self):
-        return Pago.objects.filter(rubro__rubrootro__solicitud=self).exists()
-
-    def eliminar_rubros(self):
-        for rubro in RubroOtro.objects.filter(solicitud=self):
-            r = rubro.rubro
-            rubro.delete()
-            r.verifica_rubro_otro(RUBRO_OTRO_SOLICITUD_ID)
-
-    def valorprorrogar(self, periodo):
-        rm = null_to_decimal(self.inscripcion.rubro_set.filter(rubromatricula__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
-        rc = null_to_decimal(self.inscripcion.rubro_set.filter(rubrocuota__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
-        rg = null_to_decimal(self.inscripcion.rubro_set.filter(rubroagregacion__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
-        rom = null_to_decimal(self.inscripcion.rubro_set.filter(rubrootromatricula__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
-        roa = null_to_decimal(self.inscripcion.rubro_set.filter(rubrootro__isnull=False, rubrootro__tipo__id__in=(10, 11, 12, 13, 14, 18), cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
-        rnd = null_to_decimal(self.inscripcion.rubro_set.filter(rubronotadebito__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
-        return null_to_decimal(rm+rc+rg+rom+roa+rnd, 2)
-
-    def total_cuotas(self):
-        return null_to_decimal(self.diferimientosolicitudprorrogasecretaria_set.aggregate(valor=Sum('valor'))['valor'], 2)
-
-    def tiene_requisitos(self):
-        return self.requisitossolicitudsecretariadocente_set.exists()
-
-    def es_medica(self):
-        return self.solicitudsecretariafaltas_set.filter(medica=True).exists()
-
-    def responsablen(self):
-        return PersonalSolicitudProrroga.objects.filter(carrera=self.inscripcion.carrera,modalidad=self.inscripcion.modalidad,sede=self.inscripcion.sede,nivel=self.matricula.nivelmalla).last()
-
-
-    def save(self, *args, **kwargs):
-        self.descripcion = null_to_text(self.descripcion)
-        self.respuesta = null_to_text(self.respuesta)
-        self.archivado = null_to_text(self.archivado)
-        super(SolicitudSecretariaDocente, self).save(*args, **kwargs)
-
-
-
-class HistorialSolicitud(ModeloBase):
-    solicitud = models.ForeignKey(SolicitudSecretariaDocente, verbose_name=u'Solicitud', on_delete=models.CASCADE)
-    fecha = models.DateTimeField(verbose_name=u'Fecha de solictud')
-    persona = models.ForeignKey(Persona, verbose_name=u'Persona', on_delete=models.CASCADE,blank=True,null=True)
-    respuesta = models.TextField(default='', blank=True, null=True, verbose_name=u'Respuesta')
-
-    class Meta:
-        ordering = ['fecha']
-        unique_together = ('solicitud', 'fecha', 'persona',)
-
-    def save(self, *args, **kwargs):
-        self.respuesta = null_to_text(self.respuesta)
-        super(HistorialSolicitud, self).save(*args, **kwargs)
-
 
 class TipoTerminosAcuerdos(ModeloBase):
     nombre = models.TextField(default='', blank=True, null=True, verbose_name=u"Tipo de terminos y acuerdos")
