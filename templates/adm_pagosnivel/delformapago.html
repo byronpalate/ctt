@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_pagosnivel{% endblock %}
+{% block formdestination %}/adm_pagosnivel?action=descuentoformapago&id={{ formapago.precioperiodo.id }}{% endblock %}
+{% block formactionvalue %}delformapago{% endblock %}
+{% block formobjectid %}{{ formapago.id }}{% endblock %}
+{% block formobjectname %}el descuento en la forma de pago {% endblock %}
+{% block formobjectrepr %}{{ formapago.formadepago }}{% endblock %}

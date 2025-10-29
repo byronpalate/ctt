@@ -1,0 +1,21 @@
+{% extends "formbs.html" %}
+{% block atras %}/adm_mallas?action=evidencias&id={{ malla.id }}{% endblock %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_fecha").datepicker({format:"dd-mm-yyyy"});
+            $("#id_nombre").addClass("validate[required]");
+
+
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination%}/adm_mallas?action=evidencias&id={{ malla.id }}{% endblock %}
+{% block formaction %}/adm_mallas{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addevidencia'/>
+    <input type="hidden" name='id' value='{{ malla.id }}'/>
+{% endblock %}
+{% block formback %}/adm_mallas?action=evidencias&id={{ malla.id }}{% endblock %}
+

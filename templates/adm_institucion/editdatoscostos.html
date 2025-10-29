@@ -1,0 +1,94 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function () {
+
+            verifica_selector_tipo = function () {
+                if ($("#id_costoperiodo").is(":checked")) {
+                    $('#id_costoenmalla').removeClass("validate[required]").prop('checked', false);
+                }
+                if ($("#id_costoenmalla ").is(":checked")) {
+                    $('#id_costoperiodo').removeClass("validate[required]").prop('checked', false);
+                }
+            };
+
+            verifica_selector_vencepordias = function () {
+                if ($("#id_vencematriculaspordias").is(":checked")) {
+                    $("#fieldset_diashabiles, #fieldset_diasmatriculaexpirapresencial, #fieldset_diasmatriculaexpirasemipresencial, #fieldset_diasmatriculaexpiradistancia, #fieldset_diasmatriculaexpiraonline, #fieldset_diasmatriculaexpirahibrida").show();
+                    $("#fieldset_fechaexpiramatriculagrado, #fieldset_fechaexpiramatriculaposgrado").hide();
+                    $("#id_fechaexpiramatriculagrado, #id_fechaexpiramatriculaposgrado").removeClass("validate[required]");
+                } else {
+                    $('#fieldset_diashabiles, #fieldset_diasmatriculaexpirapresencial, #fieldset_diasmatriculaexpirasemipresencial, #fieldset_diasmatriculaexpiradistancia, #fieldset_diasmatriculaexpiraonline, #fieldset_diasmatriculaexpirahibrida').hide();
+                    $("#fieldset_fechaexpiramatriculagrado, #fieldset_fechaexpiramatriculaposgrado").show();
+                    $("#id_fechaexpiramatriculagrado, #id_fechaexpiramatriculaposgrado").addClass("validate[required]");
+                }
+            };
+
+
+            $('#id_costoperiodo').click(function () {
+                $('#id_costoenmalla').removeClass("validate[required]").prop('checked', false);
+                verifica_selector_tipo();
+            });
+
+
+            $('#cuotaspagoestricto').blur(function () {
+                numerico($(this), 0, 0, 0);
+            });
+
+            $('#id_costoenmalla').click(function () {
+                $('#id_costoperiodo').removeClass("validate[required]").prop('checked', false);
+                verifica_selector_tipo();
+            });
+
+            $("#id_vencematriculaspordias").click(function () {
+                verifica_selector_vencepordias();
+            })
+
+            $("#id_").click(function () {
+                verifica_selector_vencepordias();
+            })
+
+            function actualizarEstado() {
+                if ($('#id_formalizarxporcentaje').is(':checked')) {
+                    $('#id_formalizarxmatricula').prop('checked', false);
+                    $('#fieldset_porcentajeformalizar').show();
+                } else if ($('#id_formalizarxmatricula').is(':checked')) {
+                    $('#id_formalizarxporcentaje').prop('checked', false);
+                    $('#fieldset_porcentajeformalizar').hide();
+                } else {
+                    $('#fieldset_porcentajeformalizar').hide();
+                }
+            }
+
+            // Eventos para los checkboxes
+            $('#id_formalizarxporcentaje').change(function () {
+                if ($(this).is(':checked')) {
+                    $('#id_formalizarxmatricula').prop('checked', false);
+                }
+                actualizarEstado();
+            });
+
+            $('#id_formalizarxmatricula').change(function () {
+                if ($(this).is(':checked')) {
+                    $('#id_formalizarxporcentaje').prop('checked', false);
+                }
+                actualizarEstado();
+            });
+
+            // Inicializar estado al cargar la página
+            actualizarEstado();
+
+            verifica_selector_vencepordias();
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_institucion?t=4&h3=1{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_institucion?t=4&h3=1{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editdatoscostos'/>
+{% endblock %}
+{% block formback %}/adm_institucion?t=4&h3=1{% endblock %}
+{% block buttonname %}Guardar{% endblock %}

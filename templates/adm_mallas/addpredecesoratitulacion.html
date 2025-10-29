@@ -1,0 +1,17 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_asignatura").addClass("validate[required]");
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas?action=predecesoratitulacion&id={{ trabajo.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_mallas{% endblock %}
+{% block formdestination %}/adm_mallas?action=predecesoratitulacion&id={{ trabajo.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addpredecesoratitulacion'/>
+    <input type='hidden' name='id' value='{{ trabajo.id }}'/>
+{% endblock %}
+{% block formback %}/adm_mallas?action=predecesoratitulacion&id={{ trabajo.id }}{% endblock %}

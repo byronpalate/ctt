@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_carreras{% endblock %}
+{% block formaction %}/adm_carreras{% endblock %}
+{% block formactionvalue %}delete{% endblock %}
+{% block formobjectid %}{{ carrera.id }}{% endblock %}
+{% block formobjectname %}la carrera{% endblock %}
+{% block formobjectrepr %}{{ carrera }}{% endblock %}

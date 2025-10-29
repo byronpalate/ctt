@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion{% endblock %}
+{% block formactionvalue %}deshabilitarcajero{% endblock %}
+{% block formobjectid %}{{ cajero.id }}{% endblock %}
+{% block formobjectrepr %}{{ cajero }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea deshabilitar el cajero:{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+
+              $("#id_urlaplicacionandroid, #id_urlaplicacionios, #id_urlaplicacionwindows").css({'text-transform': 'none'});
+
+
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_institucion?t=8{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_institucion?t=8{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editdatosurlapp'/>
+{% endblock %}
+{% block formback %}/adm_institucion?t=8{% endblock %}
+{% block buttonname %}Guardar{% endblock %}

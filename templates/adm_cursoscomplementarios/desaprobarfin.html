@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios?id={{ curso.id }}{% endblock %}
+{% block formactionvalue %}desaprobarfin{% endblock %}
+{% block formobjectid %}{{ curso.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea marcar como desaprobado por financiero el curso: {% endblock %}
+{% block formobjectrepr %}{{ curso }}{% endblock %}

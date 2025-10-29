@@ -1,15 +1,11 @@
 # coding=utf-8
 from django.contrib import admin
 from django.contrib.admin.models import LogEntry
-
 from settings import MANAGERS
-
 from ctt.models import *
-
 
 class ModeloBaseTabularAdmin(admin.TabularInline):
     exclude = ("usuario_creacion", "fecha_creacion", "usuario_modificacion", "fecha_modificacion")
-
 
 class ModeloBaseAdmin(admin.ModelAdmin):
     def get_actions(self, request):

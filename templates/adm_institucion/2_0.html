@@ -1,0 +1,298 @@
+{% extends "adm_institucion/2.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function () {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    <div class="row">
+        <div class="col-4">
+            <table class="table table-bordered">
+                <tr class="table-light">
+                    <th style="width: 250px;">Datos generales</th>
+                    <th style="text-align: center">
+                        {% if perms.ctt.puede_modificar_parametros_institucion %}
+                            <a class="formmodal btn btn-ssm btn-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editdatoscostos"><i class="icon-edit"></i> Editar</a>
+                        {% endif %}
+                    </th>
+                </tr>
+                <tr>
+                    <td>Contribuyente especial</td>
+                    <td style="text-align: center">
+                        {% if institucion.contribuyenteespecial %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Contribuyente especial">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Contribuyente especial">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Obligado a llevar contabilidad</td>
+                    <td style="text-align: center">
+                        {% if institucion.obligadocontabilidad %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Obligado a llevar contabilidad">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Obligado a llevar contabilidad">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Usa costo por período</td>
+                    <td style="text-align: center">
+                        {% if institucion.costoperiodo %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Costos por periodo">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Costos por periodo">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Usa costo en malla</td>
+                    <td style="text-align: center">
+                        {% if institucion.costoenmalla %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Costo en malla">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Costo en malla">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Alumnos ven fechas de rubros</td>
+                    <td style="text-align: center">
+                        {% if institucion.estudiantevefecharubro %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Visible fecha vencimiento rubros">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Visible fecha vencimiento rubros">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Matricular con deuda</td>
+                    <td style="text-align: center">
+                        {% if institucion.matriculacondeuda %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Matricular con deuda">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Matricular con deuda">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Pago estricto asistencia</td>
+                    <td style="text-align: center">
+                        {% if institucion.pagoestrictoasistencia %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Registro de asistencia con deuda">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Registro de asistencia con deuda">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Pago estricto notas</td>
+                    <td style="text-align: center">
+                        {% if institucion.pagoestrictonotas %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Registro de notas con deuda">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Registro de notas con deuda">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Cuotas vencidas aceptables asistencia</td>
+                    <td style="text-align: center">{{ institucion.cuotaspagoestricto }}</td>
+                </tr>
+                <tr>
+                    <td>Formaliza con</td>
+                    <td>
+                        {% if institucion.formalizarxmatricula %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Formaliza pagando la matricula">Valor de Matricula<br>Cancelado</span>
+                        {% else %}<span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Formaliza con Porcentaje">Porcentaje <br> Cancelado</span>
+                        {% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Porcentaje para formalizar matrículas</td>
+                    <td style="text-align: center">{{ institucion.porcentajeformalizar }} %</td>
+                </tr>
+                <tr>
+                    <td>Vence Matriculas por Dias</td>
+                    <td style="text-align: center">
+                        {% if institucion.vencematriculaspordias %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Vence matrículas por dias">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Vence matrículas por dias">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if institucion.vencematriculaspordias %}
+                    <tr>
+                        <td>Contar solo días hábiles</td>
+                        <td style="text-align: center">
+                            {% if institucion.diashabiles %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Días hábiles">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Días hábiles">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Dias Matricula Expira Presencial</td>
+                        <td style="text-align: center">{{ institucion.diasmatriculaexpirapresencial }} dias</td>
+                    </tr>
+                    <tr>
+                        <td>Dias Matricula Expira SemiPresencial</td>
+                        <td style="text-align: center">{{ institucion.diasmatriculaexpirasemipresencial }} dias</td>
+                    </tr>
+                    <tr>
+                        <td>Dias Matricula Expira Distancia</td>
+                        <td style="text-align: center">{{ institucion.diasmatriculaexpiradistancia }} dias</td>
+                    </tr>
+                    <tr>
+                        <td>Dias Matricula Expira Online</td>
+                        <td style="text-align: center">{{ institucion.diasmatriculaexpiraonline }} dias</td>
+                    </tr>
+                    <tr>
+                        <td>Dias Matricula Expira Hibrida</td>
+                        <td style="text-align: center">{{ institucion.diasmatriculaexpirahibrida }} dias</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td>Fecha expira matriculas de Grado</td>
+                        <td style="text-align: center">{{ institucion.fechaexpiramatriculagrado|date:"Y-m-d" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Fecha expira matriculas de PosGrado</td>
+                        <td style="text-align: center">{{ institucion.fechaexpiramatriculaposgrado|date:"Y-m-d" }}</td>
+                    </tr>
+                {% endif %}
+            </table>
+        </div>
+        <div class="col-4">
+            <table class="table table-bordered">
+                <tr class="table-light">
+                    <th>Datos facturación</th>
+                    <th style="text-align: center">
+                        {% if perms.ctt.puede_modificar_parametros_institucion %}
+                            <a class="formmodal btn btn-ssm btn-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editdatosfactura"><i class="icon-edit"></i> Editar</a>
+                        {% endif %}
+                    </th>
+                </tr>
+                <tr>
+                    <td style="width: 180px;">Facturación elect. externa</td>
+                    <td style="text-align: center">
+                        {% if institucion.facturacionelectronicaexterna %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Facturacion electronica externa">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Facturacion electronica externa">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>URL Facturación</td>
+                    <td>{{ institucion.urlfacturacion }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 120px;">API Key</td>
+                    <td>{{ institucion.apikey }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 120px;">PFX</td>
+                    <td>{{ institucion.pfx }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 120px;">Código IVA</td>
+                    <td style="text-align: center">{{ institucion.codigoporcentajeiva }}</td>
+                </tr>
+            </table>
+        </div>
+        <div class="col-4">
+            <table class="table table-bordered">
+                <tr class="table-light">
+                    <th style="width: 200px;">Bloqueo de acciones por deudas</th>
+                    <th style="text-align: center">
+                        {% if perms.ctt.puede_modificar_parametros_institucion %}
+                            <a class="formmodal btn btn-ssm btn-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editdatosbloqueo"><i class="icon-edit"></i> Editar</a>
+                        {% endif %}
+                    </th>
+                </tr>
+                <tr>
+                    <td style="width: 100px;">Modulo mis materias</td>
+                    <td style="text-align: center">
+                        {% if institucion.deudabloqueaasistencia %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo asistencias con deudas">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo asistencias con deudas">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 100px">Modulo record académico</td>
+                    <td style="text-align: center">
+                        {% if institucion.deudabloqueanotas %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo notas con deudas">Si</span> {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo notas con deudas">No</span> {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 100px">Modulo mi malla</td>
+                    <td style="text-align: center">
+                        {% if institucion.deudabloqueamimalla %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo malla con deudas">Si</span> {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo malla con deudas">No</span> {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 100px">Modulo mis horarios</td>
+                    <td style="text-align: center">
+                        {% if institucion.deudabloqueamishorarios %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo horarios con deudas">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo horarios con deudas">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 100px">Modulo descarga documentos</td>
+                    <td style="text-align: center">
+                        {% if institucion.deudabloqueadocumentos %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo descarga documentos con deudas">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo descarga documentos con deudas">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 100px">Modulo mi cronograma</td>
+                    <td style="text-align: center">
+                        {% if institucion.deudabloqueacronograma %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo cronograma con deudas">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo cronograma con deudas">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 100px">Modulo matriculación</td>
+                    <td style="text-align: center">
+                        {% if institucion.deudabloqueamatriculacion %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo matriculación con deudas">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo matriculación con deudas">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 100px">Modulo solicitud a secreteria</td>
+                    <td style="text-align: center">
+                        {% if institucion.deudabloqueasolicitud %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo solicitudes con deudas">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Bloqueo solicitudes con deudas">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+{% endblock %}

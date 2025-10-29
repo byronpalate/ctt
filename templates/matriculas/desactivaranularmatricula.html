@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/matriculas?action=matricula&id={{ matricula.nivel.id }}{% endblock %}
+{% block formaction %}/matriculas{% endblock %}
+{% block formactionvalue %}desactivaranular{% endblock %}
+{% block formobjectid %}{{ matricula.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea desactivar la anulacion de la matricula:{% endblock %}
+{% block formobjectrepr %}{{ matricula }}{% endblock %}

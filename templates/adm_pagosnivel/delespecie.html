@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_pagosnivel{% endblock %}
+{% block formdestination %}/adm_pagosnivel{% endblock %}
+{% block formactionvalue %}delespecie{% endblock %}
+{% block formobjectid %}{{ tipo.id }}{% endblock %}
+{% block formobjectname %}el tipo de especie valorada {% endblock %}
+{% block formobjectrepr %}{{ tipo.nombre }}{% endblock %}

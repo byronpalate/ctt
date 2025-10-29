@@ -1,0 +1,12 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_mallas{% endblock %}
+{% block formdestination %}/adm_mallas{% endblock %}
+{% block formactionvalue %}apruebafinanciero{% endblock %}
+{% block formobjectid %}{{ malla.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea habilitar el ingreso de valores a financiero de la malla: {% endblock %}
+{% block formobjectrepr %}{{ malla }}{% endblock %}
+{% block fieldsextra %}
+    <input type='hidden' name='action' value='apruebafinanciero'/>
+    <input type='hidden' name='id' value="{{ malla.id }}"/>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "adm_institucion/2.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    <div class="row">
+        <div class="col-12">
+            {% if perms.ctt.puede_modificar_parametros_institucion %}
+                <a href="javascript:;" nhref="/adm_institucion?action=addsolicitud" class="btn btn-sm mb-2 btn-success formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+        </div>
+    </div>
+    <table class="table table-bordered">
+        <thead class="table-light">
+        <tr>
+            <th style="width: 350px; ">Nombre</th>
+            <th style="width: 350px; ">Descripción</th>
+            <th>Responsables</th>
+            <th style="width: 70px; text-align: center">Valor</th>
+            <th style="width: 70px; text-align: center">Costo único</th>
+            <th style="width: 70px; text-align: center">Costo base</th>
+            <th style="width: 70px; text-align: center">Gratis Matrícula</th>
+            <th style="width: 70px; text-align: center">Activo</th>
+            <th style="width: 70px; text-align: center">Valida <br>Matrícula</th>
+            <th style="width: 70px; text-align: center"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for c in solicitudes %}
+            <tr>
+                <td>{{ c.nombre }}</td>
+                <td>{{ c.descripcion }}</td>
+                <td>{% for g in c.grupos.all %}{{ g.name }}, {% endfor %}</td>
+                <td style="text-align: right">$ {{ c.valor }}</td>
+                <td style="text-align: center">
+                    <span class="badge {% if c.costo_unico %}text-bg-success{% else %}text-bg-danger{% endif %}">{% if c.activo %} Si{% else %}No{% endif %}</span>
+                </td>
+                <td style="text-align: right">$ {{ c.costo_base }}</td>
+                <td style="text-align: center">
+                    <span class="badge {% if c.gratismatricula %}text-bg-success{% else %}text-bg-danger{% endif %}">{% if c.activo %}Si{% else %}No{% endif %}</span>
+                </td>
+                <td style="text-align: center">
+                    <span class="badge {% if c.activo %}text-bg-success{% else %}text-bg-danger{% endif %}" data-bs-toggle="tooltip" data-bs-placement="top" title="Activa">{% if c.activo %} Si{% else %}No{% endif %}</span>
+                </td>
+                <td style="text-align: center">
+                    <span class="badge {% if c.validamatricula %}text-bg-success{% else %}text-bg-danger{% endif %}" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida Matrícula">{% if c.activo %} Si{% else %}No{% endif %}</span>
+                </td>
+                <td style="text-align: center">
+                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                        <a href="javascript:;" nhref="/adm_institucion?action=editsolicitud&id={{ c.id }}" class="btn btn-ssm btn-success tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                        {% if not c.en_uso %}
+                            <a href="javascript:;" nhref="/adm_institucion?action=delsolicitud&id={{ c.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal " data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="20">NO EXISTEN DATOS</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

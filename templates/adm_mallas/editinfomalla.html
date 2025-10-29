@@ -1,0 +1,18 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_codigo").addClass("validate[required]");
+
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block atras %}/adm_mallas{% endblock %}
+{% block formaction %}/adm_mallas?action=infosede&id={{ infomalla.malla.id }}{% endblock %}
+{% block formdestination %}/adm_mallas?action=infosede&id={{ infomalla.malla.id }} {% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editinfomalla'/>
+    <input type='hidden' name='id' value='{{ infomalla.id }}'/>
+{% endblock %}
+{% block formback %}/adm_mallas?action=infosede&id={{ infomalla.malla.id }}{% endblock %}

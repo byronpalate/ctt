@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_mallas?action=syllabusmodulo&id={{ modulomalla.id }}{% endblock %}
+{% block formaction %}/adm_mallas{% endblock %}
+{% block formactionvalue %}desaprobarsyllabusmodulo{% endblock %}
+{% block formobjectid %}{{ silabo.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea deshabilitar la plantilla del silabo de la materia:{% endblock %}
+{% block formobjectrepr %}{{ modulomalla }}{% endblock %}

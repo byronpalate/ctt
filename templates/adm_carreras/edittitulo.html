@@ -1,0 +1,18 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_nombre").addClass("validate[required]");
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_carreras{% endblock %}
+{% block formdestination %}/adm_carreras?action=titulosobtenidos&id={{ titulo.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_carreras{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='edittitulo'/>
+    <input type='hidden' name='id' value='{{ titulo.id }}'/>
+{% endblock %}
+{% block formback %}/adm_carreras?action=titulosobtenidos&id={{ titulo.id }}{% endblock %}

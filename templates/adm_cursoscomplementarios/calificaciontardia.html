@@ -1,0 +1,254 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+            $(".nota").blur(function() {
+                var elemento = $(this);
+                numerico(elemento, 0, {{ registrado.materia.calfmaxima }}, 2);
+            });
+
+            actualizar_nota = function() {
+                var elemento = $(this);
+                var maid = elemento.attr("maid");
+                var sel = elemento.attr("sel");
+                numerico(elemento, 0, 100, 2);
+                var valor = elemento.val();
+                var valoranterior = elemento.attr('va');
+                elemento.css({"background-color":"white"});
+                if (valor != valoranterior){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_cursoscomplementarios",
+                        data: {'action':'nota_curso','maid': maid, 'sel': sel, 'val': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === "ok") {
+                                elemento.css({"background-color":"rgba(148, 255, 183, 0.23)"});
+                                $("#materiaasignada"+maid).html(data.nota_final);
+                                $("#maestado"+maid).html(data.estado);
+                                if (parseInt(data.estadoid) === 1){
+                                    $("#maestado"+maid).css({"color":"#006400"});
+                                }
+                                if (parseInt(data.estadoid) === 2){
+                                    $("#maestado"+maid).css({"color":"#ff0000"});
+                                }
+                                if (parseInt(data.estadoid) === 3){
+                                    $("#maestado"+maid).css({"color":"#000000"});
+                                }
+                                if (parseInt(data.estadoid) === 4){
+                                    $("#maestado"+maid).css({"color":"#FFA500"});
+                                }
+                                elemento.val(data.valor);
+                                elemento.attr({'va': data.valor});
+                                if (data.hasOwnProperty('dependientes')) {
+                                    for (i = 0; i < data.dependientes.length; i++) {
+                                        elementonombre = data.dependientes[i][0];
+                                        elementovalor = data.dependientes[i][1];
+                                        $("#materiaasignada" + maid + elementonombre).html(parseFloat(elementovalor).toFixed(2));
+                                    }
+                                }
+                            } else {
+                                elemento.val(valoranterior);
+                                elemento.css({"background-color":"rgba(240, 128, 128, 0.21)"});
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.val(valoranterior);
+                            elemento.css({"background-color":"rgba(240, 128, 128, 0.21)"});
+                        },
+                        dataType: "json"
+                    });
+                }
+            };
+
+            $(".notamodelo").blur(actualizar_nota);
+
+
+            $(".nota").blur(function() {
+                var elemento = $(this);
+                numerico(elemento, 0, {{ registrado.materia.calfmaxima }}, 2);
+                var mid = elemento.attr("mid");
+                var va = elemento.attr("va");
+                var valor = elemento.val();
+                if (va != valor) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_cursoscomplementarios",
+                        data: { 'action': 'notacurso',  'id': mid, 'valor': valor, 'csrfmiddlewaretoken': csrftoken },
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                elemento.css({"background-color":"rgba(148, 255, 183, 0.23)"});
+                                elemento.val(data.valor).attr({'va': data.valor});
+                                if (data.curso){
+                                    $("#estado_"+mid).html("<span class='badge text-bg-info'>"+data.estado+"</span>");
+                                } else {
+                                    if (data.aprobada){
+                                        $("#estado_"+mid).html("<span class='badge text-bg-success'>"+data.estado+"</span>");
+                                    } else {
+                                        $("#estado_"+mid).html("<span class='badge text-bg-danger'>"+data.estado+"</span>");
+                                    }
+                                }
+                            } else {
+                                elemento.css({"background-color":"rgba(240, 128, 128, 0.21)"});
+                                $("#not_"+mid).val(va);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            elemento.val(va);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+
+            });
+
+            $(".asistencia").blur(function() {
+                var elemento = $(this);
+                numerico(elemento, 0, 100, 0);
+            });
+
+            $(".asistencia").change(function() {
+                var elemento = $(this);
+                var mid = elemento.attr("mid");
+                var va = elemento.attr("va");
+                var valor = elemento.val();
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_cursoscomplementarios",
+                    data: {'action': 'asistcurso',  'id': mid, 'valor': valor, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.css({"background-color":"rgba(148, 255, 183, 0.23)"});
+                            $("#asis_"+mid).val(data.valor).attr({'va': data.valor});
+                            if (data.curso){
+                                $("#estado_"+mid).html("<span class='badge text-bg-info'>"+data.estado+"</span>");
+                            } else {
+                                if (data.aprobada){
+                                    $("#estado_"+mid).html("<span class='badge text-bg-success'>"+data.estado+"</span>");
+                                } else {
+                                    $("#estado_"+mid).html("<span class='badge text-bg-danger'>"+data.estado+"</span>");
+                                }
+                            }
+                        } else {
+                            elemento.css({"background-color":"rgba(240, 128, 128, 0.21)"});
+                            $("#asis_"+mid).val(va);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.css({"background-color":"rgba(240, 128, 128, 0.21)"});
+                        $("#asis_"+mid).val(va);
+                    },
+                    dataType: "json"
+                });
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios?action=registradosmaterias&id={{ registrado.matricula.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Materia: {{ registrado.materia.asignatura }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class="row">
+        <div class="col-12">
+            {% if not registrado.materia.curso.usamodeloevaluativo %}
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th style="width: 90px;text-align: center;">Calificaci&oacute;n</th>
+                        <th style="width: 90px;text-align: center;">Asistencia</th>
+                        <th style="width: 90px;text-align: center;">Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>{{ registrado.matricula.inscripcion.persona}}</td>
+                        <td style="text-align: center;">
+                            <input class="nota form-control form-control-sm" style="width: 60%; text-align: center;" type="text" mid = "{{ registrado.id  }}" id="not_{{ registrado.id }}" va="{{ registrado.notafinal }}" value="{{ registrado.notafinal }}">
+                        </td>
+                        <td style="text-align: center;">
+                            <input class="asistencia form-control form-control-sm" style="width: 60%; text-align: center;" type="text" mid = "{{ registrado.id  }}" id="asis_{{ registrado.id }}" va="{{ registrado.asistenciafinal }}" value="{{ registrado.asistenciafinal }}" {% if tieneclases %}disabled="disabled"{% endif %}>
+                        </td>
+                        <td style="text-align: center;" id="estado_{{ registrado.id }}">
+                            <span class="badge {% if registrado.estado.aprobada %}text-bg-success{% elif registrado.estado.reprobado %}text-bg-danger{% else %}text-bg-info{% endif %}">{{ registrado.estado }}</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            {% else %}
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        {% for campo in registrado.materia.curso.modeloevaluativo.campos %}
+                            <th style="text-align: center; width: 35px; vertical-align: middle;"><a href="javascript:;" class="tu" data-bs-toggle="tooltip" data-bs-placement="top" title="({{ campo.notaminima }} - {{ campo.notamaxima }})">{{ campo.nombre }}</a></th>
+                        {% endfor %}
+                        <th style="width: 90px;text-align: center;">Nota Final</th>
+                        <th style="width: 90px;text-align: center;">Asistencia</th>
+                        <th style="width: 90px;text-align: center;">Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>{{ registrado.matricula.inscripcion.persona}}</td>
+                        {% for campo in registrado.materia.curso.modeloevaluativo.campos %}
+                            {% with valor=registrado|args:campo.nombre|call:"valor_nombre_campo" %}
+                                {% if campo.dependiente %}
+                                    <td style="text-align: center;vertical-align: middle;font-size: 11px;" id="materiaasignada{{ registrado.id }}{{ campo.htmlid }}">{{ valor|floatformat:campo.decimales }}</td>
+                                {% else %}
+                                    <td style="text-align: center; vertical-align: middle;padding: 8px 1px;">
+                                        <input style="font-size: 11px; margin: 0; width: 39px; padding: 4px 0;" {% if registrado.materia.cerrada %} disabled="disabled" {% endif %} type="text" class="notamodelo input-mini campoactivo imp-numbermed-center form-control-sm" va="{{ valor }}" value="{{ valor }}" maid='{{ registrado.id }}' name='{{ registrado.id }}' sel='{{ campo.nombre }}'/>
+                                    </td>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                        <td style="text-align: center; vertical-align: middle;" id="materiaasignada{{ registrado.id }}">{{ registrado.notafinal|floatformat:"2" }}</td>
+                        <td style="text-align: center;">
+                            {% if not registrado.materia.cerrada %}
+                                <input class="asistencia form-control form-control-sm" style="width: 60%; text-align: center;" type="text" mid = "{{ registrado.id  }}" id="asis_{{ registrado.id }}" va="{{ registrado.asistenciafinal }}" value="{{ registrado.asistenciafinal }}" {% if tieneclases %}disabled="disabled"{% endif %}>
+                            {% else %}
+                                {{ registrado.asistenciafinal|floatformat:0 }}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;vertical-align: middle;">
+                            {% if registrado.aprobada %}
+                                <span id='maestado{{ registrado.id }}' style="color: #006400;"><b>{{ registrado.estado }}</b></span>{% endif %}
+                            {% if registrado.reprobado %}
+                                <span id='maestado{{ registrado.id }}' style="color: #dc143c;"><b>{{ registrado.estado }} </b></span>
+                            {% endif %}
+                            {% if registrado.encurso %}
+                                <span id='maestado{{ registrado.id }}'>{{ registrado.estado }}</span>
+                            {% endif %}
+                            {% if registrado.recuperacion %}
+                                <span id='maestado{{ registrado.id }}' style="color: #daa520;"><b>{{ registrado.estado }} </b></span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            {% endif %}
+            {% if registrado.materia.calificar %}
+                <p style="color: red">La calificacion del curso es de (0-{{ registrado.materia.calfmaxima|floatformat:2 }}) con un valor minimo de {{ registrado.materia.calfminima|floatformat:2 }} y un % de asistencia minima de {{ registrado.materia.asistminima|floatformat:0 }}%</p>
+            {% else %}
+                <p style="color: red">Este curso no se califica, solo se valida el % de asistencia para considerar aprobado el mismo, minima: {{ registrado.materia.asistminima|floatformat:0 }}%</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

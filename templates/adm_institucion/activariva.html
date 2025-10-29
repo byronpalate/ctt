@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion?t=4&h3=3{% endblock %}
+{% block formactionvalue %}activariva{% endblock %}
+{% block formobjectid %}{{ iva.id }}{% endblock %}
+{% block formobjectrepr %}{{ iva }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea habilitar el IVA: {% endblock %}

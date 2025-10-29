@@ -1,0 +1,139 @@
+{% extends "adm_institucion/3.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    <table class='table table-bordered'>
+        <thead class="table-light">
+        <tr>
+            <th style="width: 100px; text-align: center">Usa biblioteca</th>
+            <th style="width: 100px; text-align: center">Documentos colección</th>
+            <th style="width: 100px; text-align: center">Documentos autonumeración</th>
+            <th style="width: 100px; text-align: center">Documentos colección autonumeración</th>
+            <th></th>
+            <th style="width: 70px;"></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td style="text-align: center">
+                {% if institucion.usabiblioteca %}
+                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Usa biblioteca">Si</span>
+                {% else %}
+                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Usa biblioteca">No</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center">
+                {% if institucion.documentoscoleccion %}
+                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Documentos colección">Si</span>
+                {% else %}
+                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Documentos colección">No</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center">
+                {% if institucion.documentosautonumeracion %}
+                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Documentos autonumeración">Si</span>
+                {% else %}
+                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Documentos autonumeración">No</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center">
+                {% if institucion.documentoscoleccionautonumeracion %}
+                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Documentos colección autonumeración">Si</span>
+                {% else %}
+                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Documentos colección autonumeración">No</span>
+                {% endif %}
+            </td>
+            <td></td>
+            <td style="text-align: center">
+                {% if perms.ctt.puede_modificar_parametros_institucion %}
+                    <a class="formmodal btn btn-ssm btn-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editdatosbiblioteca"><i class="icon-edit"></i> Editar</a>
+                {% endif %}
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <table class='table table-bordered '>
+        <thead class="table-light">
+        <tr>
+            <th colspan="10">Referencias web
+                {% if perms.ctt.puede_modificar_parametros_institucion %}
+                    <a href="javascript:;" nhref="/adm_institucion?action=addreferenciaweb" class="pull-right formmodal btn btn-sm  btn-success"><i class="icon-plus tu"></i> Adicionar</a>
+                {% endif %}
+            </th>
+        </tr>
+        <tr>
+            <th style="width: 450px;">Nombre</th>
+            <th>URL</th>
+            <th style="width: 100px; text-align: center">Logo</th>
+            <th style="width: 60px;"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in referenciasweb %}
+            <tr>
+                <td>{{ r.nombre }}</td>
+                <td>{{ r.url }}</td>
+                <td style="text-align: center">
+                    {% if r.logo %}
+                        <a href='{{ r.logo.url }}' class="fancybox" rel="group"><img class="img-polaroid" src="{{ r.logo.url }}" style="width: 20px; height: 20px;"></a>
+                    {% endif %}
+                </td>
+                <td style="text-align: center">
+                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                        <a href="javascript:;" nhref="/adm_institucion?action=editreferenciaweb&id={{ r.id }}" class="btn btn-ssm btn-success tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                        <a href="javascript:;" nhref="/adm_institucion?action=delreferenciaweb&id={{ r.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <table class='table table-bordered'>
+        <thead class="table-light">
+        <tr>
+            <th colspan="10">Otras bibliotecas virtuales
+                {% if perms.ctt.puede_modificar_parametros_institucion %}
+                    <a href="javascript:;" nhref="/adm_institucion?action=addbibvirtual" class="pull-right formmodal btn btn-sm btn-success"><i class="icon-plus tu"></i> Adicionar</a>
+                {% endif %}
+            </th>
+        </tr>
+        <tr>
+            <th style="width: 350px;">Nombre</th>
+            <th style="width: 450px;">Descripción</th>
+            <th>URL</th>
+            <th>Externa</th>
+            <th style="width: 100px; text-align: center">Logo</th>
+            <th style="width: 100px; text-align: center"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in otrasbib %}
+            <tr>
+                <td>{{ r.nombre }}</td>
+                <td>{{ r.descripcion }}</td>
+                <td>{{ r.url }}</td>
+                <td style="text-align: center;">
+                    <input class="tipourl tu" ida="{{ r.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="EXTERNA / INTERNA" type="checkbox" {% if r.externa %}checked{% endif %}>
+                </td>
+                <td style="text-align: center">
+                    {% if r.logo %}
+                        <a href='{{ r.logo.url }}' class="fancybox" rel="group"><img class="img-polaroid" src="{{ r.logo.url }}" style="width: 20px; height: 20px;"></a>
+                    {% endif %}
+                </td>
+                <td style="text-align: center">
+                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                        <a href="javascript:;" nhref="/adm_institucion?action=editbibvirtual&id={{ r.id }}" class="btn btn-ssm btn-success tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                        <a href="javascript:;" nhref="/adm_institucion?action=delbibvirtual&id={{ r.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

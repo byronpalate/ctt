@@ -1,0 +1,16 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_archivo").addClass("validate[required]");
+
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='importar'/>
+{% endblock %}
+{% block buttonname %}Guardar{% endblock %}

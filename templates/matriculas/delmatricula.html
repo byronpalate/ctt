@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/matriculas?action=matricula&id={{ matricula.nivel.id }}{% endblock %}
+{% block formaction %}/matriculas{% endblock %}
+{% block formactionvalue %}delmatricula{% endblock %}
+{% block formobjectid %}{{ matricula.id }}{% endblock %}
+{% block formobjectname %}la matricula{% endblock %}
+{% block formobjectrepr %}{{ matricula.inscripcion.persona }}{% endblock %}

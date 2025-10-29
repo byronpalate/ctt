@@ -1,0 +1,27 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_descripcion, #id_codigo").addClass("validate[required]");
+
+
+             $("#id_codigo").blur(function () {
+                numerico($(this), 0, 0, 0);
+             });
+
+             $("#id_porcientoiva").blur(function () {
+                numerico($(this), 0, 0, 2);
+             });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_institucion?t=4&h3=3{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion?t=4&h3=3{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editiva'/>
+    <input type='hidden' name='id' value='{{ iva.id }}'/>
+{% endblock %}
+{% block formback %}/adm_institucion?t=4&h3=3{% endblock %}

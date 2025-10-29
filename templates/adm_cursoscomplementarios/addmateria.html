@@ -1,0 +1,157 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_fechainicio, #id_fechafin").datepicker({format:"dd-mm-yyyy"});
+            $("#id_asignatura, #id_fechainicio, #id_fechafin").addClass("validate[required]");
+
+            $("#id_califmaxima").blur(function(){
+                numerico($(this),0,100,2);
+                if (parseFloat($(this).val())<= parseFloat($('#id_califminima').val())){
+                    $('#id_califminima').val($(this).val());
+                }
+            });
+
+            $("#id_asistminima").blur(function(){
+                numerico($(this),0,100,0);
+            });
+
+            $("#id_creditos").blur(function(){
+                numerico($(this), 0, 20, 4);
+            });
+
+            $("#id_califminima").blur(function(){
+                numerico($(this),0,100,2);
+                if (parseFloat($(this).val())>= parseFloat($('#id_califmaxima').val())){
+                    $(this).val($('#id_califmaxima').val());
+                }
+            });
+
+            validacalificacion= function(){
+                if ($("#id_calificar").is(":checked")){
+                    $('#id_califmaxima , #id_califminima').removeAttr('disabled').addClass('validate[required]');
+                }
+                else{
+                    $('#id_califmaxima , #id_califminima').attr({'disabled': 'disabled'}).removeClass("validate[required]");
+                }
+            };
+
+            $("#id_calificar").click(function(){
+                validacalificacion();
+            });
+
+
+            validacalificacion();
+
+            $("#id_profesor").addClass("validate[required]");
+
+            ItemsDisplay = function (item) {
+                if (item.name){
+                    return $('<span>' + item.name+ '</span>');
+                }else{
+                    return '---------';
+                }
+            };
+
+
+            $("#id_profesor_select2").select2({
+                dropdownParent: $('#formulariomodaldinamico'),
+                width: '100%',
+                placeholder: "---------",
+                allowClear: true,
+                ajax: {
+                    url: '/api',
+                    type: "POST",
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page,
+                            a: 'data',
+                            model: 'Profesor:activo=True::10',
+                            p: 1,
+                            s: 10,
+                            csrfmiddlewaretoken: csrftoken
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.data,
+                            pagination: {
+                                more: (params.page * 30) < data.total_count
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                escapeMarkup: function (markup) { return markup; },
+                minimumInputLength: 1,
+                templateResult: ItemsDisplay,
+                templateSelection: ItemsDisplay
+            }).on("select2:select", function (evt) {
+                $("#id_profesor").attr({"value":(evt.params.data.id)});
+            });
+
+            $("#id_profesor").attr({"value": ""});
+            $("#id_profesor_select2").val(0).trigger("change");
+
+
+            usa_lms = function () {
+                if ($("#id_usalms").is(':checked')){
+                    $("#fieldset_lms, #fieldset_plantillalms").show();
+                }else{
+                    $("#fieldset_lms, #fieldset_plantillalms").hide();
+                }
+            };
+
+            $("#id_usalms").change(function () {
+                usa_lms();
+            });
+
+            usa_lms();
+
+            $('#id_lms').change(function(){
+                $('#id_plantillalms').children().remove().end().append('<option selected="selected" value="">---------</option>');
+                var id = parseInt($('#id_lms').val());
+                if (id > 0){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_mallas",
+                        data: {'action': 'plantillalms', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (i in data.lista){
+                                    elemento = data.lista[i];
+                                    $('#id_plantillalms').append('<option value="'+elemento.id+'">'+elemento.nombre+'</option>');
+                                }
+                            } else {
+                                $('#id_lms').val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            $('#id_lms').val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios?action=materias&id={{ curso.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios?action=materias&id={{ curso.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addmateria'/>
+    <input type='hidden' name='id' value='{{ curso.id }}'/>
+{% endblock %}
+{% block formback %}/adm_cursoscomplementarios?action=materias&id={{ curso.id }}{% endblock %}

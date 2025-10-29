@@ -1,0 +1,63 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_carreras{% endblock %}
+{% block headcanvas %}
+    <div class='row mb-2'>
+        <h4>{{ title }}
+            <br>Carrera: {{ carrera }}</h4>
+    </div>
+    {% if perms.ctt.puede_modificar_carreras %}
+        <div class="row">
+            <div class='col-12 col-md-6 mb-2'>
+                <a href="javascript:;" nhref="/adm_carreras?action=addtituloscarrera&id={{ carrera.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Título</th>
+                    <th style="width: 50px;text-align: center;">Uso</th>
+                    <th style="width: 80px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for titulo in titulos %}
+                    <tr>
+                        <td>{{ titulo }}</td>
+                        <td style="text-align: center">
+                            {% if titulo.tiene_mallas_usando %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="En uso">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="En uso">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_carreras %}
+                                {% if titulo.puede_eliminarse %}
+                                    <a  href="javascript:;" nhref='/adm_carreras?action=deltitulocarrera&id={{ titulo.id }}' class="btn btn-ssm btn-danger eliminacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

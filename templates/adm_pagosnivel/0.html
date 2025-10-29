@@ -1,0 +1,308 @@
+{% extends "adm_pagosnivel/view.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function () {
+
+            $(".seccion").click(function () {
+                bloqueointerface();
+                var id = $(this).attr('ids');
+                location.href = '/adm_pagosnivel?seccion=' + id;
+            });
+
+            $("#sel_sede").change(function () {
+                var elemento = $(this);
+                var id = parseInt(elemento.val());
+                bloqueointerface();
+                location.href = "/adm_pagosnivel?seccion=0&action=tipocursos&sede=" + id;
+            });
+
+            {% if perms.ctt.puede_modificar_precioperiodo %}
+                $(".preciomatri_curso").blur(function () {
+                    numerico($(this), 0, 0, 2);
+                    var elemento = $(this);
+                    var id = elemento.attr('idp');
+                    var va = parseFloat(elemento.attr('va'));
+                    var valor = parseFloat(elemento.val());
+                    if (valor !== va) {
+                        bloqueointerface();
+                        $.ajax({
+                            type: "POST",
+                            url: "/adm_pagosnivel",
+                            data: {
+                                'action': 'act_precio_mat_curso',
+                                'id': id,
+                                'valor': valor,
+                                'csrfmiddlewaretoken': csrftoken
+                            },
+                            success: function (data) {
+                                desbloqueointerface();
+                                if (data.result === 'ok') {
+                                    elemento.attr({'va': valor});
+                                } else {
+                                    elemento.val(va);
+                                    NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                                }
+                            },
+                            error: function () {
+                                desbloqueointerface();
+                                elemento.val(elemento.attr('va'));
+                                NotificacionError('!!!', 'Error de conexión');
+                            },
+                            dataType: "json"
+                        });
+                    }
+                });
+
+                $(".precioarancel_curso").blur(function () {
+                    numerico($(this), 0, 0, 2);
+                    var elemento = $(this);
+                    var id = elemento.attr('idp');
+                    var va = parseFloat(elemento.attr('va'));
+                    var valor = parseFloat(elemento.val());
+                    if (valor !== va) {
+                        bloqueointerface();
+                        $.ajax({
+                            type: "POST",
+                            url: "/adm_pagosnivel",
+                            data: {
+                                'action': 'act_precio_ara_curso',
+                                'id': id,
+                                'valor': valor,
+                                'csrfmiddlewaretoken': csrftoken
+                            },
+                            success: function (data) {
+                                desbloqueointerface();
+                                if (data.result === 'ok') {
+                                    elemento.attr({'va': valor});
+                                } else {
+                                    elemento.val(va);
+                                    NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                                }
+                            },
+                            error: function () {
+                                desbloqueointerface();
+                                elemento.val(elemento.attr('va'));
+                                NotificacionError('!!!', 'Error de conexión');
+                            },
+                            dataType: "json"
+                        });
+                    }
+                });
+
+                $(".preciocuotas_curso").blur(function () {
+                    numerico($(this), 0, 0, 0);
+                    var elemento = $(this);
+                    var id = elemento.attr('idp');
+                    var va = parseFloat(elemento.attr('va'));
+                    var valor = parseFloat(elemento.val());
+                    if (valor !== va) {
+                        bloqueointerface();
+                        $.ajax({
+                            type: "POST",
+                            url: "/adm_pagosnivel",
+                            data: {
+                                'action': 'act_precio_cuotas_curso',
+                                'id': id,
+                                'valor': valor,
+                                'csrfmiddlewaretoken': csrftoken
+                            },
+                            success: function (data) {
+                                desbloqueointerface();
+                                if (data.result === 'ok') {
+                                    elemento.attr({'va': valor});
+                                } else {
+                                    elemento.val(va);
+                                    NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                                }
+                            },
+                            error: function () {
+                                desbloqueointerface();
+                                elemento.val(elemento.attr('va'));
+                                NotificacionError('!!!', 'Error de conexión');
+                            },
+                            dataType: "json"
+                        });
+                    }
+                });
+            {% endif %}
+        });
+    </script>
+{% endblock %}
+{#{% block contenidoseccion %}#}
+{% block contenidotab %}
+    <div class="tab-pane fade {% if seccion == 0 %}show active{% endif %}" id="tab-0" role="tabpanel"
+         aria-labelledby="tab">
+
+        <div class="row mb-2">
+            <div class='col-12'>
+                <select id="sel_sede" style="width: 100%" class="form-select form-select-sm">
+                    {% for s in sedes %}
+                        <option value="{{ s.id }}" {% if s == sede %}selected="selected"{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="row mb-2">
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/adm_pagosnivel?action=addcostoscursos"
+                   class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th>Tipo de Curso</th>
+                        <th style="width:65px; text-align: center">Curso y escuelas</th>
+                        <th style="width:65px; text-align: center">Unidad Titulación</th>
+                        <th style="width:65px; text-align: center">Act. Conocim.</th>
+                        <th style="width: 60px; text-align: center">Costo Libre</th>
+                        <th style="width:50px; text-align: center">Difernc.</th>
+                        <th style="width:50px; text-align: center">Valida promedio</th>
+                        <th style="width:60px; text-align: center">Matrícula</th>
+                        <th style="width:60px; text-align: center">Arancel</th>
+                        <th style="width:50px; text-align: center">Cuotas</th>
+                        <th style="width: 100px; text-align: center">Diferenciado</th>
+                        <th style="width:50px; text-align: center">Activo</th>
+                        <th style="width: 80px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for tipo in tiposcursos %}
+                        <tr>
+                            <td>{{ tipo.nombre }}</td>
+                            {% with costo_periodo=tipo|args:periodo|args:sede|call:"mis_costos_periodo" %}
+                                <td style="text-align: center">
+                                    {% if tipo.cursos %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Cursos y escuelas">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Cursos y escuelas">No</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if tipo.titulacion %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Unidad de titulación">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Unidad de titulación">No</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if tipo.actualizacionconocimiento %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="actulización de conocimientos">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="actulización de conocimientos">No</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if tipo.costolibre %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Costo libre">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Costo libre">No</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if tipo.costodiferenciado %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Costo diferenciado">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Costo diferenciado">No</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if tipo.validapromedio %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Válida promedio">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Válida promedio">No</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if tipo.costolibre or tipo.costodiferenciado %}
+                                        -
+                                    {% else %}
+                                        <input {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                               {% if costo_periodo.activo %}disabled="disabled"{% endif %} type="text"
+                                               id="precio_mat_curso" idn="{{ nivel.id }}"
+                                               va="{{ costo_periodo.costomatricula|floatformat:2 }}"
+                                               idp="{{ costo_periodo.id }}"
+                                               class="imp-numbermed-right preciomatri_curso form-control-sm"
+                                               value="{{ costo_periodo.costomatricula|floatformat:2 }}">
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if tipo.costolibre or tipo.costodiferenciado %}
+                                        -
+                                    {% else %}
+                                        <input {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                               {% if costo_periodo.activo %}disabled="disabled"{% endif %} type="text"
+                                               id="precio_aran_curso" va="{{ costo_periodo.costocuota|floatformat:2 }}"
+                                               idp="{{ costo_periodo.id }}"
+                                               class="imp-numbermed-right precioarancel_curso form-control-sm"
+                                               value="{{ costo_periodo.costocuota|floatformat:2 }}">
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if tipo.costolibre or tipo.costodiferenciado %}
+                                        -
+                                    {% else %}
+                                        <input {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                               {% if costo_periodo.activo %}disabled="disabled"{% endif %} type="text"
+                                               id="precio_cuotas_curso" va="{{ costo_periodo.cuotas|floatformat:0 }}"
+                                               idp="{{ costo_periodo.id }}"
+                                               class="imp-numbersmall preciocuotas_curso form-control-sm"
+                                               value="{{ costo_periodo.cuotas|floatformat:0 }}">
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if tipo.costodiferenciado %}
+                                        <a href='/adm_pagosnivel?action=costosdiferenciadoscurso&id={{ costo_periodo.id }}'
+                                           class='btn btn-sm btn-info'><i class='icon-list'></i> Costos</a>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if costo_periodo.activo %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Activo">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" title="Activo">No</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    <a href="javascript:;"
+                                       nhref="/adm_pagosnivel?action=editcostoscursos&id={{ tipo.id }}"
+                                       class='formmodal btn btn-success btn-ssm tu' data-bs-toggle="tooltip"
+                                       data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                    {% if costo_periodo.activo %}
+                                        <a href="javascript:;"
+                                           nhref='/adm_pagosnivel?action=desactivartipo&id={{ costo_periodo.id }}'
+                                           class='btn btn-ssm btn-danger confirmacionmodal tu' data-bs-toggle="tooltip"
+                                           data-bs-placement="top" title='Desactivar'><i class='icon-lock'></i></a>
+                                    {% else %}
+                                        <a href="javascript:;"
+                                           nhref='/adm_pagosnivel?action=activartipo&id={{ costo_periodo.id }}'
+                                           class='btn btn-ssm btn-success confirmacionmodal tu' data-bs-toggle="tooltip"
+                                           data-bs-placement="top" title='Activar'><i class='icon-unlock'></i></a>
+                                    {% endif %}
+                                </td>
+                            {% endwith %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

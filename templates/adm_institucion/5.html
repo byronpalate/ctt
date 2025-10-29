@@ -1,0 +1,22 @@
+{% extends "adm_institucion/view.html" %}
+{% block contenidoseccion %}
+    <div class="row-fluid">
+        <div class="span12">
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link subseccion {% if subseccion == 0 %}active{% endif %}" ids="0" id="tab0" data-bs-toggle="tab" data-bs-target="#tab-1" type="button" role="tab" aria-controls="tab-2" aria-selected="false">Grupos</a>
+                </li>
+                <li class="nav-item " role="presentation">
+                    <a class="nav-link subseccion {% if subseccion == 1 %}active{% endif %}" ids="1" id="tab1" data-bs-toggle="tab" data-bs-target="#tab-2" type="button" role="tab" aria-controls="tab-2" aria-selected="true">Modulos</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link subseccion {% if subseccion == 2 %}active{% endif %}" ids="2" id="tab2" data-bs-toggle="tab" data-bs-target="#tab-3" type="button" role="tab" aria-controls="tab-2" aria-selected="false">Asignacion de reportes</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link subseccion {% if subseccion == 3 %}active{% endif %}" ids="3" id="tab3" data-bs-toggle="tab" data-bs-target="#tab-4" type="button" role="tab" aria-controls="tab-2" aria-selected="false">Asignacion de modulos</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    {% block contenidosubseccion %}{% endblock %}
+{% endblock %}

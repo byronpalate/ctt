@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion?t=4&h3=4{% endblock %}
+{% block formactionvalue %}delcuenta{% endblock %}
+{% block formobjectid %}{{ cuenta.id }}{% endblock %}
+{% block formobjectname %}la cuenta bancaria {% endblock %}
+{% block formobjectrepr %}{{ cuenta }}{% endblock %}

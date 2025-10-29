@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_mallas?action=itinerarios&id={{ asignatura.malla.id }}{% endblock %}
+{% block formdestination %}/adm_mallas?action=itinerarios&id={{ asignatura.malla.id }}{% endblock %}}
+{% block formactionvalue %}delitinerario{% endblock %}
+{% block formobjectid %}{{ asignatura.id }}{% endblock %}
+{% block formobjectname %}la asignatura{% endblock %}
+{% block formobjectrepr %}{{ asignatura.asignatura }}{% endblock %}

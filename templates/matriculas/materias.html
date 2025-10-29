@@ -1,0 +1,417 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $("#freeasign").click(function () {
+                var asignatura = $("#asignaturaslibres").val();
+                location.href = "/matriculas?action=promote&matricula={{ matricula.id }}&id="+asignatura;
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/matriculas?action=matricula&id={{ matricula.nivel.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>{{ matricula.nivel }}{% if matricula.nivel.cerrado %} <span class='badge text-bg-danger'>CERRADO</span>{% endif %}
+                <br>Estudiante: {{ matricula.inscripcion }}</h4>
+        </div>
+    </div>
+    {% if matricula.tiene_pago and not matricula.nivel.nivelgrado %}
+        <div class='row'>
+            <div class='col-12'>
+                <div class="alert alert-danger">
+                    <strong>!Alerta!</strong> Si adiciona materias, el estudiante debera pasar por caja para pagar los valores adeudados.
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Asignatura</th>
+                    <th style="width: 70px; text-align: center;">Nivel</th>
+                    {% if perms.ctt.puede_modificar_matriculas %}
+                        <th style="width: 50px; text-align: center">Movilidad</th>
+                        <th style="width: 50px; text-align: center">Sin Asist.</th>
+                    {% endif %}
+                    <th style="width: 50px; text-align: center;">Verif. Horario</th>
+                    <th style="width: 80px; text-align: center;">Asignada</th>
+                    <th style="width: 80px; text-align: center;">Inicio</th>
+                    <th style="width: 80px; text-align: center;">Fin</th>
+                    <th style="width: 60px; text-align: center;">Cr&eacute;ditos</th>
+                    <th style="width: 60px; text-align: center;">Horas</th>
+                    <th style="width: 60px; text-align: center;">Nota</th>
+                    <th style="width: 60px; text-align: center;">Asistencia</th>
+                    <th style="width: 60px;"> </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for materia in materias %}
+                    <tr>
+                        <td>
+                            {{ materia.materia.nombre_completo }}
+                            {% if materia.materia.asignatura != materia.asignaturareal %}
+                                <br><span class="smaller"><b>{{ materia.asignaturareal }}</b></span>
+                            {% endif %}
+                            <br><span class="smaller">{{ materia.materia.modeloevaluativo }} - {{ materia.materia.malla.id }}</span><br>
+                            {% if materia.materia.nivel != matricula.nivel %}
+                                <span class='smaller error'>{{ materia.materia.nivel }}</span> <br>
+                            {% endif %}
+                            {{ materia.materia.profesor_principal|default_if_none:"SIN DOCENTE" }}<br>
+                            {% if not materia.retirado %}
+                                <span class='badge text-bg-{% if materia.aprobada %}success{% else %}info{% endif %}'>{{ materia.estado }}</span>
+                            {% else %}
+                                <span class='badge text-bg-info'>Retirado</span>
+                            {% endif %}
+                            {% if materia.es_materiamalla %}
+                                <span class='badge text-bg-success tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Materia de la malla">MA</span>
+                            {% elif materia.es_materiamodulo %}
+                                <span class='badge text-bg-success tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Modulo">MO</span>
+                            {% else %}
+                                <span class='badge text-bg-danger tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Fuera de malla">FM</span>
+                            {% endif %}
+                            {% if materia.validacreditos %}
+                                <span class='badge text-bg-success tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Válida para créditos">VC</span>
+                            {% endif %}
+                            {% if materia.validapromedio %}
+                                <span class='badge text-bg-success tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Válida promedio">VP</span>
+                            {% endif %}
+                            {% if materia.movilidad %}
+                                <span class='badge text-bg-dark tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Movilidad">M</span>
+                            {% endif %}
+                            {% if materia.convalidada or materia.homologada or materia.retirado %}
+                                {% if materia.retirado %}
+                                    <span class='badge text-bg-warning tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Se retiro de la materia">RETIRADO</span>
+                                {% endif %}
+                                {% if materia.convalidada or materia.homologada %}
+                                    <span class='badge text-bg-success'>HOMOLOGADA</span>
+                                {% endif %}
+                                {% if materia.materia.cerrado %}
+                                    <span class='badge text-bg-danger'>CERRADA {{ materia.fechacierre|date:"Y-m-d" }}</span>
+                                {% endif %}
+                            {% else %}
+                                {% if materia.sinasistencia %}
+                                    <span class='badge text-bg-warning tu' data-bs-toggle="tooltip" data-bs-placement="top" title="No valida asistencia">NA</span>
+                                {% endif %}
+                                {% if materia.valida_pararecord %}
+                                    <span class='badge text-bg-info tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Pasa al record">VALIDA</span>
+                                {% else %}
+                                    <span class='badge text-bg-danger tu' data-bs-toggle="tooltip" data-bs-placement="top" title="No pasa al record">NO VALIDA</span>
+                                {% endif %}
+                                {% if materia.evaluar %}
+                                    <span class='badge text-bg-warning tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Autorizado a evaluar">AE</span>
+                                {% endif %}
+                                {% if materia.evaluada %}
+                                    <span class='badge text-bg-success tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Realizo evaluacion">EVALU&Oacute;</span>
+                                {% endif %}
+                                {% if materia.materia.cerrado %}
+                                    <span class='badge text-bg-danger'>CERRADA {{ materia.fechacierre|date:"Y-m-d" }}</span>
+                                {% else %}
+                                    {% if materia.matriculas > 1 %}
+                                        <span class='badge text-bg-warning tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Cantidad de matriculas">{{ materia.matriculas }} MATRÍCULA</span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                            {% if materia.materia.intensivo %}
+                                <span class='badge text-bg-warning tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Inglés Intensivo">INTENSIVO</span>
+                            {% endif %}
+{#                        aqui eliminar#}
+                         - {{ materia.id }}
+                        </td>
+                        <td>
+                            {% if materia.asignaturamalla %}
+                                {{ materia.asignaturamalla.nivelmalla }}
+                            {% endif %}
+                        </td>
+                        {% if perms.ctt.puede_modificar_matriculas %}
+                            <td style="text-align: center">
+                                {% if not matricula.cerrada %}
+                                    {% if materia.movilidad %}
+                                        <a class="btn btn-ssm btn-danger confirmacionmodal" href="javascript:;" nhref="/matriculas?action=sinmovilidad&id={{ materia.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Sin Movilidad"><i class="icon-globe"></i></a>
+                                    {% else %}
+                                        <a class="btn btn-ssm btn-success confirmacionmodal" href="javascript:;" nhref="/matriculas?action=conmovilidad&id={{ materia.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Con Movilidad"><i class="icon-globe"></i></a>
+                                    {% endif %}
+                                {% else %}
+                                    {% if materia.movilidad %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Sin asistencia">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="sin asistencia">No</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if not matricula.cerrada %}
+                                    {% if materia.sinasistencia %}
+                                        <a class="btn btn-ssm btn-danger confirmacionmodal" href="javascript:;" nhref="/matriculas?action=sidebeasistir&id={{ materia.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Si debe asistir"><i class="icon-refresh"></i></a>
+                                    {% else %}
+                                        <a class="btn btn-ssm btn-success confirmacionmodal" href="javascript:;" nhref="/matriculas?action=nodebeasistir&id={{ materia.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="No debe asistir"><i class="icon-refresh"></i></a>
+                                    {% endif %}
+                                {% else %}
+                                    {% if materia.verificahorario %}
+                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Sin asistencia">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="sin asistencia">No</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                        <td style="text-align: center">
+                            {% if materia.verificahorario %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Verifica horario">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Verifica horario">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">{{ materia.fechaasignacion|date:'Y-m-d' }}</td>
+                        <td style="text-align: center;">{{ materia.materia.inicio|date:'Y-m-d' }}</td>
+                        <td style="text-align: center;">{{ materia.materia.fin|date:'Y-m-d' }}</td>
+                        {#                    estas lineas cogen los creditos de la MATERIA#}
+                        {#                        <td style="text-align: center;">{% if not materia.convalidada and not materia.homologada %}{{ materia.materia.creditos|floatformat:4 }}{% endif %}</td>#}
+                        {#                        <td style="text-align: center;">{% if not materia.convalidada and not materia.homologada %}{{ materia.materia.horas|floatformat:1 }}{% endif %}</td>#}
+                        {#                    en cambio aqui le muestro los crediso de la MATERIASASIGNADA#}
+                        <td style="text-align: center;">{% if not materia.convalidada and not materia.homologada %}{{ materia.creditos|floatformat:4 }}{% endif %}</td>
+                        <td style="text-align: center;">{% if not materia.convalidada and not materia.homologada %}{{ materia.horas|floatformat:1 }}{% endif %}</td>
+                        {#                    //////////////#}
+                        <td style="text-align: center;">{% if not materia.convalidada and not materia.homologada %}{{ materia.notafinal|floatformat:2 }}{% endif %}</td>
+                        <td style="text-align: center;">{% if not materia.convalidada and not materia.homologada %}{{ materia.asistenciafinal|floatformat:0 }}%{% endif %}</td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li class="dropdown smaller dropstart">
+                                        <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Impresión</a>
+                                        <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                            {% if reporte_0 %}
+                                                <li class="smaller"><a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&materiaasignada={{ materia.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Seguimiento sílabo estudiante</a></li>
+                                            {% endif %}
+                                        </ul>
+                                    </li>
+                                    {% if materia.materia.cerrado and materia.estado.id == 1 %}
+                                        <li class="dropdown-divider"></li>
+                                        {% if materia.es_materiamalla %}
+                                            <li class="smaller"><a href="javascript:;" tipos="{{ reporte_1.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_1.nombre }}&periodo={{ periodo.id }}&inscripcion={{ matricula.inscripcion.id }}&materiaasignada={{ materia.id }}&fecha={{ hoy|date:'Y-m-d' }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certificado de promoción</a></li>
+                                        {% elif materia.es_materiamodulo %}
+                                            <li class="smaller"><a href="javascript:;" tipos="{{ reporte_2.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_2.nombre }}&matricula={{ materia.matricula.id }}&materiaasignada={{ materia.id }}" class="reportedirecto dropdown-item"><i class="icon-print"></i> Certificado de promoción inglés</a></li>
+                                        {% else %}
+
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if perms.ctt.puede_modificar_calificacion_tardia %}
+                                        {% if materia.valida_pararecord and not materia.convalidada and not materia.homologada and not materia.materia.cerrado   %}
+                                            <li class="smaller"><a href='/matriculas?action=calificaciontardia&id={{ materia.id }}' class="dropdown-item"><i class="icon-pencil"></i> Calificaci&oacute;n tard&iacute;a</a></li>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if materia.materia.cerrado and materia.valida_pararecord %}
+                                        {% if not PERSONA_ADMINS_ACADEMICO_ID %}
+                                            <li class="smaller"><a href='/matriculas?action=actualizarrecord&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-retweet"></i> Actualizar record</a></li>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if perms.ctt.puede_modificar_matriculas %}
+                                        {% if materia.homologada or materia.convalidada %}
+                                            {% if materia.convalidada %}
+                                                <li class="smaller"><a href='/matriculas?action=convalidar&id={{ materia.id }}' class="dropdown-item"><i class="icon-edit"></i> Homologaci&oacute;n externa</a></li>
+                                                {% if not materia.materia.cerrado %}
+                                                    <li class="smaller"><a href='/matriculas?action=delconvalidacion&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-remove"></i> Eliminar homologaci&oacute;n</a></li>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if materia.homologada %}
+                                                <li class="smaller"><a href='/matriculas?action=homologar&id={{ materia.id }}' class="dropdown-item"><i class="icon-edit"></i> Homologaci&oacute;n interna</a></li>
+                                                {% if not materia.materia.cerrado %}
+                                                    <li class="smaller"><a href='/matriculas?action=delhomologacion&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-remove"></i> Eliminar homologaci&oacute;n</a></li>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if not materia.materia.cerrado %}
+                                            {% if materia.esta_retirado %}
+                                                <li class="smaller"><a href='/matriculas?action=continuarmateria&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-refresh"></i> Continuar la materia</a></li>
+                                                {% if not materia.cerrado %}
+                                                    {% if materia.valida_pararecord %}
+                                                        <li class="smaller"><a href='/matriculas?action=novalidapararecord&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-lock"></i> No pasa al record</a></li>
+                                                    {% else %}
+                                                        <li class="smaller"><a href='/matriculas?action=validapararecord&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-plus"></i> Pasa al record</a></li>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                                {% if usa_retiro_materia and materia.matricula.retirado %}
+                                                    {% if not materia.homologada and not materia.convalidada %}
+                                                        <li class="smaller"><a  href="javascript:;" nhref='/matriculas?action=retirarmateria&id={{ materia.id }}' class="dropdown-item formmodal"><i class="icon-remove"></i> Retirar de la materia</a></li>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if not matricula.cerrada %}
+                                            {% if not materia.convalidada and not materia.homologada and materia.valida_pararecord and not materia.esta_retirado and not materia.materia.cerrado %}
+                                                <li class="smaller"><a href='/matriculas?action=convalidar&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-arrow-down"></i> Homologaci&oacute;n externa</a></li>
+                                                <li class="smaller"><a href='/matriculas?action=homologar&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-refresh"></i> Homologaci&oacute;n interna</a></li>
+                                            {% endif %}
+                                            {% if not materia.homologada and not materia.convalidada and materia.valida_pararecord and not materia.retirado %}
+                                                {% if not materia.materia.cerrado %}
+                                                    <li class="smaller"><a href='/matriculas?action=movermateriasession&id={{ materia.id }}' class="dropdown-item"><i class="icon-retweet"></i> Mover de Sesión</a></li>
+                                                    <li class="smaller"><a href='/matriculas?action=fechaasignacion&id={{ materia.id }}' class="dropdown-item"><i class="icon-calendar"></i> Fecha asignación</a></li>
+                                                    {% if genera_rubro_derecho %}
+                                                        <li class="smaller"><a href='/matriculas?action=derechoexamen&id={{ materia.id }}' class="dropdown-item"><i class="icon-money"></i> Derecho</a></li>
+                                                        <li class="smaller"><a href='/matriculas?action=derechoexamenextra&id={{ materia.id }}' class="dropdown-item"><i class="icon-money"></i> Derecho Extraordinario</a></li>
+                                                    {% endif %}
+                                                    {% if perms.ctt.puede_modificar_asistenciamateriaasignada %}
+                                                        {% if materia.sinasistencia %}
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=conasistencia&id={{ materia.id }}'><i class="icon-plus"></i> Con asistencia</a></li>
+                                                        {% else %}
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=sinasistencia&id={{ materia.id }}'><i class="icon-remove"></i> Sin asistencia</a></li>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                    {% if materia.puedo_eliminarla and perms.ctt.puede_modificar_matriculas and permiteagregaciones %}
+                                                        <li class="dropdown-divider"></li>
+                                                        <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=delmateria&id={{ materia.id }}'><i class="icon-remove"></i> Eliminar materia</a></li>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                <tr>
+                    <td colspan="7"></td>
+                    <td style="text-align: center;"><b>{{ matricula.totalcreditos|floatformat:4 }}</b></td>
+                    <td style="text-align: center;"><b>{{ matricula.totalhoras|floatformat:0 }}</b></td>
+                    <td style="text-align: center;">{% if matricula.cerrada %}<b>{{ matricula.promedionotas|floatformat:2 }}</b>{% endif %}</td>
+                    <td style="text-align: center;">{% if matricula.cerrada %}<b>{{ matricula.promedioasistencias|floatformat:0 }}%</b>{% endif %}</td>
+                    <td colspan="2"></td>
+                </tr>
+                </tfoot>
+            </table>
+            <!-- PENDIENTES Y REPROBADAS -->
+            {% if not matricula.retirado and not matricula.cerrada and perms.ctt.puede_modificar_matriculas %}
+                <!-- MATERIAS MALLA -->
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th colspan="5">Materias de malla (pendientes y reprobadas)</th>
+                    </tr>
+                    <tr>
+                        <th>Asignatura</th>
+                        <th style="width: 150px">Nivel</th>
+                        <th style="width: 100px; text-align: center">Créditos</th>
+                        <th style="width: 80px; text-align: center">Costo</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for asignaturamalla in pendientes_malla %}
+                        <tr>
+                            {% with puedetomar=matricula.inscripcion|args:asignaturamalla.asignatura|call:"puede_tomar_materia" cursando=matricula|args:asignaturamalla.asignatura|call:"cursando_asignatura" %}
+                                <td>
+                                    {{ asignaturamalla.asignatura.nombre }}
+                                </td>
+                                <td>{{ asignaturamalla.nivelmalla }}</td>
+                                <td style="text-align: center">{{ asignaturamalla.creditos }}</td>
+                                <td style="text-align: right">
+                                    {% if puedetomar and not cursando and permiteagregaciones %}
+                                        {% if esposgrado %}
+                                            {% with costo=matricula|args:asignaturamalla.asignatura|call:"calcular_costo_materia_posgrado" %}
+                                                {% if costo.0 %}$ {{ costo.0|floatformat:2 }} {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            {% with costo=matricula|args:asignaturamalla.asignatura|call:"calcular_costo_materia" %}
+                                                {% if costo.0 %}$ {{ costo.0|floatformat:2 }} {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if permiteagregaciones and puedetomar and not cursando %}
+                                        <a href="/matriculas?action=promote&matricula={{ matricula.id }}&id={{ asignaturamalla.asignatura.id }}&tiponominacion=moduloasignar" class='btn btn-success btn-ssm'><i class="icon-arrow-up"></i> Asignar</a>
+                                    {% endif %}
+                                </td>
+                            {% endwith %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="20">NO EXISTEN DATOS</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <!-- MATERIAS MODULOS -->
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th colspan="5">Materias de M&oacute;dulos (pendientes y reprobadas)</th>
+                    </tr>
+                    <tr>
+                        <th>Asignatura</th>
+                        <th style="width: 100px; text-align: center">Costo</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for modulomalla in pendientes_modulos %}
+                        <tr>
+                            {% with disponible=modulomalla.asignatura|args:periodo|call:"disponible_periodo" puedetomar=matricula.inscripcion|args:modulomalla.asignatura|call:"puede_tomar_materia_modulo" cursando=matricula|args:modulomalla.asignatura|call:"cursando_asignatura" %}
+                                <td>{{ modulomalla.asignatura.nombre }}</td>
+                                <td style="text-align: right">
+                                    {% if puedetomar and not cursando %}
+                                        {% with costo=matricula|args:modulomalla.asignatura|call:"calcular_costo_materia" %}
+                                            {% if costo.0 %}$ {{ costo.0|floatformat:2 }} {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center">
+                                    {% if permiteagregaciones %}
+                                        {% if disponible and puedetomar and not cursando %}
+                                            <a href="/matriculas?action=promote&matricula={{ matricula.id }}&id={{ modulomalla.asignatura.id }}&tiponominacion=moduloasignar" class='btn btn-success btn-ssm'><i class="icon-arrow-up"></i> Asignar&nbsp;</a>
+                                        {% endif %}
+                                    {% endif %}
+                                    <p></p>
+                                    {% if disponible and puedetomar and not cursando %}
+                                        <a href="/matriculas?action=promote&matricula={{ matricula.id }}&id={{ modulomalla.asignatura.id }}&tiponominacion=moduloadelanto" class='btn btn-danger btn-ssm'><i class="icon-forward"></i> Adelanto</a>
+                                    {% endif %}
+                                </td>
+                            {% endwith %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="20">NO EXISTEN DATOS</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <!-- RECORD ACADEMICO -->
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr><th colspan="6">Aprobadas</th></tr>
+                    <tr>
+                        <th>Asignatura</th>
+                        <th style="text-align: center; width: 150px">Nota</th>
+                        <th style="text-align: center; width: 150px">Asistencia</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for record in records %}
+                        <tr>
+                            <td>{{ record.asignatura.nombre }}</td>
+                            <td style="text-align: center;">{{ record.nota|floatformat:2 }}</td>
+                            <td style="text-align: center;">{{ record.asistencia|floatformat:0 }}%</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="20">NO EXISTEN DATOS</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

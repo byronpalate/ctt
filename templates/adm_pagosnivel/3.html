@@ -1,0 +1,65 @@
+{% extends "adm_pagosnivel/view.html" %}
+{% load ctt_extras %}
+{% block headcontenidoseccion %}
+    <script type="text/javascript">
+        $(function () {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidotab %}
+    <div class="tab-pane fade {% if seccion == 3 %}show active{% endif %}" id="tab3" role="tabpanel" aria-labelledby="tab3" tabindex="0">
+        <div class='row mb-2'>
+            <div class='col-12'>
+                <select id="sel_modalidad" style="width: 100%" class="form-select form-select-sm">
+                    {% for m in modalidades %}
+                        <option value="{{ m.id }}" {% if m == modalidad %}selected="selected"{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/adm_pagosnivel?action=addfechaproceso&mid={{ modalidad.id }}" class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar fecha proceso</a>
+            </div>
+        </div>
+        {% if procesos %}
+            <div class='row'>
+                <div class='col-12'>
+                    <h6>Archivo de autorización
+                        <a href="javascript:;" nhref="adm_pagosnivel?action=subir&id={{ procesos.id }}&mid={{ modalidad.id }}" class="btn btn-ssm btn-info tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Subir"><i class="icon-arrow-up"></i></a>
+                        {% if procesos.archivo %}
+                            <a class="btn btn-ssm btn-success tu" href="{{ procesos.archivo.url }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar" target="_blank"><i class="icon-download-alt"></i></a>
+                        {% endif %}
+                    </h6>
+                </div>
+            </div>
+        {% endif %}
+        <div class='row'>
+            <div class='col-12'>
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
+                    <tr>
+                        <th>Orden</th>
+                        <th>Fecha límite</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for f in fechasprocesos %}
+                        <tr>
+                            <td>{{ f.orden }}</td>
+                            <td>{{ f.fechalimite|date:"Y-m-d"  }}</td>
+                            <td style="text-align: center">
+                                <a href="javascript:;" nhref="/adm_pagosnivel?action=editfechaproceso&id={{ f.id }}" class='formmodal btn btn-success btn-ssm tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="20">NO EXISTEN DATOS</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

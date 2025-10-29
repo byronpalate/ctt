@@ -1,0 +1,99 @@
+{% extends "adm_institucion/6.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+            var envio = false;
+
+            $('.apiactivo').change(function () {
+                if (!envio){
+                    var elemento = $(this);
+                    var id = elemento.attr('ide');
+                    var valor = elemento.is(':checked');
+                    envio = true;
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_institucion",
+                        data: {'action': 'activarapi', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result !== 'ok') {
+                                if (elemento.is(':checked')){
+                                    elemento.prop('checked', false);
+                                } else {
+                                    elemento.prop('checked', true);
+                                }
+                                envio = false;
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            } else {
+                                envio = false;
+                            }
+                        },
+                        error: function() {
+                            if (elemento.is(':checked')){
+                                elemento.prop('checked', false);
+                            } else {
+                                elemento.prop('checked', true);
+                            }
+                            envio = false;
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    <div class='row'>
+        <div class='col-12'>
+            <a href="javascript:;" nhref="/adm_institucion?action=addapi" class="btn btn-sm mb-2 btn-success formmodal"><i class="icon-arrow-up"></i> Adicionar</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class='table table-bordered '>
+                <thead class="table-light">
+                <tr class="autoheight">
+                    <th>Nombre corto</th>
+                    <th style="width: 250px">Descripción</th>
+                    <th style="width: 250px;text-align: center">Key</th>
+                    <th style="width: 80px;text-align: center">Tipo</th>
+                    <th style="width: 30px;"><div class="rotate" style="margin: 5px; "><span badge-height="55" class="badge text-bg-primary" style="white-space: nowrap;">Activo</span></div></th>
+                    <th style="width: 100px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for api in apis %}
+                    <tr>
+                        <td>{{ api.nombrecorto }}</td>
+                        <td>{{ api.descripcion }}</td>
+                        <td>{{ api.key }}</td>
+                        <td style="text-align: center">
+                            {% if api.tipo == 1 %}
+                                GET
+                            {% else %}
+                                POST
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0;">
+                            <div class="form-check form-switch" style="margin-left: 0.4em; margin-top: 1.1em;">
+                                <input class=" form-check-input apiactivo" ide="{{ api.id }}" {% if api.activo %}checked{% endif %} type="checkbox" role="switch" id="flexSwitchCheckDefault">
+                            </div>
+                        </td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                <a class="formmodal btn btn-ssm btn-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editapi&id={{ api.id }}"><i class="icon-edit"></i></a>
+                                <a href="javascript:;" nhref="/adm_institucion?action=delapi&id={{ api.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

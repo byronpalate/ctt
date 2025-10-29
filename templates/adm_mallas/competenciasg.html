@@ -1,0 +1,61 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas{% endblock %}
+{% block headcanvas%}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Malla: {{ malla }}</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_mallas %}
+        <div class='row mb-2'>
+            <div class='col-12'>
+                <a href="javascript:;" nhref="/adm_mallas?action=addcompeg&id={{ malla.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-hover'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 10px;"></th>
+                    <th>Competencia</th>
+                    <th style="width: 60px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for c in competemcias %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ c }}</td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_mallas %}
+                                {% with en_uso=malla|args:c|call:'usando_competencia_generica' %}
+                                    {% if not en_uso %}
+                                        <a class="btn btn-danger btn-ssm tu eliminacionmodal" href="javascript:;" nhref="/adm_mallas?action=delcompeg&id={{ malla.id }}&idc={{ c.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

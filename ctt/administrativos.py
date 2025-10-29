@@ -30,8 +30,6 @@ def view(request):
     data = {}
     adduserdata(request, data)
     persona = request.session['persona']
-    if persona.id in PERM_DIRECTOR_SIS:
-        data['PERM_DIRECTOR_SIS'] = True
     if request.method == 'POST':
         action = request.POST['action']
 
@@ -241,24 +239,21 @@ def view(request):
                     personaadmin.crear_perfil(inscripcion=nuevainscripcion)
                     personaadmin.save(request)
                     minivel = nuevainscripcion.mi_nivel()
-                    if form.cleaned_data['prenivelacion']:
-                        nuevainscripcion.nivelhomologado = form.cleaned_data['nivelmalla']
-                        nuevainscripcion.save(request)
                     nuevainscripcion.mi_malla(form.cleaned_data['malla'])
                     nuevainscripcion.actualizar_nivel()
                     nuevainscripcion.actualiza_tipo_inscripcion()
-                    nuevainscripcion.generar_rubro_inscripcion(form.cleaned_data['malla'])
+                    # nuevainscripcion.generar_rubro_inscripcion(form.cleaned_data['malla'])
                     log(u'Adiciono como estudiante al administrativo: %s' % nuevainscripcion, request, "add")
-                    documentos = nuevainscripcion.documentos_entregados()
-                    documentos.pre = form.cleaned_data['prenivelacion']
-                    documentos.observaciones_pre = form.cleaned_data['observacionespre']
-                    documentos.save(request)
+                    # documentos = nuevainscripcion.documentos_entregados()
+                    # documentos.pre = form.cleaned_data['prenivelacion']
+                    # documentos.observaciones_pre = form.cleaned_data['observacionespre']
+                    # documentos.save(request)
                     # SNNA
-                    snna = administrativo.persona.datos_snna()
-                    snna.rindioexamen = form.cleaned_data['rindioexamen']
-                    snna.fechaexamen = form.cleaned_data['fechaexamensnna']
-                    snna.puntaje = form.cleaned_data['puntajesnna']
-                    snna.save(request)
+                    # snna = administrativo.persona.datos_snna()
+                    # snna.rindioexamen = form.cleaned_data['rindioexamen']
+                    # snna.fechaexamen = form.cleaned_data['fechaexamensnna']
+                    # snna.puntaje = form.cleaned_data['puntajesnna']
+                    # snna.save(request)
                     return ok_json()
                 else:
                     return bad_json(error=6)
@@ -564,8 +559,8 @@ def view(request):
                 data['grupo_empleadores'] = EMPLEADORES_GRUPO_ID
                 data['grupo_administrativo'] = ADMINISTRATIVOS_GROUP_ID
                 data['grupo_estudiantes'] = ALUMNOS_GROUP_ID
-                if persona.id in PERM_ENTRAR_COMO_USUARIO:
-                    data['entrar_como_usuario']=True
+
+                data['entrar_como_usuario']=True
                 return render(request, "administrativos/view.html", data)
             except Exception as ex:
                 return HttpResponseRedirect('/')

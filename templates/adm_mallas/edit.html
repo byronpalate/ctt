@@ -1,0 +1,154 @@
+{% extends "basebs.html" %}
+{% load ctt_extras%}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            new DragDivScroll( 'contenidomalla', 'toggleaxis, noXBarHide, noMousewheel' );
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Malla: {{ malla }}</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_mallas and permite_modificar %}
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/adm_mallas?action=addasign&id={{ malla.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <div style="overflow:auto;" id="contenidomalla">
+                <table class='table table-bordered'>
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 150px"></th>
+                        {% for nivelmalla in malla.lista_niveles %}
+                            <th style="text-align: center; width: 170px">{{ nivelmalla }}</th>
+                        {% endfor %}
+                        <th style="text-align: center; width: 170px">TOTAL</th>
+                        <th style="text-align: center;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for eje in ejesformativos %}
+                        <tr>
+                            <td>{{ eje.nombre }}</td>
+                            {% for nivelmalla in  malla.lista_niveles %}
+                                <td style="vertical-align: top">
+                                    {% with asignaturasmallas=malla|args:eje|args:nivelmalla|call:'asignaturas_malla_sin_itinerario_basico' %}
+                                        {% for asignaturamalla in asignaturasmallas %}
+                                            <div class="card mb-2" nivel="{{ nivelmalla.id }}" eje="{{ eje.id }}" style="width: 14rem;{% if asignaturamalla.itinerario %}background-color: lightgray{% endif %}">
+                                                <div class="card-body mb-2">
+                                                    <span class="badge text-bg-primary" style="font-size: medium">{{ clase.turno.nombre_horario }}</span>
+                                                    <div style="width:170px;">
+                                                        <b> {{ asignaturamalla.identificacion }}-{{ asignaturamalla.asignatura }}</b><br>
+                                                        Tipo: {{ asignaturamalla.tipomateria }}<br>
+                                                        Hrs: {{ asignaturamalla.horas|floatformat:1 }} Cred.: {{ asignaturamalla.creditos|floatformat:4 }}<br>
+                                                        H.Sem.: {{ asignaturamalla.horassemanales }}
+                                                        {% if asignaturamalla.sinasistencia or asignaturamalla.validacreditos or asignaturamalla.validapromedio or asignaturamalla.rectora or asignaturamalla.practicas or not asignaturamalla.obligatoria %}
+                                                            <br>
+                                                            {% if asignaturamalla.obligatoria %}
+                                                                <span class='badge text-bg-dark tu mb-1' data-bs-toggle="tooltip" data-bs-placement="top" title='Obligatoria'>O</span>
+                                                            {% endif %}
+                                                            {% if asignaturamalla.sinasistencia %}
+                                                                <span class='badge text-bg-warning tu mb-1' data-bs-toggle="tooltip" data-bs-placement="top" title='No valida asistencia'>A</span>
+                                                            {% endif %}
+                                                            {% if asignaturamalla.rectora %}
+                                                                <span class='badge text-bg-success tu mb-1' data-bs-toggle="tooltip" data-bs-placement="top" title='Materia comun'>G</span>
+                                                            {% endif %}
+                                                            {% if asignaturamalla.practicas %}
+                                                                <span class='badge text-bg-warning tu mb-1' data-bs-toggle="tooltip" data-bs-placement="top" title='Practicas'>PT</span>
+                                                            {% endif %}
+                                                            {% if asignaturamalla.matriculacion %}
+                                                                <span class='badge text-bg-warning tu mb-1' data-bs-toggle="tooltip" data-bs-placement="top" title='Matricula'>M</span>
+                                                            {% endif %}
+                                                            {% if asignaturamalla.validacreditos %}
+                                                                <span class="badge text-bg-warning tu mb-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida creditos">C</span>
+                                                            {% endif %}
+                                                            {% if asignaturamalla.validapromedio %}
+                                                                <span class='badge text-bg-warning tu mb-1' data-bs-toggle="tooltip" data-bs-placement="top" title='Valida promedio'>P</span>
+                                                            {% endif %}
+                                                            {% if asignaturamalla.titulacion %}
+                                                                <span class='badge text-bg-warning tu mb-1' data-bs-toggle="tooltip" data-bs-placement="top" title='Titulacion'>T</span>
+                                                            {% endif %}
+                                                            {% if asignaturamalla.plantillaslms %}
+                                                                <span class='badge text-bg-primary tu mb-1' data-bs-toggle="tooltip" data-bs-placement="top" title='Tiene LMS'>LMS</span>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                        {% if not asignaturamalla.itinerario %}
+                                                            <div>
+                                                                {% if perms.ctt.puede_modificar_mallas %}
+                                                                    <a href="javascript:;" nhref="/adm_mallas?action=editasign&id={{ asignaturamalla.id }}" class="btn btn-ssm btn-info tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                                                    {% if not permite_modificar %}
+                                                                        <a href="javascript:;" nhref="/adm_mallas?action=editasigncompetencia&id={{ asignaturamalla.id }}" class="btn btn-ssm btn-warning tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar otros datos"><i class="icon-edit"></i></a>
+                                                                    {% endif %}
+                                                                    <a href="javascript:;" nhref="/adm_mallas?action=edithorasdocencia&id={{ asignaturamalla.id }}" class="btn btn-ssm btn-outline-info tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar horas docencia"><i class="icon-edit"></i></a>
+                                                                    {% if permite_modificar and not asignaturamalla.tiene_predecesoras %}
+                                                                        <a href="javascript:;" nhref="/adm_mallas?action=delasign&id={{ asignaturamalla.id }}" class='btn btn-ssm btn-form btn-danger eliminacionmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class='icon-remove '></i></a>
+                                                                    {% endif %}
+                                                                {% endif %}
+                                                                {% if malla.modelosibalo %}
+                                                                    <a href="/adm_mallas?action=syllabus&id={{ asignaturamalla.id }}" class='btn btn-ssm {% if asignaturamalla.tiene_syllabus_aprobados %} btn-success{% else %}btn-danger{% endif %} {% if asignaturamalla.tiene_syllabus_pendiente %}blinkimg{% endif %}'><i class='icon-list'></i> {{ asignaturamalla.cantidad_syllabus_aprobados }} Sílabo</a>
+                                                                {% endif %}
+                                                                {% if perms.ctt.puede_modificar_mallas %}
+                                                                    <a href="/adm_mallas?action=predecesora&id={{ asignaturamalla.id }}" class='btn btn-outline-secondary btn-ssm'><i class='icon-list'></i> {{ asignaturamalla.cantidad_predecesoras }} Predec.</a>
+                                                                    {% if asignaturamalla.malla.modalidad.id == 5 %}
+                                                                        <a href="/adm_mallas?action=hibrida&id={{ asignaturamalla.id }}" class='btn btn-ssm'><i class='icon-list'></i> Modalidades</a>
+                                                                    {% endif %}
+                                                                {% endif %}
+                                                            </div>
+                                                        {% endif %}
+
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        {% endfor %}
+                                    {% endwith %}
+                                    <div>
+                                        {% if perms.ctt.puede_modificar_mallas and permite_modificar %}
+                                            {% with nivelestudiantes=malla|args:nivelmalla|call:'nivel_maximo_estudiantes' %}
+                                                {% if not nivelestudiantes %}
+                                                    <a href="javascript:;" nhref="/adm_mallas?action=addasign&id={{ malla.id }}&nivel={{ nivelmalla.id }}&eje={{ eje.id }}" class='btn btn-success btn-ssm formmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Adicionar"><i class="icon-plus"></i></a>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            {% endfor %}
+                            <td>
+                                <div style="width:170px">
+                                    {% with totalcreditos=malla|args:eje|call:'total_ceditos_eje' totalhoras=malla|args:eje|call:'total_horas_eje' totalvalor=malla|args:eje|call:'total_valor_eje'%}
+                                        Horas: <b>{{ totalhoras }}</b>  <br>Creditos: <b>{{ totalcreditos }}</b>
+                                    {% endwith %}
+                                </div>
+                            </td>
+                            <td></td>
+                        </tr>
+                    {% endfor %}
+                    <tr>
+                    <tr>
+                        <td>TOTALES </td>
+                        {% for nivelmalla in  malla.lista_niveles %}
+                            {% with totalcreditos=malla|args:nivelmalla|call:'total_ceditos_nivel' totalhoras=malla|args:nivelmalla|call:'total_horas_nivel' totalvalor=malla|args:nivelmalla|call:'total_valor_nivel'%}
+                                <td>Horas: <b>{{ totalhoras|floatformat:0 }}</b>  <br>Creditos: <b>{{ totalcreditos|floatformat:4 }}</b></td>
+                            {% endwith %}
+                        {% endfor %}
+                        <td>Horas:<b> {{ malla.horas|floatformat:1 }}</b><br>Creditos: <b> {{ malla.cantidad_creditos_solo_malla|floatformat:4 }}</b></td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

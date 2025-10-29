@@ -1,0 +1,37 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+
+            verificar_datos = function () {
+                if (!$("#id_usabiblioteca").is(":checked")){
+                    $("#id_documentoscoleccion, #id_documentoscoleccionautonumeracion, #id_documentosautonumeracion").prop('checked', false).attr({'disabled':'disabled'});
+                }
+                else {
+                    $("#id_documentoscoleccion, #id_documentoscoleccionautonumeracion, #id_documentosautonumeracion").removeAttr('disabled');
+                }
+                if ($("#id_documentoscoleccion").is(":checked")){
+                    $("#id_documentoscoleccionautonumeracion").removeAttr('disabled');
+                } else {
+                   $("#id_documentoscoleccionautonumeracion").prop('checked', false).attr({'disabled':'disabled'});
+                }
+            };
+
+            $('#id_documentoscoleccion, #id_usabiblioteca').click(function () {
+                verificar_datos();
+            });
+
+            verificar_datos();
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_institucion?t=5&h4=0{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_institucion?t=5&h4=0{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editdatosbiblioteca'/>
+{% endblock %}
+{% block formback %}/adm_institucion?t=5&h4=0{% endblock %}
+{% block buttonname %}Guardar{% endblock %}

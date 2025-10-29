@@ -1,0 +1,17 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_persona, #id_cargo").addClass("validate[required]");
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_coordinaciones{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_coordinaciones{% endblock %}
+{% block formdestination %}/adm_coordinaciones{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addpersonacargo'/>
+{% endblock %}
+{% block formback %}/adm_coordinaciones{% endblock %}

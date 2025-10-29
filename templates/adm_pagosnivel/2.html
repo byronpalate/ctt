@@ -1,0 +1,1606 @@
+{% extends "adm_pagosnivel/view.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function () {
+            $(".seccion").click(function () {
+                bloqueointerface();
+                var id = $(this).attr('ids');
+                location.href = '/adm_pagosnivel?seccion=' + id;
+            });
+
+            $(".preciofecha").datepicker({format: "dd-mm-yyyy"}).on('changeDate', function (ev) {
+                var elemento = $(this);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_fecha',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciomoduloins, .preciomodulo, .precioarrastremodulo, .preciomodulohomolog, .preciomodulored, .preciomatri, .precioarancel, .precioderechorotativo, .precioarancel_curso, .preciomatri_curso, .precioespecie, .preciotitulacion").blur(function () {
+                numerico($(this), 0, 0, 2);
+            });
+
+            $(".pormatext .porcsegmat .porctermat").blur(function () {
+                numerico($(this), 0, 100, 0);
+            });
+
+            $(".preciocuotas_curso, .preciocuotas_curso_dif, .meses, .preciocuotas").blur(function () {
+                numerico($(this), 1, 0, 0);
+            });
+
+            $(".preciomatri_curso").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_mat_curso',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                            {#                            $("#totalperiodo_"+precio_periodo).html(parseFloat(data.valor).toFixed(2));#}
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".precioespecie").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_especie',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciocuotas_curso").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 1, 0, 0);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_cuotas_curso',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciocuotas_curso_dif").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 1, 0, 0);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_cuotas_curso_dif',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".precioarancel_curso").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_ara_curso',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                            $("#totalperiodo_" + precio_periodo).html(parseFloat(data.valor).toFixed(2));
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciomatri").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_mat',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                            $("#totalperiodo_" + precio_periodo).html(parseFloat(data.valor).toFixed(2));
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciocuotas").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 1, 0, 0);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_cuotas',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".meses").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 0);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_meses',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".precioarancel").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_ara',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                            $("#totalperiodo_" + precio_periodo).html(parseFloat(data.valor).toFixed(2));
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".precioderechorotativo").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_derechorotativo',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                            $("#totalperiodo_" + precio_periodo).html(parseFloat(data.valor).toFixed(2));
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciomodulo").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_modulo',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                            $("#totalperiodo_" + precio_periodo).html(parseFloat(data.valor).toFixed(2));
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".precioarrastremodulo").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_arrastremodulo',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                            $("#totalperiodo_" + precio_periodo).html(parseFloat(data.valor).toFixed(2));
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciomoduloins").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_moduloins',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciostipotribunal_pago").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_preciotipotribunal_pago',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciostipotribunal_pagoposgrados").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                var periodos = elemento.attr('periodos')
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_preciotipotribunal_pagoposgrados',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'periodos': periodos,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciostipotribunal_examencomplexivo").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_preciotipotribunal_examencomplexivo',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciostipotribunal_tp").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.is(':checked');
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_preciotipotribunal_tp',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciostipotribunal_tc").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.is(':checked');
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_preciotipotribunal_tc',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciostipotribunal_mt").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.is(':checked');
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_preciotipotribunal_mt',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciomoduloind").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_moduloind',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciostipotribunal_ta").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.is(':checked');
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_preciotipotribunal_ta',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".aplicaextra").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.is(':checked');
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_aplicaextra',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+
+            $(".sininscripcion").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.is(':checked');
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_sininscripcion',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciomoduloreingreso").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_moduloreingreso',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            {# $(".preciohexterna").change(function () {#}
+            {#    var elemento = $(this);#}
+            {#    numerico(elemento, 0, 0, 2);#}
+            {#    var valor = elemento.val();#}
+            {#    var precio_periodo = elemento.attr('idp');#}
+            {#    bloqueointerface();#}
+            {#    $.ajax({#}
+            {#        type: "POST",#}
+            {#        url: "/adm_pagosnivel",#}
+            {#        data: { 'action': 'act_precio_hexterna', 'valor': valor, 'id': precio_periodo, 'csrfmiddlewaretoken': csrftoken },#}
+            {#        success: function(data) {#}
+            {#            desbloqueointerface();#}
+            {#            if (data.result === 'ok'){#}
+            {#                elemento.attr({'va': valor});#}
+            {#            } else {#}
+            {#                NotificacionAlerta(data.icono, data.titulo, data.mensaje);#}
+            {#                elemento.val(elemento.attr('va'));#}
+            {#            }#}
+            {#        },#}
+            {#        error: function() {#}
+            {#            desbloqueointerface();#}
+            {#            NotificacionError('!!!', 'Error de conexión');#}
+            {#            elemento.val(elemento.attr('va'));#}
+            {#        },#}
+            {#        dataType: "json"#}
+            {#    });#}
+            {#    return false;#}
+            {# });#}
+
+            $(".preciomodulohomolog").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_modulohomolog',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciomodulohomologconv").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_modulohomologconv',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciomodulored").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precio_modulored',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".porcsegmat").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 100, 0);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_porcsegmat',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".porctermat").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 100, 0);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_porctermat',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".pormatext").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 100, 0);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_pormatext',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".preciotitulacion").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_preciotitulacion',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".precioadelantoidiomas").change(function () {
+                var elemento = $(this);
+                numerico(elemento, 0, 0, 2);
+                var valor = elemento.val();
+                var precio_periodo = elemento.attr('idp');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_pagosnivel",
+                    data: {
+                        'action': 'act_precioadelantoidiomas',
+                        'valor': valor,
+                        'id': precio_periodo,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            elemento.attr({'va': valor});
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            elemento.val(elemento.attr('va'));
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                        elemento.val(elemento.attr('va'));
+                    },
+                    dataType: "json"
+                });
+                return false;
+            });
+
+            $(".filterable1 tr:has(td)").each(function () {
+                var t = $(this).text().toLowerCase();
+                $("<td class='indexColumn'></td>").hide().text(t).appendTo(this);
+            });
+
+            $("#FilterTextBox1").keyup(function () {
+                var s = $(this).val().toLowerCase().split(" ");
+                $(".filterable1 tr:hidden").show();
+                $.each(s, function () {
+                    $(".filterable1 tr:visible .indexColumn:not(:contains('" + this + "'))").parent().hide();
+                });
+            });
+
+            $(".editargrado").click(function () {
+                var idc = $(this).attr('idc');
+                var idm = $(this).attr('idm');
+                var idp = $(this).attr('idp');
+                var idb = $(this).attr('idb');
+                if (idb == false) {
+                    if ($(this).attr('estado') == 'visible') {
+                        $(".imp_" + idc + "_" + idm).attr({'disabled': 'disabled'});
+                        $(this).attr({'estado': 'novisible'}).children().addClass("icon-eye-close").removeClass("icon-eye-open");
+                    } else {
+                        $(".imp_" + idc + "_" + idm).removeAttr('disabled');
+                        $(this).attr({'estado': 'visible'}).children().addClass("icon-eye-open").removeClass("icon-eye-close");
+                    }
+                }
+            });
+
+            $(".editartribunales").click(function () {
+                var idp = $(this).attr('idp');
+                if ($(this).attr('estado') == 'visible') {
+                    $(".ptt_" + idp).attr({'disabled': 'disabled'});
+                    $(this).attr({'estado': 'novisible'}).children().addClass("icon-eye-close").removeClass("icon-eye-open");
+                } else {
+                    $(".ptt_" + idp).removeAttr('disabled');
+                    $(this).attr({'estado': 'visible'}).children().addClass("icon-eye-open").removeClass("icon-eye-close");
+                }
+            });
+
+            $(".editarposgrado").click(function () {
+                var idc = $(this).attr('idc');
+                var idm = $(this).attr('idm');
+                var idt = $(this).attr('idt');
+                if ($(this).attr('estado') == 'visible') {
+                    $(".imp_" + idc + "_" + idm + "_" + idt).attr({'disabled': 'disabled'});
+                    $(this).attr({'estado': 'novisible'}).children().addClass("icon-eye-close").removeClass("icon-eye-open");
+                } else {
+                    $(".imp_" + idc + "_" + idm + "_" + idt).removeAttr('disabled');
+                    $(this).attr({'estado': 'visible'}).children().addClass("icon-eye-open").removeClass("icon-eye-close");
+                }
+            });
+
+            $("#carrera").change(function () {
+                var elemento = $(this).val();
+                bloqueointerface();
+                location.href = '/adm_pagosnivel?idc=' + elemento;
+            });
+
+            $("#modalidad").change(function () {
+                var elemento = $(this).val();
+                bloqueointerface();
+                location.href = '/adm_pagosnivel?idm=' + elemento;
+            });
+
+            $("#malla").change(function () {
+                var elemento = $(this).val();
+                bloqueointerface();
+                location.href = '/adm_pagosnivel?idma=' + elemento;
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block contenidotab %}
+    <div class="tab-pane fade {% if seccion == 2 %}show active{% endif %}" id="tab-2" role="tabpanel" aria-labelledby="tab2">
+        <p><a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref='/adm_pagosnivel?action=clonarvalores&id={{ periodo.id }}'><i class="icon-random"></i> Clonar valores</a></p>
+        <div class=" mb-2">
+            <select name="plantilla" id="carrera" class="form-select form-select-sm">
+                {% for carrera in carreras %}
+                    <option value="{{ carrera.id }}"
+                            {% if adm_pagosnivel_carrera == carrera.id %}selected{% endif %}>{{ carrera }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class=" mb-2">
+            <select name="plantilla" id="modalidad" class="form-select form-select-sm">
+                {% for modalidad in modalidades %}
+                    <option value="{{ modalidad.id }}"
+                            {% if adm_pagosnivel_modalidad == modalidad.id %}selected{% endif %}>{{ modalidad }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class=" mb-2">
+            <select name="plantilla" id="malla" class="form-select form-select-sm">
+                {% for malla in mallas %}
+                    <option value="{{ malla.id }}" {% if adm_pagosnivel_malla == malla.id %}selected{% endif %}>{{ malla }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class='row'>
+            <div class="col-12">
+                <table class='table table-bordered'>
+                    <thead class="table-light">
+                    <tr>
+                        <th colspan="20">
+                            Coordinaci&oacute;n: {{ coordinacion.nombre }} - {{ coordinacion.alias }}
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% if malla %}
+                        {% with precio_mod_ins=malla|args:periodo|args:coordinacion.sede|args:malla.carrera|args:malla.modalidad|args:malla|call:'precio_modulo_inscripcion' %}
+                            <tr>
+                                <td>
+                                    <table class="table table-condensed table-bordered">
+                                        <tr>
+                                            <td>
+                                                {{ malla.carrera }}<br>
+                                                <span class="badge text-bg-info" style="margin: 0">id MALLA: {{ malla.id }}</span>
+                                            </td>
+                                            <td style="width: 120px">{{ malla.modalidad }}</td>
+                                            <td style="width: 50px; text-align: center; vertical-align: middle">
+                                                {% if precio_mod_ins.en_uso_periodo %}
+                                                    <span class="badge text-bg-success" style="margin: 0">Si</span>
+                                                {% else %}
+                                                    <span class="badge text-bg-danger">NO</span>
+                                                {% endif %}
+                                            </td>
+                                            {% if perms.ctt.puede_modificar_precioperiodo %}
+                                                <td style="vertical-align: middle; text-align: center; width: 50px">
+                                                    <a class="btn btn-info btn-ssm tu editargrado" idp="{{ precio_mod_ins.periodo.id }}"
+                                                       idc="{{ malla.carrera.id }}" idm="{{ malla.modalidad.id }}"
+                                                       idb="{{ precio_mod_ins.bloqueo }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-eye-close"></i></a>
+                                                </td>
+                                                <td style="vertical-align: middle; text-align: center; width: 50px">
+                                                    <input disabled="disabled"
+                                                           {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                           type='checkbox' id="precio_modulo_sininscripcion"
+                                                           idn="{{ nivel.id }}"
+                                                           idp="{{ precio_mod_ins.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Permite inscripción con valor CERO"
+                                                           class="form-control-sm sininscripcion preciomoduloins imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}" visible="novisible"
+                                                           {% if precio_mod_ins.sininscripcion %}checked='checked'{% endif %}/>
+                                                </td>
+                                            {% endif %}
+                                            <td style="width: 630px">
+                                                <table class="table table-condensed">
+                                                    <tr>
+                                                        <td class="smaller" style="text-align: center; width: 60px">Inscrip.</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">Inducción</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">Reingreso</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">Homg.</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">Homg.Conv.</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">Red. Maest.</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">Módulo Int.</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">Arr.Mod.</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">%Seg.Mat</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">%Ter.Mat</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">%Mat.Extra</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_modulo_ins"
+                                                                   idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.precioinscripcion|floatformat:2 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbermed-right preciomoduloins imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.precioinscripcion|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_modulo_ind"
+                                                                   idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.precioinduccion|floatformat:2 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbermed-right preciomoduloind imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.precioinduccion|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_modulo_reingreso"
+                                                                   idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.precioreingreso|floatformat:2 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbermed-right preciomoduloreingreso imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.precioreingreso|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_modulo_homol"
+                                                                   idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.preciohomologacion|floatformat:2 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbermed-right preciomodulohomolog imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.preciohomologacion|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_modulo_homolconv"
+                                                                   idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.preciohomologacion|floatformat:2 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbermed-right preciomodulohomologconv imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.preciohomologacionconvenio|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_modulo_red"
+                                                                   idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.precioredmaestros|floatformat:2 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbermed-right preciomodulored imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.precioredmaestros|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_modulo" idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.preciomodulo|floatformat:2 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbermed-right preciomodulo imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.preciomodulo|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_arrastremodulo"
+                                                                   idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.precioarrastremodulo|floatformat:2 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbermed-right precioarrastremodulo imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.precioarrastremodulo|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="porc_seg_mat" idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.porcentajesegundamatricula|floatformat:0 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbersmall porcsegmat imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.porcentajesegundamatricula|floatformat:0 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="porc_ter_mat" idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.porcentajeterceramatricula|floatformat:0 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbersmall porctermat imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.porcentajeterceramatricula|floatformat:0 }}">
+                                                        </td>
+                                                        <td>
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="por_mat_extra" idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.porcentajematriculaextraordinaria|floatformat:0 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbersmall pormatext imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.porcentajematriculaextraordinaria|floatformat:0 }}">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="hidden" id="bloqueo_mod_ins"
+                                                                   idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.bloqueo }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="bloqueo imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.bloqueo }}">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="smaller" style="text-align: center; width: 60px">Costo Titulaci&oacute;n</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px">Adelanto Idiomas</td>
+                                                        <td class="smaller" style="text-align: center; width: 60px"></td>
+                                                        <td class="smaller" style="text-align: center; width: 60px"></td>
+                                                        <td class="smaller" style="text-align: center; width: 60px"></td>
+                                                        <td class="smaller" style="text-align: center; width: 60px"></td>
+                                                        <td class="smaller" style="text-align: center; width: 60px"></td>
+                                                        <td class="smaller" style="text-align: center; width: 60px"></td>
+                                                        <td class="smaller" style="text-align: center; width: 60px"></td>
+                                                        <td class="smaller" style="text-align: center; width: 60px"></td>
+                                                        <td class="smaller" style="text-align: center; width: 60px"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_modulo_tit"
+                                                                   idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.preciotitulacion|floatformat:2 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbermed-right preciotitulacion imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.preciotitulacion|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_adelanto_idiomas"
+                                                                   idn="{{ nivel.id }}"
+                                                                   va="{{ precio_mod_ins.precioadelantoidiomas|floatformat:2 }}"
+                                                                   idp="{{ precio_mod_ins.id }}"
+                                                                   class="form-control-sm imp-numbermed-right precioadelantoidiomas imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_mod_ins.precioadelantoidiomas|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center"></td>
+                                                        <td style="text-align: center"></td>
+                                                        <td style="text-align: center"></td>
+                                                        <td style="text-align: center"></td>
+                                                        <td style="text-align: center"></td>
+                                                        <td style="text-align: center"></td>
+                                                        <td style="text-align: center"></td>
+                                                        <td style="text-align: center"></td>
+                                                        <td></td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    {% with niveles=malla.carrera|args:malla.modalidad|call:'niveles_maximos_modalidad' %}
+                                        <table class="table table-borderer table-condensed">
+                                            <tr>
+                                                <th>NIVEL</th>
+                                                <th class="smaller" style="text-align: center; width: 80px">Aplic.ExtraOrd.</th>
+                                                <th class="smaller" style="text-align: center; width: 80px">Matrícula</th>
+                                                <th class="smaller" style="text-align: center; width: 80px">Arancel</th>
+                                                <th class="smaller" style="text-align: center; width: 80px">Derecho<br>Rotativo</th>
+                                                <th class="smaller" style="text-align: center; width: 80px">Cuotas</th>
+                                                <th class="smaller" style="text-align: center; width: 80px">Meses</th>
+                                                <th class="smaller" style="text-align: center; width: 80px">Total</th>
+                                                <th class="smaller" style="text-align: center; width: 80px">Descuentos</th>
+                                            </tr>
+                                            {% for nivel in niveles %}
+                                                {% with precio_per=malla.carrera|args:nivel|args:periodo|args:coordinacion.sede|args:malla.modalidad|call:'precio_periodo' %}
+                                                    <tr>
+                                                        <td>
+                                                            {{ nivel }}
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type='checkbox' id="check_aplicaextra"
+                                                                   class="aplicaextra imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }} tu"
+                                                                   idp="{{ precio_per.id }}" data-bs-toggle="tooltip"
+                                                                   data-bs-placement="top"
+                                                                   title="Aplica Mat. ExtraOrdinaria"
+                                                                   {% if precio_per.aplicaextra %}checked='checked'{% endif %}/>
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_mat" idn="{{ nivel.id }}"
+                                                                   va="{{ precio_per.preciomatricula|floatformat:2 }}"
+                                                                   idp="{{ precio_per.id }}"
+                                                                   class="form-control-sm imp-numbermed-right preciomatri imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_per.preciomatricula|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_aran"
+                                                                   va="{{ precio_per.precioarancel|floatformat:2 }}"
+                                                                   idp="{{ precio_per.id }}"
+                                                                   class="form-control-sm imp-numbermed-right precioarancel imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_per.precioarancel|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_derechorotativo"
+                                                                   va="{{ precio_per.precioderechorotativo|floatformat:2 }}"
+                                                                   idp="{{ precio_per.id }}"
+                                                                   class="form-control-sm imp-numbermed-right precioderechorotativo imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_per.precioderechorotativo|floatformat:2 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_cuotas"
+                                                                   va="{{ precio_per.cuotas|floatformat:0 }}"
+                                                                   idp="{{ precio_per.id }}"
+                                                                   class="form-control-sm imp-numbersmall preciocuotas imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_per.cuotas|floatformat:0 }}">
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <input disabled="disabled"
+                                                                   {% if not perms.ctt.puede_modificar_precioperiodo %}disabled="disabled"{% endif %}
+                                                                   type="text" id="precio_meses"
+                                                                   va="{{ precio_per.meses|floatformat:0 }}"
+                                                                   idp="{{ precio_per.id }}"
+                                                                   class="form-control-sm imp-numbersmall meses imp_{{ malla.carrera.id }}_{{ malla.modalidad.id }}"
+                                                                   value="{{ precio_per.meses|floatformat:0 }}">
+                                                        </td>
+                                                        <td style="text-align: right; width: 80px"
+                                                            id="totalperiodo_{{ precio_per.id }}">
+                                                            {% with total_per=malla.carrera|args:nivel|args:periodo|args:coordinacion.sede|args:malla.modalidad|call:'total_periodo' %}
+                                                                {{ total_per|floatformat:2 }}
+                                                            {% endwith %}
+                                                        </td>
+                                                        <td style="text-align: center">
+                                                            <a href="/adm_pagosnivel?action=descuentoformapago&id={{ precio_per.id }}" class="btn btn-ssm {% if precio_per.tiene_descuento %}btn-success{% else %}btn-info{% endif %}"><i class="icon-list"></i> Desc.</a>
+                                                        </td>
+                                                    </tr>
+                                                {% endwith %}
+                                            {% endfor %}
+                                        </table>
+                                    {% endwith %}
+                                </td>
+                            </tr>
+                        {% endwith %}
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}

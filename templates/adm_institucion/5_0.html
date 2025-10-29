@@ -1,0 +1,63 @@
+{% extends "adm_institucion/5.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    {% if perms.ctt.puede_modificar_parametros_institucion %}
+        <div class='row'>
+            <div class='col-12'>
+                <a href="javascript:;" nhref="/adm_institucion?action=addgrupo" class='formmodal btn btn-sm mb-2 btn-success'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+    <div class="row">
+        <div class="col-12">
+            <table class='table table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Nombre(a)</th>
+                    <th style="width: 80px; text-align: center">Integrantes</th>
+                    <th style="width: 100px; text-align: center"></th>
+                    <th style="width: 100px; text-align: center"></th>
+                    <th style="width: 70px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for grupo in grupos %}
+                    <tr>
+                        {% with integrantes=institucion|args:grupo|call:'cantidad_integrantes' %}
+                            <td>{{ grupo.name }}</td>
+                            <td style="text-align: center">{{ integrantes }}</td>
+                            <td style="text-align: center">
+
+                                <a class="btn btn-ssm btn-info" href="/adm_institucion?action=permisosgrupo&id={{ grupo.id }}"><i class="icon-list"></i> Permisos</a>
+
+                            </td>
+                            <td style="text-align: center">
+                                <a class="btn btn-ssm btn-info" href="/adm_institucion?action=reportesgrupo&id={{ grupo.id }}"><i class="icon-list"></i> Reportes</a>
+                            </td>
+                            <td style="text-align: center">
+                                {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                    <a class="formmodal btn btn-ssm btn-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_institucion?action=editgrupo&id={{ grupo.id }}"><i class="icon-edit"></i></a>
+                                    {% if not integrantes %}
+                                        <a class="btn btn-ssm btn-danger eliminacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar" href="javascript:;" nhref="/adm_institucion?action=delgrupo&t=6&id={{ grupo.id }}"><i class="icon-remove"></i></a>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        {% endwith %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

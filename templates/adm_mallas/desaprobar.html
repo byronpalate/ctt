@@ -1,0 +1,12 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_mallas{% endblock %}
+{% block formdestination %}/adm_mallas{% endblock %}
+{% block formactionvalue %}aprueba{% endblock %}
+{% block formobjectid %}{{ malla.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea desaprobar la malla: {% endblock %}
+{% block formobjectrepr %}{{ malla }}{% endblock %}
+{% block fieldsextra %}
+    <input type='hidden' name='action' value='desaprobar'/>
+    <input type='hidden' name='id' value="{{ malla.id }}"/>
+{% endblock %}

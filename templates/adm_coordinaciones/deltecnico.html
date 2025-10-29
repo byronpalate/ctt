@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_coordinaciones{% endblock %}
+{% block formdestination %}/adm_coordinaciones?action=personaltecnico&id={{ tecnico.coordinacion.id }}{% endblock %}
+{% block formactionvalue %}deltecnico{% endblock %}
+{% block formobjectid %}{{ tecnico.id }}{% endblock %}
+{% block formobjectname %}el tecnico de la coordinación{% endblock %}
+{% block formobjectrepr %}{{ tecnico.persona }}{% endblock %}

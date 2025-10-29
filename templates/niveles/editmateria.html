@@ -31,30 +31,16 @@
 
             materiageneral();
 
-           verifica_modelo = function () {
-                if ($("#id_integracioncurricular").is(":checked")){
-                    $("#fieldset_tipointegracion").show();
-                    $("#id_tipointegracion").addClass('validate[required]');
-                }  else {
-                    $("#fieldset_tipointegracion").hide();
-                    $("#id_tipointegracion").removeClass('validate[required]');
-                }
-            };
 
-            $("#id_integracioncurricular").click(function () {
-                verifica_modelo();
-            });
-
-            verifica_modelo();
         });
     </script>
 {% endblock %}
-{% block atras %}/adm_internadorotativo?action=materias&id={{ materia.internado.id }}{% endblock %}
+{% block atras %}/niveles?action=materias&id={{ materia.niveles.id }}{% endblock %}
 {% block titulo %}{{ title }}{% endblock %}
-{% block formdestination %}/adm_internadorotativo?action=materias&id={{ materia.internado.id }}{% endblock %}
-{% block formaction %}/adm_internadorotativo{% endblock %}
+{% block formdestination %}/niveles?action=materias&id={{ materia.niveles.id }}{% endblock %}
+{% block formaction %}/niveles{% endblock %}
 {% block formextra %}
     <input type='hidden' name='action' value='editmateria'/>
     <input type='hidden' name='id' value='{{ materia.id }}'/>
 {% endblock %}
-{% block formback %}/adm_internadorotativo?action=materias&id={{ materia.internado.id }}{% endblock %}
+{% block formback %}/niveles?action=materias&id={{ materia.niveles.id }}{% endblock %}

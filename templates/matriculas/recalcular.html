@@ -1,0 +1,13 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/matriculas?action=matricula&id={{ matricula.nivel.id }}&idm={{ matricula.id }}{% endblock %}
+{% block formaction %}/matriculas{% endblock %}
+{% block formactionvalue %}recalcular{% endblock %}
+{% block formobjectid %}{{ matricula.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea recalcular los rubros de:{% endblock %}
+{% block formobjectrepr %}{{ matricula.inscripcion.persona }}{% endblock %}
+{% block fieldsextra %}
+    <input type="hidden" name="id" value="{{ matricula.id }}">
+    <input type="hidden" name="idf" value="{{ tipo }}">
+{% endblock %}
+

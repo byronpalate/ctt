@@ -16,13 +16,14 @@ from dateutil.relativedelta import relativedelta
 
 from decorators import secure_module, last_access
 
-from settings import ALUMNOS_GROUP_ID, EMAIL_DOMAIN
+from settings import ALUMNOS_GROUP_ID, EMAIL_DOMAIN, CONTROL_UNICO_CREDENCIALES, EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES,\
+EMAIL_DOMAIN_ESTUDIANTES, NACIONALIDAD_INDIGENA_ID, PAIS_ECUADOR_ID,MODALIDAD_DISTANCIA
+
 from ctt.commonviews import adduserdata, obtener_reporte
 from ctt.forms import InscripcionForm, RecordAcademicoForm, HistoricoRecordAcademicoForm, CargarFotoForm, \
     CambiomallaForm, NuevaInscripcionForm, \
     CambionivelmallaForm, EstudioEducacionSuperiorForm, EstudioEducacionBasicaForm, \
     CambiaDatosCarreraForm, ImportarArchivoXLSForm, \
-    CambioitinerarioForm, \
     RetiradoCarreraForm, \
     CambiarFichaInscripcionForm, \
     ImportarArchivoXLSPeriodoForm
@@ -30,7 +31,7 @@ from ctt.forms import InscripcionForm, RecordAcademicoForm, HistoricoRecordAcade
 from ctt.funciones import log, generar_usuario, \
     generar_nombre, resetear_clave, MiPaginador, bad_json, ok_json, url_back, generar_email, \
     puede_modificar_inscripcion_post, convertir_fecha, remover_tildes
-from ctt.models import InscripcionMalla, InscripcionItinerarrio, EstudioPersona, ModuloMalla
+from ctt.models import InscripcionMalla, EstudioPersona
 
 from ctt.models import Persona, Inscripcion, RecordAcademico, HistoricoRecordAcademico, \
     FotoPersona, Archivo, NivelMalla, EjeFormativo, AsignaturaMalla, Periodo, \
@@ -50,9 +51,6 @@ def view(request):
     adduserdata(request, data)
     persona = request.session['persona']
     coordinacionseleccionada = request.session['coordinacionseleccionada']
-    data['PERSONA_ADMINS_ACADEMICO_ID'] = False
-    if persona.id in PERSONA_ADMINS_ACADEMICO_ID:
-        data['PERSONA_ADMINS_ACADEMICO_ID'] = True
 
     if request.method == 'POST':
         action = request.POST['action']
@@ -1003,17 +1001,17 @@ def view(request):
                     flag.permitepagoparcial = True
                     flag.save()
                     # SEGUIMIENTO LABORAL
-                    if form.cleaned_data['trabaja']:
-                        trabajo = TrabajoPersona(persona=estudiante,
-                                                 empresa=form.cleaned_data['empresa'],
-                                                 ocupacion=form.cleaned_data['ocupacion'],
-                                                 titulogrado=form.cleaned_data['titulogrado'],
-                                                 universidadgrado=form.cleaned_data['universidadgrado'],
-                                                 responsabilidades='',
-                                                 personascargo=0,
-                                                 ejerce=False,
-                                                 fecha=form.cleaned_data['fecha_ingreso'])
-                        trabajo.save(request)
+                    # if form.cleaned_data['trabaja']:
+                    #     trabajo = TrabajoPersona(persona=estudiante,
+                    #                              empresa=form.cleaned_data['empresa'],
+                    #                              ocupacion=form.cleaned_data['ocupacion'],
+                    #                              titulogrado=form.cleaned_data['titulogrado'],
+                    #                              universidadgrado=form.cleaned_data['universidadgrado'],
+                    #                              responsabilidades='',
+                    #                              personascargo=0,
+                    #                              ejerce=False,
+                    #                              fecha=form.cleaned_data['fecha_ingreso'])
+                    #     trabajo.save(request)
                     # DATOS DE FACTURACION
                     clientefacturacion = inscripcion.clientefacturacion(request)
                     clientefacturacion.nombre = remover_tildes(form.cleaned_data['facturanombre'])
@@ -2589,27 +2587,7 @@ def view(request):
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
-        if action == 'cambioitinerario':
-            try:
-                inscripcion = Inscripcion.objects.get(pk=request.POST['id'])
-                if not puede_modificar_inscripcion_post(request, inscripcion):
-                    return bad_json(error=8)
-                form = CambioitinerarioForm(request.POST)
-                if form.is_valid():
-                    itinerario = inscripcion.inscripcionitinerarrio_set.all()
-                    itinerario.delete()
-                    ii = InscripcionItinerarrio(inscripcion=inscripcion,
-                                                itinerario=form.cleaned_data['itinerario'])
-                    ii.save(request)
-                    inscripcion.actualizar_creditos()
-                    inscripcion.actualizar_nivel()
-                    log(u'Modifico itinerario de inscripcion: %s - %s' % (inscripcion.persona, ii.itinerario), request, "edit")
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
+
 
         if action == 'habilitarmatricula':
             try:
@@ -4883,8 +4861,6 @@ def view(request):
                 data['admisiones'] = True if persona.en_grupo(12) else False
                 data['sistemas'] = True if persona.en_grupo(3) else False
                 data['centro'] = persona.en_grupo(47)
-                if persona.id in PERM_ENTRAR_COMO_USUARIO:
-                    data['entrar_como_usuario'] = True
                 return render(request, "inscripciones/view.html", data)
             except Exception as ex:
                 return HttpResponseRedirect('/')

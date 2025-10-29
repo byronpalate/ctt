@@ -31,7 +31,6 @@ def login_required_inside(request):
 def view(request):
     global ex
     if request.method == 'POST':
-
         if 'a' in request.POST:
             action = request.POST['a']
 

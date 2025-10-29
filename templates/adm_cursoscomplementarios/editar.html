@@ -1,0 +1,236 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_fechainicio, #id_fechafin").datepicker({format:"dd-mm-yyyy"});
+            $("#id_nombre, #id_carrera, #id_tema, #id_fechainicio, #id_tipocurso, #id_fechafin, #id_cupo, #id_sesion, #id_paralelo, #id_modalidad, #id_periodo").addClass("validate[required]");
+
+            $("#id_cupo").blur(function(){
+                numerico($(this), 1, 0, 0);
+            });
+
+            verifica_valor_total = function () {
+                var c = 1;
+                var cuotas = parseFloat($("#id_cuotas").val());
+                if (cuotas){
+                    c = cuotas;
+                }
+                var matricula = parseFloat($("#id_costomatricula").val());
+                var costocuota = parseFloat($("#id_costocuota").val());
+                $("#id_costototal").val((redondear(matricula + (costocuota * cuotas), 2).toFixed(2)));
+            };
+
+
+            $('#id_cuotas').blur(function(){
+                numerico($(this), 0, 0, 0);
+                verifica_valor_total();
+            });
+
+            $("#id_costomatricula").blur(function(){
+                numerico($(this), 0, 0, 2);
+                verifica_valor_total();
+            });
+
+            $("#id_costocuota").blur(function(){
+                numerico($(this), 0, 0, 2);
+                verifica_valor_total();
+            });
+
+            verifica_cupo = function () {
+                if ($("#id_sincupo").is(":checked")){
+                    $('#id_cupo').attr({'disabled': 'disabled'}).removeClass("validate[required]");
+                }
+                else{
+                    $('#id_cupo ').removeAttr('disabled').addClass('validate[required]');
+                }
+            };
+
+            verifica_selector_tipo = function () {
+                if ($("#id_optativa ").is(":checked")){
+                    $('#id_libreconfiguracion, #id_actualizacionconocimiento, #id_examencomplexivo').removeClass("validate[required]").prop('checked', false);
+                }
+                if ($("#id_libreconfiguracion ").is(":checked")){
+                    $('#id_optativa, #id_actualizacionconocimiento, #id_examencomplexivo').removeClass("validate[required]").prop('checked', false);
+                }
+                if ($("#id_actualizacionconocimiento ").is(":checked")){
+                    $('#id_libreconfiguracion, #id_optativa, #id_examencomplexivo').removeClass("validate[required]").prop('checked', false);
+                }
+                if ($("#id_examencomplexivo ").is(":checked")){
+                    $('#id_libreconfiguracion, #id_optativa, #id_actualizacionconocimiento').removeClass("validate[required]").prop('checked', false);
+                }
+            };
+
+
+            $('#id_sincupo').click(function () {
+                verifica_cupo();
+            });
+
+            $('#id_libreconfiguracion').click(function () {
+                $('#id_actualizacionconocimiento, #id_optativa').removeClass("validate[required]").prop('checked', false);
+                verifica_selector_tipo();
+            });
+
+            $('#id_optativa').click(function () {
+                $('#id_libreconfiguracion, #id_actualizacionconocimiento').removeClass("validate[required]").prop('checked', false);
+                verifica_selector_tipo();
+            });
+
+            $('#id_actualizacionconocimiento').click(function () {
+                $('#id_libreconfiguracion, #id_optativa').removeClass("validate[required]").prop('checked', false);
+                verifica_selector_tipo();
+            });
+
+            $('#id_examencomplexivo').click(function () {
+                $('#id_libreconfiguracion, #id_optativa, #id_actualizacionconocimiento').removeClass("validate[required]").prop('checked', false);
+                verifica_selector_tipo();
+            });
+
+            ItemsDisplay = function (item) {
+                if (item.name){
+                    return $('<span>' + item.name+ '</span>');
+                }else{
+                    return '---------';
+                }
+            };
+
+            $("#id_solicitante_select2").select2({
+                dropdownParent: $('#formulariomodaldinamico'),
+                width: '100%',
+                placeholder: "---------",
+                allowClear: true,
+                ajax: {
+                    url: '/api',
+                    type: "POST",
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page,
+                            a: 'data',
+                            model: 'Persona:usuario__is_active=True::10',
+                            p: 1,
+                            s: 10,
+                            csrfmiddlewaretoken: csrftoken
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.data,
+                            pagination: {
+                                more: (params.page * 30) < data.total_count
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                escapeMarkup: function (markup) { return markup; },
+                minimumInputLength: 1,
+                templateResult: ItemsDisplay,
+                templateSelection: ItemsDisplay
+            }).on("select2:select", function (evt) {
+                $("#id_solicitante").attr({"value":(evt.params.data.id)});
+            });
+
+            actualizar_campos_select2();
+
+            verificar_tipo_curso = function () {
+                var elemento = $("#id_tipocurso");
+                var valor = elemento.val();
+                $("#id_costodiferenciado").prop('checked', false);
+                $("#id_costomatricula").val('0.00');
+                $("#id_costocuota").val('0.00');
+                $("#id_cuotas").val('1');
+                $("#id_costototal").val('0.00');
+                if (valor){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_cursoscomplementarios",
+                        data: { 'action': 'datos_tipo_curso', 'id': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok'){
+                                if (data.diferenciado){
+                                    $("#id_validapromedio").prop('checked', data.validapromedio);
+                                    $("#id_costodiferenciado").prop('checked', true).attr({'disabled': 'disabled'});
+                                    $("#id_costomatricula").val(parseFloat(data.costo_mat).toFixed(2)).attr({'disabled': 'disabled'});
+                                    $("#id_costocuota").val(parseFloat(data.costo_cuota).toFixed(2)).attr({'disabled': 'disabled'});
+                                }else{
+                                    $("#id_validapromedio").prop('checked', data.validapromedio);
+                                    $("#id_costodiferenciado").prop('checked', false);
+                                    $("#id_costomatricula").val('0.00');
+                                    $("#id_costocuota").val('0.00');
+
+                                }
+                                if (data.libre){
+                                    $("#id_costomatricula").removeAttr('disabled');
+                                    $("#id_costocuota").removeAttr('disabled');
+                                    $("#id_cuotas").removeAttr('disabled');
+                                }
+                                $("#id_costomatricula").val(parseFloat(data.costo_mat).toFixed(2));
+                                $("#id_costocuota").val(parseFloat(data.costo_cuota).toFixed(2));
+                                $("#id_cuotas").val(data.cuotas);
+                                verifica_valor_total();
+                            } else {
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                                $("#id_costodiferenciado").prop('checked', false);
+                                $("#id_validapromedio").prop('checked', false);
+                                $("#id_costomatricula").val('0.00');
+                                $("#id_costocuota").val('0.00');
+                                $("#id_cuotas").val('0');
+                                verifica_valor_total();
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                            $("#id_costodiferenciado").prop('checked', false);
+                            $("#id_costomatricula").val('0.00');
+                            $("#id_costocuota").val('0.00');
+                            $("#id_cuotas").val('0');
+                            verifica_valor_total();
+                        },
+                        dataType: "json"
+                    });
+                }
+            };
+
+            $("#id_tipocurso").change(function () {
+                verificar_tipo_curso();
+            });
+
+            verificar_tipo_curso();
+
+            verifica_modelo = function () {
+                if ($("#id_usamodeloevaluativo").is(":checked")){
+                    $("#fieldset_modeloevaluativo").show();
+                    $("#id_modeloevaluativo").addClass('validate[required]');
+                }  else {
+                    $("#fieldset_modeloevaluativo").hide();
+                    $("#id_modeloevaluativo").removeClass('validate[required]');
+                }
+            };
+
+            $("#id_usamodeloevaluativo").click(function () {
+                verifica_modelo();
+            });
+
+            verifica_cupo();
+            verifica_selector_tipo();
+
+
+            verifica_modelo();
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursoscomplementarios{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios?id={{ actividad.id }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editar'/>
+    <input type='hidden' name='id' value='{{ actividad.id }}'/>
+{% endblock %}
+{% block formback %}/adm_cursoscomplementarios{% endblock %}

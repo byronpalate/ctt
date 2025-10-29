@@ -1,0 +1,17 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+    $(function(){
+        $("#id_grupo").addClass("validate[required]");
+    });
+    </script>
+{% endblock %}
+{% block atras %}/administrativos?id={{ administrativo.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/administrativos{% endblock %}
+{% block formdestination %}/administrativos?id={{ administrativo.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addgrupo'/>
+    <input type='hidden' name='id' value="{{ administrativo.id }}"/>
+{% endblock %}
+{% block formback %}/administrativos?id={{ administrativo.id }}{% endblock %}

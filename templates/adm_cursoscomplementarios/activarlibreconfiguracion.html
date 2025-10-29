@@ -1,0 +1,11 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios{% endblock %}
+{% block formactionvalue %}activarlibreconfiguracion{% endblock %}
+{% block formobjectid %}{{ actividad.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea activar la opción de Libre Configuración en el curso: {% endblock %}
+{% block formobjectrepr %} {{ actividad }}{% endblock %}
+{% block fieldsextra %}
+    <input type='hidden' name='actividad' value='{{ actividad.id }}'>
+{% endblock %}

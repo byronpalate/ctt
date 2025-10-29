@@ -232,19 +232,6 @@ def costo_matricula(inscripcion, asignaturas, materias, nivel, fecha):
                 valor_arancel = 0
             else:
                 valor_arancel = null_to_numeric(precioperiodo.precioarancel, 2)
-    for asignaturamodulo in malla.modulomalla_set.filter(asignatura__id__in=asignaturas):
-        costomateria = costo_materia(inscripcion, asignaturamodulo.asignatura, nivel)
-        matriculas = costomateria[1]
-        if Materia.objects.filter(id__in=materias, intensivo=True).exists():
-            if matriculas >= 1 and preciosotros:
-                valor_modulo = null_to_numeric(valor_modulo + preciosotros.precioarrastremodulo, 2)
-            else:
-                valor_modulo = null_to_numeric(valor_modulo + preciosotros.preciomodulo, 2)
-        else:
-            if matriculas >= 1 and preciosotros:
-                valor_modulo = null_to_numeric(valor_modulo + preciosotros.precioarrastremodulo, 2)
-            else:
-                valor_modulo = null_to_numeric(valor_modulo + 0, 2)
     if es_especial:
         if valor_matricula > 0 and porciento_extra_matricula > 0:
             valor_matricula_extra = null_to_numeric(valor_matricula * (porciento_extra_matricula / 100.0), 2)
@@ -657,32 +644,6 @@ def calcular_agregacion(matricula, asignatura, tiponominacion):
 #                                     descripcion='TERCERA MATRICULA')
 #             ro.save()
 #             rubro.actulizar_nombre()
-
-
-def calculo_derecho_rotativo(matricula):
-    fecha_pagos = matricula.fecha
-    es_posgrado = True if (matricula.inscripcion.carrera.posgrado) else False
-    # CALCULO DE LA MATRICULA
-    asignaturas = [x.asignaturareal.id for x in matricula.materiaasignada_set.all()]
-    materias = [x.materia.id for x in matricula.materiaasignada_set.all()]
-    costomatricula = costo_matricula(matricula.inscripcion, asignaturas, materias, matricula.nivel, matricula.fecha)
-    if costomatricula[11] > 0:
-        valor_derechorotativo = null_to_numeric(costomatricula[11], 2)
-        rubro = Rubro(fecha=fecha_pagos,
-                      fechavence=fecha_pagos,
-                      valor=valor_derechorotativo,
-                      iva_id=TIPO_IVA_0_ID,
-                      periodo=matricula.nivel.periodo,
-                      valoriva=0,
-                      valortotal=valor_derechorotativo,
-                      saldo=valor_derechorotativo,
-                      inscripcion=matricula.inscripcion)
-        rubro.save()
-        ro = RubroOtro(rubro=rubro,
-                       tipo_id=15)
-        ro.save()
-        rubro.actulizar_nombre('DERECHO INTERNADO ROTATIVO')
-
 
 def calculo_eliminacionmateria(materiaasignada, responsable, motivo):
     if materiaasignada.matricula.inscripcion.carrera.tipogrado.id == CUARTO_NIVEL_TITULACION_ID:

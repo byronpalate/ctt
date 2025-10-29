@@ -1327,41 +1327,6 @@ def view(request):
                     transaction.set_rollback(True)
                     return bad_json(error=1, ex=ex)
 
-            if action == 'importarplantillas':
-                try:
-                    lms = Lms.objects.get(pk=int(request.POST['id']))
-                    local_scope = {}
-                    exec(lms.logica_plantillas, globals(), local_scope)
-                    logica_plantillas = local_scope['logica_plantillas']
-                    logica_plantillas(lms)
-
-                    log(u'Actualizo plantilla: %s' % lms, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'deleteplantilla':
-                try:
-                    plantilla = PlantillasLms.objects.get(pk=request.POST['id'])
-                    if plantilla.en_uso():
-                        return bad_json(error=8)
-                    log(u'Elimino plantilla lms: %s' % plantilla, request, "del")
-                    plantilla.delete()
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=2, ex=ex)
-
-            if action == 'deletebloqueolms':
-                try:
-                    bloqueado = BloqueoLms.objects.get(pk=request.POST['id'])
-                    log(u'Elimino bloqueado lms: %s' % bloqueado, request, "del")
-                    bloqueado.delete()
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=2, ex=ex)
 
             if action == 'activarapi':
                 try:
@@ -1372,34 +1337,6 @@ def view(request):
                         log(u'Desactivo Api: %s' % api, request, "edit")
                     else:
                         log(u'Activo Api: %s' % api, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=2, ex=ex)
-
-            if action == 'activarlms':
-                try:
-                    lms = Lms.objects.get(pk=request.POST['id'])
-                    lms.activo = request.POST['valor'] == 'true'
-                    lms.save()
-                    if lms.activo:
-                        log(u'Desactivo lms: %s' % lms, request, "edit")
-                    else:
-                        log(u'Activo lms: %s' % lms, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=2, ex=ex)
-
-            if action == 'activarplantilla':
-                try:
-                    plantillalms = PlantillasLms.objects.get(pk=request.POST['id'])
-                    plantillalms.activo = request.POST['valor'] == 'true'
-                    plantillalms.save()
-                    if plantillalms.activo:
-                        log(u'Desactivo plantilla lms: %s' % plantillalms, request, "edit")
-                    else:
-                        log(u'Activo plantilla lms: %s' % plantillalms, request, "edit")
                     return ok_json()
                 except Exception as ex:
                     transaction.set_rollback(True)
@@ -2184,61 +2121,6 @@ def view(request):
                     data['ids'] = ids
                     data['plantillas'] = page.object_list
                     return render(request, "adm_institucion/plantillaslms.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'modeloslms':
-                try:
-                    data['title'] = u'Modelos LMS'
-                    data['lms'] = Lms.objects.get(pk=int(request.GET['id']))
-                    data['modelos'] = ModeloEvaluativo.objects.all()
-                    return render(request, "adm_institucion/modeloslms.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'bloqueadoslms':
-                try:
-                    data['title'] = u'Bloqueos LMS'
-                    data['lms'] = lms = Lms.objects.get(pk=int(request.GET['id']))
-                    bloqueados = BloqueoLms.objects.filter(lms=lms)
-                    search = ''
-                    ids = None
-                    if 's' in request.GET:
-                        search = request.GET['s'].strip()
-                        ss = search.split(' ')
-                        if len(ss) == 1:
-                            bloqueados = BloqueoLms.objects.filter(Q(persona__nombre1__icontains=search) |
-                                                                   Q(persona__nombre2__icontains=search) |
-                                                                   Q(persona__apellido1__icontains=search) |
-                                                                   Q(persona__apellido2__icontains=search) |
-                                                                   Q(persona__cedula__icontains=search) |
-                                                                   Q(persona__pasaporte__icontains=search) |
-                                                                   Q(identificador__icontains=search) |
-                                                                   Q(carrera__nombre__icontains=search) |
-                                                                   Q(persona__usuario__username__icontains=search)).distinct()
-                        else:
-                            bloqueados = BloqueoLms.objects.filter(Q(persona__apellido1__icontains=ss[0]) &
-                                                                   Q(persona__apellido2__icontains=ss[1])).distinct()
-                    paging = MiPaginador(bloqueados, 25)
-                    p = 1
-                    try:
-                        paginasesion = 1
-                        if 'adm_institucion_bloqueadoslms_page' in request.session:
-                            p = int(request.session['adm_institucion_bloqueadoslms_page'])
-                        if 'page' in request.GET:
-                            request.session['adm_institucion_bloqueadoslms_page'] = p = int(request.GET['page'])
-                        page = paging.page(p)
-                    except:
-                        p = 1
-                        page = paging.page(p)
-                    data['pagenumber'] = request.session['adm_institucion_bloqueadoslms_page'] = p
-                    data['paging'] = paging
-                    data['rangospaging'] = paging.rangos_paginado(p)
-                    data['page'] = page
-                    data['search'] = search
-                    data['ids'] = ids
-                    data['bloqueados'] = page.object_list
-                    return render(request, "adm_institucion/bloqueadoslms.html", data)
                 except Exception as ex:
                     pass
 

@@ -1,0 +1,93 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_modelos_evaluativos %}
+        <div class='row'>
+            <div class="col-12">
+                <a href="javascript:;" nhref="/adm_modelosevaluativos?action=add" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th style="width: 80px; text-align: center">Fecha</th>
+                    <th style="width: 80px; text-align: center">Principal</th>
+                    <th style="width: 80px; text-align: center">Activo</th>
+                    <th style="width: 80px; text-align: center">Nota Aprobar</th>
+                    <th style="width: 80px; text-align: center">Nota Recuperación</th>
+                    <th style="width: 80px; text-align: center">Nota Máxima</th>
+                    <th style="width: 80px; text-align: center">Asistencia Recuperación</th>
+                    <th style="width: 80px; text-align: center">Asistencia Aprobar</th>
+                    <th style="width: 80px; text-align: center">Decimales Nota Final</th>
+                    <th style="width: 80px; text-align: center">Campos</th>
+                    <th style="width: 60px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for modelo in modelos %}
+                    <tr>
+                        <td>{{ modelo.nombre }}</td>
+                        <td style="text-align: center">{{ modelo.fecha|date:"Y-m-d"}}</td>
+                        <td style="text-align: center">
+                            {% if modelo.principal %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Principal">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Principal">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if modelo.activo %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activo">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activo">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">{{ modelo.notaaprobar|floatformat:2 }}</td>
+                        <td style="text-align: center">{{ modelo.notarecuperacion|floatformat:2 }}</td>
+                        <td style="text-align: center">{{ modelo.notamaxima|floatformat:2 }}</td>
+                        <td style="text-align: center">{{ modelo.asistenciarecuperacion|floatformat:2 }}</td>
+                        <td style="text-align: center">{{ modelo.asistenciaaprobar|floatformat:2 }}</td>
+                        <td style="text-align: center">{{ modelo.notafinaldecimales }}</td>
+                        <td style="text-align: center">{{ modelo.cantidad_campos }}</td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {% if perms.ctt.puede_modificar_modelos_evaluativos and not modelo.en_uso %}
+                                        <li class="smaller"><a href="javascript:;" nhref="/adm_modelosevaluativos?action=edit&id={{ modelo.id }}" class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
+                                    {% endif %}
+                                    <li class="smaller"><a href="javascript:;" nhref="/adm_modelosevaluativos?action=editestado&id={{ modelo.id }}" class="confirmacionmodal dropdown-item"><i class="icon-refresh"></i> Activar/Desactivar</a></li>
+                                    <li class="smaller"><a href="/adm_modelosevaluativos?action=detalle&id={{ modelo.id }}" class="dropdown-item"><i class="icon-list"></i> Campos del modelo</a></li>
+                                    <li class="smaller"><a href="javascript:;" nhref="/adm_modelosevaluativos?action=logica&id={{ modelo.id }}" class="dropdown-item formmodal"><i class="icon-edit"></i> Lógica de cálculo</a></li>
+                                    {% if perms.ctt.puede_modificar_modelos_evaluativos and not modelo.en_uso %}
+                                        <li class="dropdown-divider"></li>
+                                        <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref="/adm_modelosevaluativos?action=delmodelo&id={{ modelo.id }}"><i class="icon-remove"></i> Eliminar</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

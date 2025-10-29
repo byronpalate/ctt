@@ -1,0 +1,452 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript" src="/static/js/bootstrap-filestyle.min.js?v={{ institucion.versionstaticsjs }}"> </script>
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas?action=syllabus&id={{ silabo.modulomalla.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+            <h5>Materia: {{ planificacionmateria.materia }}</h5>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas%}
+    <div class="row">
+        <div class="col-12">
+            <table class="table table-bordered" style="width: 50%">
+                <thead class="table-light">
+                <tr>
+                    <th colspan="2" style="width: 25%; text-align: center">Materia</th>
+                    <th colspan="2" style="width: 25%; text-align: center">Horas docencia</th>
+                    <th colspan="2" style="width: 25%; text-align: center">Horas autónomas</th>
+                    <th colspan="2" style="width: 25%; text-align: center">Horas colaborativas</th>
+                    <th colspan="2" style="width: 25%; text-align: center">Horas prácticas</th>
+                </tr>
+                <tr>
+                    <th style="text-align: center; width: 10%">Total totales</th>
+                    <th style="text-align: center; width: 10%;">Créditos</th>
+                    <th style="text-align: center; width: 10%">Total</th>
+                    <th style="text-align: center; width: 10%;">No utilizadas</th>
+                    <th style="text-align: center; width: 10%;">Total</th>
+                    <th style="text-align: center; width: 10%;">No utilizadas</th>
+                    <th style="text-align: center; width: 10%;">Total</th>
+                    <th style="text-align: center; width: 10%;">No utilizadas</th>
+                    <th style="text-align: center; width: 10%;">Total</th>
+                    <th style="text-align: center; width: 10%;">No utilizadas</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td style="text-align: center;">{{ planificacionmateria.horas }}</td>
+                    <td style="text-align: center;" id="disp_docencia">{{ planificacionmateria.creditos}}</td>
+                    <td style="text-align: center;">{{ planificacionmateria.horasasistidasporeldocente }}</td>
+                    <td style="text-align: center;" id="disp_docencia">{{ planificacionmateria.disponile_docencia }}</td>
+                    <td  style="text-align: center;">{{ planificacionmateria.horasautonomas }}</td>
+                    <td  style="text-align: center;" id="disp_autonoma">{{ planificacionmateria.disponile_autonoma }}</td>
+                    <td  style="text-align: center;">{{ planificacionmateria.horascolaborativas }}</td>
+                    <td  style="text-align: center;" id="disp_col">{{ planificacionmateria.disponile_colabora }}</td>
+                    <td  style="text-align: center;">{{ planificacionmateria.horaspracticas }}</td>
+                    <td  style="text-align: center;" id="disp_prac">{{ planificacionmateria.disponile_practica }}</td>
+                </tr>
+                </tbody>
+            </table>
+            <table class='table table-bordered ' >
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 50%">Horario de tutoria:</th>
+                    <th>Horario de prácticas:</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{{ planificacionmateria.horariotutorias|default_if_none:"" }}</td>
+                    <td>{{ planificacionmateria.horariopracticas|default_if_none:"" }}</td>
+                </tr>
+                </tbody>
+            </table>
+            <table class='table table-bordered ' >
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 33%">Competencia generica de la institucion:</th>
+                    <th style="width: 33%">Competencia específica del proyecto formativo:</th>
+                    <th>Competencia específica del perfil de egreso:</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td style="vertical-align: top">{{ planificacionmateria.competenciagenericainstitucion|default_if_none:"" }}</td>
+                    <td style="vertical-align: top">{{ planificacionmateria.competenciaespecificaproyectoformativo|default_if_none:"" }}</td>
+                    <td style="vertical-align: top">{{ planificacionmateria.competenciaespecificaperfildeegreso|default_if_none:"" }}</td>
+                </tr>
+                </tbody>
+            </table>
+            <table class='table table-bordered ' >
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 33%">Contribución a la carrera:</th>
+                    <th style="width: 33%">Problema abordado y metodos de enseñanza:</th>
+                    <th>Proyecto final:</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td style="vertical-align: top">{{ planificacionmateria.contribucioncarrera|default_if_none:"" }}</td>
+                    <td style="vertical-align: top">{{ planificacionmateria.problemaabordadometodosdeensenanza|default_if_none:"" }}</td>
+                    <td style="vertical-align: top">{{ planificacionmateria.proyectofinal|default_if_none:"" }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <h5>Rúbrica</h5>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-bordered ' >
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 50%">Evidencia</th>
+                    <th>Indicadores</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td style="vertical-align: top">{{ rubrica.evidencia|default_if_none:'' }}</td>
+                    <td style="vertical-align: top">{{ rubrica.criterio|default_if_none:'' }}</td>
+                </tr>
+                </tbody>
+            </table>
+            <table class='table table-bordered ' >
+                <thead class="table-light">
+                <tr>
+                    <th>Excelente</th>
+                    <th>Avanzado</th>
+                    <th>Medio</th>
+                    <th>Bajo</th>
+                    <th>Deficiente</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td style="vertical-align: top">{{ rubrica.logroexcelente|default_if_none:'' }}</td>
+                    <td style="vertical-align: top">{{ rubrica.logroavanzado|default_if_none:'' }}</td>
+                    <td style="vertical-align: top">{{ rubrica.logromedio|default_if_none:'' }}</td>
+                    <td style="vertical-align: top">{{ rubrica.logrobajo|default_if_none:'' }}</td>
+                    <td style="vertical-align: top">{{ rubrica.logrodeficiente|default_if_none:'' }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <h5>Talleres</h5>
+        </div>
+    </div>
+    {% for taller in talleres %}
+        <h5>Taller: {{ taller.nombretaller }}</h5>
+        <table class='table table-bordered ' >
+            <thead class="table-light">
+            <tr>
+                <th style="width: 33%">Resultado de aprendizaje</th>
+                <th style="width: 33%">Recursos utilizados</th>
+                <th>Dimensión procedimental</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td style="vertical-align: top">{{ taller.resultadoaprendizaje|default_if_none:'' }}</td>
+                <td style="vertical-align: top">{{ taller.recursosutilizados|default_if_none:'' }}</td>
+                <td style="vertical-align: top">{{ taller.dimensionprocedimental|default_if_none:'' }}</td>
+            </tr>
+            </tbody>
+        </table>
+        {% with rubricat=taller.mi_rubrica %}
+            <div class='row'>
+                <div class='col-12'>
+                    <h5>Rúbrica</h5>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-12'>
+                    <table class='table table-bordered ' >
+                        <thead class="table-light">
+                        <tr>
+                            <th style="width: 33%">Evidencia</th>
+                            <th style="width: 33%">Evidencia</th>
+                            <th>Indicadores</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="vertical-align: top">{{ taller.resultadoaprendizaje|default_if_none:'' }}</td>
+                            <td style="vertical-align: top">{{ rubricat.evidencia|default_if_none:'' }}</td>
+                            <td style="vertical-align: top">{{ rubricat.criterio|default_if_none:'' }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <table class='table table-bordered ' >
+                        <thead class="table-light">
+                        <tr>
+                            <th>Excelente</th>
+                            <th>Avanzado</th>
+                            <th>Medio</th>
+                            <th>Bajo</th>
+                            <th>Deficiente</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="vertical-align: top">{{ rubricat.logroexcelente|default_if_none:'' }}</td>
+                            <td style="vertical-align: top">{{ rubricat.logroavanzado|default_if_none:'' }}</td>
+                            <td style="vertical-align: top">{{ rubricat.logromedio|default_if_none:'' }}</td>
+                            <td style="vertical-align: top">{{ rubricat.logrobajo|default_if_none:'' }}</td>
+                            <td style="vertical-align: top">{{ rubricat.logrodeficiente|default_if_none:'' }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endwith %}
+        <div class='row'>
+            <div class='col-12'>
+                <h5>Clases</h5>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 70px; text-align: center">Fecha</th>
+                        <th style="width: 70px; text-align: center">Fecha fin act.</th>
+                        <th style="width: 350px">Contenido</th>
+                        <th>Actividades</th>
+                        <th style="width: 60px; text-align: center">Hrs.</th>
+                        <th style="width: 80px; text-align: center">Arch.</th>
+                    </tr>
+                    </thead>
+                    <tbody id="contenidotaller_{{ taller.id }}">
+                    {% for clase in taller.mis_clases %}
+                        <tr id="fila1_{{ clase.id }}" class="filasclases">
+                            <td style="text-align: center; vertical-align: middle">{{ clase.fecha|date:"Y-m-d" }}</td>
+                            <td style="text-align: center; vertical-align: middle">{{ clase.fechafinactividades|date:"Y-m-d" }}</td>
+                            <td style="vertical-align: middle">
+                                {{ clase.contenido }}
+                            </td>
+                            <td style="padding: 0">
+                                <table class="table table-condensed" style="margin-bottom: 10px; margin-top: 10px">
+                                    {% if clase.actividadesaprendizajecondocenciaasistida_uno %}
+                                        <tr>
+                                            <td style="width: 40px; text-align: center"><span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horas asistidas">HD</span></td>
+                                            <td style="width: 60px; text-align: center">{{ clase.horasdocente_uno|floatformat:1  }}</td>
+                                            <td>{{ clase.actividadesaprendizajecondocenciaasistida_uno  }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if clase.actividadesaprendizajecondocenciaasistida_dos %}
+                                        <tr>
+                                            <td style="width: 40px; text-align: center"><span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horas asistidas">HD</span></td>
+                                            <td style="width: 60px; text-align: center">{{ clase.horasdocente_dos|floatformat:1  }}</td>
+                                            <td>{{ clase.actividadesaprendizajecondocenciaasistida_dos  }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if clase.actividadesaprendizajecolaborativas %}
+                                        <tr>
+                                            <td style="width: 40px; text-align: center"><span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horas colaborativas">HC</span></td>
+                                            <td style="width: 60px; text-align: center">{{ clase.horascolaborativas|floatformat:1  }}</td>
+                                            <td>{{ clase.actividadesaprendizajecolaborativas }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if clase.actividadestrabajoautonomas %}
+                                        <tr>
+                                            <td style="width: 40px; text-align: center"><span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horas autonomas">HA</span></td>
+                                            <td style="width: 60px; text-align: center">{{ clase.horasautonomas|floatformat:1  }}</td>
+                                            <td>{{ clase.actividadestrabajoautonomas }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if clase.actividadesaprendizajepractico %}
+                                        <tr>
+                                            <td style="width: 40px; text-align: center"><span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horas practicas">HP</span></td>
+                                            <td style="width: 60px; text-align: center">{{ clase.horaspracticas|floatformat:1  }}</td>
+                                            <td>{{ clase.actividadesaprendizajepractico }}</td>
+                                        </tr>
+                                    {% endif %}
+                                </table>
+                            </td>
+                            <td style="text-align: center">
+                                {{ clase.total_horas|floatformat:1 }}
+                            </td>
+                            <td style="vertical-align: middle; text-align: center">
+                                {% if clase.archivo %}
+                                    <a class="btn btn-sm btn-success descargararchivo tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar" href="{{ clase.archivo.url }}" target="_blank"><i class="icon-download-alt"></i></a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+    {% if guias %}
+        <div class='row'>
+            <div class='col-12'>
+                <h5>Guías prácticas</h5>
+            </div>
+        </div>
+        {% for guia in guias %}
+            <div class='row'>
+                <div class='col-12'>
+                    <h5>Guia: {{ guia.titulo }} - {{ guia.get_tipo_display }} - {{ guia.horas }}Hrs.</h5>
+                    <table class="table table-bordered ">
+                        <thead class="table-light">
+                        <tr>
+                            <th style="width: 50%">Recursos</th>
+                            <th style="width: 50%">Equipos o herramientas</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="vertical-align: top">{{ guia.recursos }}</td>
+                            <td style="vertical-align: top">{{ guia.equipos }}</td>
+                        </tr>
+                        </tbody>
+                        <thead class="table-light">
+                        <tr>
+                            <th>Materiales</th>
+                            <th>Ractivos</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="vertical-align: top">{{ guia.materiales }}</td>
+                            <td style="vertical-align: top">{{ guia.reactivos }}</td>
+                        </tr>
+                        </tbody>
+
+                        <thead class="table-light">
+                        <tr>
+                            <th>Empresa</th>
+                            <th>Materiales bibliograficos</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="vertical-align: top">{{ guia.empresa}}</td>
+                            <td style="vertical-align: top">{{ guia.materialesbibliograficos }}</td>
+                        </tr>
+                        </tbody>
+                        <thead class="table-light">
+                        <tr>
+                            <th>Instrumentos</th>
+                            <th>Herramientas</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="vertical-align: top">{{ guia.instrumentos }}</td>
+                            <td style="vertical-align: top">{{ guia.herramientas }}</td>
+                        </tr>
+                        </tbody>
+                        <thead class="table-light">
+                        <tr>
+                            <th>Resultados</th>
+                            <th>Conclusiones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="vertical-align: top">{{ guia.resultados }}</td>
+                            <td style="vertical-align: top">{{ guia.conclusiones }}</td>
+                        </tr>
+                        </tbody>
+                        <thead class="table-light">
+                        <tr>
+                            <th>Objetivo</th>
+                            <th>Actividades</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="vertical-align: top">{{ guia.objetivo}}</td>
+                            <td style="vertical-align: top">{{ guia.actividades }}</td>
+                        </tr>
+                        </tbody>
+                        <thead class="table-light">
+                        <tr>
+                            <th>Fundamento teorico</th>
+                            <th>Procedimiento</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="vertical-align: top">{{ guia.fundamentoteorico }}</td>
+                            <td style="vertical-align: top">{{ guia.procedimiento }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div class='row'>
+        <div class='col-12'>
+            <h5>Bibliografías</h5>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <table class="table table-bordered ">
+                <thead class="table-light">
+                <tr>
+                    <th colspan="2">
+                        Bibliografía Complementaria
+                    </th>
+                </tr>
+                <tr>
+                    <th style="width: 100px">Código</th>
+                    <th>Descripción</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for basica in planificacionmateria.bibliografia_complementaria %}
+                    <tr>
+                        <td>{{ basica.codigobibliotecabibliografiacomplementaria }}</td>
+                        <td>{{ basica.bibliografiacomplementaria }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <table class="table table-bordered ">
+                <thead class="table-light">
+                <tr>
+                    <th colspan="2">
+                        Bibliografía Básica
+                    </th>
+                </tr>
+                <tr>
+                    <th style="width: 100px">Código</th>
+                    <th>Descripción</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for basica in planificacionmateria.bibliografia_basica %}
+                    <tr>
+                        <td>{{ basica.codigobibliotecabibliografiabasica }}</td>
+                        <td>{{ basica.bibliografiabasica }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

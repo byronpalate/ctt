@@ -1,0 +1,155 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_campoformacion, #id_areaconocimiento, #id_tipomateria, #id_ejeformativo, #id_nivelmalla, #id_asignatura, #id_horas, #id_creditos, #id_identificacion").addClass("validate[required]");
+            $("#id_horassemanales").addClass("validate[min[1]]");
+
+            practicas = function(){
+                if ($("#id_practicas").is(':checked')){
+                    $("#id_codigopracticas").addClass("validate[required]");
+                    $("#fieldset_codigopracticas").show();
+                }else{
+                    $("#id_codigopracticas").val('').removeClass("validate[required]");
+                    $("#fieldset_codigopracticas").hide();
+                }
+            };
+
+            practicas();
+            $("#id_practicas").click(function(){
+                practicas();
+            });
+
+            $("#id_horassemanales, #id_horas, #id_organizacionaprendizaje, #id_horasasistidas, #id_horasdocencia, #id_horascolaborativas, #id_horasorganizacionaprendizaje, #id_horasautonomas, #id_horascolaborativas, #id_horaspracticas").blur(function(){
+                numerico($(this), 0, 0, 1);
+            });
+
+            $("#id_creditos").blur(function(){
+                numerico($(this), 0, 20, 4);
+            });
+
+            $("#id_cantidadmatriculas").blur(function(){
+                numerico($(this), 1, 0, 0);
+            });
+
+            $(document).ready(function () {
+                var modelomallaseleccionada = $('#id_modelonuevo').val();
+                modelomalla(modelomallaseleccionada);
+            })
+
+            $('#id_modelonuevo').change(function () {
+                modelomalla($(this).val());
+            });
+
+
+            modelomalla = function(mm){
+                const campoformacion = $("#fieldset_campoformacion");
+                const horascolaborativas = $("#fieldset_horascolaborativas");
+                const organizacionaprendizaje = $("#fieldset_organizacionaprendizaje");
+                const horasorganizacionaprendizaje = $("#fieldset_horasorganizacionaprendizaje");
+                const horasdocencia = $("#fieldset_horasdocencia");
+                const horasautonomas = $("#fieldset_horasautonomas");
+                const horaspracticas = $("#fieldset_horaspracticas");
+                const horasasistidas = $("#fieldset_horasasistidas");
+                const totalhorasaprendizajecontactodocente = $("#fieldset_totalhorasaprendizajecontactodocente");
+                const totalhorasaprendizajeautonomo = $("#fieldset_totalhorasaprendizajeautonomo");
+                const totalhorasaprendizajepracticoexperimental = $("#fieldset_totalhorasaprendizajepracticoexperimental");
+
+                switch (mm) {
+                    case "1":
+                        //se validan
+                        $("#id_campoformacion").addClass("validate[required]");
+                        //se ocultan
+                        totalhorasaprendizajecontactodocente.hide();
+                        totalhorasaprendizajeautonomo.hide();
+                        totalhorasaprendizajepracticoexperimental.hide();
+                        //se muestran
+                        campoformacion.show();
+                        horascolaborativas.show();
+                        organizacionaprendizaje.show();
+                        horasorganizacionaprendizaje.show();
+                        horasdocencia.show();
+                        horasorganizacionaprendizaje.show();
+                        horasautonomas.show();
+                        horaspracticas.show();
+                        horasasistidas.show();
+                        break;
+                    case "2":
+                        //no se validan
+                        $("#id_campoformacion").removeClass("validate[required]");
+                        //se ocultan
+                        campoformacion.hide();
+                        horascolaborativas.hide();
+                        organizacionaprendizaje.hide();
+                        horasorganizacionaprendizaje.hide();
+                        horasasistidas.hide();
+                        horasdocencia.hide();
+                        horasorganizacionaprendizaje.hide();
+                        horasautonomas.hide();
+                        horaspracticas.hide();
+                        //se muesetran
+                        totalhorasaprendizajecontactodocente.show();
+                        totalhorasaprendizajepracticoexperimental.show();
+                        totalhorasaprendizajeautonomo.show();
+                        break;
+                    default:
+                        //se ocultan
+                        totalhorasaprendizajecontactodocente.hide();
+                        totalhorasaprendizajeautonomo.hide();
+                        totalhorasaprendizajepracticoexperimental.hide();
+                        //se muestran
+                        campoformacion.show();
+                        horascolaborativas.show();
+                        organizacionaprendizaje.show();
+                        horasorganizacionaprendizaje.show();
+                        horasdocencia.show();
+                        horasorganizacionaprendizaje.show();
+                        horasautonomas.show();
+                        horaspracticas.show();
+                        horasasistidas.show();
+                }
+            };
+
+            $('#id_lms').change(function(){
+                $('#id_plantillalms').children().remove().end().append('<option selected="selected" value="">---------</option>');
+                var id = parseInt($('#id_lms').val());
+                if (id > 0){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/adm_mallas",
+                        data: {'action': 'plantillalms', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (i in data.lista){
+                                    elemento = data.lista[i];
+                                    $('#id_plantillalms').append('<option value="'+elemento.id+'">'+elemento.nombre+'</option>');
+                                }
+                            } else {
+                                $('#id_lms').val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            $('#id_lms').val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+            
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas?action=modulos&id={{ modulomalla.malla.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_mallas{% endblock %}
+{% block formdestination %}/adm_mallas?action=modulos&id={{ modulomalla.malla.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editmodulo'/>
+    <input type='hidden' name='id' value='{{ modulomalla.id }}'/>
+{% endblock %}
+{% block formback %}/adm_mallas?action=modulos&id={{ modulomalla.malla.id }}{% endblock %}

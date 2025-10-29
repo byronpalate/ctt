@@ -1,0 +1,161 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function () {
+
+            $("#selectorcarrera").change(function () {
+                var valor = $(this).val();
+                bloqueointerface();
+                location.href = '/adm_mallas?c=' + valor;
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <select id="selectorcarrera" style="width: 100%" class="form-select form-select-sm">
+                {% for c in carreras %}
+                    <option value="{{ c.id }}" {% if carrera == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_mallas %}
+        <div class='row mb-2'>
+            <div class='col-12'>
+                <a href="javascript:;" nhref="/adm_mallas?action=add" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr class="autoheight">
+                    <th style="width: 10px">id<br>Malla</th>
+                    <th style="width: 100px">Modalidad</th>
+                    <th>Título obtenido</th>
+                    <th style="width: 120px">C&oacute;digo</th>
+                    <th style="width: 70px; text-align: center">Cr&eacute;ditos</th>
+                    <th style="width: 50px; text-align: center">Horas Total</th>
+                    <th style="width: 50px; text-align: center">Horas Matr.</th>
+                    <th style="width: 50px; text-align: center">Horas Prac.</th>
+                    <th style="width: 50px; text-align: center">Horas Vinc.</th>
+                    <th style="width: 50px; text-align: center">Itiner.</th>
+                    <th style="width: 50px; text-align: center">Niveles</th>
+                    <th style="width: 50px; text-align: center">Mat.</th>
+                    <th style="width: 50px; text-align: center">Mod.</th>
+                    <th style="width: 50px; text-align: center">Mat. Online</th>
+                    <th style="width: 50px; text-align: center">Vigente</th>
+                    <th style="width: 80px; text-align: center">Vigencia</th>
+                    <th style="width: 20px; text-align: center">En Uso</th>
+                    <th style="width: 20px; text-align: center">Aprobado</th>
+                    <th style="width: 20px; text-align: center">Habilitado <br>Financiero</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for malla in mallas %}
+                    <tr>
+                        <td>
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Id Malla">{{ malla.id }}</span>
+                        </td>
+                        <td>{{ malla.modalidad }}</td>
+                        <td>{{ malla.tituloobtenido|default:'' }}</td>
+                        <td>
+                            {% for c in malla.codigos %}
+                                {% if c.codigo %}
+                                    {{ c.sede.alias }}: {{ c.codigo }}{% if not forloop.last %}<br>{% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td style="text-align: center;">{{ malla.cantidad_creditos_solo_malla }}</td>
+                        <td style="text-align: center;">{{ malla.total_totales|floatformat:1 }}</td>
+                        <td style="text-align: center;">{{ malla.horas|floatformat:1 }}</td>
+                        <td style="text-align: center;">{{ malla.horaspracticas|floatformat:0 }}</td>
+                        <td style="text-align: center;">{{ malla.horasvinculacion|floatformat:0 }}</td>
+                        <td style="text-align: center;">{{ malla.cantidad_itinerarios|floatformat:0 }}</td>
+                        <td style="text-align: center;">{{ malla.nivelesregulares }}</td>
+                        <td style="text-align: center">{{ malla.cantidad_materias }}</td>
+                        <td style="text-align: center;">{{ malla.cantidad_modulos }}</td>
+                        <td style="text-align: center;">{{ malla.maximomateriasonline }}</td>
+                        <td style="text-align: center">
+                            {% if malla.vigente %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Vigente">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Vigente">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">{{ malla.inicio|date:"Y-m-d" }}<br>{{ malla.fin|date:"Y-m-d" }}
+                        </td>
+                        <td style="text-align: center">{{ malla.cantidad_estudiantes_usando }}</td>
+                        <td style="text-align: center">
+                            {% if malla.aprobado %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Aprobado por {{ malla.persona_aprueba }}">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if malla.activo %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Ingreso valores financiero">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Ingreso valores financiero">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" href="javascript:;">Acciones<span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {% if perms.ctt.puede_modificar_mallas or permite_modificar %}
+                                        {% if not malla.activo and modificamalla %}
+                                            <li class="smaller"><a href="javascript:;" nhref="/adm_mallas?action=apruebafinanciero&id={{ malla.id }}" class="confirmacionmodal dropdown-item"><i class="icon-ok"></i> Aprobar Ingreso Valores Financiero</a></li>
+                                            <li class="dropdown-divider"></li>
+                                        {% endif %}
+                                        {% if  malla.activo and modificamalla %}
+                                            <li class="smaller"><a href="javascript:;" nhref="/adm_mallas?action=desaprobarfinanciero&id={{ malla.id }}" class="confirmacionmodal dropdown-item"><i class="icon-remove"></i> Desaprobar Ingreso Valores Financiero</a></li>
+                                            <li class="dropdown-divider"></li>
+                                        {% endif %}
+                                        {% if not malla.aprobado and modificamalla %}
+                                            <li class="smaller"><a href="javascript:;" nhref="/adm_mallas?action=aprueba&id={{ malla.id }}" class="confirmacionmodal dropdown-item"><i class="icon-ok"></i> Aprobar Malla</a></li><li class="dropdown-divider"></li>
+                                        {% endif %}
+                                        {% if malla.aprobado and modificamalla %}
+                                            <li class="smaller"><a href="javascript:;" nhref="/adm_mallas?action=desaprobar&id={{ malla.id }}" class="confirmacionmodal dropdown-item"><i class="icon-remove"></i> Desaprobar Malla</a></li>
+                                            <li class="dropdown-divider"></li>
+                                        {% endif %}
+                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/adm_mallas?action=editmalla&id={{ malla.id }}'><i class="icon-edit"></i> Editar</a></li>
+                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/adm_mallas?action=clonarmalla&id={{ malla.id }}'><i class="icon-edit"></i> Clonar</a></li>
+                                    {% endif %}
+                                    <li class="smaller"><a href='/adm_mallas?action=edit&id={{ malla.id }}' class="dropdown-item"><i class="icon-list"></i>Asignaturas</a></li>
+                                    <li class="smaller"><a href='/adm_mallas?action=infosede&id={{ malla.id }}' class="dropdown-item"><i class="icon-list"></i> Lugar de ejecución</a></li>
+                                    <li class="smaller"><a href='/adm_mallas?action=competenciase&id={{ malla.id }}' class="dropdown-item"><i class="icon-list"></i> Competencias específicas</a></li>
+                                    <li class="smaller"><a href='/adm_mallas?action=competenciasg&id={{ malla.id }}' class="dropdown-item"><i class="icon-list"></i> Competencias genéricas</a></li>
+                                    <li class="smaller"><a href='/adm_mallas?action=evidencias&id={{ malla.id }}' class="dropdown-item"><i class="icon-list"></i> Evidencias</a></li>
+                                    <li class="smaller"><a href='/adm_mallas?action=otrosrequisitos&id={{ malla.id }}' class="dropdown-item"><i class="icon-list"></i> Otros Requisitos</a></li>
+                                    {% if malla.puede_eliminarse %}
+                                        <li class="dropdown-divider"></li>
+                                        <li class="smaller"><a href="javascript:;" nhref='/adm_mallas?action=delete&id={{ malla.id }}'  class="eliminacionmodal dropdown-item"><i class="icon-remove"></i> Eliminar</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

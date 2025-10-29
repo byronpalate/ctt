@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_carreras?action=competencias&id={{ competencia.carrera.id }}{% endblock %}
+{% block formaction %}/adm_carreras{% endblock %}
+{% block formactionvalue %}delcompetencia{% endblock %}
+{% block formobjectid %}{{ competencia.id }}{% endblock %}
+{% block formobjectname %}la competencia{% endblock %}
+{% block formobjectrepr %}{{ competencia }}{% endblock %}

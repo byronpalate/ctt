@@ -1,0 +1,98 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas?action=edit&id={{ asignaturamalla.malla.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Asignatura: {{ asignaturamalla }}</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_mallas and permite_modificar %}
+        <div class='row mb-2'>
+            <div class='col-12'>
+                {% if permite_modificar %}
+                    <a href="javascript:;" nhref="/adm_mallas?action=addpredecesora&id={{ asignaturamalla.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-hover'>
+                <thead class="table-light">
+                <tr>
+                    <th>Asignaturas</th>
+                    <th style="width: 150px">Nivel</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for predecesora in predecesoras %}
+                    <tr>
+                        <td>{{ predecesora.predecesora.asignatura }}</td>
+                        <td >{{ predecesora.predecesora.nivelmalla }}</td>
+                        <td style="text-align: center">
+                            {% if permite_modificar %}
+                                <a href="javascript:;" nhref='/adm_mallas?action=delpredecesora&id={{ predecesora.id }}' class="btn btn-ssm btn-danger btn-form tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>Módulo</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_mallas and permite_modificar %}
+        <div class='row mb-2'>
+            <div class='col-12'>
+                <a href="javascript:;" nhref="/adm_mallas?action=addpredecesoraasignaturamodulo&id={{ asignaturamalla.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-bordered table-hover'>
+                <thead class="table-light">
+                <tr>
+                    <th>Asignaturas</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for predecesora in predecesorasmodulo %}
+                    <tr>
+                        <td>{{ predecesora.predecesoramodulo.asignatura }}</td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_mallas and permite_modificar %}
+                                <a href="javascript:;" nhref='/adm_mallas?action=delpredecesoraasignaturamodulo&id={{ predecesora.id }}' class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

@@ -40,9 +40,7 @@ def view(request):
     periodo = request.session['periodo']
     institucion = mi_institucion()
     miscarreras = Carrera.objects.filter(grupocoordinadorcarrera__group__in=persona.grupos()).distinct()
-    data['PERSONA_ADMINS_ACADEMICO_ID'] = False
-    if persona.id in PERSONA_ADMINS_ACADEMICO_ID:
-        data['PERSONA_ADMINS_ACADEMICO_ID'] = True
+
     if request.method == 'POST':
         if 'action' in request.POST:
             action = request.POST['action']
@@ -116,24 +114,19 @@ def view(request):
                     if not matricula.permite_agregaciones() and tiponominacion == 'moduloasignar':
                         return bad_json(mensaje=u"No puede agregar materias fuera de las fechas permitidas.")
                     malla = matricula.inscripcion.mi_malla()
-                    itinerario = matricula.inscripcion.mi_itinerario()
+
                     am = None
                     mm = None
                     horas = materia.horas
                     creditos = materia.creditos
-                    if malla.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=itinerario), asignatura=representa).exists():
-                        am = malla.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=itinerario), asignatura=representa)[0]
+                    if malla.asignaturamalla_set.filter( asignatura=representa).exists():
+                        am = malla.asignaturamalla_set.filter(asignatura=representa)[0]
                         horas = am.horas
                         creditos = am.creditos
-                    elif malla.modulomalla_set.filter(asignatura=representa).exists():
-                        mm = malla.modulomalla_set.filter(asignatura=representa)[0]
-                        horas = mm.horas
-                        creditos = mm.creditos
                     matriculas = matricula.inscripcion.historicorecordacademico_set.filter(noaplica=False, convalidacion=False, homologada=False, asignatura=representa, fecha__lt=materia.nivel.fin).count() + 1
                     materiaasignada = MateriaAsignada(matricula=matricula,
                                                       materia=materia,
                                                       asignaturamalla=am,
-                                                      modulomalla=mm,
                                                       asignaturareal=representa,
                                                       horas=horas,
                                                       creditos=creditos,
@@ -886,15 +879,11 @@ def view(request):
                             if inscripcion.persona.tiene_deuda_vencida():
                                 if not inscripcion.permitematriculacondeuda:
                                     data['errmsj'] = u'EL ESTUDIANTE TIENE DEUDA VIGENTE'
-                        data['itinerario'] = itinerario = inscripcion.mi_itinerario()
+
                         if inscripcion.mi_nivel().nivel.id == NIVEL_MALLA_CERO:
-                            data['materiasmalla'] = malla.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=itinerario), nivelmalla_id=NIVEL_MALLA_CERO).filter(matriculacion=True).order_by('nivelmalla', 'ejeformativo')
+                            data['materiasmalla'] = malla.asignaturamalla_set.filter(nivelmalla_id=NIVEL_MALLA_CERO).filter(matriculacion=True).order_by('nivelmalla', 'ejeformativo')
                         else:
-                            data['materiasmalla'] = malla.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=itinerario)).filter(matriculacion=True).order_by('nivelmalla', 'ejeformativo')
-                        if inscripcion.mi_nivel().nivel.id < 7:
-                            data['materiasmodulos'] = malla.modulomalla_set.all().order_by('asignatura__nombre')
-                        else:
-                            data['materiasmodulos'] = None
+                            data['materiasmalla'] = malla.asignaturamalla_set.filter().filter(matriculacion=True).order_by('nivelmalla', 'ejeformativo')
                         data['datosincripcion'] = inscripcion.documentosdeinscripcion_set.all()[0]
                         data['maximo_materia_online'] = malla.maximomateriasonline
                         data['secretarias'] = CargoInstitucion.objects.filter(cargo_id=50).distinct()
@@ -1095,14 +1084,13 @@ def view(request):
                     data['records'] = records = RecordAcademico.objects.filter(inscripcion=matricula.inscripcion, aprobada=True).order_by('asignatura')
                     aprobadasids = [x.asignatura.id for x in records]
                     malla = matricula.inscripcion.mi_malla()
-                    itinerario = matricula.inscripcion.mi_itinerario()
+
                     if not CALCULO_ASISTENCIA_CLASE:
                         for ma in matricula.materiaasignada_set.filter(cerrado=False):
                             ma.save(actualiza=True)
                             ma.actualiza_estado()
                     data['esposgrado'] = True if matricula.inscripcion.carrera.posgrado else False
-                    data['pendientes_malla'] = malla.asignaturamalla_set.filter(Q(itinerario__isnull=True) | Q(itinerario=itinerario)).exclude(asignatura_id__in=aprobadasids).order_by('nivelmalla')
-                    data['pendientes_modulos'] = malla.modulomalla_set.exclude(asignatura_id__in=aprobadasids).order_by('asignatura__nombre')
+                    data['pendientes_malla'] = malla.asignaturamalla_set.filter().exclude(asignatura_id__in=aprobadasids).order_by('nivelmalla')
                     data['genera_rubro_derecho'] = GENERAR_RUBRO_DERECHO
                     data['usa_retiro_materia'] = USA_RETIRO_MATERIA
                     data['permiteagregaciones'] = matricula.nivel.periodo.fecha_agregaciones()

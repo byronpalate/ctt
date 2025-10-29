@@ -1,0 +1,7 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios?action=horariomateria&id={{ clase.materiacurso.id }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formactionvalue %}delclase{% endblock %}
+{% block formobjectid %}{{ clase.id }}{% endblock %}
+{% block formobjectrepr %}{{ clase.materiacurso.asignatura }}{% endblock %}

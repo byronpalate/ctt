@@ -1,0 +1,135 @@
+{% extends "adm_institucion/1.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    {% if perms.ctt.puede_modificar_parametros_institucion %}
+        <a href="javascript:;" nhref="/adm_institucion?action=addpersonacargo" class='formmodal btn mb-2 btn-sm btn-success'><i class="icon-plus tu"></i> Adicionar</a>
+    {% endif %}
+    <table class="table table-bordered">
+        <thead class="table-light">
+        <tr>
+            <th>Cargo</th>
+            <th style="width: 300px">Persona</th>
+            <th style="width: 100px;">Identificaci&oacute;n</th>
+            <th style="width: 200px;">Tel&eacute;fono</th>
+            <th style="width: 200px;">Email</th>
+            <th style="width: 50px"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for cargoinstitucion in cargosinstitucion %}
+            <tr>
+                <td>{{ cargoinstitucion.cargo }}</td>
+                <td>{{ cargoinstitucion.persona }}</td>
+                <td>
+                    {% for identificacion in cargoinstitucion.persona.lista_identificaciones %}
+                        {{ identificacion }}{% if not forloop.last %}<br/>
+                        {% endif %}
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for telefono in cargoinstitucion.persona.telefonos %}
+                        {{ telefono }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+                <td>
+                    {% if cargoinstitucion.persona.emails %}
+                        <a href="mailto:{{ cargoinstitucion.persona.emails }}">{{ cargoinstitucion.persona.emails }}</a>
+                        <br>
+                    {% endif %}
+                </td>
+                <td style="text-align: center">
+                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                        <a href="javascript:;" nhref="/adm_institucion?action=delpersonacargo&id={{ cargoinstitucion.id }}&t=2" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="20">NO EXISTEN DATOS</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% for sede in sedes %}
+        {% if perms.ctt.puede_modificar_parametros_institucion %}
+            <a href="javascript:;" nhref="/adm_institucion?action=addpersonacargosede&id={{ sede.id }}" class='formmodal btn btn-sm mb-2 mt-2 btn-success'><i class="icon-plus tu"></i> Adicionar</a>
+        {% endif %}
+        <table class="table table-bordered">
+            <thead class="table-light">
+            <tr>
+                <th>Sede: {{ sede }}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td colspan="2" style="padding: 0">
+                    <div class='row'>
+                        <div class='col-12'>
+                            <table class="table table-bordered"
+                                   style="margin-bottom: 0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th colspan="6">Cargos de sede</th>
+                                </tr>
+                                <tr>
+                                    <th>Cargo</th>
+                                    <th style="width: 300px">Persona</th>
+                                    <th style="width: 100px;">Identificaci&oacute;n</th>
+                                    <th style="width: 200px;">Tel&eacute;fono</th>
+                                    <th style="width: 200px;">Email</th>
+                                    <th style="width: 50px"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for cargoinstitucion in sede.mis_cargos %}
+                                    <tr>
+                                        <td>{{ cargoinstitucion.cargo }}</td>
+                                        <td>{{ cargoinstitucion.persona }}</td>
+                                        <td>
+                                            {% for identificacion in cargoinstitucion.persona.lista_identificaciones %}
+                                                {{ identificacion }}
+                                                {% if not forloop.last %}
+                                                    <br/>{% endif %}
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {% for telefono in cargoinstitucion.persona.telefonos %}
+                                                {{ telefono }}
+                                                {% if not forloop.last %},
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {% if cargoinstitucion.persona.emails %}
+                                                <a href="mailto:{{ cargoinstitucion.persona.emails }}">{{ cargoinstitucion.persona.emails }}</a>
+                                                <br>
+                                            {% endif %}
+                                        </td>
+                                        <td style="text-align: center">
+                                            {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                                <a href="javascript:;" nhref="/adm_institucion?action=delpersonacargo&id={{ cargoinstitucion.id }}&t=2&h={{ sede.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="20">NO EXISTEN DATOS</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    {% endfor %}
+{% endblock %}

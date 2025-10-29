@@ -1,0 +1,38 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+
+              $("#id_urlfacturacion, #id_apikey, #id_pfx, #id_proveedorfacturacion").css({'text-transform': 'none'});
+
+            verifica_dato = function () {
+                if ($("#id_facturacionelectronicaexterna").is(':checked')){
+                     $("#id_urlfacturacion, #id_apikey, #id_pfx, #id_proveedorfacturacion").addClass('validate[required]');
+                    $("#fieldset_urlfacturacion, #fieldset_apikey, #fieldset_pfx, #fieldset_proveedorfacturacion").show();
+
+                }    else{
+                     $("#id_urlfacturacion, #id_apikey, #id_pfx, #id_proveedorfacturacion").removeClass('validate[required]').val('');
+                    $("#fieldset_urlfacturacion, #fieldset_apikey, #fieldset_pfx, #fieldset_proveedorfacturacion").hide();
+                }
+            };
+
+            $("#id_facturacionelectronicaexterna").click(function () {
+                verifica_dato();
+            });
+
+
+            verifica_dato();
+
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_institucion?t=4&h3=1{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_institucion?t=4&h3=1{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editdatosfactura'/>
+{% endblock %}
+{% block formback %}/adm_institucion?t=4&h3=1{% endblock %}
+{% block buttonname %}Guardar{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_institucion{% endblock %}
+{% block formdestination %}/adm_institucion?t=5&h4=0{% endblock %}
+{% block formactionvalue %}delbibvirtual{% endblock %}
+{% block formobjectid %}{{ rf.id }}{% endblock %}
+{% block formobjectname %}la biblioteca virtual{% endblock %}
+{% block formobjectrepr %}{{ rf }}{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            busqueda = function(tipo){
+                var term = '';
+
+                    term = $("#searchinput").val().trim().toUpperCase();
+
+                if (term.length>0){
+                    location.href = "/adm_carreras?action=titulosobtenidos&s="+term;
+                } else {
+                    location.href = "/adm_carreras?action=titulosobtenidos";
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda(1);
+            });
+
+            $('.busqueda').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    if ( $(this).hasClass('searchinput')){
+                        busqueda(1);
+                    } else {
+                        busqueda(2);
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_carreras{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="row">
+            <div class='col-6'>
+                {% if perms.ctt.puede_modificar_carreras %}
+                    <a href="javascript:;" nhref="/adm_carreras?action=addtitulos" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+                {% endif %}
+                <a href="/adm_carreras" class='btn btn-sm btn-success '><i class="icon-list"></i> Carreras</a>
+            </div>
+            <div class='col-6'>
+                <input class='form-control-sm busqueda' id="searchinput" type='text' value='{{ search }}' autocomplete="off"/>
+                <a href="javascript:;" id='search' class='btn btn-sm btn-info'><i class="icon-search"></i> Buscar</a>
+                {% if search or ids %}
+                    <a href="/adm_carreras?action=titulosobtenidos" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Título</th>
+                    <th style="width: 50px;text-align: center;">Uso</th>
+                    <th style="width: 80px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for titulo in titulos %}
+                    <tr>
+                        <td>{{ titulo }}</td>
+                        <td style="text-align: center">
+                            {% if titulo.tiene_mallas_usando %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="En uso">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="En uso">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_carreras %}
+                                {% if titulo.puede_eliminarse %}
+                                    <a href="javascript:;" nhref="/adm_carreras?action=edittitulo&id={{ titulo.id }}" class='btn btn-ssm btn-info formmodal'><i class="icon-edit"></i></a>
+                                    <a href="javascript:;" nhref='/adm_carreras?action=deltitulo&id={{ titulo.id }}' class="btn btn-ssm btn-danger eliminacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-12">
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item"><a href="/adm_carreras?action=titulosobtenidos&{% if search %}s={{ search }}&{% endif %}page=1" class= "page-link">1</a></li>
+                            <li class="page-item"><a href="/adm_carreras?action=titulosobtenidos&{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="page-link">...</a></li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_carreras?action=titulosobtenidos&{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item"><a href="/adm_carreras?action=titulosobtenidos&{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="page-link">...</a></li>
+                            <li class="page-item"><a href="/adm_carreras?action=titulosobtenidos&{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}" class="page-link">{{ paging.num_pages }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_carreras?action=titulosobtenidos&{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

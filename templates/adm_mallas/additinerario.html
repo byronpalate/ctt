@@ -1,0 +1,149 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_itinerario, #id_campoformacion, #id_areaconocimiento, #id_tipomateria, #id_ejeformativo, #id_nivelmalla, #id_asignatura, #id_horas, #id_creditos, #id_identificacion").addClass("validate[required]");
+            $("#id_horassemanales").addClass("validate[min[1]]");
+
+            practicas = function(){
+                if ($("#id_practicas").is(':checked')){
+                    $("#id_codigopracticas").addClass("validate[required]");
+                    $("#fieldset_codigopracticas").show();
+                }else{
+                    $("#id_codigopracticas").val('').removeClass("validate[required]");
+                    $("#fieldset_codigopracticas").hide();
+                }
+            };
+
+            practicas();
+
+            $("#id_practicas").click(function(){
+                practicas();
+            });
+
+            $("#id_horassemanales, #id_horas, #id_organizacionaprendizaje, #id_horasasistidas, #id_horasdocencia, #id_horascolaborativas, #id_horasorganizacionaprendizaje, #id_horasautonomas, #id_horascolaborativas, #id_horaspracticas").blur(function(){
+                numerico($(this), 0, 0, 1);
+            });
+
+            $("#id_creditos").blur(function(){
+                numerico($(this), 0, 20, 4);
+            });
+
+            $("#id_cantidadmatriculas").blur(function(){
+                numerico($(this), 1, 0, 0);
+            });
+            $(document).ready(function () {
+                var modelomallaseleccionada = $('#id_modelonuevo').val();
+                modelomalla(modelomallaseleccionada);
+            })
+
+            $('#id_modelonuevo').change(function () {
+                modelomalla($(this).val());
+            });
+
+            modelomalla = function (mm) {
+                switch (mm) {
+                    case "1":
+                        //se validan
+                        $("#id_campoformacion").addClass("validate[required]");
+                        //se ocultan
+                        var elDiv = document.getElementById("fieldset_totalhorasaprendizajecontactodocente"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_totalhorasaprendizajeautonomo"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_totalhorasaprendizajepracticoexperimental"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        //se muestran
+                        var elDiv = document.getElementById("fieldset_campoformacion"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horascolaborativas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_organizacionaprendizaje"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horasorganizacionaprendizaje"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horasdocencia"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horasorganizacionaprendizaje"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horasautonomas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horaspracticas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horasasistidas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        break;
+                    case "2":
+                        //se validan
+                        //no se validan
+                        $("#id_campoformacion").removeClass("validate[required]");
+                        //se ocultan
+                        var elDiv = document.getElementById("fieldset_campoformacion"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_horascolaborativas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_organizacionaprendizaje"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_horasorganizacionaprendizaje"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_horasasistidas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_horasdocencia"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_horasorganizacionaprendizaje"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_horasautonomas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_horaspracticas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        //se muesetran
+                        var elDiv = document.getElementById("fieldset_totalhorasaprendizajecontactodocente"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_totalhorasaprendizajepracticoexperimental"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_totalhorasaprendizajeautonomo"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        break;
+                    default:
+                        //se ocultan
+                        var elDiv = document.getElementById("fieldset_totalhorasaprendizajecontactodocente"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_totalhorasaprendizajeautonomo"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        var elDiv = document.getElementById("fieldset_totalhorasaprendizajepracticoexperimental"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'none';
+                        //se muestran
+                        var elDiv = document.getElementById("fieldset_campoformacion"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horascolaborativas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_organizacionaprendizaje"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horasorganizacionaprendizaje"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horasdocencia"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horasorganizacionaprendizaje"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horasautonomas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horaspracticas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                        var elDiv = document.getElementById("fieldset_horasasistidas"); //se define la variable "elDiv" igual a nuestro div
+                        elDiv.style.display = 'flex';
+                }
+            };
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas?action=itinerariosmalla&id={{ malla.id }}{% endblock %}
+{% block formdestination %}/adm_mallas?action=itinerarios&id={{ itinerario.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_mallas?action=itinerarios&id={{ itinerario.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='additinerario'/>
+    <input type='hidden' name='malla' value='{{ malla.id }}'/>
+    <input type='hidden' name='itinerario' value='{{ itinerario.id }}'/>
+{% endblock %}
+{% block formback %}/adm_mallas?action=itinerarios&id={{ itinerario.id }}{% endblock %}

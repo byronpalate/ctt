@@ -1,0 +1,95 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_modelosevaluativos{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class='row mb-2'>
+        <div class="col-12">
+            <a href="javascript:;" nhref="/adm_modelosevaluativos?action=adddetalle&id={{ modelo.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 80px; text-align: center">Campo</th>
+                    <th>Alternativas de evaluación</th>
+                    <th style="width: 80px; text-align: center">Orden</th>
+                    <th style="width: 80px; text-align: center">Nota m&iacute;nima</th>
+                    <th style="width: 80px; text-align: center">Nota m&aacute;xima</th>
+                    <th style="width: 80px; text-align: center">Cant. Decimales</th>
+                    <th style="width: 80px; text-align: center">Dependiente?</th>
+                    <th style="width: 80px; text-align: center">Actualiza Estado</th>
+                    <th style="width: 80px; text-align: center">Determina Estado Final</th>
+                    <th style="width: 80px; text-align: center">Req. Asist.</th>
+                    <th style="width: 80px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for campo in campos %}
+                    <tr>
+                        <td style="text-align: center">{{ campo.nombre }}</td>
+                        <td>{{ campo.alternativa|default_if_none:"" }}</td>
+                        <td style="text-align: center">{{ campo.orden }}</td>
+                        <td style="text-align: center">{{ campo.notaminima }}</td>
+                        <td style="text-align: center">{{ campo.notamaxima }}</td>
+                        <td style="text-align: center">{{ campo.decimales }}</td>
+                        <td style="text-align: center">
+                            {% if campo.dependiente %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Dependiente">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Dependiente">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if campo.actualizaestado %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Actualiza estado">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Actualiza estado">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if campo.determinaestadofinal %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Determina estado final">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Determina estado final">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if campo.dependeasistencia %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Depende de asistencia">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Depende de asistencia">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_modelos_evaluativos and not modelo.en_uso %}
+                                <a href="javascript:;" nhref="/adm_modelosevaluativos?action=editdetalle&id={{ campo.id }}" class="btn btn-info btn-ssm tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                <a href="javascript:;" nhref="/adm_modelosevaluativos?action=deldetalle&id={{ campo.id }}" class="btn btn-danger btn-ssm eliminacionmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

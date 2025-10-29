@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_carreras{% endblock %}
+{% block formdestination %}/adm_carreras?id={{ carrera.id }}{% endblock %}
+{% block formactionvalue %}deshabilitar{% endblock %}
+{% block formobjectid %}{{ carrera.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea deshabilitar:{% endblock %}
+{% block formobjectrepr %}{{ carrera }}{% endblock %}

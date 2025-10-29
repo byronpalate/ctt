@@ -1,0 +1,70 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function () {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Malla: {{ malla }}</h4>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_mallas %}
+        {% if permite_modificar %}
+            <div class="row">
+                <div class='col-6'>
+                    <a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref="/adm_mallas?action=additinerariomalla&id={{ malla.id }}"><i class="icon-plus tu"></i> Adicionar</a>
+                </div>
+            </div>
+            <br>
+        {% endif %}
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width:150px;">Nombre</th>
+                    <th>Titulo Obtenido</th>
+
+                    <th style="width: 80px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for itinerario in itinerarios %}
+                    <tr>
+                        <td>{{ itinerario.nombre }}</td>
+                        <td>{{ itinerario.tituloobtenido }}</td>
+                        <td style="text-align: center">
+                             <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" href="javascript:;">Acciones<span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {% if perms.ctt.puede_modificar_mallas or permite_modificar %}
+                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/adm_mallas?action=edititinerarios&id={{ itinerario.id }}'><i class="icon-edit"></i> Editar</a></li>
+                                        <li class="smaller"><a class="dropdown-item" href='/adm_mallas?action=itinerarios&id={{ itinerario.id }}'><i class="icon-edit"></i> Agregar Itinerario</a></li>
+                                    {% endif %}
+                                    {% if malla.puede_eliminarse %}
+                                        <li class="dropdown-divider"></li>
+                                        <li class="smaller"><a href="javascript:;" nhref='/adm_mallas?action=delete&id={{ malla.id }}' class="eliminacionmodal dropdown-item"><i class="icon-remove"></i> Eliminar</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

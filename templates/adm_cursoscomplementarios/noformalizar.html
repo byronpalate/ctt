@@ -1,0 +1,11 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/adm_cursoscomplementarios?action=registrados&id={{ matricula.curso.id }}{% endblock %}
+{% block formaction %}/adm_cursoscomplementarios{% endblock %}
+{% block formactionvalue %}noformalizar{% endblock %}
+{% block formobjectid %}{{ matricula.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea marcar como No Formalizada la matrícula{% endblock %}
+{% block formobjectrepr %}{{ matricula.inscripcion.persona }}{% endblock %}
+{% block fieldsextra %}
+    <input type="hidden" name="id" value="{{ matricula.id }}">
+{% endblock %}

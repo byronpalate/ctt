@@ -1,0 +1,15 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_coordinaciones{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editaccesopersona'/>
+    <input type='hidden' name='id' value='{{ responsable.id }}'/>
+    <input type='hidden' name='idc' value='{{ carrera.id }}'/>
+    <input type='hidden' name='idco' value='{{ coordinacion.id }}'/>
+    <input type='hidden' name='idm' value='{{ modalidad.id }}'/>
+{% endblock %}
+{% block formdestination %}/adm_coordinaciones?action=accesocarreras&id={{ carrera.id }}&idc={{ coordinacion.id }}&idm={{ modalidad.id }}{% endblock %}
+{% block formactionvalue %}delaccesopersona{% endblock %}
+{% block formobjectid %}{{ responsable.id }}{% endblock %}
+{% block formobjectname %}el personal de carrera{% endblock %}
+{% block formobjectrepr %}{{ responsable.persona }}{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "adm_institucion/3.html" %}
+{% load ctt_extras %}
+{% block jssubseccion %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block contenidosubseccion %}
+    {% for sede in sedes %}
+        <div class="row">
+            <div class="col-12">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                    <th>Sede: {{ sede.nombre }}</th>
+                    </thead>
+                    <tr>
+                        <td>
+                            {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                <div class="row">
+                                    <div class="col-12">
+                                        <a href="javascript:;" nhref="/adm_institucion?action=addbiblioteca&id={{ sede.id }}" class="formmodal btn btn-sm mb-2 btn-success"><i class="icon-plus tu"></i>Adicionar</a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if sede.tiene_biblioteca %}
+                                {% for biblioteca in sede.mi_bibliotecas %}
+                                    <table class="table table-bordered">
+                                        <thead class="table-light">
+                                        <tr>
+                                            <th colspan="4">
+                                                Biblioteca: {{ biblioteca }}
+                                                <a href="javascript:;" nhref="/adm_institucion?action=addbibliotecario&id={{ biblioteca.id }}" class="pull-right formmodal btn btn-ssm  btn-success"><i class="icon-plus tu"></i> Adicionar</a>
+                                            </th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for bibliotecario in biblioteca.mis_bibliotecarios %}
+                                            <tr>
+                                                <td colspan="2">{{ bibliotecario.persona }}</td>
+                                                <td style="width: 40px; text-align: center">
+                                                    {% if perms.ctt.puede_modificar_parametros_institucion %}
+                                                        <a href="javascript:;" nhref="/adm_institucion?action=delbibliotecario&id={{ bibliotecario.id }}" class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="20">NO EXISTEN DATOS</td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                {% endfor %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

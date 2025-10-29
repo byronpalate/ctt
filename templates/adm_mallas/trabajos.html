@@ -1,0 +1,104 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $("#selectortipo").change(function () {
+                var id = $(this).val();
+                bloqueointerface();
+                location.href = '/adm_mallas?action=titulacion&id={{ malla.id }}&tipo='+id;
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_mallas{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+            <br>Malla: {{ malla }}</h4>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <select style="width: 100%" id="selectortipo" class="form-select form-select-sm">
+                {% for tipo in tipos %}
+                    <option value="{{ tipo.id }}"
+                            {% if tipo == tipotrabajoseleccionado %}selected{% endif %}>{{ tipo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    {% if perms.ctt.puede_modificar_mallas %}
+        {% if permite_modificar %}
+            <div class='row mb-2'>
+                <div class='col-6'>
+                    <a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref="/adm_mallas?action=addtitulacion&id={{ malla.id }}"><i class="icon-plus tu"></i> Adicionar</a>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 180px">Unidad Titulación</th>
+                    <th>Asignatura</th>
+                    <th style="width: 80px; text-align: center">Matrículas</th>
+                    <th style="width: 80px; text-align: center">Horas</th>
+                    <th style="width: 80px; text-align: center;">Cr&eacute;ditos</th>
+                    <th style="width: 60px; text-align: center;">Valida Cr&eacute;ditos</th>
+                    <th style="width: 60px; text-align: center;">Valida Promedio</th>
+                    <th style="width: 100px; text-align: center;">Precedencias</th>
+                    <th style="width: 80px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for trabajo in trabajos %}
+                    <tr>
+                        <td>{{ trabajo.unidadtitulacion }}</td>
+                        <td>{{ trabajo.asignatura }}</td>
+                        <td style="text-align: center">{{ trabajo.cantidadmatriculas }}</td>
+                        <td style="text-align: center">{{ trabajo.horas|floatformat:1 }}</td>
+                        <td style="text-align: center;">{{ trabajo.creditos|floatformat:4 }}</td>
+                        <td style="text-align: center;">
+                            {% if trabajo.validacreditos %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Válida para créditos">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Válida para créditos">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if trabajo.validapromedio %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida para promedio">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida para promedio">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            <a href="/adm_mallas?action=predecesoratitulacion&id={{ trabajo.id }}" class="btn btn-sm"><i class="icon-list"></i> {{ trabajo.cantidad_predecesoras }} Precedencias</a>
+                        </td>
+                        <td style="text-align: center">
+                            {% if perms.ctt.puede_modificar_mallas %}
+                                {% if permite_modificar %}
+                                    {% if not trabajo.esta_en_curso %}
+                                        <a class="btn btn-info btn-ssm tu formmodal" href="javascript:;" nhref="/adm_mallas?action=edittitulacion&id={{ trabajo.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                        <a class="btn btn-danger btn-ssm tu eliminacionmodal" href="javascript:;" nhref="/adm_mallas?action=deltitulacion&id={{ trabajo.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

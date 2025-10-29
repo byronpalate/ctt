@@ -1,0 +1,114 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            busqueda = function(tipo){
+                var term = '';
+                term = $("#searchinput").val().trim().toUpperCase();
+                if (term.length>0){
+                    location.href = "/adm_institucion?s="+term;
+                } else {
+                    location.href = "/adm_institucion";
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda();
+            });
+
+            $('.busqueda').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    busqueda();
+                }
+            }).focus();
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_institucion?subseccion=6{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-hover'>
+                <thead class="table-light">
+                <tr class="autoheight">
+                    <th>Nombre</th>
+                    <th style="width: 30px;">
+                        <div class="rotate" style="margin: 5px auto 2px;"><span badge-height="50" class="badge text-bg-secondary" style="white-space: nowrap;">Lógica</span></div>
+                    </th>
+                    <th style="width: 30px; text-align: center">
+                        <div class="rotate" style="margin: 5px auto 2px;"><span badge-height="50" class="badge text-bg-secondary" style="white-space: nowrap;">Activo</span></div>
+                    </th>
+                    <th style="width: 40px; text-align: center;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for modelo in modelos %}
+                    {% with logicamodelo=modelo|args:lms|call:'logica_modelo_lms' %}
+                        <tr>
+                            <td>{{ modelo.nombre }}</td>
+                            <td style="text-align: center;">
+                                {% if logicamodelo.logica %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Logica">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Logica">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
+                                {% if logicamodelo.activo %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activo">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activo">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="javascript:;" nhref='/adm_institucion?action=editarlogicamodelo&id={{ logicamodelo.id }}' class="btn btn-info btn-ssm formmodal"><i class="icon-edit"></i> </a>
+                            </td>
+                        </tr>
+                    {% endwith %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row-fluid'>
+        <div class="col-12">
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item"><a href="/adm_institucion?{% if search %}s={{ search }}&{% endif %}page=1" class="page-link">1</a></li>
+                            <li class="page-item"><a href="/adm_institucion?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="page-link">...</a></li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_institucion?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link page-link-sm">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item"><a href="/adm_institucion?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="page-link">...</a></li>
+                            <li class="page-item"><a href="/adm_institucion?{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}" class="page-link">{{ paging.num_pages }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_institucion?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
