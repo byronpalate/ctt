@@ -3637,7 +3637,7 @@ class Malla(ModeloBase):
         return self.asignaturamalla_set.filter( nivelmalla=nivelmalla, ejeformativo=eje).distinct()
 
     def asignaturas_malla_sin_itinerario(self, eje, nivelmalla):
-        return self.asignaturamalla_set.filter(itinerario__isnull=True, nivelmalla=nivelmalla, ejeformativo=eje)
+        return self.asignaturamalla_set.filter(nivelmalla=nivelmalla, ejeformativo=eje)
 
     def asignaturas_malla_sin_itinerario_basico(self, eje, nivelmalla):
         return self.asignaturamalla_set.filter(nivelmalla=nivelmalla, ejeformativo=eje)
@@ -3943,7 +3943,7 @@ class AsignaturaMalla(ModeloBase):
         return Inscripcion.objects.filter(inscripcionmalla__malla=self.malla, inscripcionnivel__nivel__id__gt=self.nivelmalla.id).exists()
 
     def es_itinerario(self):
-        return self.itinerario_id is not None and self.itinerario_id > 0
+        return None
 
     def save(self, *args, **kwargs):
         self.identificacion = null_to_text(self.identificacion)
@@ -5209,8 +5209,6 @@ class Inscripcion(ModeloBase):
         if self.periodo:
             costo_periodo = self.carrera.precio_modulo_inscripcion(self.periodo, self.sede, self.modalidad, malla)
             costo_conveniohomologacion = None
-            if PreciosConvenioHomologacion.objects.filter(periodo=self.periodo).exists():
-                costo_conveniohomologacion = PreciosConvenioHomologacion.objects.filter(periodo=self.periodo)[0]
             documentos = self.documentos_entregados()
             if costo_periodo.precioinscripcion:
                 if documentos.conveniohomologacion:
@@ -5816,11 +5814,8 @@ class Inscripcion(ModeloBase):
             numeronivel = minivel
             total_optativas_nivel = 0
             total_libreopcion_nivel = 0
-            itinerarios = 0
-            if malla.asignaturamalla_set.filter(nivelmalla__id=minivel, itinerario__isnull=False).exists():
-                itinerarios = 1
             total_regulares_nivel = malla.asignaturamalla_set.filter(nivelmalla__id=minivel).count()
-            total_nivel_malla = total_optativas_nivel + total_libreopcion_nivel + total_regulares_nivel - itinerarios
+            total_nivel_malla = total_optativas_nivel + total_libreopcion_nivel + total_regulares_nivel
             aprobadas_nivel = malla.asignaturamalla_set.filter(asignatura__id__in=aprobadas, nivelmalla__id=minivel).count()
             if aprobadas_nivel < total_nivel_malla:
                 cantidad_arrastres += total_nivel_malla - aprobadas_nivel
@@ -7738,8 +7733,7 @@ class Matricula(ModeloBase):
             if UTILIZA_GRATUIDADES:
                 nivel = self.nivelmalla
                 malla = self.inscripcion.mi_malla()
-                itinerario = self.inscripcion.mi_itinerario()
-                cantidadmateriasnivel = malla.asignaturamalla_set.filter(Q(itinerario=itinerario) | Q(itinerario__isnull=True), nivelmalla=nivel).distinct().count()
+                cantidadmateriasnivel = malla.asignaturamalla_set.filter( nivelmalla=nivel).distinct().count()
                 cantidadperiodo = self.materiaasignada_set.filter(asignaturamalla__isnull=False).count()
                 porciento = (100.0/cantidadmateriasnivel)*cantidadperiodo
                 if porciento < PORCIENTO_PERDIDA_PARCIAL_GRATUIDAD:

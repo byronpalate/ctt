@@ -36,7 +36,8 @@ from ctt.models import InscripcionMalla, EstudioPersona
 from ctt.models import Persona, Inscripcion, RecordAcademico, HistoricoRecordAcademico, \
     FotoPersona, Archivo, NivelMalla, EjeFormativo, AsignaturaMalla, Periodo, \
     Carrera,  Asignatura, Nivel, Matricula, Clase, RetiroCarrera, \
-    Modalidad, Sede, Administrativo, Profesor, Materia, Turno,  Rubro, Pago, Sesion, Malla
+    Modalidad, Sede, Administrativo, Profesor, Materia, Turno,  Rubro, Pago, Sesion, Malla, TipoTerminosAcuerdos, \
+    AceptacionTerminosAcuerdos, ArchivoDocumentoInscripcion
 
 from ctt.tasks import send_mail, send_html_mail
 
@@ -324,7 +325,6 @@ def view(request):
                 form = CambioCohortePosgradoForm(request.POST)
                 if form.is_valid():
                     cohortefinal = form.cleaned_data['nuevacohorte']
-                    inscripcion.fechascorteposgrado = cohortefinal
                     inscripcion.save(request)
                     log(u'Modifico cohorthe de inscripcion: %s' % (inscripcion.persona), request, "edit")
                     return ok_json()
@@ -883,19 +883,16 @@ def view(request):
                     sesion = form.cleaned_data['sesion']
                     modalidad = form.cleaned_data['modalidad']
                     sede = form.cleaned_data['sede']
-                    alumnoa=form.cleaned_data['alumnoantiguo']
-                    mocs = form.cleaned_data['mocs']
-                    if mocs==False:
-                        costo_periodo = carrera.precio_modulo_inscripcion_carrera(form.cleaned_data['periodo'], sede, modalidad,carrera,form.cleaned_data['malla'])
-                        if costo_periodo != None:
-                            if not costo_periodo.sininscripcion:
-                                if costo_periodo.precioinscripcion <= 0:
-                                    return bad_json(mensaje=u"En este periodo no esta asignado el valor de inscripción. Favor comunicarse con el Depto. Financiero")
-                            if not sede.coordinacion_set.filter(carrera=carrera).exists():
-                                return bad_json(mensaje=u"No existe una coordinacion para esta carrera en esta sede.")
-                            if form.cleaned_data['homologar']:
-                                if costo_periodo.preciohomologacion <= 0:
-                                    return bad_json(mensaje=u"En este periodo no esta asignado el valor de Homologación. Favor comunicarse con el Depto. Financiero")
+                    costo_periodo = carrera.precio_modulo_inscripcion_carrera(form.cleaned_data['periodo'], sede, modalidad,carrera,form.cleaned_data['malla'])
+                    if costo_periodo != None:
+                        if not costo_periodo.sininscripcion:
+                            if costo_periodo.precioinscripcion <= 0:
+                                return bad_json(mensaje=u"En este periodo no esta asignado el valor de inscripción. Favor comunicarse con el Depto. Financiero")
+                        if not sede.coordinacion_set.filter(carrera=carrera).exists():
+                            return bad_json(mensaje=u"No existe una coordinacion para esta carrera en esta sede.")
+                        if form.cleaned_data['homologar']:
+                            if costo_periodo.preciohomologacion <= 0:
+                                return bad_json(mensaje=u"En este periodo no esta asignado el valor de Homologación. Favor comunicarse con el Depto. Financiero")
                     coordinacion = sede.coordinacion_set.filter(carrera=carrera)[0]
                     estudiante = Persona(nombre1=remover_tildes(form.cleaned_data['nombre1']),
                                          nombre2=remover_tildes(form.cleaned_data['nombre2']),
@@ -921,11 +918,7 @@ def view(request):
                                          telefono=remover_tildes(form.cleaned_data['telefono']),
                                          telefono_conv=remover_tildes(form.cleaned_data['telefono_conv']),
                                          email=form.cleaned_data['email'],
-                                         sangre=form.cleaned_data['sangre'],
-                                         ubicacionresidenciasalesforce=form.cleaned_data['ubicacionresidenciasalesforce'],
-                                         otraubicacionsalesforce=form.cleaned_data['otraubicacionsalesforce'],
-                                         nombrecompletomadre=form.cleaned_data['nombrescompletosmadre'],
-                                         nombrecompletopadre=form.cleaned_data['nombrescompletospadre'])
+                                         sangre=form.cleaned_data['sangre'])
                     estudiante.save(request)
                     generar_usuario(persona=estudiante, group_id=ALUMNOS_GROUP_ID)
                     if EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES:
@@ -937,7 +930,6 @@ def view(request):
                                               fecha=datetime.now().date(),
                                               hora=datetime.now().time(),
                                               identificador=form.cleaned_data['identificador'],
-                                              centroinformacion=form.cleaned_data['centroinformacion'] if modalidad.id == 3 or modalidad.id == 4 else None,
                                               carrera=carrera,
                                               modalidad=modalidad,
                                               sesion=sesion,
@@ -948,23 +940,9 @@ def view(request):
                                               nivel=form.cleaned_data['nivel'] if form.cleaned_data['nivel'] else None,
                                               condicionado=form.cleaned_data['condicionado'],
                                               observaciones=form.cleaned_data['observaciones'],
-                                              fechascorteposgrado=form.cleaned_data['cohorte'] if carrera.posgrado else None,
-                                              orientacion=form.cleaned_data['orientacion'],
                                               examenubicacionidiomas=form.cleaned_data['examenubicacionidiomas'],
-                                              intercambio=form.cleaned_data['intercambio'],
-                                              alumnoantiguo=form.cleaned_data['alumnoantiguo'],
-                                              personainscribio=request.session['persona'],
-                                              fuente=form.cleaned_data['fuente'],
-                                              becapromocional=form.cleaned_data['becapromocional'],
-                                              fuentefinanciacion = form.cleaned_data['fuentefinanciacion'],
-                                              otrofuentefinanciacion = form.cleaned_data['otrofuentefinanciacion'] if form.cleaned_data['otrofuentefinanciacion'] else '')
+                                              personainscribio=request.session['persona'])
                     inscripcion.save(request)
-                    if inscripcion.becapromocional=='1':
-                        send_html_mail(subject="Beca Promocional.",
-                                       html_template="emails/becapromocional.html",
-                                       data={'inscripcion':inscripcion}, recipient_list=inscripcion.persona.lista_emails_correo(),
-                                       recipient_list_cc=[inscripcion.persona.email])
-
                     if not puede_modificar_inscripcion_post(request, inscripcion):
                         transaction.set_rollback(True)
                         return bad_json(error=4)
@@ -975,15 +953,9 @@ def view(request):
                                                  especialidadeducacionbasica_id=form.cleaned_data['especialidad'])
                         estudio.save(request)
                     # SNNA
-                    snna = estudiante.datos_snna()
-                    snna.rindioexamen = form.cleaned_data['rindioexamen']
-                    snna.fechaexamen = form.cleaned_data['fechaexamensnna']
-                    snna.puntaje = form.cleaned_data['puntajesnna']
-                    snna.save(request)
                     # DOCUMENTOS DE INSCRIPCION
                     documentos = inscripcion.documentos_entregados()
                     documentos.homologar = form.cleaned_data['homologar']
-                    documentos.reconocimientointerno = form.cleaned_data['reconocimientointerno']
                     # documentos.titulo = form.cleaned_data['titulo']
                     # documentos.cedula = form.cleaned_data['reg_cedula']
                     # documentos.votacion = form.cleaned_data['votacion']
@@ -992,10 +964,6 @@ def view(request):
                     documentos.conveniohomologacion = form.cleaned_data['conveniohomologacion']
                     documentos.eshomologacionexterna = False
                     documentos.save(request)
-                    # EXAMEN DE UBICACIÓN
-                    if documentos.homologar == True or documentos.reconocimientointerno == True:
-                        inscripcion.examenubicacionidiomas = False
-                        inscripcion.save()
                     # INSCRIPCION FLAGS
                     flag = inscripcion.mis_flag()
                     flag.permitepagoparcial = True
@@ -1021,17 +989,6 @@ def view(request):
                     clientefacturacion.tipo = form.cleaned_data['facturatipoidentificacion']
                     clientefacturacion.email = form.cleaned_data['facturaemail']
                     clientefacturacion.save()
-                    # PREGUNTAS
-                    preguntasinscripcion = inscripcion.preguntas_inscripcion()
-                    if form.cleaned_data['comoseinformo']:
-                        preguntasinscripcion.comoseinformo = form.cleaned_data['comoseinformo']
-                    if form.cleaned_data['razonesmotivaron']:
-                        preguntasinscripcion.razonesmotivaron = form.cleaned_data['razonesmotivaron']
-                    if form.cleaned_data['comoseinformootras']:
-                        preguntasinscripcion.comoseinformootras = form.cleaned_data['comoseinformootras']
-                    if form.cleaned_data['comoseinformoredsocial']:
-                        preguntasinscripcion.comoseinformoredsocial = form.cleaned_data['comoseinformoredsocial']
-                    preguntasinscripcion.save(request)
                     # PERFIL DE USUARIO
                     estudiante.crear_perfil(inscripcion=inscripcion)
                     perfil = estudiante.mi_perfil()
@@ -1043,13 +1000,12 @@ def view(request):
                     perfil.carnetdiscapacidad = form.cleaned_data['carnetdiscapacidad']
                     perfil.save(request)
                     mocs = form.cleaned_data['mocs']
-                    if int(coordinacion.id) == 22 or int(coordinacion.id) == 28 or int(coordinacion.id) == 23 or alumnoa == True or documentos.homologar == True:
+                    if int(coordinacion.id) == 22 or int(coordinacion.id) == 28 or int(coordinacion.id) == 23 or documentos.homologar == True:
                         #No Genera valores
                         True
                     else:
                         inscripcion.generar_rubro_inscripcion(form.cleaned_data['malla'])
                     inscripcion.mi_malla(form.cleaned_data['malla'])
-                    inscripcion.mi_itinerario()
                     inscripcion.actualizar_nivel()
                     # REGISTRO TIPO DE INSCRIPCION
                     inscripcion.actualiza_tipo_inscripcion()
@@ -1119,7 +1075,6 @@ def view(request):
                     inscripcion.inscripcionmalla_set.all().delete()
                     inscripcionmalla = InscripcionMalla(inscripcion=inscripcion, malla=form.cleaned_data['malla'])
                     inscripcionmalla.save()
-                    inscripcion.mi_itinerario()
                     inscripcion.actualizar_nivel()
                     inscripcion.generar_rubro_inscripcion(form.cleaned_data['malla'])
                     log(u'Modifico de Datos de Carrera: %s' % inscripcion, request, "edit")
@@ -1147,29 +1102,13 @@ def view(request):
                         sesion = form.cleaned_data['sesion']
                         modalidad = form.cleaned_data['modalidad']
                         malla = form.cleaned_data['malla']
-                    mocs = form.cleaned_data['mocs']
-                    alumnoa = form.cleaned_data['alumnoantiguo']
-                    reconocimientointerno = form.cleaned_data['reconocimientointerno']
-                    if int(coordinacion.id) == 22 or int(coordinacion.id) == 28 or int(coordinacion.id) == 23 or alumnoa == True or reconocimientointerno == True:
-                        True
-                    else:
-                        if carrera.precio_modulo_inscripcion_carrera(form.cleaned_data['periodo'], sede,modalidad, carrera,malla):
-                            costo_periodo = carrera.precio_modulo_inscripcion_carrera(form.cleaned_data['periodo'], sede,modalidad, carrera,malla)
-                        else:
-                            return bad_json(mensaje=u"El Periodo, modalidad, carrera y malla que esta seleccionando NO TIENE ASIGNADO VALORES. Favor comunicarse con el Depto. Financiero")
 
-                        if persona.id in PERSONA_ADMINS_ACADEMICO_ID:
-                            if alumnoa:
-                                if costo_periodo is not None:
-                                    if not mocs:
-                                        if not costo_periodo.sininscripcion:
-                                            if costo_periodo.precioinscripcion <= 0:
-                                                return bad_json(mensaje=u"El Periodo, modalidad, carrera y malla que esta seleccionando no tiene asignado un VALOR DE INSCRIPCION. Favor comunicarse con el Depto. Financiero")
-                        else:
-                            if not mocs:
-                                if not costo_periodo.sininscripcion:
-                                    if costo_periodo.precioinscripcion <= 0:
-                                        return bad_json(mensaje=u"El Periodo, modalidad, carrera y malla que esta seleccionando no tiene asignado un VALOR DE INSCRIPCION. Favor comunicarse con el Depto. Financiero")
+
+                    if carrera.precio_modulo_inscripcion_carrera(form.cleaned_data['periodo'], sede,modalidad, carrera,malla):
+                        costo_periodo = carrera.precio_modulo_inscripcion_carrera(form.cleaned_data['periodo'], sede,modalidad, carrera,malla)
+                    else:
+                        return bad_json(mensaje=u"El Periodo, modalidad, carrera y malla que esta seleccionando NO TIENE ASIGNADO VALORES. Favor comunicarse con el Depto. Financiero")
+
                     nuevainscripcion = Inscripcion(persona=inscripcion.persona,
                                                    fecha=datetime.now().date(),
                                                    hora=datetime.now().time(),
@@ -1179,15 +1118,11 @@ def view(request):
                                                    modalidad=modalidad,
                                                    sesion=sesion,
                                                    sede=sede,
-                                                   centroinformacion=inscripcion.centroinformacion,
                                                    coordinacion=coordinacion,
-                                                   mocs=form.cleaned_data['mocs'],
-                                                   fechascorteposgrado=form.cleaned_data['cohorte'],
                                                    personainscribio=request.session['persona'] ,
                                                    condicionado=form.cleaned_data['condicionado'])
                     nuevainscripcion.save(request)
                     nuevainscripcion.mi_malla(form.cleaned_data['malla'])
-                    nuevainscripcion.mi_itinerario()
                     nuevainscripcion.actualiza_fecha_inicio_carrera()
                     if not puede_modificar_inscripcion_post(request, nuevainscripcion):
                         transaction.set_rollback(True)
@@ -1252,43 +1187,15 @@ def view(request):
                     documentos.observaciones_pre = form.cleaned_data['observacionespre']
                     documentos.reingreso = form.cleaned_data['reingreso']
                     documentos.homologar = form.cleaned_data['homologar']
-                    documentos.reconocimientointerno = form.cleaned_data['reconocimientointerno']
                     documentos.save(request)
                     nuevainscripcion.actualizar_nivel()
-                    reconocimientointerno = form.cleaned_data['reconocimientointerno']
+
 
 
                     # Lógica combinada según tu requerimiento
-                    if nuevainscripcion.carrera.posgrado and inscripcion.carrera.posgrado and documentos.reingreso:
-                        crear_homologacion = True
-                    elif documentos.reconocimientointerno:
-                        crear_homologacion = True
-                    else:
-                        crear_homologacion = False
 
-                    if crear_homologacion:
-                        if not PreHomologacionInscripcionInformacion.objects.filter(inscripcion=nuevainscripcion).exists():
-                            homologacion = PreHomologacionInscripcionInformacion(inscripcion=nuevainscripcion,
-                                                                                 periodo=nuevainscripcion.periodo,
-                                                                                 fecha=datetime.now().date(),
-                                                                                 tipohomo=4)
-                            homologacion.save()
-                            if Inscripcion.objects.filter(pk=int(request.POST['id']), habilitadomatricula=True):
-                                Inscripcion.objects.filter(pk=int(request.POST['id'])).update(habilitadomatricula=False)
-                                if DocumentosDeInscripcion.objects.filter(inscripcion_id=int(request.POST['id']), homologar=True):
-                                    DocumentosDeInscripcion.objects.filter(inscripcion_id=int(request.POST['id']), homologar=True).update(homologar=True)
-                            Inscripcion.objects.filter(pk=nuevainscripcion.id).update(habilitadomatricula=True)
-                            log(u'Adiciono registro homologacion tipo RECONOCIMIENTO INTERNO desde cambio de carrera %s' % homologacion.inscripcion, request, "add")
-                    if int(coordinacion.id) == 22 or int(coordinacion.id) == 28 or int(coordinacion.id) == 23 or alumnoa == True or reconocimientointerno == True:
-                        True
-                    else:
-                        nuevainscripcion.generar_rubro_inscripcion(form.cleaned_data['malla'])
-                    # SNNA
-                    snna = inscripcion.persona.datos_snna()
-                    snna.rindioexamen = form.cleaned_data['rindioexamen']
-                    snna.fechaexamen = form.cleaned_data['fechaexamensnna']
-                    snna.puntaje = form.cleaned_data['puntajesnna']
-                    snna.save(request)
+
+                    nuevainscripcion.generar_rubro_inscripcion(form.cleaned_data['malla'])
                     if not inscripcion.persona.emailinst:
                         inscripcion.persona.emailinst = generar_email(inscripcion.persona, estudiante=True)
                         inscripcion.persona.save()
@@ -1353,10 +1260,6 @@ def view(request):
                     estudiante.canton = form.cleaned_data['canton']
                     estudiante.parroquia = form.cleaned_data['parroquia']
                     estudiante.sector = form.cleaned_data['sector']
-                    estudiante.ubicacionresidenciasalesforce = form.cleaned_data['ubicacionresidenciasalesforce']
-                    estudiante.otraubicacionsalesforce = form.cleaned_data['otraubicacionsalesforce']
-                    estudiante.nombrecompletomadre = form.cleaned_data['nombrescompletosmadre']
-                    estudiante.nombrecompletopadre = form.cleaned_data['nombrescompletospadre']
                     estudiante.direccion = remover_tildes(form.cleaned_data['direccion'])
                     estudiante.direccion2 = remover_tildes(form.cleaned_data['direccion2'])
                     estudiante.num_direccion = remover_tildes(form.cleaned_data['num_direccion'])
@@ -1369,16 +1272,8 @@ def view(request):
                     # DATOS DE LA INSCRIPCION
                     if not inscripcion.matriculado() and not inscripcion.graduado() and not inscripcion.egresado():
                         inscripcion.sesion = form.cleaned_data['sesion']
-                    if per.usuario.id in PERSONA_ADMINS_ACADEMICO_ID:
-                        inscripcion.centroinformacion = form.cleaned_data['centroinformacion']
                     inscripcion.identificador = form.cleaned_data['identificador']
                     inscripcion.observaciones = form.cleaned_data['observaciones']
-                    inscripcion.fechascorteposgrado = form.cleaned_data['cohorte']
-                    inscripcion.orientacion = form.cleaned_data['orientacion']
-                    inscripcion.intercambio = form.cleaned_data['intercambio']
-                    inscripcion.alumnoantiguo = form.cleaned_data['alumnoantiguo']
-                    inscripcion.fuente = form.cleaned_data['fuente']
-                    inscripcion.becapromocional=form.cleaned_data['becapromocional']
                     # DATOS DE INICIO Y FIN DE CARRERA
                     malla = inscripcion.mi_malla()
                     minivel = inscripcion.mi_nivel().nivel.id
@@ -1388,18 +1283,7 @@ def view(request):
                     inscripcion.save(request)
                     inscripcion.actualiza_fecha_inicio_carrera()
                     # SNNA
-                    snna = estudiante.datos_snna()
-                    snna.rindioexamen = form.cleaned_data['rindioexamen']
-                    snna.fechaexamen = form.cleaned_data['fechaexamensnna']
-                    snna.puntaje = form.cleaned_data['puntajesnna']
-                    snna.save(request)
                     # ACTUALIZA LAS PREGUNTAS DE INSCRIPCION
-                    preguntas = inscripcion.preguntas_inscripcion()
-                    preguntas.comoseinformo = form.cleaned_data['comoseinformo']
-                    preguntas.razonesmotivaron = form.cleaned_data['razonesmotivaron']
-                    preguntas.comoseinformootras = form.cleaned_data['comoseinformootras']
-                    preguntas.comoseinformoredsocial = form.cleaned_data['comoseinformoredsocial']
-                    preguntas.save(request)
                     # DOCUMENTOS
                     documentos = inscripcion.documentos_entregados()
                     # documentos.titulo = form.cleaned_data['titulo']
@@ -2312,11 +2196,9 @@ def view(request):
                                                                          pre=True if smart_str(cols[21]) == 'S' else False,
                                                                          observaciones_pre=smart_str(cols[22]))
                                     documentos.save(request)
-                                    inscripcion.preguntas_inscripcion()
                                     inscripcion.persona.mi_perfil()
                                     inscripcion.generar_rubro_inscripcion(malla)
                                     inscripcion.mi_malla(malla=malla)
-                                    inscripcion.mi_itinerario()
                                     inscripcion.actualizar_nivel()
                                     inscripcion.actualiza_tipo_inscripcion()
                                     log(u'Importo inscripcion: %s' % persona.identificacion(), request, "add")
@@ -3517,8 +3399,6 @@ def view(request):
                     data['inscripcion'] = inscripcion = Inscripcion.objects.get(pk=request.GET['id'])
                     documentos = inscripcion.documentos_entregados()
                     perfil = inscripcion.persona.mi_perfil()
-                    preguntas_inscripcion = inscripcion.preguntas_inscripcion()
-                    snna = inscripcion.persona.datos_snna()
                     clientefacturacion = inscripcion.clientefacturacion(request)
                     form = InscripcionForm(initial={'nombre1': inscripcion.persona.nombre1,
                                                     'nombre2': inscripcion.persona.nombre2,
@@ -3528,7 +3408,6 @@ def view(request):
                                                     'pasaporte': inscripcion.persona.pasaporte,
                                                     'periodo': inscripcion.periodo,
                                                     'nivel': inscripcion.nivel,
-                                                    'centroinformacion': inscripcion.centroinformacion,
                                                     'nacionalidad': inscripcion.persona.nacionalidad,
                                                     'paisnac': inscripcion.persona.paisnac,
                                                     'provincianac': inscripcion.persona.provincianac,
@@ -3542,10 +3421,6 @@ def view(request):
                                                     'canton': inscripcion.persona.canton,
                                                     'parroquia': inscripcion.persona.parroquia,
                                                     'sector': inscripcion.persona.sector,
-                                                    'ubicacionresidenciasalesforce': inscripcion.persona.ubicacionresidenciasalesforce,
-                                                    'otraubicacionsalesforce': inscripcion.persona.otraubicacionsalesforce,
-                                                    'nombrescompletosmadre': inscripcion.persona.nombrecompletomadre,
-                                                    'nombrescompletospadre': inscripcion.persona.nombrecompletopadre,
                                                     'direccion': inscripcion.persona.direccion,
                                                     'direccion2': inscripcion.persona.direccion2,
                                                     'num_direccion': inscripcion.persona.num_direccion,
@@ -3561,7 +3436,6 @@ def view(request):
                                                     'modalidad': inscripcion.modalidad,
                                                     'sesion': inscripcion.sesion,
                                                     'identificador': inscripcion.identificador,
-                                                    'becapromocional':inscripcion.becapromocional,
                                                     'facturaidentificacion': clientefacturacion.identificacion,
                                                     'facturatipoidentificacion': clientefacturacion.tipo,
                                                     'facturanombre': clientefacturacion.nombre,
@@ -3569,17 +3443,9 @@ def view(request):
                                                     'facturatelefono': clientefacturacion.telefono,
                                                     'facturaemail': clientefacturacion.email,
                                                     'prenivelacion': documentos.pre,
-                                                    'observacionespre': documentos.observaciones_pre,
-                                                    'comoseinformo': preguntas_inscripcion.comoseinformo,
-                                                    'comoseinformootras': preguntas_inscripcion.comoseinformootras,
-                                                    'comoseinformoredsocial': preguntas_inscripcion.comoseinformoredsocial,
-                                                    'razonesmotivaron': preguntas_inscripcion.razonesmotivaron,
                                                     'etnia': perfil.raza,
                                                     'nacionalidadindigena': perfil.nacionalidadindigena,
                                                     'condicionado': inscripcion.condicionado,
-                                                    'rindioexamen': snna.rindioexamen,
-                                                    'fechaexamensnna': snna.fechaexamen,
-                                                    'puntajesnna': snna.puntaje,
                                                     'homologar': documentos.homologar,
                                                     'examenubicacionidiomas': inscripcion.examenubicacionidiomas,
                                                     'malla': inscripcion.mi_malla(),
@@ -3595,10 +3461,6 @@ def view(request):
                                                     # "cert_med": documentos.cert_med,
                                                     "eshomologacionexterna": documentos.eshomologacionexterna,
                                                     "cohorte": inscripcion.fechascorteposgrado,
-                                                    "orientacion": inscripcion.orientacion,
-                                                    "intercambio": inscripcion.intercambio,
-                                                    "alumnoantiguo": inscripcion.alumnoantiguo,
-                                                    "fuente": inscripcion.fuente,
                                                     "conveniohomologacion": documentos.conveniohomologacion})
                     form.editar(inscripcion)
                     form.sin_trabajo()
@@ -3656,9 +3518,7 @@ def view(request):
                     data['reprobadasotras'] = inscripcion.recordacademico_set.filter(aprobada=False, asignaturamalla__isnull=True).count()
                     malla = inscripcion.mi_malla()
                     aprobadasmalla = AsignaturaMalla.objects.filter(recordacademico__inscripcion=inscripcion, recordacademico__aprobada=True).values_list('id', flat=True)
-                    data['ampendientes'] = malla.asignaturamalla_set.filter(Q(itinerario=inscripcion.mi_itinerario()) | Q(itinerario__isnull=True)).exclude(id__in=aprobadasmalla).order_by('itinerario', 'nivelmalla', 'asignatura')
-                    aprobadasmodulos = ModuloMalla.objects.filter(recordacademico__inscripcion=inscripcion, recordacademico__aprobada=True).values_list('id', flat=True)
-                    data['mmpendientes'] = ModuloMalla.objects.filter(malla=malla).exclude(id__in=aprobadasmodulos).order_by('asignatura')
+                    data['ampendientes'] = malla.asignaturamalla_set.filter().exclude(id__in=aprobadasmalla).order_by('nivelmalla', 'asignatura')
                     data['reporte_0'] = obtener_reporte("record_academico_btn_impresion_alumno")
                     data['reporte_1'] = obtener_reporte("homologacion_preliminar")
                     data['muestra_estado_nivelacion'] = MUESTRA_ESTADO_NIVELACION
@@ -4389,18 +4249,6 @@ def view(request):
                     data['title'] = u'Crear perfil de profesor'
                     data['inscripcion'] = Inscripcion.objects.get(pk=request.GET['id'])
                     return render(request, "inscripciones/adddocente.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'cambioitinerario':
-                try:
-                    data['title'] = u'Cambio de itinerario'
-                    data['inscripcion'] = inscripcion = Inscripcion.objects.get(pk=request.GET['id'])
-                    malla = inscripcion.mi_malla()
-                    form = CambioitinerarioForm(initial={'itinerario': inscripcion.mi_itinerario()})
-                    form.itinerarios(malla)
-                    data['form'] = form
-                    return render(request, "inscripciones/cambioitinerario.html", data)
                 except Exception as ex:
                     pass
 
