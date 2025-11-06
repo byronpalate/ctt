@@ -518,9 +518,7 @@ def view(request):
                     form = TipoCostoCursoForm(request.POST)
                     if form.is_valid():
                         tipo = TipoCostoCurso(nombre=form.cleaned_data['nombre'],
-                                              titulacion=form.cleaned_data['titulacion'],
                                               cursos=form.cleaned_data['cursos'],
-                                              actualizacionconocimiento=form.cleaned_data['actualizacionconocimiento'],
                                               costodiferenciado=form.cleaned_data['costodiferenciado'],
                                               validapromedio=form.cleaned_data['validapromedio'])
                         tipo.save()
