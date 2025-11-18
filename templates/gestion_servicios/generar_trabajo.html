@@ -1,0 +1,12 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+{% endblock %}
+{% block atras %}/gestion_servicios?action=competenciase&id={{ solicitud.id }}{% endblock %}
+{% block formdestination %}/gestion_servicios?action=competenciase&id={{ solicitud.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/gestion_servicios{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='generar_trabajo'/>
+    <input type='hidden' name='id' value='{{ solicitud.id }}'/>
+{% endblock %}
+{% block formback %}/gestion_servicios?action=competenciase&id={{ solicitud.id }}{% endblock %}

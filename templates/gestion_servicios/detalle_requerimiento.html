@@ -1,0 +1,211 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+
+{% block heading %}
+<script type="text/javascript">
+    function enviarProforma(id){
+        if(!confirm("¿Enviar esta proforma al cliente?")) return;
+        $.post("/gestion_servicios", {
+            action: "send",
+            id: id,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, function(data){
+            if(data.result === 'ok'){
+                location.reload();
+            }else{
+                alert(data.mensaje || 'Ocurrió un error al enviar la proforma');
+            }
+        }, "json");
+    }
+
+    function generarRubro(id){
+        if(!confirm("¿Generar rubro para esta proforma?")) return;
+        $.post("/gestion_servicios", {
+            action: "generar_rubro",
+            id: id,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, function(data){
+            if(data.result === 'ok'){
+                alert(data.mensaje || 'Rubro generado correctamente');
+                location.reload();
+            }else{
+                alert(data.mensaje || 'Ocurrió un error al generar el rubro');
+            }
+        }, "json");
+    }
+</script>
+{% endblock %}
+
+{% block headcanvas %}
+<div class="row mb-2">
+    <div class="col-12">
+        <h4>{{ title }}</h4>
+        <p class="small text-muted mb-1">
+            Requerimiento #{{ requerimiento.id }} ·
+            Recibido: {{ requerimiento.fecha_recepcion|date:"d/m/Y H:i" }}<br>
+            Contacto: {{ requerimiento.nombre_contacto }}
+            ({{ requerimiento.email_contacto }}{% if requerimiento.telefono_contacto %} · {{ requerimiento.telefono_contacto }}{% endif %})
+        </p>
+    </div>
+</div>
+
+<div class="row mb-2">
+    <div class="col-12">
+        {% if not sololectura %}
+            <a href="javascript:;"
+               nhref="/gestion_servicios?action=add_proforma&requerimiento_id={{ requerimiento.id }}"
+               class="btn btn-sm btn-success formmodal">
+                <i class="icon-plus"></i> Generar nueva proforma
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block canvas %}
+<div class="row">
+    <div class="col-md-6">
+        <h5>Datos del requerimiento</h5>
+        <table class="table table-sm">
+            <tr>
+                <th style="width: 150px;">Tipo de servicio</th>
+                <td>
+                    {% if requerimiento.tipo_servicio %}
+                        {{ requerimiento.tipo_servicio.nombre }}
+                    {% else %}
+                        <span class="text-muted">No especificado</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Descripción</th>
+                <td>{{ requerimiento.descripcion|default:"(Sin descripción)" }}</td>
+            </tr>
+            <tr>
+                <th>Estado</th>
+                <td>
+                    {% if requerimiento.estado == 1 %}
+                        <span class="badge text-bg-secondary">Recibido</span>
+                    {% elif requerimiento.estado == 2 %}
+                        <span class="badge text-bg-info">En proforma</span>
+                    {% elif requerimiento.estado == 3 %}
+                        <span class="badge text-bg-primary">Proforma enviada</span>
+                    {% elif requerimiento.estado == 4 %}
+                        <span class="badge text-bg-success">Cerrado</span>
+                    {% else %}
+                        <span class="badge text-bg-light">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<hr>
+
+<div class="row mt-2" id="proformas">
+    <div class="col-12">
+        <h5>Proformas generadas</h5>
+        <table class="table table-bordered table-striped table-sm">
+            <thead class="table-light">
+            <tr>
+                <th style="width: 120px;">N° Proforma</th>
+                <th>Cliente</th>
+                <th style="width: 110px; text-align:right;">Subtotal</th>
+                <th style="width: 110px; text-align:right;">Descuento</th>
+                <th style="width: 110px; text-align:right;">Impuestos</th>
+                <th style="width: 110px; text-align:right;">Total</th>
+                <th style="width: 110px; text-align:center;">Estado</th>
+                <th style="width: 180px; text-align:center;">Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for pro in proformas %}
+                <tr>
+                    <td>{{ pro.numero }}</td>
+                    <td>{{ pro.cliente }}</td>
+                    <td style="text-align:right;">$ {{ pro.subtotal|floatformat:2|intcomma }}</td>
+                    <td style="text-align:right;">$ {{ pro.descuento|floatformat:2|intcomma }}</td>
+                    <td style="text-align:right;">$ {{ pro.impuestos|floatformat:2|intcomma }}</td>
+                    <td style="text-align:right;"><strong>$ {{ pro.total|floatformat:2|intcomma }}</strong></td>
+                    <td style="text-align:center;">
+                        {% if pro.estado == 1 %}
+                            <span class="badge text-bg-secondary">Borrador</span>
+                        {% elif pro.estado == 2 %}
+                            <span class="badge text-bg-info">Enviada</span>
+                        {% elif pro.estado == 3 %}
+                            <span class="badge text-bg-success">Aprobada</span>
+                        {% elif pro.estado == 4 %}
+                            <span class="badge text-bg-danger">Rechazada</span>
+                        {% else %}
+                            <span class="badge text-bg-light">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:center;">
+    <div class="btn-group">
+        {# Ver detalle proforma #}
+        <a href="/gestion_servicios?action=detalle_proforma&id={{ pro.id }}"
+           class="btn btn-ssm btn-outline-secondary"
+           title="Detalle de proforma">
+            <i class="icon-eye-open"></i>
+        </a>
+
+        {% if not sololectura %}
+            {# Editar proforma #}
+            <a href="javascript:;"
+               nhref="/gestion_servicios?action=edit&id={{ pro.id }}"
+               class="btn btn-ssm btn-outline-primary formmodal"
+               title="Editar proforma">
+                <i class="icon-edit"></i>
+            </a>
+
+            {# Enviar al cliente (solo borrador) #}
+            {% if pro.estado == 1 %}
+                <a href="javascript:;"
+                   class="btn btn-ssm btn-outline-success"
+                   title="Enviar al cliente"
+                   onclick="enviarProforma({{ pro.id }})">
+                    <i class="icon-mail-forward"></i>
+                </a>
+            {% endif %}
+
+            {# Generar rubro (solo si está APROBADA y aún no tiene rubro) #}
+            {% if pro.estado == 3 and not pro.tiene_rubro %}
+                <a href="javascript:;"
+                   class="btn btn-ssm btn-outline-warning"
+                   title="Generar rubro"
+                   onclick="generarRubro({{ pro.id }})">
+                    <i class="icon-money"></i>
+                </a>
+            {% endif %}
+
+            {# Generar orden de trabajo (solo si puede_generar_trabajo=True) #}
+            {% if  not pro.solicitud_trabajo.trabajo %}
+                <a href="javascript:;"
+                   nhref="/gestion_servicios?action=generar_trabajo&id={{ pro.id }}"
+                   class="btn btn-ssm btn-outline-dark formmodal"
+                   title="Generar orden de trabajo">
+                    <i class="icon-wrench"></i>
+                </a>
+
+
+            {% elif pro.rubro_servicio and pro.rubro_servicio.rubro.cancelado %}
+                <span class="badge text-bg-warning ms-1" title="Rubro pendiente de pago">
+                    Rubro pendiente
+                </span>
+            {% endif %}
+        {% endif %}
+    </div>
+</td>
+
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8">Este requerimiento aún no tiene proformas.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

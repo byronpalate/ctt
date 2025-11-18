@@ -9,6 +9,7 @@ from django.db.models import Q
 from django.forms.models import ModelChoiceField
 from django.forms.widgets import DateTimeInput
 from django.utils.safestring import mark_safe
+from decimal import Decimal
 
 from settings import FORMA_PAGO_RECIBOCAJAINSTITUCION, ALUMNOS_GROUP_ID, FORMA_PAGO_NOTA_CREDITO, MAXIMO_MATERIA_ONLINE, \
     NIVEL_MALLA_UNO, CANTIDAD_MATRICULAS_MAXIMAS, EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES, EMAIL_INSTITUCIONAL_AUTOMATICO_DOCENTES,\
@@ -36,7 +37,8 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor
     ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, \
     MateriaCursoEscuelaComplementaria, \
     Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, \
-    TipoIntegracion, CodigoEvaluacion, IvaAplicado
+    TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente,  Factura, TipoServicio, ServicioCatalogo
+# Servicio,
 
 
 class BaseForm(forms.Form):
@@ -2907,3 +2909,144 @@ class TipoCostoCursoForm(BaseForm):
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+
+class ProformaForm(BaseForm):
+    cliente = forms.ModelChoiceField(label=u"Cliente", queryset=Cliente.objects.all(), widget=forms.Select())
+    observaciones = forms.CharField(label=u"Observaciones", required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}))
+    descuento = forms.FloatField(label=u"Descuento", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-moneda', 'decimales': '2'}))
+    impuestos = forms.FloatField(label=u"Impuestos", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-moneda', 'decimales': '2'}))
+
+    def editar(self, proforma):
+        if proforma and proforma.estado != Proforma.Estado.BORRADOR:
+            deshabilitar_campo(self, 'cliente')
+            deshabilitar_campo(self, 'observaciones')
+            deshabilitar_campo(self, 'descuento')
+            deshabilitar_campo(self, 'impuestos')
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+
+# =========================
+#    GESTIÓN (ADMIN)
+# =========================
+
+class RevisionProformaForm(BaseForm):
+    cumple = forms.BooleanField(label=u"Verificación cumple", required=False, initial=False)
+    comentarios = forms.CharField(label=u"Comentarios", required=False, widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'}))
+
+    def editar(self, revision):
+        # si ya hay decisión, bloquear el cambio
+        if revision and revision.pk:
+            deshabilitar_campo(self, 'cumple')
+            # permitir comentar, si quieres bloquear también:
+            # deshabilitar_campo(self, 'comentarios')
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+
+class EmitirFacturaForm(BaseForm):
+    numero = forms.CharField(label=u"Número de factura", max_length=30)
+    fecha_emision = forms.DateField(label=u"Fecha de emisión", widget=forms.TextInput(attrs={'class': 'selectorfecha'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+    def editar(self, factura):
+        if factura and factura.pk:
+            deshabilitar_campo(self, 'numero')
+            deshabilitar_campo(self, 'fecha_emision')
+
+
+class GenerarTrabajoForm(BaseForm):
+    descripcion = forms.CharField(label=u"Descripción", required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+
+class RevisionProformaForm(BaseForm):
+    cumple = forms.BooleanField(label=u"Verificación cumple", required=False, initial=False)
+    comentarios = forms.CharField(label=u"Comentarios", required=False, widget=forms.Textarea(attrs={'rows':'4','class':'form-control'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+class VincularFacturaForm(BaseForm):
+    factura = forms.ModelChoiceField(label=u"Factura existente", queryset=Factura.objects.all(), widget=forms.Select())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+class GenerarTrabajoForm(BaseForm):
+    responsable = forms.ModelChoiceField(label=u"Responsable", queryset=Persona.objects.all(), widget=forms.Select())
+    descripcion = forms.CharField(label=u"Descripción", required=False, widget=forms.Textarea(attrs={'rows':'3','class':'form-control'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+
+class RequerimientoServicioForm(BaseForm):
+    tipo_servicio = forms.ModelChoiceField(
+        label=u"Laboratorio / área",
+        queryset=TipoServicio.objects.all(),
+        widget=forms.Select()
+    )
+
+    nombre_contacto = forms.CharField(
+        label=u"Nombre de contacto",
+        max_length=255,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+
+    email_contacto = forms.EmailField(
+        label=u"Email de contacto",
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+
+    telefono_contacto = forms.CharField(
+        label=u"Teléfono de contacto",
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+
+    descripcion = forms.CharField(
+        label=u"Descripción del requerimiento",
+        widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'})
+    )
+
+    archivo = forms.FileField(
+        label=u"Archivo adjunto (opcional)",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'})
+    )
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+
+class ProformaDetalleForm(BaseForm):
+    servicio = forms.ModelChoiceField(label=u"Servicio", queryset=ServicioCatalogo.objects, widget=forms.Select())
+    descripcion = forms.CharField(label=u"Descripción", required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}))
+    cantidad = forms.DecimalField(label=u"Cantidad", max_digits=8, decimal_places=2, initial=Decimal('1.00'))
+    precio_unitario = forms.DecimalField(label=u"Precio unitario", max_digits=10, decimal_places=2, required=False, help_text=u"Si lo dejas vacío, se tomará el precio base del servicio.")
+
+    def add(self, tiposervicio):
+        self.fields['servicio'].queryset = ServicioCatalogo.objects.filter(tipo_servicio=tiposervicio)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+

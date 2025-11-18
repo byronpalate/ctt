@@ -26,7 +26,7 @@ from ctt import commonviews, inscripciones, matriculas, fecha_evaluaciones, adm_
     alu_cursoscomplementarios, adm_caja, alu_materias, finanzas, adm_facturas, printdoc, adm_recibopago, adm_notacredito, adm_valecaja, adm_recibo_caja, \
     adm_transferencias, adm_depositos, adm_tecnologicouniversidad, adm_depositoinscripcion, adm_carreras, api, mailbox, adm_coordinaciones, \
     adm_institucion, adm_colegios, adm_cursoscomplementarios, adm_evaluaciones, niveles, administrativos, adm_asignaturas, adm_modelosevaluativos, docentes, \
-    adm_calculofinanzas, adm_pagosnivel
+    adm_calculofinanzas, adm_pagosnivel, servicios, gestion_servicios
 
 
 import django.views.static
@@ -149,6 +149,8 @@ urlpatterns = [
 
     path('adm_evaluaciones', adm_evaluaciones.view),
     path('adm_pagosnivel', adm_pagosnivel.view),
+    path('servicios', servicios.view),
+    path('gestion_servicios', gestion_servicios.view),
 
 
 

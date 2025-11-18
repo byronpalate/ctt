@@ -1,0 +1,208 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+
+{% block heading %}
+<script type="text/javascript">
+    $(function () {
+        const go = function () {
+            const term = ($("#searchinput").val() || "").trim();
+            const estado = $("#filter_estado").val() || "";
+            const qs = [];
+            if (term.length) qs.push("s=" + encodeURIComponent(term));
+            if (estado.length) qs.push("e=" + encodeURIComponent(estado));
+            const url = "/gestion_servicios" + (qs.length ? ("?" + qs.join("&")) : "");
+            location.href = url;
+        };
+
+        $("#search").on("click", go);
+        $(".busqueda").on("keyup", function (e) {
+            if (e.keyCode === 13) go();
+        });
+        $("#filter_estado").on("change", go);
+        $("#allresults").on("click", function () {
+            location.href = "/gestion_servicios";
+        });
+    });
+</script>
+{% endblock %}
+
+{% block headcanvas %}
+<div class="row mb-2">
+    <div class="col-12">
+        <h4>{{ title }}</h4>
+    </div>
+</div>
+
+<div class="row g-2 align-items-end">
+    <div class="col-12 col-md-6">
+
+
+    </div>
+
+    <div class="col-12 col-md-3">
+        <div class="input-group">
+            <input type="text" id="searchinput" class="form-control form-control-sm busqueda"
+                   value="{{ search }}" placeholder="Buscar contacto / email / descripción…" autocomplete="off">
+            <a href="javascript:;" class="btn btn-sm btn-outline-secondary" id="search">
+                <i class="icon-search"></i>
+            </a>
+            {% if search or estado %}
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" id="allresults">
+                    <i class="icon-refresh"></i>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-12 col-md-3">
+        <label class="form-label mb-1 small">Estado del requerimiento</label>
+        <select id="filter_estado" class="form-select form-select-sm">
+            <option value="" {% if not estado %}selected{% endif %}>Todos</option>
+            <option value="1" {% if estado|add:'' == '1' %}selected{% endif %}>Recibido</option>
+            <option value="2" {% if estado|add:'' == '2' %}selected{% endif %}>Proforma en elaboración</option>
+            <option value="3" {% if estado|add:'' == '3' %}selected{% endif %}>Proforma enviada</option>
+            <option value="4" {% if estado|add:'' == '4' %}selected{% endif %}>Cerrado</option>
+        </select>
+    </div>
+</div>
+{% endblock %}
+
+{% block canvas %}
+<div class="row">
+    <div class="col-12">
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+            <tr>
+                <th style="width: 80px;"># Req</th>
+                <th style="width: 160px;">Fecha recepción</th>
+                <th>Contacto</th>
+                <th>Tipo servicio</th>
+                <th style="width: 140px; text-align: center;">Estado</th>
+                <th style="width: 130px; text-align: center;">Proformas</th>
+                <th style="width: 120px;"></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for req in requerimientos %}
+                <tr>
+                    <td>{{ req.id }}</td>
+                    <td>{{ req.fecha_recepcion|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        <strong>{{ req.nombre_contacto }}</strong><br>
+                        <small class="text-muted">
+                            {{ req.email_contacto }}{% if req.telefono_contacto %} · {{ req.telefono_contacto }}{% endif %}
+                        </small>
+                    </td>
+                    <td>
+                        {% if req.tipo_servicio %}
+                            {{ req.tipo_servicio.nombre }}
+                        {% else %}
+                            <span class="text-muted">No especificado</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if req.estado == 1 %}
+                            <span class="badge text-bg-secondary">Recibido</span>
+                        {% elif req.estado == 2 %}
+                            <span class="badge text-bg-info">En proforma</span>
+                        {% elif req.estado == 3 %}
+                            <span class="badge text-bg-primary">Proforma enviada</span>
+                        {% elif req.estado == 4 %}
+                            <span class="badge text-bg-success">Cerrado</span>
+                        {% else %}
+                            <span class="badge text-bg-light">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% with req.proformas.all as pros %}
+                            {{ pros|length }} proforma{{ pros|length|pluralize }}
+                        {% endwith %}
+                    </td>
+
+                <td>
+    <div class="btn-group dropdown">
+        <a class="btn btn-ssm btn-outline-secondary dropdown-toggle"
+           data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+           href="javascript:;">Acciones <span class="caret"></span></a>
+
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-layouts">
+            <li class="smaller">
+                <a href="/gestion_servicios?action=detalle_requerimiento&id={{ req.id }}"
+                   class="dropdown-item">
+                    <i class="icon-eye-open"></i> Detalle
+                </a>
+            </li>
+
+            {% with req.proformas.all as pros %}
+
+                    <li class="smaller">
+                        <a href="/gestion_servicios?action=detalle_requerimiento&id={{ req.id }}"
+                           class="dropdown-item">
+                            <i class="icon-file-text"></i>
+                            Ver proforma{% if pros|length > 1 %}s{% endif %} ({{ pros|length }})
+                        </a>
+                    </li>
+            {% endwith %}
+        </ul>
+    </div>
+</td>
+
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">NO EXISTEN REQUERIMIENTOS</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% if paging.num_pages > 20 %}
+            <div>
+                <ul class='pagination'>
+                    {% if paging.primera_pagina %}
+                        <li class="page-item">
+                            <a href="/gestion_servicios?{% if search %}s={{ search }}&{% endif %}{% if estado %}e={{ estado }}&{% endif %}page=1"
+                               class="page-link">1</a>
+                        </li>
+                        <li class="page-item">
+                            <a href="/gestion_servicios?{% if search %}s={{ search }}&{% endif %}{% if estado %}e={{ estado }}&{% endif %}page={{ paging.ellipsis_izquierda }}"
+                               class="page-link">...</a>
+                        </li>
+                    {% endif %}
+                    {% for pagenumber in paging.paginas %}
+                        <li {% if pagenumber == page.number %}class="active page-item"{% else %}class="page-item"{% endif %}>
+                            <a href="/gestion_servicios?{% if search %}s={{ search }}&{% endif %}{% if estado %}e={{ estado }}&{% endif %}page={{ pagenumber }}"
+                               class="page-link">{{ pagenumber }}</a>
+                        </li>
+                    {% endfor %}
+                    {% if paging.ultima_pagina %}
+                        <li class="page-item">
+                            <a href="/gestion_servicios?{% if search %}s={{ search }}&{% endif %}{% if estado %}e={{ estado }}&{% endif %}page={{ paging.ellipsis_derecha }}"
+                               class="page-link">...</a>
+                        </li>
+                        <li class="page-item">
+                            <a href="/gestion_servicios?{% if search %}s={{ search }}&{% endif %}{% if estado %}e={{ estado }}&{% endif %}page={{ paging.num_pages }}"
+                               class="page-link">{{ paging.num_pages }}</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% else %}
+            <div>
+                <ul class='pagination'>
+                    {% for pagenumber in paging.page_range %}
+                        <li {% if pagenumber == page.number %}class="active page-item"{% else %}class="page-item"{% endif %}>
+                            <a href="/gestion_servicios?{% if search %}s={{ search }}&{% endif %}{% if estado %}e={{ estado }}&{% endif %}page={{ pagenumber }}"
+                               class="page-link">{{ pagenumber }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

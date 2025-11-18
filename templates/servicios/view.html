@@ -1,0 +1,256 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% load humanize %}
+
+{% block heading %}
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+        });
+
+        // ====== Buscador ======
+        $(function() {
+            busqueda = function() {
+                var term = $("#searchinput").val().trim().toUpperCase();
+                if (term.length > 0){
+                    location.href = "/servicios?s=" + encodeURIComponent(term);
+                } else {
+                    location.href = "/servicios";
+                }
+            };
+
+            $("#search").click(function() { busqueda(); });
+
+            $('.busqueda').keyup(function(e) {
+                if (e.keyCode === 13) { busqueda(); }
+            }).focus();
+        });
+
+        // ====== Helpers CSRF para POST vía fetch ======
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        // ====== Acción eliminar requerimiento (POST a /servicios) ======
+        async function postAccion(id, accion){
+            try{
+                const form = new FormData();
+                form.append('action', accion);
+                form.append('id', id);
+                const resp = await fetch('/servicios', {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrftoken},
+                    body: form
+                });
+                const data = await resp.json();
+                if(data.result === 'ok'){
+                    location.reload();
+                }else{
+                    alert(data.mensaje || 'Ocurrió un error');
+                }
+            }catch(e){
+                alert('Error de red');
+            }
+        }
+
+        $(document).on('click', '.btn-delete-req', function(){
+            const id = $(this).data('id');
+            if(confirm('¿Eliminar requerimiento en estado RECIBIDO? Esta acción no se puede deshacer.')){
+                postAccion(id, 'delete');
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title|default:"Mis requerimientos de servicio" }}</h4>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class='col-12 col-md-6 mb-2'>
+            {% if not sololectura %}
+                <a href="javascript:;" nhref="/servicios?action=add" class='btn btn-sm btn-success formmodal'>
+                    <i class="icon-plus"></i> Adicionar requerimiento
+                </a>
+            {% endif %}
+        </div>
+
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text"
+                       class="form-control form-control-sm busqueda"
+                       id="searchinput"
+                       value='{{ search }}'
+                       autocomplete="off"
+                       placeholder="Buscar descripción o contacto">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" id='search'>
+                    <i class="icon-search"></i>
+                </a>
+                {% if search or ids %}
+                    <a href="/servicios" class="btn btn-sm btn-outline-secondary" id='allresults'>
+                        <i class="icon-refresh"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 12%;">N° Req.</th>
+                        <th style="width: 20%;">Laboratorio / área</th>
+                        <th>Contacto</th>
+                        <th style="width: 18%;">Estado</th>
+                        <th style="width: 18%;">Fechas</th>
+                        <th style="width: 90px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for r in requerimientos %}
+                    <tr>
+                        <td>
+                            <a href="/servicios?action=detail&id={{ r.id }}">Req #{{ r.id }}</a>
+                        </td>
+                        <td>
+                            {% if r.tipo_servicio %}
+                                {{ r.tipo_servicio.nombre }}
+                            {% else %}
+                                <span class="text-muted">Sin tipo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ r.nombre_contacto }}<br>
+                            <small class="text-muted">
+                                {{ r.email_contacto }}{% if r.telefono_contacto %} · {{ r.telefono_contacto }}{% endif %}
+                            </small>
+                        </td>
+                        <td>
+                            {% if r.estado == 1 %}
+                                <span class="badge text-bg-secondary">Recibido</span>
+                            {% elif r.estado == 2 %}
+                                <span class="badge text-bg-info">En proforma</span>
+                            {% elif r.estado == 3 %}
+                                <span class="badge text-bg-primary">Proforma enviada</span>
+                            {% elif r.estado == 4 %}
+                                <span class="badge text-bg-success">Cerrado</span>
+                            {% else %}
+                                <span class="badge text-bg-light">{{ r.get_estado_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>
+                                Recibido: {{ r.fecha_recepcion|date:"d/m/Y H:i" }}<br>
+                                {# más adelante, si quisieras guardar fecha de cierre, la muestras aquí #}
+                            </small>
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle"
+                                   data-bs-toggle="dropdown"
+                                   aria-haspopup="true"
+                                   aria-expanded="false"
+                                   href="javascript:;">
+                                    Acciones <span class="caret"></span>
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li class="smaller">
+                                        <a href="/servicios?action=detail&id={{ r.id }}" class="dropdown-item">
+                                            <i class="icon-zoom-in"></i> Detalle
+                                        </a>
+                                    </li>
+
+                                    {% if not sololectura and r.estado == 1 %}
+                                        <li class="smaller">
+                                            <a href="javascript:;"
+                                               nhref="/servicios?action=edit&id={{ r.id }}"
+                                               class="formmodal dropdown-item">
+                                                <i class="icon-edit"></i> Editar
+                                            </a>
+                                        </li>
+                                        <li class="smaller">
+                                            <a href="javascript:;"
+                                               class="dropdown-item btn-delete-req"
+                                               data-id="{{ r.id }}">
+                                                <i class="icon-remove"></i> Eliminar
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class='row'>
+        <div class="col-12">
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item">
+                                <a href="/servicios?{% if search %}s={{ search }}&{% endif %}page=1" class="page-link">1</a>
+                            </li>
+                            <li class="page-item">
+                                <a href="/servicios?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="page-link">...</a>
+                            </li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}>
+                                <a href="/servicios?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a>
+                            </li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item">
+                                <a href="/servicios?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="page-link">...</a>
+                            </li>
+                            <li class="page-item">
+                                <a href="/servicios?{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}" class="page-link">{{ paging.num_pages }}</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}>
+                                <a href="/servicios?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

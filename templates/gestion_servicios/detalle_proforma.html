@@ -1,0 +1,229 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+
+{% block heading %}
+<script type="text/javascript">
+    function enviarProforma(id){
+        if(!confirm("¿Enviar esta proforma al cliente?")) return;
+        $.post("/gestion_servicios", {
+            action: "send",
+            id: id,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, function(data){
+            if(data.result === 'ok'){
+                location.reload();
+            }else{
+                alert(data.mensaje || 'Ocurrió un error al enviar la proforma');
+            }
+        }, "json");
+    }
+
+    function generarRubro(id){
+        if(!confirm("¿Generar rubro para esta proforma?")) return;
+        $.post("/gestion_servicios", {
+            action: "generar_rubro",
+            id: id,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, function(data){
+            if(data.result === 'ok'){
+                alert(data.mensaje || 'Rubro generado correctamente');
+                location.reload();
+            }else{
+                alert(data.mensaje || 'Ocurrió un error al generar el rubro');
+            }
+        }, "json");
+    }
+</script>
+{% endblock %}
+
+{% block headcanvas %}
+<div class="row mb-2">
+    <div class="col-12">
+        <h4>{{ title }}</h4>
+        <p class="small text-muted mb-1">
+            Proforma {{ proforma.numero }}
+            {% if proforma.requerimiento %}
+                · desde requerimiento #{{ proforma.requerimiento.id }}
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="row mb-2">
+
+    <div class="col-12">
+
+
+        {# Acciones sobre la proforma #}
+
+    {% if proforma.estado == 1 %}
+
+
+         <a href="javascript:;" nhref="/gestion_servicios?action=agregar_detalle&id={{ proforma.id }}" class='btn btn-sm btn-success formmodal'>
+                    <i class="icon-plus"></i> Agregar servicio
+                </a>
+{% endif %}
+
+
+        <div class="btn-group ms-2">
+
+
+                <a href="javascript:;"
+                   nhref="/servicios?action=edit&id={{ proforma.id }}"
+                   class="btn btn-sm btn-outline-primary formmodal">
+                    <i class="icon-edit"></i> Editar
+                </a>
+
+                {% if proforma.estado == 1 %}
+                    <a href="javascript:;" class="btn btn-sm btn-outline-success"
+                       onclick="enviarProforma({{ proforma.id }});">
+                        <i class="icon-mail-forward"></i> Enviar al cliente
+                    </a>
+                {% endif %}
+
+
+        </div>
+
+      {% if proforma.solicitud_trabajo %}
+    <div class="btn-group ms-2">
+
+
+        {% if not proforma.solicitud_trabajo.trabajo %}
+            {# Verifica que tenga rubro y que esté cancelado #}
+            {% if proforma.rubro_servicio and proforma.rubro_servicio.rubro.cancelado %}
+                <a href="javascript:;"
+                   nhref="/gestion_servicios?action=generar_trabajo&id={{ proforma.solicitud_trabajo.id }}"
+                   class="btn btn-sm btn-outline-dark formmodal">
+                    <i class="icon-wrench"></i> Generar trabajo
+                </a>
+            {% else %}
+                <span class="badge text-bg-warning ms-2">
+                    Pendiente de pago de rubro
+                </span>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endif %}
+
+
+    </div>
+</div>
+{% endblock %}
+
+{% block canvas %}
+<div class="row">
+    <div class="col-md-6">
+        <h5>Datos de la proforma</h5>
+        <table class="table table-sm">
+            <tr>
+                <th style="width: 140px;">Número</th>
+                <td>{{ proforma.numero }}</td>
+            </tr>
+            <tr>
+                <th>Cliente</th>
+                <td>
+                    {{ proforma.cliente }}<br>
+                    {% if proforma.cliente.identificacion %}
+                        <small class="text-muted">{{ proforma.cliente.identificacion }}</small>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Estado</th>
+                <td>
+                    {% if proforma.estado == 1 %}
+                        <span class="badge text-bg-secondary">Borrador</span>
+                    {% elif proforma.estado == 2 %}
+                        <span class="badge text-bg-info">Enviada</span>
+                    {% elif proforma.estado == 3 %}
+                        <span class="badge text-bg-success">Aprobada</span>
+                    {% elif proforma.estado == 4 %}
+                        <span class="badge text-bg-danger">Rechazada</span>
+                    {% else %}
+                        <span class="badge text-bg-light">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Fechas</th>
+                <td>
+                    <small>
+                        Creación: {{ proforma.creado_en|date:"d/m/Y H:i" }}<br>
+                        {% if proforma.fecha_envio %}
+                            Envío: {{ proforma.fecha_envio|date:"d/m/Y H:i" }}<br>
+                        {% endif %}
+                        {% if proforma.fecha_respuesta %}
+                            Respuesta: {{ proforma.fecha_respuesta|date:"d/m/Y H:i" }}
+                        {% endif %}
+                    </small>
+                </td>
+            </tr>
+            <tr>
+                <th>Observaciones</th>
+                <td>{{ proforma.observaciones|default:"(Sin observaciones)" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="col-md-6">
+        <h5>Totales</h5>
+        <table class="table table-sm">
+            <tr>
+                <th style="width: 140px;">Subtotal</th>
+                <td style="text-align:right;">$ {{ proforma.subtotal|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr>
+                <th>Descuento</th>
+                <td style="text-align:right;">$ {{ proforma.descuento|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr>
+                <th>Impuestos</th>
+                <td style="text-align:right;">$ {{ proforma.impuestos|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr>
+                <th>Total</th>
+                <td style="text-align:right;"><strong>$ {{ proforma.total|floatformat:2|intcomma }}</strong></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<hr>
+
+<div class="row mt-2">
+    <div class="col-12">
+        <h5>Detalle de ítems</h5>
+        <table class="table table-bordered table-striped table-sm">
+            <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Servicio / Descripción</th>
+                <th style="width: 90px; text-align:right;">Cant.</th>
+                <th style="width: 110px; text-align:right;">P. Unitario</th>
+                <th style="width: 110px; text-align:right;">Total</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for it in detalles %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        {% if it.servicio %}
+                            <strong>{{ it.servicio }}</strong><br>
+                        {% endif %}
+                        {{ it.descripcion }}
+                    </td>
+                    <td style="text-align:right;">{{ it.cantidad }}</td>
+                    <td style="text-align:right;">$ {{ it.precio_unitario|floatformat:2|intcomma }}</td>
+                    <td style="text-align:right;">$ {{ it.total|floatformat:2|intcomma }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5">La proforma no tiene ítems registrados.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

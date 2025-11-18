@@ -58,7 +58,7 @@ from settings import NOTA_ESTADO_REPROBADO, NOTA_ESTADO_SUPLETORIO, NIVEL_MALLA_
     NIVEL_MALLA_UNO, SEXO_FEMENINO, SEXO_MASCULINO, TIPO_MORA_RUBRO, GENERAR_RUBRO_MORA, VALOR_MORA_RUBRO
 from ctt.funciones import enletras, validarRGB
 from ctt.tasks import send_mail, send_html_mail
-
+from django.core.validators import MinValueValidator
 
 def ctt_list_classes():
     listclass = []
@@ -9945,9 +9945,20 @@ class IvaAplicado(ModeloBase):
         self.descripcion = null_to_text(self.descripcion)
         super(IvaAplicado, self).save(*args, **kwargs)
 
+class Cliente(ModeloBase):
+    persona = models.ForeignKey('ctt.Persona', verbose_name=u'personaaceptaterminos', on_delete=models.CASCADE)
+    identificacion = models.CharField(max_length=20, unique=True)
+    razon_social = models.CharField(max_length=255)
+    email = models.EmailField()
+    telefono = models.CharField(max_length=30, blank=True)
+    direccion = models.CharField(max_length=255, blank=True)
+    class Meta:
+        indexes = [models.Index(fields=["identificacion"], name="idx_ctt_cliente_ident")]
+    def __str__(self): return f"{self.razon_social} ({self.identificacion})"
 
 class Rubro(ModeloBase):
-    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True,  verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    cliente = models.ForeignKey('Cliente', blank=True, null=True,  verbose_name=u'Cliente', on_delete=models.CASCADE)
     periodo = models.ForeignKey(Periodo, blank=True, null=True, verbose_name=u'Periodo', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=300, verbose_name=u'Nombre')
     fecha = models.DateField(verbose_name=u'Fecha')
@@ -17684,8 +17695,242 @@ class TipoTerminosAcuerdos(ModeloBase):
     archivo = models.FileField(upload_to='terminosycondiciones/%Y', blank=True, null=True, verbose_name=u'Archivo')
     url = models.TextField(default='', blank=True, null=True, verbose_name=u"Url con politicas")
 
-
 class AceptacionTerminosAcuerdos(ModeloBase):
     persona = models.ForeignKey(Persona, verbose_name=u'personaaceptaterminos', on_delete=models.CASCADE)
     tipoacuerdo = models.ForeignKey(TipoTerminosAcuerdos, verbose_name=u'Tipo de terminos y acuerdos', on_delete=models.CASCADE)
     fechaaceptacion = models.DateField(default=timezone.now, blank=True, null=True, verbose_name=u'Fecha aceptacion')
+
+
+class TipoServicio(ModeloBase):
+    codigo = models.CharField(max_length=20, unique=True)  # AGORA, LAB_MAT, etc.
+    nombre = models.CharField(max_length=150)              # "Salón Ágora", "Lab Materiales"
+    descripcion = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.nombre
+
+class ServicioCatalogo(ModeloBase):
+    class TipoCobro(models.IntegerChoices):
+        POR_ITEM = 1, "Por ítem (muestra / pieza / ensayo / paquete)"
+        POR_HORA = 2, "Por hora"
+
+    tipo_servicio = models.ForeignKey(TipoServicio, on_delete=models.PROTECT, related_name="servicios", verbose_name="Laboratorio / Área")
+    nombre = models.TextField()  # descripción larga del ítem
+    tipo_cobro = models.PositiveSmallIntegerField(choices=TipoCobro.choices, default=TipoCobro.POR_ITEM)
+    precio_base = models.DecimalField(max_digits=10, decimal_places=2)
+    observacion = models.TextField(blank=True)
+
+    def __str__(self):
+        txt = (self.nombre or "").strip()
+        return (txt[:80] + "…") if len(txt) > 80 else txt
+
+
+class RequerimientoServicio(ModeloBase):
+    class Estado(models.IntegerChoices):
+        RECIBIDO         = 1, "Recibido"
+        EN_PROFORMA      = 2, "Proforma en elaboración"
+        PROFORMA_ENVIADA = 3, "Proforma enviada al cliente"
+        CERRADO          = 4, "Cerrado"
+
+    cliente = models.ForeignKey(
+        Cliente, null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="requerimientos"
+    )
+    nombre_contacto = models.CharField(max_length=255)
+    email_contacto = models.EmailField()
+    telefono_contacto = models.CharField(max_length=50, blank=True)
+    tipo_servicio = models.ForeignKey(
+        TipoServicio, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="requerimientos"
+    )
+    descripcion = models.TextField()
+    archivo = models.FileField(upload_to="requerimientos/", blank=True)
+
+    estado = models.PositiveSmallIntegerField(
+        choices=Estado.choices,
+        default=Estado.RECIBIDO
+    )
+
+    fecha_recepcion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Req #{self.id} - {self.nombre_contacto}"
+
+
+class Proforma(ModeloBase):
+    class Estado(models.IntegerChoices):
+        BORRADOR  = 1, "Borrador"
+        ENVIADA   = 2, "Enviada"
+        APROBADA  = 3, "Aprobada"
+        RECHAZADA = 4, "Rechazada"
+
+    numero = models.CharField(max_length=30, unique=True)
+    cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="proformas")
+    estado = models.PositiveSmallIntegerField(choices=Estado.choices, default=Estado.BORRADOR)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    descuento = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    impuestos = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    observaciones = models.TextField(blank=True)
+    fecha_envio = models.DateTimeField(null=True, blank=True)
+    fecha_respuesta = models.DateTimeField(null=True, blank=True)
+    creado_por = models.ForeignKey('ctt.Persona', null=True, blank=True, on_delete=models.SET_NULL, related_name="proformas_creadas")
+
+    requerimiento = models.ForeignKey(
+        RequerimientoServicio,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='proformas'
+    )
+    from decimal import Decimal
+
+    def recomputar_totales(self):
+        sub = sum((d.subtotal for d in self.detalles.all()), Decimal('0.00'))
+        self.subtotal = sub
+        self.total = sub - self.descuento + self.impuestos
+
+    def enviar_al_cliente(self, actor_persona=None):
+        estado_anterior = self.estado
+        # recalcula totales antes de enviar
+        self.recomputar_totales()
+        self.estado = self.Estado.ENVIADA
+        self.fecha_envio = timezone.now()
+        self.save()
+
+        self.registrar_evento(
+            tipo=ProformaHistorial.TipoEvento.ENVIO,
+            mensaje="Proforma enviada al cliente.",
+            actor_persona=actor_persona,
+            estado_anterior=estado_anterior,
+            estado_nuevo=self.estado,
+        )
+
+    def registrar_evento(self, tipo, mensaje="", actor_persona=None, actor_externo="", estado_anterior=None,
+                         estado_nuevo=None):
+        from .models import ProformaHistorial  # o ajusta el import según tu estructura
+
+        ProformaHistorial.objects.create(
+            proforma=self,
+            tipo=tipo,
+            mensaje=mensaje,
+            actor_persona=actor_persona,
+            actor_externo=actor_externo,
+            estado_anterior=estado_anterior,
+            estado_nuevo=estado_nuevo,
+        )
+
+    def __str__(self): return f"Proforma {self.numero}"
+
+
+class ProformaDetalle(ModeloBase):
+    proforma = models.ForeignKey(Proforma, related_name='detalles', on_delete=models.CASCADE)
+    servicio = models.ForeignKey(ServicioCatalogo, on_delete=models.PROTECT)
+    descripcion = models.CharField(max_length=255, blank=True)
+
+    cantidad = models.DecimalField(max_digits=8, decimal_places=2, default=1)
+
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+
+    def save(self, *args, **kwargs):
+        if not self.precio_unitario:
+            self.precio_unitario = self.servicio.precio_base
+
+        # cantidad = piezas / ensayos (POR_ITEM) o horas (POR_HORA)
+        self.subtotal = self.cantidad * self.precio_unitario
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.servicio.nombre} x {self.cantidad}"
+
+
+class RevisionProforma(ModeloBase):
+    proforma = models.OneToOneField(Proforma, on_delete=models.CASCADE, related_name="revision")
+    revisado_por = models.ForeignKey('Persona', on_delete=models.PROTECT, related_name="proformas_revisadas")
+    cumple = models.BooleanField()
+    comentarios = models.TextField(blank=True)
+
+class SolicitudTrabajo(ModeloBase):
+    class Estado(models.IntegerChoices):
+        PEND_PAGO = 1, "Pendiente de pago"
+        PAGADA    = 2, "Pagada"
+        EN_PROCESO= 3, "En proceso"
+        ENTREGADA = 4, "Entregada"
+        CERRADA   = 5, "Cerrada"
+        NO_CUMPLE = 6, "No cumplimiento"
+
+    proforma = models.OneToOneField(Proforma, on_delete=models.PROTECT, related_name="solicitud_trabajo")
+    cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT)
+    estado = models.PositiveSmallIntegerField(choices=Estado.choices, default=Estado.PEND_PAGO)
+
+    def __str__(self):
+        return f"Solicitud #{self.pk} - {self.cliente} - {self.get_estado_display()}"
+
+class FacturaItem(ModeloBase):
+    factura = models.ForeignKey('Factura', related_name="items", on_delete=models.CASCADE)
+    descripcion = models.CharField(max_length=255)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2,
+                                   validators=[MinValueValidator(Decimal("0.01"))])
+    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
+
+    @property
+    def total(self): return self.cantidad * self.precio_unitario
+
+
+class Trabajo(ModeloBase):
+    solicitud = models.OneToOneField(SolicitudTrabajo, related_name="trabajo", on_delete=models.PROTECT)
+    responsable = models.ForeignKey('Persona', on_delete=models.PROTECT, related_name="trabajos_asignados")
+    descripcion = models.TextField(blank=True)
+    fecha_inicio = models.DateTimeField(null=True, blank=True)
+    fecha_fin = models.DateTimeField(null=True, blank=True)
+
+class EntregaResultado(ModeloBase):
+    trabajo = models.OneToOneField(Trabajo, related_name="entrega", on_delete=models.PROTECT)
+    recibido_por = models.CharField(max_length=255)
+    observaciones = models.TextField(blank=True)
+    archivo = models.FileField(upload_to="resultados/", blank=True)
+    fecha_entrega = models.DateTimeField(auto_now_add=True)
+
+class InformeNoCumplimiento(ModeloBase):
+    proforma = models.ForeignKey(Proforma, on_delete=models.PROTECT, related_name="informes_no_cumplimiento")
+    descripcion = models.TextField()
+    adjunto = models.FileField(upload_to="no_cumple/", blank=True)
+
+class ProformaHistorial(ModeloBase):
+    class TipoEvento(models.IntegerChoices):
+        CREACION   = 1, "Creación"
+        EDICION    = 2, "Edición"
+        ENVIO      = 3, "Envío al cliente"
+        APROBACION = 4, "Aprobación del cliente"
+        RECHAZO    = 5, "Rechazo del cliente"
+        COMENTARIO = 6, "Comentario / observación"
+
+    proforma = models.ForeignKey(
+        Proforma,
+        related_name="historial",
+        on_delete=models.CASCADE
+    )
+
+    tipo = models.PositiveSmallIntegerField(choices=TipoEvento.choices)
+    fecha = models.DateTimeField(default=timezone.now)
+
+    # Quién hizo la acción
+    actor_persona = models.ForeignKey('ctt.Persona', null=True, blank=True, on_delete=models.SET_NULL, related_name="eventos_proforma")
+    actor_externo = models.CharField(max_length=255, blank=True, help_text="Nombre o referencia del cliente externo si no está logueado.")
+
+    estado_anterior = models.PositiveSmallIntegerField(null=True, blank=True)
+    estado_nuevo = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    mensaje = models.TextField(blank=True)  # aquí va el “por qué”, comentario, etc.
+
+    def __str__(self):
+        return f"[{self.get_tipo_display()}] Proforma {self.proforma.numero} - {self.fecha:%Y-%m-%d %H:%M}"
+
+class RubroServicio(ModeloBase):
+    rubro = models.OneToOneField('Rubro', on_delete=models.CASCADE, related_name='rubro_servicio')
+    proforma = models.OneToOneField('Proforma', on_delete=models.PROTECT, related_name='rubro_servicio')
+    descripcion = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"Rubro servicio {self.rubro_id} - proforma {self.proforma.numero}"

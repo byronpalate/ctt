@@ -1,0 +1,170 @@
+{# templates/servicios/requerimiento_detail.html #}
+{% extends "basebs.html" %}
+{% load humanize %}
+
+{% block headcanvas %}
+<div class="row mb-2">
+    <div class="col-12">
+        <h4>{{ title|default:"Detalle de requerimiento" }}</h4>
+        <p class="small text-muted mb-1">
+            Req #{{ requerimiento.id }}
+        </p>
+    </div>
+</div>
+
+<div class="row mb-2">
+    <div class="col-12">
+        <a href="/servicios"
+           class="btn btn-sm btn-outline-secondary">
+            <i class="icon-arrow-left"></i> Volver a mis requerimientos
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block canvas %}
+<div class="row">
+    <div class="col-md-6">
+        <h5>Datos del requerimiento</h5>
+        <table class="table table-sm">
+            <tr>
+                <th style="width: 160px;">Laboratorio / área</th>
+                <td>
+                    {% if requerimiento.tipo_servicio %}
+                        {{ requerimiento.tipo_servicio.nombre }}
+                    {% else %}
+                        <span class="text-muted">Sin tipo de servicio</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Estado</th>
+                <td>
+                    {% if requerimiento.estado == 1 %}
+                        <span class="badge text-bg-secondary">Recibido</span>
+                    {% elif requerimiento.estado == 2 %}
+                        <span class="badge text-bg-info">En proforma</span>
+                    {% elif requerimiento.estado == 3 %}
+                        <span class="badge text-bg-primary">Proforma enviada</span>
+                    {% elif requerimiento.estado == 4 %}
+                        <span class="badge text-bg-success">Cerrado</span>
+                    {% else %}
+                        <span class="badge text-bg-light">{{ requerimiento.get_estado_display }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Fecha de recepción</th>
+                <td>{{ requerimiento.fecha_recepcion|date:"d/m/Y H:i" }}</td>
+            </tr>
+            <tr>
+                <th>Archivo adjunto</th>
+                <td>
+                    {% if requerimiento.archivo %}
+                        <a href="{{ requerimiento.archivo.url }}" target="_blank">
+                            Ver archivo
+                        </a>
+                    {% else %}
+                        <span class="text-muted">(Sin archivo)</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="col-md-6">
+        <h5>Contacto</h5>
+        <table class="table table-sm">
+            <tr>
+                <th style="width: 140px;">Nombre</th>
+                <td>{{ requerimiento.nombre_contacto }}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>{{ requerimiento.email_contacto }}</td>
+            </tr>
+            <tr>
+                <th>Teléfono</th>
+                <td>{{ requerimiento.telefono_contacto|default:"(No registra)" }}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <h5>Descripción del requerimiento</h5>
+        <div class="card">
+            <div class="card-body">
+                {{ requerimiento.descripcion|linebreaksbr }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr id="proformas">
+
+<div class="row mt-3">
+    <div class="col-12">
+        <h5>Proformas generadas para este requerimiento</h5>
+
+        {% with proformas as pros %}
+            {% if pros %}
+                <table class="table table-bordered table-striped table-sm mt-2">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 130px;">N° Proforma</th>
+                        <th style="width: 120px; text-align:right;">Total</th>
+                        <th style="width: 140px;">Estado</th>
+                        <th style="width: 180px;">Fechas</th>
+                        <th style="width: 80px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for p in pros %}
+                        <tr>
+                            <td>{{ p.numero }}</td>
+                            <td style="text-align:right;">$ {{ p.total|floatformat:2|intcomma }}</td>
+                            <td>
+                                {% if p.estado == 1 %}
+                                    <span class="badge text-bg-secondary">Borrador</span>
+                                {% elif p.estado == 2 %}
+                                    <span class="badge text-bg-info">Enviada</span>
+                                {% elif p.estado == 3 %}
+                                    <span class="badge text-bg-success">Aprobada</span>
+                                {% elif p.estado == 4 %}
+                                    <span class="badge text-bg-danger">Rechazada</span>
+                                {% else %}
+                                    <span class="badge text-bg-light">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>
+                                    Creación: {{ p.creado_en|date:"d/m/Y H:i" }}<br>
+                                    {% if p.fecha_envio %}
+                                        Envío: {{ p.fecha_envio|date:"d/m/Y H:i" }}<br>
+                                    {% endif %}
+                                    {% if p.fecha_respuesta %}
+                                        Respuesta: {{ p.fecha_respuesta|date:"d/m/Y H:i" }}
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                <a href="/servicios?action=proforma_detail&id={{ p.id }}"
+                                   class="btn btn-ssm btn-outline-primary">
+                                    Ver
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted mt-2">
+                    Aún no se han generado proformas para este requerimiento.
+                </p>
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+{% endblock %}
