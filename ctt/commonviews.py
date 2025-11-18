@@ -17,10 +17,11 @@ from django.shortcuts import render
 
 
 from decorators import secure_module, last_access, db_selector
-from settings import ALUMNOS_GROUP_ID, SEXO_FEMENINO, SEXO_MASCULINO, CONTACTO_EMAIL, ENVIO_CORREO_INICIO_SESION,\
-    PIE_PAGINA_CREATIVE_COMMON_LICENCE, CHEQUEAR_CORREO, PROFESORES_GROUP_ID, EMPLEADORES_GRUPO_ID, TIPO_PERIODO_GRADO,\
-NOTIFICACION_DEUDA, ACTUALIZAR_FOTO_PROFESOR, ACTUALIZAR_FOTO_ADMINISTRATIVOS, ARCHIVO_TIPO_PUBLICO, ACTUALIZAR_FOTO_ALUMNOS,\
-    NIVEL_MALLA_CERO, CHEQUEAR_CONFLICTO_HORARIO, NOTA_ESTADO_EN_CURSO
+from settings import ALUMNOS_GROUP_ID, SEXO_FEMENINO, SEXO_MASCULINO, CONTACTO_EMAIL, ENVIO_CORREO_INICIO_SESION, \
+    PIE_PAGINA_CREATIVE_COMMON_LICENCE, CHEQUEAR_CORREO, PROFESORES_GROUP_ID, EMPLEADORES_GRUPO_ID, TIPO_PERIODO_GRADO, \
+    NOTIFICACION_DEUDA, ACTUALIZAR_FOTO_PROFESOR, ACTUALIZAR_FOTO_ADMINISTRATIVOS, ARCHIVO_TIPO_PUBLICO, \
+    ACTUALIZAR_FOTO_ALUMNOS, \
+    NIVEL_MALLA_CERO, CHEQUEAR_CONFLICTO_HORARIO, NOTA_ESTADO_EN_CURSO, CLIENTES_GROUP_ID
 from ctt.forms import PersonaForm, CambioClaveForm, CargarFotoForm, CambioPerfilForm, CambioCoordinacionForm, \
     CambioPeriodoForm, CambioClaveSimpleForm,FormTerminos
 from ctt.funciones import generar_nombre, log, fechatope, ok_json, bad_json, url_back, generar_clave, \
@@ -95,6 +96,10 @@ def login_user(request):
                                         da.save(request)
                                     if perfilprincipal.es_estudiante():
                                         perfilprincipal.establecer_estudiante_principal()
+
+                                    if perfilprincipal.es_cliente():
+                                        cliente = perfilprincipal.cliente
+
                                     return ok_json({"sessionid": request.session.session_key})
                                 else:
                                     return bad_json(mensaje=u'Login fallido, no existen perfiles activos.')
@@ -222,6 +227,8 @@ def adduserdata(request, data):
             request.session['grupos_usuarios'] = request.user.groups.filter(id=ALUMNOS_GROUP_ID)
         elif perfilprincipal.es_empleador():
             request.session['grupos_usuarios'] = request.user.groups.filter(id=EMPLEADORES_GRUPO_ID)
+        elif perfilprincipal.es_cliente():
+            request.session['grupos_usuarios'] = request.user.groups.filter(id=CLIENTES_GROUP_ID)
         else:
             request.session['grupos_usuarios'] = request.user.groups.exclude(id__in=[ALUMNOS_GROUP_ID, PROFESORES_GROUP_ID])
     data['grupos_usuarios'] = request.session['grupos_usuarios']
@@ -249,6 +256,8 @@ def adduserdata(request, data):
         else:
             request.session['periodo'] = None
     elif perfilprincipal.es_empleador():
+        pass
+    elif perfilprincipal.es_cliente():
         pass
     else:
         data['periodos'] = periodos
@@ -412,6 +421,23 @@ def panel(request):
                 encuestas = encuesta(grupos, persona)
                 if encuestas:
                     return HttpResponseRedirect('/com_responderencuestas?action=responder&id=' + str(encuestas.first().id))
+            elif perfilprincipal.es_cliente():
+                data['cliente'] = cliente = perfilprincipal.cliente
+                data['proceso'] = None
+                data['es_cliente'] = False
+                data['incidencias'] = []
+                misgrupos = GruposModulos.objects.filter(grupo__id=CLIENTES_GROUP_ID).distinct()
+                modulos_activos = Prefetch('modulos', queryset=Modulo.objects.filter(activo=True).order_by('nombre'), to_attr='modulos_activos')
+                data['grupos_con_mods'] = (misgrupos.order_by('grupo__name').prefetch_related(modulos_activos))
+                grupos = persona.usuario.groups.filter(id__in=[CLIENTES_GROUP_ID])
+                data['datosincompletos'] = persona.datos_incompletos()
+                data['hojavidallena'] = False
+                # NOTICIAS Y AVISOS DEL DIA
+                data['noticias'] = []
+                # data['noticiasgraficas'] = []
+                # encuestas = encuesta(grupos, persona)
+                # if encuestas:
+                #     return HttpResponseRedirect('/com_responderencuestas?action=responder&id=' + str(encuestas.first().id))
             else:
                 misgrupos = GruposModulos.objects.filter(grupo__in=persona.usuario.groups.exclude(id__in=[ALUMNOS_GROUP_ID, PROFESORES_GROUP_ID, EMPLEADORES_GRUPO_ID])).distinct()
                 modulos_activos = Prefetch('modulos', queryset=Modulo.objects.filter(activo=True).order_by('nombre'), to_attr='modulos_activos')

@@ -53,7 +53,8 @@ from settings import CLASES_HORARIO_ESTRICTO, CLASES_APERTURA_ANTES, CLASES_APER
     PERFIL_PROFESOR_ID, PERFIL_EMPLEADOR_ID, TIPO_COLEGIO_FISCAL, TIPO_COLEGIO_MUNICIPAL, TIPO_COLEGIO_PARTICULAR, \
     TIPO_COLEGIO_FISCOMISIONAL, TIPO_RESPUESTA_ENCUESTA_FECHA_ID, CARRERA_FORMACION_CONTINUA_ID, COLEGIO_UTI_ID, \
     PROCESADOR_PAGO_DATAFAST, TIPO_CONVENIO_INDIVIDUAL, PROVEEDOR_PAGOONLINE_PAYPHONE, \
-    OTROS_BANCOS_EXTERNOS_ID, PROVEEDOR_PAGOONLINE_DATAFAST, TIPO_IVA_15_ID, APP_DOMAIN, SITE_ROOT, FORMA_PAGO_TARJETA
+    OTROS_BANCOS_EXTERNOS_ID, PROVEEDOR_PAGOONLINE_DATAFAST, TIPO_IVA_15_ID, APP_DOMAIN, SITE_ROOT, FORMA_PAGO_TARJETA, \
+    PERFIL_CLIENTE_ID
 from settings import NOTA_ESTADO_REPROBADO, NOTA_ESTADO_SUPLETORIO, NIVEL_MALLA_CERO, \
     NIVEL_MALLA_UNO, SEXO_FEMENINO, SEXO_MASCULINO, TIPO_MORA_RUBRO, GENERAR_RUBRO_MORA, VALOR_MORA_RUBRO
 from ctt.funciones import enletras, validarRGB
@@ -1435,7 +1436,7 @@ class Persona(ModeloBase):
     apellido2 = models.CharField(default='', max_length=50, verbose_name=u"2do Apellido")
     cedula = models.CharField(default='', max_length=13, verbose_name=u"Cedula")
     pasaporte = models.CharField(default='', max_length=15, verbose_name=u"Pasaporte")
-    nacimiento = models.DateField(verbose_name=u"Fecha de nacimiento")
+    nacimiento = models.DateField(verbose_name=u"Fecha de nacimiento",blank=True, null=True)
     sexo = models.ForeignKey(Sexo, verbose_name=u'Sexo', on_delete=models.CASCADE)
     genero = models.ForeignKey(Genero, blank=True, null=True, verbose_name=u'Genero', on_delete=models.CASCADE)
     otrogenero = models.CharField(default='', max_length=200, verbose_name=u"Otro Genero")
@@ -1476,7 +1477,7 @@ class Persona(ModeloBase):
 
     class Meta:
         verbose_name_plural = u"Personas"
-        unique_together = ('emailinst',)
+        # unique_together = ('emailinst',)
         ordering = ['apellido1', 'apellido2', 'nombre1', 'nombre2']
 
     @staticmethod
@@ -1597,7 +1598,7 @@ class Persona(ModeloBase):
             return True
         return False
 
-    def crear_perfil(self, administrativo=None, inscripcion=None, profesor=None, empleador=None):
+    def crear_perfil(self, administrativo=None, inscripcion=None, profesor=None, empleador=None,cliente=None):
         if inscripcion:
             perfil = PerfilUsuario(persona=self,
                                    inscripcion=inscripcion,
@@ -1617,6 +1618,11 @@ class Persona(ModeloBase):
             perfil = PerfilUsuario(persona=self,
                                    empleador=empleador,
                                    tipoperfilusuario_id=PERFIL_EMPLEADOR_ID)
+            perfil.save()
+        elif cliente:
+            perfil = PerfilUsuario(persona=self,
+                                   cliente=cliente,
+                                   tipoperfilusuario_id=PERFIL_CLIENTE_ID)
             perfil.save()
 
     def lista_perfiles(self):
@@ -1660,6 +1666,8 @@ class Persona(ModeloBase):
             return self.perfilusuario_set.filter(inscripcion__isnull=False, inscripcion__activo=True).order_by('-principal')[0]
         elif self.perfilusuario_set.filter(empleador__isnull=False, empleador__activo=True).exists():
             return self.perfilusuario_set.filter(empleador__isnull=False, empleador__activo=True)[0]
+        elif self.perfilusuario_set.filter(cliente__isnull=False, cliente__activo=True).exists():
+            return self.perfilusuario_set.filter(cliente__isnull=False, cliente__activo=True)[0]
         return None
 
     def tiene_ficha(self):
@@ -1690,6 +1698,9 @@ class Persona(ModeloBase):
     def es_estudiante(self):
         return self.perfilusuario_set.filter(inscripcion__isnull=False).exists()
 
+    def es_cliente(self):
+        return self.perfilusuario_set.filter(cliente__isnull=False).exists()
+
     def es_estudiante_matriculado(self):
         return self.perfilusuario_set.filter(inscripcion__isnull=False, inscripcion__matricula__cerrada=False).exclude(inscripcion__coordinacion__id__in=(22, 23)).exists()
 
@@ -1707,6 +1718,9 @@ class Persona(ModeloBase):
 
     def es_profesor(self):
         return self.perfilusuario_set.filter(profesor__isnull=False).exists()
+
+    def es_cliente(self):
+        return self.perfilusuario_set.filter(cliente__isnull=False).exists()
 
     def mis_inscripciones(self):
         return self.perfilusuario_set.filter(inscripcion__isnull=False)
@@ -1905,6 +1919,8 @@ class Persona(ModeloBase):
 
     def mi_cumpleannos(self):
         hoy = datetime.now().date()
+        if not self.nacimiento:
+            return False
         nacimiento = self.nacimiento
         if nacimiento.day == hoy.day and nacimiento.month == hoy.month:
             return True
@@ -14800,6 +14816,14 @@ class Profesor(ModeloBase):
         self.descripcionprof = null_to_text(self.descripcionprof)
         super(Profesor, self).save(*args, **kwargs)
 
+class Cliente(ModeloBase):
+    persona = models.ForeignKey(Persona, verbose_name=u"Persona", on_delete=models.CASCADE)
+    empresa = models.ForeignKey(EmpresaEmpleadora, verbose_name=u"Empresa",blank=True, null=True, on_delete=models.CASCADE)
+    activo = models.BooleanField(default=True, verbose_name=u"Activo")
+
+    def __str__(self):
+        return u'%s' % self.persona
+
 
 class PerfilUsuario(ModeloBase):
     persona = models.ForeignKey(Persona, on_delete=models.CASCADE)
@@ -14808,6 +14832,7 @@ class PerfilUsuario(ModeloBase):
     administrativo = models.ForeignKey(Administrativo, blank=True, null=True, verbose_name=u'Administrativo', on_delete=models.CASCADE)
     profesor = models.ForeignKey(Profesor, blank=True, null=True, verbose_name=u'Profesor', on_delete=models.CASCADE)
     inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente, blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
     principal = models.BooleanField(default=False, verbose_name=u'Inscripción principal')
     codigo_texto = models.CharField(default='', max_length=200, verbose_name=u"Código Texto")
     codigo_qr = models.FileField(upload_to='qr', verbose_name=u'Códigos QR', blank=True, null=True)
@@ -14837,6 +14862,9 @@ class PerfilUsuario(ModeloBase):
 
     def es_empleador(self):
         return self.empleador is not None
+
+    def es_cliente(self):
+        return self.cliente is not None
 
     def establecer_estudiante_principal(self):
         if self.es_estudiante() and not self.principal:
@@ -17695,6 +17723,7 @@ class TipoTerminosAcuerdos(ModeloBase):
     archivo = models.FileField(upload_to='terminosycondiciones/%Y', blank=True, null=True, verbose_name=u'Archivo')
     url = models.TextField(default='', blank=True, null=True, verbose_name=u"Url con politicas")
 
+
 class AceptacionTerminosAcuerdos(ModeloBase):
     persona = models.ForeignKey(Persona, verbose_name=u'personaaceptaterminos', on_delete=models.CASCADE)
     tipoacuerdo = models.ForeignKey(TipoTerminosAcuerdos, verbose_name=u'Tipo de terminos y acuerdos', on_delete=models.CASCADE)
@@ -17934,3 +17963,6 @@ class RubroServicio(ModeloBase):
 
     def __str__(self):
         return f"Rubro servicio {self.rubro_id} - proforma {self.proforma.numero}"
+
+
+

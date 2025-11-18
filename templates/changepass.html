@@ -1,0 +1,25 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type = "text/javascript">
+        $(function (){
+            $("#id_anterior,#id_nueva").addClass("validate[required]");
+            $("#id_repetir").addClass("validate[required,equals[id_nueva]]");
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/pass{% endblock %}
+{% block formdestination %}/{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='changepass'/>
+{% endblock %}
+{% block pre_form %}
+    {% if cambio_clave_obligatorio %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <h4 class="alert-heading">Cambio de Clave Obligatorio!</h4>
+            Por la seguridad del sistema es necesario un cambio de clave en su cuenta.
+        </div>
+    {% endif %}
+{% endblock %}
+{% block formback %}/{% endblock %}

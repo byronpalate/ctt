@@ -602,6 +602,27 @@ class AdministrativosForm(BaseForm):
         self.fields['cantonnac'].queryset = Canton.objects.filter(provincia=administrativo.persona.provincianac)
         self.fields['parroquianac'].queryset = Parroquia.objects.filter(canton=administrativo.persona.cantonnac)
 
+class ClientesForm(BaseForm):
+    cedula = forms.CharField(label=u"Cédula", max_length=10, required=False, widget=forms.TextInput())
+    pasaporte = forms.CharField(label=u"Pasaporte", max_length=15, initial='', required=False, widget=forms.TextInput())
+    nombre1 = forms.CharField(label=u"1er Nombre", max_length=50, widget=forms.TextInput())
+    nombre2 = forms.CharField(label=u"2do Nombre", max_length=50, required=False, widget=forms.TextInput())
+    apellido1 = forms.CharField(label=u"1er Apellido", max_length=50, widget=forms.TextInput())
+    apellido2 = forms.CharField(label=u"2do Apellido", max_length=50, required=False, widget=forms.TextInput())
+    sexo = forms.ModelChoiceField(label=u"Género", queryset=Sexo.objects.all(), widget=forms.Select())
+    direccion = forms.CharField(label=u"Calle Principal", max_length=100, required=False, widget=forms.TextInput())
+    telefono = forms.CharField(label=u"Teléfono Movil", max_length=10, required=False, widget=forms.TextInput())
+    email = forms.CharField(label=u"Correo Electrónico", max_length=240, required=False, widget=forms.TextInput())
+    empresa = forms.BooleanField(label=u"Pertenece a Empresa?", required=False, initial=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
+    ruc = forms.CharField(label=u"Ruc", max_length=13, required=False, widget=forms.TextInput())
+    nombreempresa = forms.CharField(label=u"Nombre Empresa", max_length=50,required=False, widget=forms.TextInput())
+    emailempresa = forms.CharField(label=u"Correo Electrónico Empresa", max_length=240, required=False, widget=forms.TextInput())
+    direccionempresa = forms.CharField(label=u"Dirección Empresa", max_length=100, required=False, widget=forms.TextInput())
+    telefonoempresa = forms.CharField(label=u"Teléfono Empresa", max_length=10, required=False, widget=forms.TextInput())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
 
 class GrupoUsuarioForm(BaseForm):
     grupo = forms.ModelChoiceField(label=u'Grupo', queryset=Group.objects.all().order_by('name'), required=False, widget=forms.Select())
