@@ -411,7 +411,6 @@ class ModeloBase(models.Model):
         return [True, False]
 
     def delete(self, force=True, extra=None, *args, **kwargs):
-        """ Método para eliminar un registro """
         extra = self.extra_delete()
         if not extra[0]:
             raise Exception('No se puede eliminar')
@@ -9961,17 +9960,6 @@ class IvaAplicado(ModeloBase):
         self.descripcion = null_to_text(self.descripcion)
         super(IvaAplicado, self).save(*args, **kwargs)
 
-class Cliente(ModeloBase):
-    persona = models.ForeignKey('ctt.Persona', verbose_name=u'personaaceptaterminos', on_delete=models.CASCADE)
-    identificacion = models.CharField(max_length=20, unique=True)
-    razon_social = models.CharField(max_length=255)
-    email = models.EmailField()
-    telefono = models.CharField(max_length=30, blank=True)
-    direccion = models.CharField(max_length=255, blank=True)
-    class Meta:
-        indexes = [models.Index(fields=["identificacion"], name="idx_ctt_cliente_ident")]
-    def __str__(self): return f"{self.razon_social} ({self.identificacion})"
-
 class Rubro(ModeloBase):
     inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True,  verbose_name=u'Inscripción', on_delete=models.CASCADE)
     cliente = models.ForeignKey('Cliente', blank=True, null=True,  verbose_name=u'Cliente', on_delete=models.CASCADE)
@@ -17761,18 +17749,11 @@ class RequerimientoServicio(ModeloBase):
         PROFORMA_ENVIADA = 3, "Proforma enviada al cliente"
         CERRADO          = 4, "Cerrado"
 
-    cliente = models.ForeignKey(
-        Cliente, null=True, blank=True,
-        on_delete=models.SET_NULL,
-        related_name="requerimientos"
-    )
+    cliente = models.ForeignKey(Cliente, null=True, blank=True, on_delete=models.SET_NULL, related_name="requerimientos")
     nombre_contacto = models.CharField(max_length=255)
     email_contacto = models.EmailField()
     telefono_contacto = models.CharField(max_length=50, blank=True)
-    tipo_servicio = models.ForeignKey(
-        TipoServicio, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="requerimientos"
-    )
+    tipo_servicio = models.ForeignKey(TipoServicio, null=True, blank=True, on_delete=models.SET_NULL, related_name="requerimientos")
     descripcion = models.TextField()
     archivo = models.FileField(upload_to="requerimientos/", blank=True)
 
