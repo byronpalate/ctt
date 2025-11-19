@@ -3018,30 +3018,9 @@ class GenerarTrabajoForm(BaseForm):
 
 
 class RequerimientoServicioForm(BaseForm):
-    tipo_servicio = forms.ModelChoiceField(
-        label=u"Laboratorio / área",
-        queryset=TipoServicio.objects.all(),
-        widget=forms.Select()
-    )
+    tipo_servicio = forms.ModelChoiceField(label=u"Laboratorio / área", queryset=TipoServicio.objects.all(), widget=forms.Select())
 
-    nombre_contacto = forms.CharField(
-        label=u"Nombre de contacto",
-        max_length=255,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
-    )
-
-    email_contacto = forms.EmailField(
-        label=u"Email de contacto",
-        widget=forms.EmailInput(attrs={'class': 'form-control'})
-    )
-
-    telefono_contacto = forms.CharField(
-        label=u"Teléfono de contacto",
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
-    )
-
+    cliente = forms.ModelChoiceField(label=u"Cliente", queryset=Cliente.objects.all(), widget=forms.Select())
     descripcion = forms.CharField(
         label=u"Descripción del requerimiento",
         widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'})

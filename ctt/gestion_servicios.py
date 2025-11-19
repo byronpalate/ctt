@@ -11,24 +11,8 @@ from django.utils import timezone
 from decorators import secure_module, last_access
 from ctt.commonviews import adduserdata
 from ctt.funciones import log, MiPaginador, ok_json, bad_json, url_back, remover_tildes
-from ctt.models import (
-    Proforma,
-    RevisionProforma,
-    SolicitudTrabajo,
-    Trabajo,
-    Factura,
-    Cliente,
-    Persona,
-    Group,
-    RequerimientoServicio,
-    ProformaHistorial, ServicioCatalogo, ProformaDetalle, RubroServicio, Rubro
-)
-from ctt.forms import (
-    RevisionProformaForm,
-    VincularFacturaForm,
-    GenerarTrabajoForm,
-    ProformaForm,ProformaDetalleForm,
-)
+from ctt.models import (Proforma, RevisionProforma, SolicitudTrabajo, Trabajo, Factura, Cliente, Persona, Group, RequerimientoServicio, ProformaHistorial, ServicioCatalogo, ProformaDetalle, RubroServicio, Rubro)
+from ctt.forms import (RevisionProformaForm, VincularFacturaForm, GenerarTrabajoForm, ProformaForm,ProformaDetalleForm,RequerimientoServicioForm)
 
 from settings import  TIPO_IVA_0_ID
 @login_required(login_url='/login')
@@ -43,6 +27,29 @@ def view(request):
     # ====================== POST ======================
     if request.method == 'POST':
         action = request.POST.get('action')
+
+        # ========= ADD REQUERIMIENTO =========
+        if action == 'addrequerimiento':
+            try:
+                form = RequerimientoServicioForm(request.POST, request.FILES)
+                if form.is_valid():
+                    cd = form.cleaned_data
+                    req = RequerimientoServicio(
+                        tipo_servicio=cd['tipo_servicio'],
+                        descripcion=remover_tildes(cd.get('descripcion') or ""),
+                        archivo=cd.get('archivo'),
+                        cliente=cd['cliente'],
+                        estado=RequerimientoServicio.Estado.RECIBIDO,
+                        fecha_recepcion=timezone.now(),
+                    )
+                    req.save()
+                    log(u'Cliente editó requerimiento: %s' % req, request, "edit")
+                    return ok_json()
+                else:
+                    return bad_json(error=6)
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
 
         # ======= CREAR PROFORMA DESDE REQUERIMIENTO =======
         if action == 'add_proforma':
@@ -460,6 +467,18 @@ def view(request):
                 return render(request, 'gestion_servicios/add_proforma.html', data)
             except Exception as ex:
                 return url_back(request, ex=ex)
+
+            # ========= ADD (pantalla nuevo requerimiento) =========
+        if action == 'addrequerimiento':
+            try:
+                data['title'] = u'Nuevo requerimiento de servicio'
+
+                initial = {}
+                # si tienes info en cliente, podrías precargar:
+                data['form'] = RequerimientoServicioForm(initial=initial)
+                return render(request, "gestion_servicios/addrequerimiento.html", data)
+            except Exception as ex:
+                pass
 
         return url_back(request)
 
