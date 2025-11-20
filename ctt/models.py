@@ -9960,6 +9960,14 @@ class IvaAplicado(ModeloBase):
         self.descripcion = null_to_text(self.descripcion)
         super(IvaAplicado, self).save(*args, **kwargs)
 
+class Cliente(ModeloBase):
+    persona = models.ForeignKey(Persona, verbose_name=u"Persona", on_delete=models.CASCADE)
+    empresa = models.ForeignKey(EmpresaEmpleadora, verbose_name=u"Empresa",blank=True, null=True, on_delete=models.CASCADE)
+    activo = models.BooleanField(default=True, verbose_name=u"Activo")
+
+    def __str__(self):
+        return u'%s' % self.persona
+
 class Rubro(ModeloBase):
     inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True,  verbose_name=u'Inscripción', on_delete=models.CASCADE)
     cliente = models.ForeignKey(Cliente, blank=True, null=True,  verbose_name=u'Cliente', on_delete=models.CASCADE)
@@ -14803,14 +14811,6 @@ class Profesor(ModeloBase):
         self.objetivodocente = null_to_text(self.objetivodocente)
         self.descripcionprof = null_to_text(self.descripcionprof)
         super(Profesor, self).save(*args, **kwargs)
-
-class Cliente(ModeloBase):
-    persona = models.ForeignKey(Persona, verbose_name=u"Persona", on_delete=models.CASCADE)
-    empresa = models.ForeignKey(EmpresaEmpleadora, verbose_name=u"Empresa",blank=True, null=True, on_delete=models.CASCADE)
-    activo = models.BooleanField(default=True, verbose_name=u"Activo")
-
-    def __str__(self):
-        return u'%s' % self.persona
 
 
 class PerfilUsuario(ModeloBase):
