@@ -9962,7 +9962,7 @@ class IvaAplicado(ModeloBase):
 
 class Rubro(ModeloBase):
     inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True,  verbose_name=u'Inscripción', on_delete=models.CASCADE)
-    cliente = models.ForeignKey('Cliente', blank=True, null=True,  verbose_name=u'Cliente', on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente, blank=True, null=True,  verbose_name=u'Cliente', on_delete=models.CASCADE)
     periodo = models.ForeignKey(Periodo, blank=True, null=True, verbose_name=u'Periodo', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=300, verbose_name=u'Nombre')
     fecha = models.DateField(verbose_name=u'Fecha')

@@ -291,38 +291,19 @@
             </div>
         </div>
     {% endif %}
-<div class="row mt-2">
-    <!-- Botón para ir a clientes -->
-    <div class="col-12 col-md-6 mb-2">
-        <a href="/finanzas?action=clientes" class="btn btn-sm btn-info">
-            <i class="icon-list"></i> Clientes
-        </a>
-    </div>
-
-    <!-- Buscador -->
-    <div class="col-12 col-md-3 mb-2">
-        <div class="input-group">
-            <input type="text"
-                   class="form-control form-control-sm busqueda"
-                   id="busqueda"
-                   placeholder="Ingrese el nombre o identificación"
-                   value="{{ search }}"
-                   autocomplete="off">
-            <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id="search">
-                <i class="icon-search"></i>
-            </a>
-            {% if search or ids %}
-                <a href="/finanzas?action=clientes"
-                   class="btn btn-sm btn-outline-secondary"
-                   type="button"
-                   id="allresults">
-                    <i class="icon-refresh"></i>
-                </a>
-            {% endif %}
+    <div class="row mt-2">
+        <div class='col-12 col-md-6 mb-2'>
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="busqueda" placeholder="Ingrese el nombre o identificación" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/finanzas" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
         </div>
     </div>
-</div>
-
     <div class="row">
         <div class="col-12">
             <table class="table table-bordered table-striped">
@@ -371,9 +352,8 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% for inscripcion in inscripciones %}
-                    {% with matriculado=inscripcion.matriculado matricula=inscripcion|args:periodo|call:"matricula_periodo" retirocarrera=inscripcion.retiro_carrera malla=inscripcion.mi_malla %}
-                        <tr>
+                {% for inscripcion in clientes %}
+                         <tr>
                             <td>
                                 {{ inscripcion.persona }}
                                 {% if inscripcion.orientacion %}
@@ -400,9 +380,7 @@
                                     <span class="badge text-bg-warning tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Retiro de Carrera">RC</span>
                                 {% endif %}
                                 <!-- BECA ASIGNADA -->
-                                {% if matricula.becado %}
-                                    <span class="badge text-bg-success tr" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ matricula.tipobeca.nombre }}">BECARIO</span>
-                                {% endif %}
+
                                 <!-- MALLA DEL ESTUDIANTE -->
                                 {% if not inscripcion.tiene_malla %}
                                     <span class="badge text-bg-info tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Sin malla asignada">SM</span>
@@ -452,7 +430,7 @@
                                 <a href="/finanzas?action=rubros&id={{ inscripcion.id }}" class="btn btn-ssm btn-success"><i class="icon-money"></i> Rubros</a>
                             </td>
                         </tr>
-                    {% endwith %}
+
                 {% empty %}
                     <tr>
                         <td colspan="20">NO EXISTEN DATOS</td>

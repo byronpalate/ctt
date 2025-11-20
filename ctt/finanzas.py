@@ -27,7 +27,7 @@ from ctt.models import Inscripcion, Rubro, Pago, Banco, TipoOtroRubro, RubroOtro
     PagoCheque, RubroEspecieValorada, PagoTransferenciaDeposito, TipoEspecieValorada, DepositoInscripcion, \
     InscripcionFlags, RubroLiquidado, ValeCaja, \
     TipoCheque, TipoEmisorTarjeta, IvaAplicado, null_to_numeric, DatoCheque, DatoTransferenciaDeposito, Periodo, \
-    RubroAnticipado, TipoTarjetaBanco, RubroCuota, FormaDePago, RubroNotaDebito, DescuentoRecargoRubro
+    RubroAnticipado, TipoTarjetaBanco, RubroCuota, FormaDePago, RubroNotaDebito, DescuentoRecargoRubro, Cliente
 
 from ctt.printdoc import imprimir_contenido
 
@@ -1512,6 +1512,97 @@ def view(request):
                     data['rubro'] = rubro = Rubro.objects.get(pk=request.GET['id'])
                     data['inscripcion'] = Inscripcion.objects.get(id=rubro.inscripcion_id)
                     return render(request, "finanzas/activo.html", data)
+                except Exception as ex:
+                    pass
+
+            if action == 'clientes':
+                try:
+                    data['title'] = u'Finanzas'
+                    search = None
+                    ids = None
+                    if 's' in request.GET:
+                        search = request.GET['s'].strip()
+                        ss = search.split(' ')
+                        if len(ss) == 1:
+                            clientes = Cliente.objects.filter(Q(persona__nombre1__icontains=search) |
+                                                                       Q(persona__nombre2__icontains=search) |
+                                                                       Q(persona__apellido1__icontains=search) |
+                                                                       Q(persona__apellido2__icontains=search) |
+                                                                       Q(persona__cedula__icontains=search) |
+                                                                       Q(persona__pasaporte__icontains=search) |
+                                                                       Q(identificador__icontains=search) |
+                                                                       Q(carrera__nombre__icontains=search)).distinct().order_by(
+                                'persona__apellido1', 'persona__apellido2', 'persona__nombre1', 'persona__nombre2')
+                        else:
+                            clientes = Cliente.objects.filter(Q(persona__apellido1__icontains=ss[0]) & Q(
+                                persona__apellido2__icontains=ss[1])).distinct().order_by('persona__apellido1',
+                                                                                          'persona__apellido2',
+                                                                                          'persona__nombre1',
+                                                                                          'persona__nombre2')
+                    elif 'id' in request.GET:
+                        ids = int(request.GET['id'])
+                        clientes = Cliente.objects.filter(id=ids)
+                    else:
+                        clientes = Cliente.objects.all().order_by('persona__apellido1', 'persona__apellido2',
+                                                                           'persona__nombre1', 'persona__nombre2')
+                    paging = MiPaginador(clientes, 10)
+                    p = 1
+                    try:
+                        paginasesion = 1
+                        if 'paginador' in request.session and 'paginador_url' in request.session:
+                            if request.session['paginador_url'] == 'finanzas':
+                                paginasesion = int(request.session['paginador'])
+                        if 'page' in request.GET:
+                            p = int(request.GET['page'])
+                        else:
+                            p = paginasesion
+                        page = paging.page(p)
+                    except Exception as ex:
+                        p = 1
+                        page = paging.page(p)
+                    request.session['paginador'] = p
+                    request.session['paginador_url'] = 'finanzas'
+                    data['paging'] = paging
+                    data['rangospaging'] = paging.rangos_paginado(p)
+                    data['page'] = page
+                    data['search'] = search if search else ""
+                    data['ids'] = ids if ids else ""
+                    data['clientes'] = page.object_list
+                    if sesion_caja:
+                        data['total_notacredito_sesion'] = sesion_caja.total_notadecredito_sesion()
+                        data['total_efectivo_sesion'] = sesion_caja.total_efectivo_sesion()
+                        data['cantidad_facturas_sesion'] = sesion_caja.cantidad_facturas_sesion()
+                        data['cantidad_recibopago_sesion'] = sesion_caja.cantidad_recibopago_sesion()
+                        data['cantidad_cheques_sesion'] = sesion_caja.cantidad_cheques_sesion()
+                        data['total_cheque_sesion'] = sesion_caja.total_cheque_sesion()
+                        data['cantidad_tarjetas_sesion'] = sesion_caja.cantidad_tarjetas_sesion()
+                        data['total_tarjeta_sesion'] = sesion_caja.total_tarjeta_sesion()
+                        data['cantidad_depositos_sesion'] = sesion_caja.cantidad_depositos_sesion()
+                        data['total_deposito_sesion'] = sesion_caja.total_deposito_sesion()
+                        data['cantidad_transferencias_sesion'] = sesion_caja.cantidad_transferencias_sesion()
+                        data['total_transferencia_sesion'] = sesion_caja.total_transferencia_sesion()
+                        data['cantidad_recibocaja_sesion'] = sesion_caja.cantidad_recibocaja_sesion()
+                        data['total_recibocaja_sesion'] = sesion_caja.total_recibocaja_sesion()
+                        data['total_otros_ingresos'] = null_to_numeric(
+                            ValeCaja.objects.filter(sesion=sesion_caja, tipooperacion=2).distinct().aggregate(
+                                valor=Sum('valor'))['valor'], 2)
+                        data['total_otros_egresos'] = null_to_numeric(
+                            ValeCaja.objects.filter(sesion=sesion_caja, tipooperacion=1).distinct().aggregate(
+                                valor=Sum('valor'))['valor'], 2)
+                        data['depositos_pendientes_procesar'] = DepositoInscripcion.objects.filter(procesado=False,
+                                                                                                   autorizado=True,
+                                                                                                   saldo__gt=0).count()
+                        data['total_sesion'] = sesion_caja.total_sesion()
+                    data['pago_efectivo_id'] = FORMA_PAGO_EFECTIVO
+                    data['pago_tarjeta_id'] = FORMA_PAGO_TARJETA
+                    data['pago_cheque_id'] = FORMA_PAGO_CHEQUE
+                    data['pago_deposito_id'] = FORMA_PAGO_DEPOSITO
+                    data['pago_transferencia_id'] = FORMA_PAGO_TRANSFERENCIA
+                    data['pago_recibo_caja_id'] = FORMA_PAGO_RECIBOCAJAINSTITUCION
+                    data['reporte_0'] = obtener_reporte("certificado_matricula_alumno")
+                    data['reporte_1'] = obtener_reporte("reporte_compromiso_pago")
+                    data['reporte_2'] = obtener_reporte("cronograma_pagos")
+                    return render(request, "finanzas/clientes.html", data)
                 except Exception as ex:
                     pass
 

@@ -50,10 +50,6 @@
 
 <div class="row mb-2">
     <div class="col-12">
-        <a href="/servicios"
-           class="btn btn-sm btn-outline-secondary">
-            <i class="icon-arrow-left"></i> Volver al listado
-        </a>
 
         {# Botones de aprobar / rechazar solo cuando está ENVIADA #}
         {% if proforma.estado == 2 %}
@@ -69,7 +65,7 @@
     </div>
 </div>
 {% endblock %}
-
+{% block atras %}/servicios{% endblock %}
 {% block canvas %}
 <div class="row">
     <div class="col-md-6">

@@ -460,7 +460,6 @@ def view(request):
                 data['requerimiento'] = req
 
                 initial = {
-                    "cliente": req.cliente,
                     "observaciones": remover_tildes(req.descripcion or ""),
                 }
                 data['form'] = ProformaForm(initial=initial)

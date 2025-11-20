@@ -35,7 +35,7 @@
     }
 </script>
 {% endblock %}
-
+{% block atras %}/gestion_servicios{% endblock %}
 {% block headcanvas %}
 <div class="row mb-2">
     <div class="col-12">
@@ -165,7 +165,8 @@
                    class="btn btn-ssm btn-outline-success"
                    title="Enviar al cliente"
                    onclick="enviarProforma({{ pro.id }})">
-                    <i class="icon-mail-forward"></i>
+                   <i class="icon-arrow-right"></i>
+
                 </a>
             {% endif %}
 
