@@ -17802,18 +17802,17 @@ class AceptacionTerminosAcuerdos(ModeloBase):
     tipoacuerdo = models.ForeignKey(TipoTerminosAcuerdos, verbose_name=u'Tipo de terminos y acuerdos', on_delete=models.CASCADE)
     fechaaceptacion = models.DateField(default=timezone.now, blank=True, null=True, verbose_name=u'Fecha aceptacion')
 
-# class TipoServicio(ModeloBase):
-#     codigo = models.CharField(max_length=20, unique=True)  # AGORA, LAB_MAT, etc.
-#     nombre = models.CharField(max_length=150)              # "Salón Ágora", "Lab Materiales"
-#     descripcion = models.TextField(blank=True)
-#
-#     def __str__(self):
-#         return self.nombre
+class TipoServicio(ModeloBase):
+    nombre = models.CharField(max_length=180)           # "Salón Ágora", "Lab Materiales"
+
+    def __str__(self):
+        return self.nombre
 
 class EspacioFisico(ModeloBase):
     codigo = models.CharField(max_length=20, unique=True)  # AGORA, LAB_MAT, etc.
     nombre = models.CharField(max_length=150)              # "Salón Ágora", "Lab Materiales"
     descripcion = models.TextField(blank=True)
+    tipo_servicio = models.ForeignKey(TipoServicio, blank=True, null=True,verbose_name=u'tiposervicio', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.nombre
