@@ -215,7 +215,7 @@
                     </td>
                     <td style="text-align:right;">{{ it.cantidad }}</td>
                     <td style="text-align:right;">$ {{ it.precio_unitario|floatformat:2|intcomma }}</td>
-                    <td style="text-align:right;">$ {{ it.total|floatformat:2|intcomma }}</td>
+                    <td style="text-align:right;">$ {{ it.subtotal|floatformat:2|intcomma }}</td>
                 </tr>
             {% empty %}
                 <tr>

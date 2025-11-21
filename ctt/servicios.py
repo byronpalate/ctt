@@ -40,7 +40,7 @@ def view(request):
                 if form.is_valid():
                     cd = form.cleaned_data
                     req = RequerimientoServicio(
-                        tipo_servicio=cd['tipo_servicio'],
+                        espacio_fisico=cd['espacio_fisico'],
                         nombre_contacto=cd['nombre_contacto'],
                         email_contacto=cd['email_contacto'],
                         telefono_contacto=cd.get('telefono_contacto', ''),

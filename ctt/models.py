@@ -17717,8 +17717,15 @@ class AceptacionTerminosAcuerdos(ModeloBase):
     tipoacuerdo = models.ForeignKey(TipoTerminosAcuerdos, verbose_name=u'Tipo de terminos y acuerdos', on_delete=models.CASCADE)
     fechaaceptacion = models.DateField(default=timezone.now, blank=True, null=True, verbose_name=u'Fecha aceptacion')
 
+# class TipoServicio(ModeloBase):
+#     codigo = models.CharField(max_length=20, unique=True)  # AGORA, LAB_MAT, etc.
+#     nombre = models.CharField(max_length=150)              # "Salón Ágora", "Lab Materiales"
+#     descripcion = models.TextField(blank=True)
+#
+#     def __str__(self):
+#         return self.nombre
 
-class TipoServicio(ModeloBase):
+class EspacioFisico(ModeloBase):
     codigo = models.CharField(max_length=20, unique=True)  # AGORA, LAB_MAT, etc.
     nombre = models.CharField(max_length=150)              # "Salón Ágora", "Lab Materiales"
     descripcion = models.TextField(blank=True)
@@ -17731,7 +17738,7 @@ class ServicioCatalogo(ModeloBase):
         POR_ITEM = 1, "Por ítem (muestra / pieza / ensayo / paquete)"
         POR_HORA = 2, "Por hora"
 
-    tipo_servicio = models.ForeignKey(TipoServicio, on_delete=models.PROTECT, related_name="servicios", verbose_name="Laboratorio / Área")
+    espacio_fisico = models.ForeignKey(EspacioFisico, on_delete=models.PROTECT, related_name="servicios", verbose_name="Laboratorio / Área")
     nombre = models.TextField()  # descripción larga del ítem
     tipo_cobro = models.PositiveSmallIntegerField(choices=TipoCobro.choices, default=TipoCobro.POR_ITEM)
     precio_base = models.DecimalField(max_digits=10, decimal_places=2)
@@ -17753,7 +17760,7 @@ class RequerimientoServicio(ModeloBase):
     nombre_contacto = models.CharField(max_length=255)
     email_contacto = models.EmailField()
     telefono_contacto = models.CharField(max_length=50, blank=True)
-    tipo_servicio = models.ForeignKey(TipoServicio, null=True, blank=True, on_delete=models.SET_NULL, related_name="requerimientos")
+    espacio_fisico = models.ForeignKey(EspacioFisico, null=True, blank=True, on_delete=models.SET_NULL, related_name="requerimientos")
     descripcion = models.TextField()
     archivo = models.FileField(upload_to="requerimientos/", blank=True)
 

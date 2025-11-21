@@ -35,7 +35,7 @@ def view(request):
                 if form.is_valid():
                     cd = form.cleaned_data
                     req = RequerimientoServicio(
-                        tipo_servicio=cd['tipo_servicio'],
+                        espacio_fisico=cd['espacio_fisico'],
                         descripcion=remover_tildes(cd.get('descripcion') or ""),
                         archivo=cd.get('archivo'),
                         cliente=cd['cliente'],
@@ -175,9 +175,9 @@ def view(request):
                 form = ProformaDetalleForm(request.POST)
 
                 # Filtramos servicios según el tipo de servicio del requerimiento (si existe)
-                if proforma.requerimiento and proforma.requerimiento.tipo_servicio_id:
+                if proforma.requerimiento and proforma.requerimiento.espacio_fisico_id:
                     form.fields['servicio'].queryset = ServicioCatalogo.objects.filter(
-                        tipo_servicio=proforma.requerimiento.tipo_servicio
+                        espacio_fisico=proforma.requerimiento.espacio_fisico
                     )
 
                 if not form.is_valid():
@@ -380,9 +380,9 @@ def view(request):
                 form = ProformaDetalleForm()
 
                 # Filtrar lista de servicios según el tipo del requerimiento (si aplica)
-                if proforma.requerimiento and proforma.requerimiento.tipo_servicio_id:
+                if proforma.requerimiento and proforma.requerimiento.espacio_fisico_id:
                     form.fields['servicio'].queryset = ServicioCatalogo.objects.filter(
-                        tipo_servicio=proforma.requerimiento.tipo_servicio
+                        espacio_fisico=proforma.requerimiento.espacio_fisico
                     )
 
                 data['form'] = form
@@ -488,7 +488,7 @@ def view(request):
         estado = request.GET.get('e')   # estado del requerimiento
         tipo = request.GET.get('t')     # tipo_servicio_id opcional
 
-        qs = RequerimientoServicio.objects.select_related('cliente', 'tipo_servicio').all()
+        qs = RequerimientoServicio.objects.select_related('cliente', 'espacio_fisico').all()
 
         if search:
             qs = qs.filter(
@@ -501,7 +501,7 @@ def view(request):
             qs = qs.filter(estado=int(estado))
 
         if tipo and tipo.isdigit():
-            qs = qs.filter(tipo_servicio_id=int(tipo))
+            qs = qs.filter(espacio_fisico_id=int(tipo))
 
         qs = qs.order_by('-fecha_recepcion', '-id')
 

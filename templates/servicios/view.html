@@ -135,8 +135,8 @@
                             <a href="/servicios?action=detail&id={{ r.id }}">Req #{{ r.id }}</a>
                         </td>
                         <td>
-                            {% if r.tipo_servicio %}
-                                {{ r.tipo_servicio.nombre }}
+                            {% if r.espacio_fisico %}
+                                {{ r.espacio_fisico.nombre }}
                             {% else %}
                                 <span class="text-muted">Sin tipo</span>
                             {% endif %}

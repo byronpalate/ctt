@@ -37,7 +37,7 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor
     ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, \
     MateriaCursoEscuelaComplementaria, \
     Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, \
-    TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente,  Factura, TipoServicio, ServicioCatalogo
+    TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente,  Factura, EspacioFisico, ServicioCatalogo
 # Servicio,
 
 
@@ -3017,7 +3017,7 @@ class GenerarTrabajoForm(BaseForm):
 
 
 class RequerimientoServicioForm(BaseForm):
-    tipo_servicio = forms.ModelChoiceField(label=u"Laboratorio / área", queryset=TipoServicio.objects.all(), widget=forms.Select())
+    espacio_fisico = forms.ModelChoiceField(label=u"Laboratorio / área", queryset=EspacioFisico.objects.all(), widget=forms.Select())
 
     cliente = forms.ModelChoiceField(label=u"Cliente", queryset=Cliente.objects.all(), widget=forms.Select())
     descripcion = forms.CharField(
@@ -3042,8 +3042,8 @@ class ProformaDetalleForm(BaseForm):
     cantidad = forms.DecimalField(label=u"Cantidad", max_digits=8, decimal_places=2, initial=Decimal('1.00'))
     precio_unitario = forms.DecimalField(label=u"Precio unitario", max_digits=10, decimal_places=2, required=False, help_text=u"Si lo dejas vacío, se tomará el precio base del servicio.")
 
-    def add(self, tiposervicio):
-        self.fields['servicio'].queryset = ServicioCatalogo.objects.filter(tipo_servicio=tiposervicio)
+    def add(self, espaciofisico):
+        self.fields['servicio'].queryset = ServicioCatalogo.objects.filter(espacio_fisico=espaciofisico)
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
