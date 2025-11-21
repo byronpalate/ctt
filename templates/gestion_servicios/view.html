@@ -91,9 +91,9 @@
                     <td>{{ req.id }}</td>
                     <td>{{ req.fecha_recepcion|date:"d/m/Y H:i" }}</td>
                     <td>
-                        <strong>{{ req.nombre_contacto }}</strong><br>
+                        <strong>{{ req.cliente  }}</strong><br>
                         <small class="text-muted">
-                            {{ req.email_contacto }}{% if req.telefono_contacto %} · {{ req.telefono_contacto }}{% endif %}
+                                {{ req.cliente.persona.email  }}{% if req.cliente.persona.telefono %} · {{ req.cliente.persona.telefono_conv }}{% endif %}
                         </small>
                     </td>
                     <td>

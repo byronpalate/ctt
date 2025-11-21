@@ -9965,12 +9965,107 @@ class Cliente(ModeloBase):
     empresa = models.ForeignKey(EmpresaEmpleadora, verbose_name=u"Empresa",blank=True, null=True, on_delete=models.CASCADE)
     activo = models.BooleanField(default=True, verbose_name=u"Activo")
 
+    def chequea_mora(self):
+        for rubro in self.rubro_set.filter(cancelado=False):
+            rubro.cheque_mora()
+
+    def total_rubros(self):
+        return null_to_numeric(self.rubro_set.aggregate(valor=Sum('valortotal'))['valor'], 2)
+
+    def total_rubros_sin_notadebito(self):
+        return null_to_numeric(
+            self.rubro_set.exclude(rubronotadebito__rubro__inscripcion=self).aggregate(valor=Sum('valortotal'))[
+                'valor'], 2)
+
+    def total_rubros_pendientes(self):
+        return null_to_numeric(self.rubro_set.filter(cancelado=False).aggregate(valor=Sum('saldo'))['valor'], 2)
+
+    def rubros_pendientes(self):
+        return self.rubro_set.filter(cancelado=False).order_by('fechavence')
+
+    def total_descuento(self):
+        return null_to_numeric(
+            DescuentoRecargoRubro.objects.filter(rubro__cliente=self, recargo=False).distinct().aggregate(
+                valor=Sum('valordescuento'))['valor'], 2)
+
+    def total_descuento_pendiente(self):
+        return null_to_numeric(DescuentoRecargoRubro.objects.filter(rubro__cliente=self, recargo=False,
+                                                                    rubro__cancelado=False).distinct().aggregate(
+            valor=Sum('valordescuento'))['valor'], 2)
+
+    def total_liquidado(self):
+        return null_to_numeric(
+            RubroLiquidado.objects.filter(rubro__cliente=self).distinct().aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def total_pagado(self):
+        return null_to_numeric(
+            Pago.objects.filter(rubro__cliente=self, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def total_pagado_periodo(self, periodo):
+        return null_to_numeric(
+            Pago.objects.filter(rubro__cliente=self, rubro__periodo=periodo, valido=True).aggregate(
+                valor=Sum('valor'))['valor'], 2)
+
+    def total_valores_periodo(self, periodo):
+        return null_to_numeric(
+            Rubro.objects.filter(inscripcion=self, periodo=periodo).aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def total_valores_periodo_prontopago(self, periodo):
+        return null_to_numeric(Rubro.objects.filter(inscripcion=self, periodo=periodo, validoprontopago=True).aggregate(
+            valor=Sum('valor'))['valor'], 2)
+
+    def total_cancelado(self):
+        return null_to_numeric(
+            PagoCancelado.objects.filter(rubro__cliente=self).aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def total_pagado_pendiente(self):
+        return null_to_numeric(
+            Pago.objects.filter(rubro__cliente=self, rubro__cancelado=False, valido=True).aggregate(
+                valor=Sum('valor'))['valor'], 2)
+
+    def total_notacredito(self):
+        return null_to_numeric(self.notacredito_set.all().aggregate(valor=Sum('valorinicial'))['valor'], 2)
+
+    def total_adeudado(self):
+        return null_to_numeric(self.rubro_set.aggregate(valor=Sum('saldo'))['valor'], 2)
+
+    def adeuda_a_la_fecha(self):
+        return null_to_numeric(
+            self.rubro_set.filter(fechavence__lt=datetime.now().date()).aggregate(valor=Sum('saldo'))['valor'], 2)
+
+    def credito_a_la_fecha(self):
+        return null_to_numeric(
+            self.rubro_set.filter(fechavence__gte=datetime.now().date()).aggregate(valor=Sum('saldo'))['valor'], 2)
+
+    def tiene_deuda_vencida(self):
+        return self.rubro_set.filter(cancelado=False, fechavence__lt=datetime.now().date()).exists()
+
+    def tiene_deuda_fuera_periodo(self, periodo):
+        return Rubro.objects.filter(cancelado=False, fechavence__lt=datetime.now().date(), inscripcion=self).exclude(
+            periodo=periodo).exists()
+
+    def tiene_deuda(self):
+        return self.rubro_set.filter(cancelado=False).exists()
+
+    def tiene_deuda_orientacion(self):
+        return self.rubro_set.filter(cancelado=True, nombre='DERECHO ORIENTACIÓN PROFESIONAL').exists()
+
+    def tiene_deuda_inscripcion(self):
+        return self.rubro_set.filter(nombre__icontains='INSCRIPCION').exists()
+
+    def tiene_deuda_inscripcion_pagada(self):
+        return self.rubro_set.filter(cancelado=True, nombre__icontains='INSCRIPCION').exists()
+
+    def tiene_credito(self):
+        return self.rubro_set.filter(cancelado=False, fechavence__gte=datetime.now().date()).exists()
+
     def __str__(self):
         return u'%s' % self.persona
 
 class Rubro(ModeloBase):
     inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True,  verbose_name=u'Inscripción', on_delete=models.CASCADE)
     cliente = models.ForeignKey(Cliente, blank=True, null=True,  verbose_name=u'Cliente', on_delete=models.CASCADE)
+    persona = models.ForeignKey(Persona, blank=True, null=True,  verbose_name=u'Persona', on_delete=models.CASCADE)
     periodo = models.ForeignKey(Periodo, blank=True, null=True, verbose_name=u'Periodo', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=300, verbose_name=u'Nombre')
     fecha = models.DateField(verbose_name=u'Fecha')
@@ -10104,8 +10199,6 @@ class Rubro(ModeloBase):
     def es_curso(self):
         return self.rubrocursoescuelacomplementaria_set.exists()
 
-    def es_curso_titulacion(self):
-        return self.rubrocursounidadtitulacion_set.exists()
 
     def es_mora(self):
         return self.rubrootro_set.filter(tipo__id=TIPO_MORA_RUBRO).exists()
@@ -10259,8 +10352,6 @@ class Rubro(ModeloBase):
             return "ARANCEL"
         if self.rubrocursoescuelacomplementaria_set.exists():
             return "CURSO"
-        if self.rubrocursounidadtitulacion_set.exists():
-            return "CURSO TITULACION"
         if self.rubroagregacion_set.exists():
             return "AGREGACION MATERIAS"
         if self.rubronotadebito_set.exists():
@@ -10325,8 +10416,6 @@ class Rubro(ModeloBase):
                 return "CUR"
         if self.rubrocursoescuelacomplementaria_set.exists():
             return "CUR"
-        if self.rubrocursounidadtitulacion_set.exists():
-            return "CURT"
         if self.rubroagregacion_set.exists():
             return "AGR"
         if self.rubronotadebito_set.exists():
@@ -10338,8 +10427,6 @@ class Rubro(ModeloBase):
             return str(self.rubroespecievalorada_set.all()[0].tipoespecie.id)
         if self.rubrocursoescuelacomplementaria_set.exists():
             return str(self.rubrocursoescuelacomplementaria_set.all()[0].participante.curso.tipocurso.id)
-        if self.rubrocursounidadtitulacion_set.exists():
-            return str(self.rubrocursounidadtitulacion_set.all()[0].participante.curso.tipocurso.id)
         return ""
 
     def relacionado(self):
@@ -10363,8 +10450,6 @@ class Rubro(ModeloBase):
             return self.rubrocuota_set.all()[0]
         if self.rubrocursoescuelacomplementaria_set.exists():
             return self.rubrocursoescuelacomplementaria_set.all()[0]
-        if self.rubrocursounidadtitulacion_set.exists():
-            return self.rubrocursounidadtitulacion_set.all()[0]
         if self.rubroagregacion_set.exists():
             return self.rubroagregacion_set.all()[0]
         if self.rubronotadebito_set.exists():
@@ -10393,8 +10478,6 @@ class Rubro(ModeloBase):
             return u"ARANCEL: %s"[:299] % self.rubroagregacion_set.all()[0].materiaasignada.materia.asignatura.nombre
         if self.rubrocursoescuelacomplementaria_set.exists():
             return u"CURSO: %s"[:299] % self.rubrocursoescuelacomplementaria_set.all()[0].participante.curso.nombre
-        if self.rubrocursounidadtitulacion_set.exists():
-            return u"CURSO TITULACIÓN: %s"[:299] % self.rubrocursounidadtitulacion_set.all()[0].participante.curso.nombre
         if self.rubroespecievalorada_set.exists():
             return u"%s"[:299] % self.rubroespecievalorada_set.all()[0].tipoespecie.nombre
         if self.rubronotadebito_set.exists():
@@ -12814,7 +12897,8 @@ class DiferidoTarjeta(ModeloBase):
 
 
 class ReciboCajaInstitucion(ModeloBase):
-    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    inscripcion = models.ForeignKey(Inscripcion,  blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente,  blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
     pago = models.ForeignKey(Pago, blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
     motivo = models.TextField(default='', verbose_name=u'Motivo')
     fecha = models.DateField(verbose_name=u'Fecha')
@@ -12866,6 +12950,7 @@ class ReciboCajaInstitucion(ModeloBase):
 
 class NotaCredito(ModeloBase):
     inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente,  blank=True, null=True, verbose_name=u'Cliente', on_delete=models.CASCADE)
     fecha = models.DateField(verbose_name=u'Fecha')
     numero = models.CharField(default='', max_length=20, verbose_name=u"Numero")
     motivo = models.CharField(default='', max_length=200, verbose_name=u'Motivo')
@@ -17785,6 +17870,7 @@ class Proforma(ModeloBase):
     numero = models.CharField(max_length=30, unique=True)
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="proformas")
     estado = models.PositiveSmallIntegerField(choices=Estado.choices, default=Estado.BORRADOR)
+    iva = models.ForeignKey(IvaAplicado, verbose_name="IVA", on_delete=models.PROTECT, null=True, blank=True,)
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     descuento = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     impuestos = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
@@ -17800,12 +17886,52 @@ class Proforma(ModeloBase):
         on_delete=models.SET_NULL,
         related_name='proformas'
     )
-    from decimal import Decimal
+
+    def tiene_rubro(self):
+        return bool(getattr(self, 'rubro_servicio', None))
+
+    def rubro_pagado(self):
+        rs = getattr(self, 'rubro_servicio', None)
+        if not rs or not getattr(rs, 'rubro', None):
+            return False
+        return bool(rs.rubro.cancelado)
 
     def recomputar_totales(self):
-        sub = sum((d.subtotal for d in self.detalles.all()), Decimal('0.00'))
-        self.subtotal = sub
-        self.total = sub - self.descuento + self.impuestos
+        detalles = self.detalles.all()
+
+        # Subtotal = suma de subtotales de detalles
+        sub = sum((d.subtotal for d in detalles), Decimal('0.00'))
+        self.subtotal = sub.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        # Aseguramos descuento como Decimal
+        descuento = self.descuento or Decimal('0.00')
+
+        # Base imponible = subtotal - descuento (no negativa)
+        base_imponible = (self.subtotal - descuento).quantize(
+            Decimal('0.01'),
+            rounding=ROUND_HALF_UP
+        )
+        if base_imponible < 0:
+            base_imponible = Decimal('0.00')
+
+        # porcientoiva viene como 0.15 (equivale a 15%)
+        if self.iva and self.iva.porcientoiva is not None:
+            porcentaje = Decimal(str(self.iva.porcientoiva))  # 0.15
+        else:
+            porcentaje = Decimal('0.00')
+
+        # impuestos = base * porcentaje  (ya NO se divide para 100)
+        self.impuestos = (base_imponible * porcentaje).quantize(
+            Decimal('0.01'),
+            rounding=ROUND_HALF_UP
+        )
+
+        # Total final
+        self.total = (base_imponible + self.impuestos).quantize(
+            Decimal('0.01'),
+            rounding=ROUND_HALF_UP
+        )
+
 
     def enviar_al_cliente(self, actor_persona=None):
         estado_anterior = self.estado

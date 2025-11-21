@@ -1,0 +1,553 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            $(".btn-cerrar").click(function() {
+                $("#observacion").modal('hide');
+            });
+
+            selectorrubro = $(".selectorrubro");
+
+            actulizarvalor = function(){
+                var seleccionados = $(".selectorrubro:checked");
+                var suma = 0;
+                seleccionados.each(function() {
+                    valor = $(this).attr('deuda');
+                    suma += parseFloat(valor);
+                });
+                suma = suma.toFixed(2);
+                $("#porpagar").html("$ "+suma);
+                {% if permite_pago_online %}
+                    if (suma>0){
+                        $("#ingresarpago").show();
+                    } else {
+                        $("#ingresarpago").hide();
+                    }
+                {% endif %}
+            };
+
+            todos = $("#todos");
+
+            todos.click(function(){
+                if (todos.prop('checked')){
+                    selectorrubro.prop('checked', true);
+                } else {
+                    selectorrubro.prop('checked', false);
+                }
+                actulizarvalor();
+            });
+
+            selectorrubro.change(function() {
+                actulizarvalor();
+            });
+
+            $("#ingresarpago").click(function() {
+                var ids = '';
+                var puedepagar = false;
+                var puedepagarpronto = false;
+                var seleccionados = $(".selectorrubro:checked");
+                var normales = 0;
+                var parqueo = 0;
+                var rubrodebito = 0;
+                var sinpronto = 0;
+                var conpronto = 0;
+                seleccionados.each(function() {
+                    if (ids.length>0) {
+                        ids += ",";
+                    }
+                    ids += $(this).attr('rid');
+                    var nd = $(this).attr('nd');
+                    var tipo = $(this).attr('t')
+                    var pp = $(this).attr('pp')
+                    if (parseInt(nd) === 0){
+                        normales += 1;
+                    } else {
+                        rubrodebito += 1;
+                    }
+                    if (parseInt(tipo) === 24){
+                        parqueo += 1;
+                    }
+                    //pronto pago
+                    if (pp=='0'){
+                        sinpronto += 1;
+                    }else{
+                        conpronto += 1;
+                    }
+                });
+                if (ids.length>0) {
+                    puedepagar = true;
+                    puedepagarpronto = true;
+                }
+                if (normales > 0 && rubrodebito > 0 && puedepagar){
+                    puedepagar = false;
+                }
+                if (normales > 1 && puedepagar && parqueo > 0){
+                    puedepagar = false;
+                }
+                if (sinpronto > 0 && conpronto > 0 && puedepagar){
+                    puedepagarpronto = false;
+                }
+                if (puedepagar){
+                    if (puedepagarpronto) {
+                        location.href = "/alu_finanzas?action=pagar&ids=" + ids;
+                    }else{
+                        smoke.alert("Debe seleccionar correctamente los rubro de cobro. Algunos rubros no se considera como PRONTO PAGO");
+                    }
+                } else {
+                    smoke.alert("Está mezclando rubros a los cuales se emite factura y otros a los cuales solo se emite recibo de pago.");
+                }
+            });
+
+            selectorrubro.prop("checked", false);
+            todos.prop("checked", false);
+
+            {% if permite_pago_online %}
+                actulizarvalor();
+            {% endif %}
+
+            mostrar_rubros = function () {
+                if (parseInt($('input[name=cancelados]:checked').val()) === 0){
+                    $(".pagados").hide();
+                } else {
+                    $(".pagados").show();
+                }
+            };
+
+            mostrar_rubros();
+
+            $(".mostrarpagados").click(function () {
+                mostrar_rubros();
+            });
+
+            $(".verobservacion").click(function(){
+                var id = $(this).attr('id');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_finanzas",
+                    data: {'action': 'observaciones', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data){
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            $("#observacion").modal('show')
+                            $('#contenidotablaobservacion').html(data.html);
+                        }else{
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"});
+            });
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    {% if reporte_0 %}
+        <div class='row mb-2'>
+            <div class='col-10'>
+                <a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0 }}&inscripcion={{ inscripcion.id }}" class='btn btn-sm reportedirecto btn-warning'><i class="icon-print"></i> Imprimir Pagos</a>
+            </div>
+            <div class="col-2">
+                <input type="radio" name="cancelados" class="mostrarpagados" value="0" checked> Deudas
+                <input type="radio" name="cancelados" class="mostrarpagados" value="1"> Todos
+            </div>
+        </div>
+    {% endif %}
+    <div class='row mb-2'>
+        <span class="fs-6"><i class="icon-arrow-down"></i> Para cancelar <strong>SELECCIONE</strong> los rubros</span>
+    </div>
+    <div class="well mini-layout-body">
+        <div class="row">
+            <div class="col-12">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                    <tr>
+                        {% if permite_pago_online %}
+                            <th style="width: 30px; text-align: center;"><input type="checkbox" id="todos" style="transform: scale(1.5);"></th>
+                        {% endif %}
+                        <th>Rubro</th>
+                        <th style="width: 200px; text-align: center;">Tipo</th>
+                        <th style="width: 80px; text-align: center;">Fecha</th>
+                        <th style="width: 80px; text-align: center;">Valor</th>
+                        <th style="width: 80px; text-align: center;">Descuento</th>
+                        <th style="width: 80px; text-align: center;">SubTotal</th>
+                        <th style="width: 80px; text-align: center;">IVA</th>
+                        <th style="width: 80px; text-align: center;">TOTAL</th>
+                        <th style="width: 80px; text-align: center;">Pagado</th>
+                        <th style="width: 80px; text-align: center;">Por Pagar</th>
+                        <th style="width: 50px; text-align: center;">Cancl.</th>
+                        <th style="width: 90px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for rubro in rubros %}
+                        {% if rubro.validoprontopago %}
+                            <tr class="{% if rubro.cancelado %}pagados{% endif %} prontopago">
+                                {% else %}
+                            <tr class="{% if rubro.cancelado %}pagados{% endif %}">
+                        {% endif %}
+                    {% if permite_pago_online %}
+                        <td style="text-align: center;">
+                            {% if not rubro.cancelado %}
+                                {% if not rubro.pasivo %}
+                                    {% if tiene_nota_debito %}
+                                        {% if rubro.es_notadebito or rubro.es_especie  %}
+                                            <input type="checkbox" style="transform: scale(1.5);" checked=false class="selectorrubro" rid="{{ rubro.id }}" deuda='{{ rubro.saldo }}' t="{{ rubro.relacionado.tipo.id }}" nd="{% if rubro.es_notadebito %}1{% else %}0{% endif %}" pp="0"/>
+                                        {% endif %}
+                                    {% else %}
+                                        <input type="checkbox" style="transform: scale(1.5);" checked=false class="selectorrubro" rid="{{ rubro.id }}" deuda='{{ rubro.saldo }}' t="{{ rubro.relacionado.tipo.id }}" nd="{% if rubro.es_notadebito %}1{% else %}0{% endif %}" pp="{% if rubro.validoprontopago %}1{% else %}0{% endif %}"/>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="DEBE ACERCARSE AL DEPT. FINANCIERO">CARTERA <br> PASIVA</span>
+                                {% endif %}
+                            {% else %}
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                    <td>{{ rubro.nombre }}</td>
+                    <td>{{ rubro.tipo }}</td>
+                    <td style="text-align: center;">
+                        {{ rubro.fechavence|date:"Y-m-d"  }}
+                        {% if rubro.vencido %}
+                            <br><span class="badge text-bg-danger">VENCIDA</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;"><span> $ {{ rubro.valor|floatformat:2 }} </span></td>
+                    <td style="text-align: right;"><span> $ {{ rubro.total_valor_descuento|floatformat:2 }} </span></td>
+                    <td style="text-align: right;"><span> $ {{ rubro.valor_con_descuento|floatformat:2 }} </span></td>
+                    <td style="text-align: right;"><span> $ {{ rubro.valoriva|floatformat:2 }} </span></td>
+                    <td style="text-align: right;"><span> $ {{ rubro.valortotal|floatformat:2 }} </span></td>
+                    <td style="text-align: right;"><span>$ {{ rubro.total_pagado|floatformat:2 }}</span></td>
+                    <td style="text-align: right;">{{ rubro.saldo|floatformat:2 }}</td>
+                    <td style="text-align: center;">
+                        {% if rubro.cancelado %}
+                            <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelado">Si</span>
+                        {% else %}
+                            <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelado">No</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center"><a class="btn btn-warning btn-ssm" href="/alu_finanzas?action=pagos&id={{ rubro.id }}"><i class="icon-list"></i> pagos</a></td>
+                    </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="20">NO EXISTEN DATOS</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                    {% if rubros %}
+                        <tfoot>
+                        <tr>
+                            <td colspan="8">
+                                {% if permite_pago_online %}
+                                    <div style="width: 200px;float: left;">
+                                        <a href="javascript:;" id="ingresarpago" class="btn btn-primary btn-huge"><i class="icon-plus"></i> INGRESAR PAGO</a>
+                                    </div>
+                                    <div id='porpagar' style="font-size: 40px; width: 250px; float: left; margin-top: 5px">$ 0.00</div>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;"><b></b></td>
+                            <td style="text-align: right;"><b></b></td>
+                            <td style="text-align: right;"><b>$ {{ total_adeudado|floatformat:2 }}</b></td>
+                            <td colspan="4"></td>
+                        </tr>
+                        </tfoot>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>Ingreso de comprobantes</h4>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <a class=" btn btn-sm btn-success formmodal" href="javascript:;" nhref="/alu_finanzas?action=adddeposito"><i class="icon-plus tu"></i> Adicionar</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 80px; text-align: center;">Fecha</th>
+                    <th style="width: 100px;">Referencia</th>
+                    <th style="width: 100px;">Tipo</th>
+                    <th style="width: 80px;">Identif.</th>
+                    <th>Motivo</th>
+                    <th style="width: 300px;">Cuenta Banco</th>
+                    <th style="width: 40px; text-align: center;">Proc.</th>
+                    <th style="width: 80px; text-align: center;">Valor</th>
+                    <th style="width: 80px; text-align: center;">Saldo</th>
+                    <th style="width: 80px; text-align: center;">Alertas</th>
+                    <th style="width: 50px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for deposito in depositos %}
+                    <tr>
+                        <td style="text-align: center;">{{ deposito.fecha|date:"Y-m-d" }}</td>
+                        <td>{{ deposito.referencia }}</td>
+                        <td>{% if deposito.ventanilla %}DEPOSITO{% endif %}{% if deposito.movilweb %}TRANSFERENCIA{% endif %}</td>
+                        <td>{{ deposito.inscripcion.persona.identificacion }}</td>
+                        <td>{{ deposito.motivo }}</td>
+                        <td>{{ deposito.cuentabanco }}</td>
+                        <td style="text-align: center">
+                            {% if deposito.estadoprocesado == 1 %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Procesado">Si</span>
+                            {% else %}
+                                {% if deposito.estadoprocesado == 2 %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Procesado">Revisar</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Procesado">No</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">$ {{ deposito.valor|floatformat:2 }}</td>
+                        <td style="text-align: right;">$ {{ deposito.saldo|floatformat:2 }}</td>
+                        <td style="text-align: center;">
+                            {% if deposito.observacion %}
+                                <a href="javascript:;" id="{{ deposito.id }}" class="btn btn-ssm btn-form btn-warning btn-warning blinkimg verobservacion" data-bs-toggle="tooltip" data-bs-placement="top" title='Observación'><i class="icon-comment"></i></a>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if deposito.estadoprocesado == 3 or deposito.estadoprocesado == 2 %}
+                                <a href="javascript:;" nhref="/alu_finanzas?action=del&id={{ deposito.id }}" class="btn btn-ssm eliminacionmodal btn-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <h4>Saldos a favor</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class="table table-striped table-bordered">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 80px;text-align: center;">Fecha</th>
+                    <th>Motivo</th>
+                    <th style="width: 100px;text-align: center;">Valor</th>
+                    <th style="width: 100px;text-align: center;">Saldo</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for rc in reciboscaja %}
+                    <tr>
+                        <td style="text-align: center">{{ rc.fecha|date:'Y-m-d' }}</td>
+                        <td>{{ rc.motivo }}</td>
+                        <td style="text-align: right;">$ {{ rc.valorinicial|floatformat:2 }}</td>
+                        <td style="text-align: right;"><b>$ {{ rc.saldo|floatformat:2 }}</b></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <h4>Notas de cr&eacute;dito</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class="table table-condensed table-striped table-bordered">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 80px;text-align: center;">Fecha</th>
+                    <th>Motivo</th>
+                    <th style="width: 70px;text-align: center;">Período</th>
+                    <th style="width: 70px;text-align: center;">Valor</th>
+                    <th style="width: 70px;text-align: center;">Saldo</th>
+                    <th style="width: 150px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for rc in notascredito %}
+                    <tr>
+                        <td>{{ rc.fecha|date:'Y-m-d' }}</td>
+                        <td>{{ rc.motivo }}</td>
+                        <td style="text-align: center;">{{ rc.periodo|default_if_none:'' }}</td>
+                        <td style="text-align: right;">$ {{ rc.valorinicial|floatformat:2 }}</td>
+                        <td style="text-align: right;"><b>$ {{ rc.saldo|floatformat:2 }}</b></td>
+                        <td></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <br>
+    <div class='row'>
+        <div class='col-12'>
+            <h4>Facturas</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 120px;">No.</th>
+                    <th style="width: 80px; text-align: center;">Fecha</th>
+                    <th>Cliente</th>
+                    <th style="width: 80px;">Tipo</th>
+                    <th style="width: 100px;">Identificaci&oacute;n</th>
+                    <th style="width: 70px; text-align: center;">Base cero</th>
+                    <th style="width: 60px; text-align: center;">Descuento</th>
+                    <th style="width: 60px; text-align: center;">IVA</th>
+                    <th style="width: 70px; text-align: center;">Total</th>
+                    <th style="width: 40px; text-align: center">Valida</th>
+                    <th style="width: 40px; text-align: center">Pag.</th>
+                    <th style="width: 40px; text-align: center">PDF</th>
+                    <th style="width: 40px; text-align: center">XML</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for factura in facturas %}
+                    <tr>
+                        <td>{{ factura.numero }}</td>
+                        <td style="text-align: center;">{{ factura.fecha|date:'Y-m-d' }}</td>
+                        <td>{{ factura.nombre }}</td>
+                        <td>{{ factura.tipo_identificacion }}</td>
+                        <td>{{ factura.identificacion }}</td>
+                        <td style="text-align: right;">$ {{ factura.basecero|floatformat:2|intcomma }}</td>
+                        <td style="text-align: right;">$ {{ factura.iva|floatformat:2|intcomma }}</td>
+                        <td style="text-align: right;">$ {{ factura.descuento|floatformat:2|intcomma }}</td>
+                        <td style="text-align: right;">$ {{ factura.total|floatformat:2|intcomma }}</td>
+                        <td style="text-align: center">
+                            {% if factura.valida %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if factura.pagada %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Pagada">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Pagada">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            <a class="btn btn-ssm btn-danger" target="_blank" href="https://hermes.uti.edu.ec/api?x=descargarfactura&tipo=pdf&numerofactura={{ factura.numero }}&ruc={{ ruc_institucion }}"><i class="icon-download-alt"></i></a>
+                        </td>
+                        <td style="text-align: center">
+                            <a class="btn btn-ssm btn-primary" target="_blank" href="https://hermes.uti.edu.ec/api?x=descargarfactura&tipo=xml&numerofactura={{ factura.numero }}&ruc={{ ruc_institucion }}"><i class="icon-download-alt"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <h4>Recibos de pago</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 120px;">No.</th>
+                    <th style="width: 80px; text-align: center;">Fecha</th>
+                    <th>Cliente</th>
+                    <th style="width: 70px; text-align: center;">Base cero</th>
+                    <th style="width: 60px; text-align: center;">Base IVA</th>
+                    <th style="width: 70px; text-align: center;">Subtotal</th>
+                    <th style="width: 60px; text-align: center;">Descuento</th>
+                    <th style="width: 60px; text-align: center;">IVA</th>
+                    <th style="width: 70px; text-align: center;">Total</th>
+                    <th style="width: 40px; text-align: center">Valido</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for recibo in recibos %}
+                    <tr>
+                        <td>{{ recibo.numero }}</td>
+                        <td style="text-align: center;">{{ recibo.fecha|date:'Y-m-d' }}</td>
+                        <td>{{ recibo.inscripcion }}</td>
+                        <td style="text-align: right;">$ {{ recibo.basecero|floatformat:2|intcomma }}</td>
+                        <td style="text-align: right;">$ {{ recibo.baseiva|floatformat:2|intcomma }}</td>
+                        <td style="text-align: right;">$ {{ recibo.subtotal|floatformat:2|intcomma }}</td>
+                        <td style="text-align: right;">$ {{ recibo.descuento|floatformat:2|intcomma }}</td>
+                        <td style="text-align: right;">$ {{ recibo.iva|floatformat:2|intcomma }}</td>
+                        <td style="text-align: right;">$ {{ recibo.total|floatformat:2|intcomma }}</td>
+                        <td style="text-align: center">
+                            {% if recibo.valido %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valido">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valido">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="modal fade" id="observacion" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="paneltitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paneltitle">Observación:</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th>Detalle</th>
+                        </tr>
+                        </thead>
+                        <tbody id="contenidotablaobservacion">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-info" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

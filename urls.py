@@ -38,7 +38,7 @@ from ctt import commonviews, inscripciones, matriculas, fecha_evaluaciones, adm_
     adm_coordinaciones, \
     adm_institucion, adm_colegios, adm_cursoscomplementarios, adm_evaluaciones, niveles, administrativos, \
     adm_asignaturas, adm_modelosevaluativos, docentes, \
-    adm_calculofinanzas, adm_pagosnivel, adm_cliente
+    adm_calculofinanzas, adm_pagosnivel, adm_cliente, cli_finanzas
 
 import django.views.static
 
@@ -87,6 +87,7 @@ urlpatterns = [
     path('alu_notas', alu_notas.view),
 
     path('alu_finanzas', alu_finanzas.view),
+    path('cli_finanzas', cli_finanzas.view),
 
     path('adm_asignaturas', adm_asignaturas.view),
     path('adm_mallas', adm_mallas.view),

@@ -188,6 +188,7 @@ def view(request):
                 cantidad = form.cleaned_data['cantidad']
                 precio_unitario = form.cleaned_data.get('precio_unitario') or servicio.precio_base
 
+                # Crear el detalle
                 ProformaDetalle.objects.create(
                     proforma=proforma,
                     servicio=servicio,
@@ -196,16 +197,19 @@ def view(request):
                     precio_unitario=precio_unitario
                 )
 
-                # Recalcular totales de la proforma
+                # Recalcular totales de la proforma (incluye IVA si lo definiste en el modelo)
                 if hasattr(proforma, "recomputar_totales"):
                     proforma.recomputar_totales()
+                    # si tu ModeloBase usa save(request) para auditoría, lo dejamos igual
                     proforma.save(request)
 
                 log(u'Agregó servicio %s a la proforma %s' % (servicio, proforma), request, "add")
                 return ok_json()
+
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
+
 
         if action == 'generar_rubro':
             try:
@@ -428,7 +432,7 @@ def view(request):
             except Exception as ex:
                 return url_back(request, ex=ex)
 
-        # ======= DETALLE de PROFORMA =======
+
         # ======= DETALLE DE UNA PROFORMA =======
         if action == 'detalle_proforma':
             try:

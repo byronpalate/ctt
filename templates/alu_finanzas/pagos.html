@@ -1,0 +1,142 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% block heading %}
+    <script>
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/alu_finanzas{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Rubro: {{ rubro.nombre }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row'>
+        <div class='col-12 col-md-6 mb-2'>
+            <table class="table table-hover">
+                <tbody>
+                <tr>
+                    <td style="width: 80px;">Fecha:</td>
+                    <td><b>{{ rubro.fecha|date:"Y-m-d" }}<b></td>
+                </tr>
+                <tr>
+                    <td>Valor</td>
+                    <td><b>${{ rubro.valor|floatformat:2|intcomma }}</b></td>
+                </tr>
+                <tr>
+                    <td>Pagado</td>
+                    <td><b>${{ rubro.total_pagado|floatformat:2|intcomma }}</b></td>
+                </tr>
+                <tr>
+                    <td>Adeudado</td>
+                    <td>
+                        <span class="badge text-bg-danger">${{ rubro.saldo|floatformat:2|intcomma }}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Tipo</td>
+                    <td><b>{{ rubro.tipo }}</b></td>
+                </tr>
+                <tr>
+                    <td>Nombre</td>
+                    <td><b>{{ rubro.nombre }}</b></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class='col-12 col-md-6 mb-2'>
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                <th style="width: 250px; text-align: center;">Fecha</th>
+                <th style="width: 110px; text-align: center;">Valor</th>
+                <th style="width: 200px;">Tipo</th>
+                <th>Recibio</th>
+                </thead>
+                <tbody>
+                {% for pago in pagos %}
+                    <tr>
+                        <td style="text-align: center;">{{ pago.fecha|date:"Y-m-d" }}</td>
+                        <td style='text-align: right;'>${{ pago.valor|floatformat:2|intcomma }}</td>
+                        <td>
+                            {% if pago.anticipado %}
+                                PREFACTURADO
+                            {% else %}
+                                {{ pago.tipo }}
+                                {% if pago.es_cheque %}
+                                    {% with dato=pago.dato_cheque %}
+                                        NO: {{ dato.numero }}, CTA: {{ dato.cuenta }}, {{ dato.banco }}, VALOR: {{ dato.valor|floatformat:2 }}
+                                    {% endwith %}
+                                {% endif %}
+                                {% if pago.es_deposito %}
+                                    {% with dato=pago.dato_deposito %}
+                                        {{ dato.referencia }}, {{ dato.cuentabanco.banco }}, CTA: {{ dato.cuentabanco.numero }}, {{ dato.fechabanco|date:'Y-m-d' }}, VALOR: {{ dato.valor|floatformat:2 }}
+                                    {% endwith %}
+                                {% endif %}
+                                {% if pago.es_transferencia %}
+                                    {% with dato=pago.dato_transferencia %}
+                                        {{ dato.referencia }}, {{ dato.cuentabanco.banco }}, CTA: {{ dato.cuentabanco.numero }}, {{ dato.fechabanco|date:'Y-m-d' }}, VALOR: {{ dato.valor|floatformat:2 }}
+                                    {% endwith %}
+                                {% endif %}
+                                {% if pago.es_tarjeta %}
+                                    {% with dato=pago.dato_tarjeta %}
+                                        {{ dato.tipotarjeta }}, LOT: {{ dato.lote }}, REF: {{ dato.referencia }}, VALOR: {{ dato.valor|floatformat:2 }}
+                                    {% endwith %}
+                                {% endif %}
+                                {% if pago.es_notacredito %}
+                                    {% with dato=pago.dato_notacredito %}
+                                        NO: {{ dato.numero }}, VALOR: {{ dato.valorinicial|floatformat:2 }}
+                                    {% endwith %}
+                                {% endif %}
+                                {% if pago.es_recibocajainst %}
+                                    {% with dato=pago.dato_recibocajainst %}
+                                        VALOR: {{ dato.valorinicial|floatformat:2 }}
+                                    {% endwith %}
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ pago.sesion.caja.persona }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                {% if pagos %}
+                    <tfoot>
+                    <tr>
+                        <td> </td>
+                        <td style="text-align: right;"><b>${{ rubro.total_pagado|floatformat:2 }}</b></td>
+                        <td> </td>
+                        <td> </td>
+                    </tr>
+                    </tfoot>
+                {% endif %}
+            </table>
+            {% if factura.electronica and factura.weburl %}
+                <table class="table table-bordered table-striped">
+                    <thead class="table-light">
+                    <th style="width: 190px;">Factura</th>
+                    <th style="width: 100px; text-align: center;">Valor</th>
+                    <th style="text-align: center;">Autorizaci&oacute;n</th>
+                    </thead>
+                    <tbody>
+                    <td>{{ factura.numero }}</td>
+                    <td style="text-align: center;">{{ factura.total|floatformat:2 }}</td>
+                    {% if factura.claveacceso %}
+                        <td style="text-align: center;"><a href="https://app.datil.co/ver/factura/{{ factura.weburl }}" target="_blank" data-bs-toggle="tooltip" data-bs-placement="top" title="De clic aqu&iacute; para ver su factura" class="tl">{{ factura.claveacceso }}</a></td>
+                    {% else %}
+                        <td style="text-align: center;"><a href="https://app.datil.co/ver/factura/{{ factura.weburl }}" target="_blank" data-bs-toggle="tooltip" data-bs-placement="top" title="De clic aqu&iacute; para ver su factura" class="tl">En proceso de aprobaci&oacute;n SRI</a></td>
+                    {% endif %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -86,12 +86,12 @@
 
     <div class="row">
         <div class='col-12 col-md-6 mb-2'>
-            {% if not sololectura %}
-                <a href="javascript:;" nhref="/servicios?action=add" class='btn btn-sm btn-success formmodal'>
-                    <i class="icon-plus"></i> Adicionar requerimiento
-                </a>
-            {% endif %}
-        </div>
+{#            {% if not sololectura %}#}
+{#                <a href="javascript:;" nhref="/servicios?action=add" class='btn btn-sm btn-success formmodal'>#}
+{#                    <i class="icon-plus"></i> Adicionar requerimiento#}
+{#                </a>#}
+{#            {% endif %}#}
+{#        </div>#}
 
         <div class='col-12 col-md-3 mb-2'>
             <div class="input-group">
@@ -142,9 +142,9 @@
                             {% endif %}
                         </td>
                         <td>
-                            {{ r.nombre_contacto }}<br>
+                            {{ r.cliente }}<br>
                             <small class="text-muted">
-                                {{ r.email_contacto }}{% if r.telefono_contacto %} · {{ r.telefono_contacto }}{% endif %}
+                                {{ r.cliente.persona.email  }}{% if r.cliente.persona.telefono %} · {{ r.cliente.persona.telefono_conv }}{% endif %}
                             </small>
                         </td>
                         <td>

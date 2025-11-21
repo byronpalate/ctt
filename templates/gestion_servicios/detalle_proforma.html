@@ -50,61 +50,48 @@
 </div>
 
 <div class="row mb-2">
-
     <div class="col-12">
 
-
         {# Acciones sobre la proforma #}
-
-    {% if proforma.estado == 1 %}
-
-
-         <a href="javascript:;" nhref="/gestion_servicios?action=agregar_detalle&id={{ proforma.id }}" class='btn btn-sm btn-success formmodal'>
-                    <i class="icon-plus"></i> Agregar servicio
-                </a>
-{% endif %}
-
+        {% if proforma.estado == 1 %}
+            <a href="javascript:;" nhref="/gestion_servicios?action=agregar_detalle&id={{ proforma.id }}" class='btn btn-sm btn-success formmodal'>
+                <i class="icon-plus"></i> Agregar servicio
+            </a>
+        {% endif %}
 
         <div class="btn-group ms-2">
+            <a href="javascript:;"
+               nhref="/servicios?action=edit&id={{ proforma.id }}"
+               class="btn btn-sm btn-outline-primary formmodal">
+                <i class="icon-edit"></i> Editar
+            </a>
 
-
-                <a href="javascript:;"
-                   nhref="/servicios?action=edit&id={{ proforma.id }}"
-                   class="btn btn-sm btn-outline-primary formmodal">
-                    <i class="icon-edit"></i> Editar
+            {% if proforma.estado == 1 %}
+                <a href="javascript:;" class="btn btn-sm btn-outline-success"
+                   onclick="enviarProforma({{ proforma.id }});">
+                    <i class="icon-mail-forward"></i> Enviar al cliente
                 </a>
-
-                {% if proforma.estado == 1 %}
-                    <a href="javascript:;" class="btn btn-sm btn-outline-success"
-                       onclick="enviarProforma({{ proforma.id }});">
-                        <i class="icon-mail-forward"></i> Enviar al cliente
-                    </a>
-                {% endif %}
-
-
+            {% endif %}
         </div>
 
-      {% if proforma.solicitud_trabajo %}
-    <div class="btn-group ms-2">
-
-
-        {% if not proforma.solicitud_trabajo.trabajo %}
-            {# Verifica que tenga rubro y que esté cancelado #}
-            {% if proforma.rubro_servicio and proforma.rubro_servicio.rubro.cancelado %}
-                <a href="javascript:;"
-                   nhref="/gestion_servicios?action=generar_trabajo&id={{ proforma.solicitud_trabajo.id }}"
-                   class="btn btn-sm btn-outline-dark formmodal">
-                    <i class="icon-wrench"></i> Generar trabajo
-                </a>
-            {% else %}
-                <span class="badge text-bg-warning ms-2">
-                    Pendiente de pago de rubro
-                </span>
-            {% endif %}
+        {% if proforma.solicitud_trabajo %}
+            <div class="btn-group ms-2">
+                {% if not proforma.solicitud_trabajo.trabajo %}
+                    {# Verifica que tenga rubro y que esté cancelado #}
+                    {% if proforma.rubro_servicio and proforma.rubro_servicio.rubro.cancelado %}
+                        <a href="javascript:;"
+                           nhref="/gestion_servicios?action=generar_trabajo&id={{ proforma.solicitud_trabajo.id }}"
+                           class="btn btn-sm btn-outline-dark formmodal">
+                            <i class="icon-wrench"></i> Generar trabajo
+                        </a>
+                    {% else %}
+                        <span class="badge text-bg-warning ms-2">
+                            Pendiente de pago de rubro
+                        </span>
+                    {% endif %}
+                {% endif %}
+            </div>
         {% endif %}
-    </div>
-{% endif %}
-
 
     </div>
 </div>
@@ -145,6 +132,19 @@
                 </td>
             </tr>
             <tr>
+                <th>IVA</th>
+                <td>
+                    {% if proforma.iva %}
+                        {{ proforma.iva }}
+                        {% if proforma.iva.porcientoiva %}
+                            <small class="text-muted">({{ proforma.iva.porcientoiva }}%)</small>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">(Sin IVA configurado)</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
                 <th>Fechas</th>
                 <td>
                     <small>
@@ -177,7 +177,13 @@
                 <td style="text-align:right;">$ {{ proforma.descuento|floatformat:2|intcomma }}</td>
             </tr>
             <tr>
-                <th>Impuestos</th>
+                <th>
+                    {% if proforma.iva and proforma.iva.porcientoiva %}
+                        IVA ({{ proforma.iva.porcientoiva }}%)
+                    {% else %}
+                        Impuestos
+                    {% endif %}
+                </th>
                 <td style="text-align:right;">$ {{ proforma.impuestos|floatformat:2|intcomma }}</td>
             </tr>
             <tr>

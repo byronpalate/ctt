@@ -142,61 +142,77 @@
                         {% endif %}
                     </td>
                     <td style="text-align:center;">
-    <div class="btn-group">
-        {# Ver detalle proforma #}
-        <a href="/gestion_servicios?action=detalle_proforma&id={{ pro.id }}"
-           class="btn btn-ssm btn-outline-secondary"
-           title="Detalle de proforma">
-            <i class="icon-eye-open"></i>
-        </a>
+   <div class="btn-group">
+    {# Ver detalle proforma #}
+    <a href="/gestion_servicios?action=detalle_proforma&id={{ pro.id }}"
+       class="btn btn-ssm btn-outline-secondary"
+       title="Detalle de proforma">
+        <i class="icon-eye-open"></i>
+    </a>
 
-        {% if not sololectura %}
-            {# Editar proforma #}
+    {% if not sololectura %}
+
+        {# Editar proforma: solo si NO está aprobada #}
+        {% if pro.estado != 3 %}
             <a href="javascript:;"
                nhref="/gestion_servicios?action=edit&id={{ pro.id }}"
                class="btn btn-ssm btn-outline-primary formmodal"
                title="Editar proforma">
                 <i class="icon-edit"></i>
             </a>
+        {% endif %}
 
-            {# Enviar al cliente (solo borrador) #}
-            {% if pro.estado == 1 %}
-                <a href="javascript:;"
-                   class="btn btn-ssm btn-outline-success"
-                   title="Enviar al cliente"
-                   onclick="enviarProforma({{ pro.id }})">
-                   <i class="icon-arrow-right"></i>
+        {# Enviar al cliente (solo borrador) #}
+        {% if pro.estado == 1 %}
+            <a href="javascript:;"
+               class="btn btn-ssm btn-outline-success"
+               title="Enviar al cliente"
+               onclick="enviarProforma({{ pro.id }})">
+               <i class="icon-arrow-right"></i>
+            </a>
+        {% endif %}
 
-                </a>
-            {% endif %}
-
-            {# Generar rubro (solo si está APROBADA y aún no tiene rubro) #}
-            {% if pro.estado == 3 and not pro.tiene_rubro %}
+        {# Lógica de rubro / pago / trabajo cuando la proforma está APROBADA #}
+        {% if pro.estado == 3 %}
+            {# 1) Proforma aprobada y SIN rubro → mostrar "Generar rubro" #}
+            {% if not pro.tiene_rubro %}
                 <a href="javascript:;"
                    class="btn btn-ssm btn-outline-warning"
                    title="Generar rubro"
                    onclick="generarRubro({{ pro.id }})">
                     <i class="icon-money"></i>
                 </a>
-            {% endif %}
 
-            {# Generar orden de trabajo (solo si puede_generar_trabajo=True) #}
-            {% if  not pro.solicitud_trabajo.trabajo %}
-                <a href="javascript:;"
-                   nhref="/gestion_servicios?action=generar_trabajo&id={{ pro.id }}"
-                   class="btn btn-ssm btn-outline-dark formmodal"
-                   title="Generar orden de trabajo">
-                    <i class="icon-wrench"></i>
-                </a>
-
-
-            {% elif pro.rubro_servicio and pro.rubro_servicio.rubro.cancelado %}
+            {# 2) Tiene rubro, pero NO está pagado → badge "Rubro pendiente" #}
+            {% elif pro.rubro_servicio and not pro.rubro_servicio.rubro.cancelado %}
                 <span class="badge text-bg-warning ms-1" title="Rubro pendiente de pago">
                     Rubro pendiente
                 </span>
+
+            {# 3) Tiene rubro pagado (cancelado=True) #}
+            {% elif pro.rubro_servicio and pro.rubro_servicio.rubro.cancelado %}
+
+                {# 3.a) Aún NO tiene trabajo generado → mostrar "Generar orden de trabajo" #}
+                {% if not pro.solicitud_trabajo or not pro.solicitud_trabajo.trabajo %}
+                    <a href="javascript:;"
+                       nhref="/gestion_servicios?action=generar_trabajo&id={{ pro.solicitud_trabajo.id }}"
+                       class="btn btn-ssm btn-outline-dark formmodal"
+                       title="Generar orden de trabajo">
+                        <i class="icon-wrench"></i>
+                    </a>
+
+                {# 3.b) Ya tiene trabajo generado → badge informativo #}
+                {% else %}
+                    <span class="badge text-bg-success ms-1" title="Orden de trabajo generada">
+                        Trabajo generado
+                    </span>
+                {% endif %}
             {% endif %}
         {% endif %}
-    </div>
+
+    {% endif %}
+</div>
+
 </td>
 
                 </tr>

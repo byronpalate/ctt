@@ -1,0 +1,154 @@
+<div class="wpwl-label wpwl-label-custom" style="display:inline-block; width: 100%">Tipo Tarjeta:  </div>
+<div class="wpwl-wrapper wpwl-wrapper-custom" style="display:inline-block; width: 100%">
+    <select name="customParameters[SHOPPER_tipotarjeta]" id="tipotarjeta" style="width: 100%">
+        {% for b in tipotarjeta %}
+            <option value="{{ b.id }}" {% if b.id == pago_tarjeta_nacional_id %}selected{% endif %}>{{ b }}</option>
+        {% endfor %}
+    </select>
+</div>
+<br>
+<div class="wpwl-label wpwl-label-custom" style="display:inline-block; width: 100%">Banco:  </div>
+<div class="wpwl-wrapper wpwl-wrapper-custom" style="display:inline-block; width: 100%">
+    <select name="customParameters[SHOPPER_banco]" id="bancos" style="width: 100%">
+        {% for b in bancos %}
+            <option class="{% if otros_bancos_externos_id == b.id %}externo{% else %}nacional{% endif %}" value="{{ b.id }}">{{ b }}</option>
+        {% endfor %}
+    </select>
+</div>
+<br>
+<div class="wpwl-label wpwl-label-custom" style="display:inline-block; width: 100%">Tipo Tarjeta Banco:  </div>
+<div class="wpwl-wrapper wpwl-wrapper-custom" style="display:inline-block; width: 100%; margin-bottom: 10px">
+    <select name="customParameters[SHOPPER_tipotarjetabanco]" id="tipotarjetabanco" style="width: 100%">
+        {% for b in tipo %}
+            <option value="{{ b.id }}" dif="{% if b.difiere %}1{% else %}0{% endif %}">{{ b }}</option>
+        {% endfor %}
+    </select>
+</div>
+<div class="wpwl-label wpwl-label-custom diferidos" {% if not permite_diferir %}style="display:none"{% endif %}>Numero de cuotas:  </div>
+<div class="wpwl-wrapper wpwl-wrapper-custom diferidos" style="display:{% if not permite_diferir %}none{% endif %}; margin-bottom: 5px">
+    <select name="recurring.numberOfInstallments" id="cantidadcuotas">
+        <option value="0" selected>0</option>
+    </select>
+</div>
+<div class="wpwl-label wpwl-label-custom" style="display:none">Tipo credito:</div>
+<div class="wpwl-wrapper wpwl-wrapper-custom" style="display:none;">
+    <input type="hidden" id="tipocredito" name="customParameters[SHOPPER_TIPOCREDITO]" value="00">
+</div>
+{#<div class="wpwl-label wpwl-label-custom" style="display:none">Intereses:</div>#}
+{#<div class="wpwl-wrapper wpwl-wrapper-custom" style="display:none;">#}
+{#    <select name="customParameters[SHOPPER_interes]" id="intereses">#}
+{#        <option value="0">No</option>#}
+{#        <option value="1">Si</option>#}
+{#    </select>#}
+{#</div>#}
+<script type="text/javascript">
+    $(function() {
+
+        verificar_tipo = function () {
+            var valor = parseInt($("#tipotarjeta").val());
+            if (valor == {{ pago_tarjeta_nacional_id }}){
+                $("#bancos").val(0);
+                $(".externo").hide();
+                $(".nacional").show();
+            } else {
+                $("#bancos").val({{ otros_bancos_externos_id }});
+                $(".externo").show();
+                $(".nacional").hide();
+            }
+        };
+
+        $("#tipotarjeta").change(function () {
+            verificar_tipo();
+            {% if permite_diferir %}
+                verifica_diferido();
+            {% endif %}
+        });
+
+        {% if permite_diferir %}
+            $("#bancos").change(function () {
+                verifica_diferido();
+            });
+        {% endif %}
+
+        verifica_diferido = function () {
+            $("#cantidadcuotas").empty().append("<option value='0'>0</option>").val(0);
+            $("#intereses").val(0);
+            $(".diferidos").hide();
+            var id = $("#bancos").val();
+            var idtb = $("#tipotarjetabanco").val();
+            var idt = $("[name='paymentBrand']").val();
+            $("#tipocredito").val('00');
+            bloqueointerface();
+            $.ajax({
+                type: "POST",
+                url: "/alu_finanzas",
+                data: {'action': 'permitediferir', 'id': id, 'idt': idt, 'idtb': idtb, 'csrfmiddlewaretoken': csrftoken},
+                success: function(data) {
+                    desbloqueointerface();
+                    if (data.result == 'ok') {
+                        $("#cantidadcuotas").empty();
+                        for (item in data.lista){
+                            var txt = ((data.lista[item][1]==0) ? 'Sin intereses' : 'Con intereses');
+                            $("#cantidadcuotas").append("<option id='dif_"+data.lista[item][0]+"' value='"+data.lista[item][0]+"' dif='"+data.lista[item][2]+"' tipocred='"+data.lista[item][4]+"' interes='"+data.lista[item][1]+"'>"+data.lista[item][3]+" - "+txt+"</option>");
+                        }
+                        if (data.lista.length > 1){
+                            $(".diferidos").show();
+                        }
+                    }
+                },
+                error: function() {
+                    desbloqueointerface();
+                },
+                dataType: "json"
+            });
+        };
+
+        verificar_tipo();
+        {% if permite_diferir %}
+            verifica_diferido();
+
+            $("[name='paymentBrand']").change(function () {
+                verifica_diferido();
+            });
+
+            $("#tipotarjetabanco").change(function () {
+                verifica_diferido();
+            });
+/*
+            $("#cantidadcuotas").change(function () {
+                var valorcuotas = parseInt($(this).val());
+                var dif = parseInt($("#dif_"+valorcuotas).attr('dif'));
+                var interes = $(this).attr('interes');
+                if (interes == 'true'){
+                    $("#intereses").val(1);
+                } else {
+                    $("#intereses").val(0);
+                }
+            });
+  */
+            $("#cantidadcuotas").change(function () {
+                    var elemento = $("#cantidadcuotas").find(":selected");
+                    var interes = parseInt(elemento.attr('interes'));
+                    /*
+                    var gracia = parseInt(elemento.attr('gracia'));
+                     */
+
+                    {#if (interes==1) {#}
+                    {#    $("#intereses").val(1);#}
+                    {# } else {#}
+                    {#    $("#intereses").val(0);#}
+                    {# }#}
+
+                    $("#tipocredito").val(elemento.attr('tipocred'));
+
+                    /*
+                    if (gracia) {
+                        $("#gracia").val(1);
+                    } else {
+                        $("#gracia").val(0);
+                    }
+                     */
+                });
+        {% endif %}
+    });
+</script>

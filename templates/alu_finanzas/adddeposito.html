@@ -1,0 +1,50 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            verifica_archivo(document.getElementById('id_archivo'));
+            $("#id_fecha").datepicker({format:"dd-mm-yyyy"});
+            $("#id_fecha, #id_cuentabanco, #id_referencia").addClass("validate[required]");
+
+            $("#id_deposito").click(function(){
+                if ($("#id_deposito").prop('checked')){
+                    $("#id_transferencia").prop('checked', false);
+                } else {
+                    $("#id_transferencia").prop('checked', true);
+                }
+             });
+
+            $("#id_transferencia").click(function(){
+                if ($("#id_transferencia").prop('checked')){
+                    $("#id_deposito").prop('checked', false);
+                } else {
+                    $("#id_deposito").prop('checked', true);
+                }
+             });
+
+            $("#id_valor").blur(function(){
+                numerico($(this), 0, 0, 2);
+             }).addClass("validate[min[0.01]]");
+
+            $("#id_ventanilla").click(function(){
+                if ($("#id_ventanilla").prop('checked')){
+                    $("#id_movilweb").prop('checked', false);
+                }
+             });
+
+            $("#id_movilweb").click(function(){
+                if ($("#id_movilweb").prop('checked')){
+                    $("#id_ventanilla").prop('checked', false);
+                }
+             });
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block atras%}/alu_finanzas{% endblock %}
+{% block formaction %}/alu_finanzas{% endblock %}
+{% block formdestination %}/alu_finanzas{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='adddeposito'/>
+{% endblock %}
+{% block formback %}/alu_finanzas{% endblock %}
