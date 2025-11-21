@@ -126,7 +126,7 @@
                     <td>{{ pro.cliente }}</td>
                     <td style="text-align:right;">$ {{ pro.subtotal|floatformat:2|intcomma }}</td>
                     <td style="text-align:right;">$ {{ pro.descuento|floatformat:2|intcomma }}</td>
-                    <td style="text-align:right;">$ {{ pro.impuestos|floatformat:2|intcomma }}</td>
+                    <td style="text-align:right;">$ {{ pro.iva }}</td>
                     <td style="text-align:right;"><strong>$ {{ pro.total|floatformat:2|intcomma }}</strong></td>
                     <td style="text-align:center;">
                         {% if pro.estado == 1 %}

@@ -69,7 +69,7 @@ def view(request):
                     requerimiento=requerimiento,
                     observaciones=remover_tildes(form.cleaned_data.get('observaciones') or ""),
                     descuento=form.cleaned_data.get('descuento') or Decimal('0.00'),
-                    impuestos=form.cleaned_data.get('impuestos') or Decimal('0.00'),
+                    iva=form.cleaned_data.get('iva'),
                     creado_por=persona,
                     numero="PF-%s" % timezone.now().strftime("%Y%m%d%H%M%S"),
                     estado=Proforma.Estado.BORRADOR,

@@ -2936,14 +2936,13 @@ class TipoCostoCursoForm(BaseForm):
 class ProformaForm(BaseForm):
     observaciones = forms.CharField(label=u"Observaciones", required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}))
     descuento = forms.FloatField(label=u"Descuento", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-moneda', 'decimales': '2'}))
-    impuestos = forms.FloatField(label=u"Impuestos", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-moneda', 'decimales': '2'}))
+    iva = ModelChoiceField(label=u'IVA', queryset=IvaAplicado.objects.all(), required=False, widget=forms.Select())
 
     def editar(self, proforma):
         if proforma and proforma.estado != Proforma.Estado.BORRADOR:
             deshabilitar_campo(self, 'cliente')
             deshabilitar_campo(self, 'observaciones')
             deshabilitar_campo(self, 'descuento')
-            deshabilitar_campo(self, 'impuestos')
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
