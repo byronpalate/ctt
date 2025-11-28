@@ -37,7 +37,7 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor
     ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, \
     MateriaCursoEscuelaComplementaria, \
     Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, \
-    TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente,  Factura, EspacioFisico, ServicioCatalogo
+    TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente,  Factura, EspacioFisico, ServicioCatalogo, TipoServicio
 # Servicio,
 
 
@@ -3015,19 +3015,10 @@ class GenerarTrabajoForm(BaseForm):
 
 
 class RequerimientoServicioForm(BaseForm):
-    espacio_fisico = forms.ModelChoiceField(label=u"Laboratorio / área", queryset=EspacioFisico.objects.all(), widget=forms.Select())
-
+    tiposervicio = forms.ModelChoiceField(label=u"Tipo de Requerimiento", queryset=TipoServicio.objects.all(), widget=forms.Select())
     cliente = forms.ModelChoiceField(label=u"Cliente", queryset=Cliente.objects.all(), widget=forms.Select())
-    descripcion = forms.CharField(
-        label=u"Descripción del requerimiento",
-        widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'})
-    )
-
-    archivo = forms.FileField(
-        label=u"Archivo adjunto (opcional)",
-        required=False,
-        widget=forms.ClearableFileInput(attrs={'class': 'form-control'})
-    )
+    descripcion = forms.CharField(label=u"Descripción del requerimiento",widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'}))
+    archivo = forms.FileField(label=u"Archivo adjunto (opcional)",required=False,widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
@@ -3036,7 +3027,10 @@ class RequerimientoServicioForm(BaseForm):
 
 class ProformaDetalleForm(BaseForm):
     servicio = forms.ModelChoiceField(label=u"Servicio", queryset=ServicioCatalogo.objects, widget=forms.Select())
-    descripcion = forms.CharField(label=u"Descripción", required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}))
+    fecha = forms.DateField(label=u"Fecha", input_formats=['%d-%m-%Y'], initial=datetime.now().date(), widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
+    horainicio = forms.CharField(label='Hora Inicio',widget=forms.Select(), required=False)
+    horafin = forms.CharField(label='Hora Fin',widget=forms.Select(), required=False)
+    descripcion = forms.CharField(label=u"Descripción", required=False, widget=forms.Textarea(attrs={'rows': '2', 'class': 'form-control'}))
     cantidad = forms.DecimalField(label=u"Cantidad", max_digits=8, decimal_places=2, initial=Decimal('1.00'))
     precio_unitario = forms.DecimalField(label=u"Precio unitario", max_digits=10, decimal_places=2, required=False, help_text=u"Si lo dejas vacío, se tomará el precio base del servicio.")
 

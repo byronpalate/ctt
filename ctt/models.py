@@ -6430,6 +6430,7 @@ class Inscripcion(ModeloBase):
     def tiene_nee(self):
         return self.inclusionbienestar_set.exists()
 
+
     def save(self, *args, **kwargs):
         self.identificador = null_to_text(self.identificador)
         self.coordinacion = self.mi_coordinacion()
@@ -17844,7 +17845,7 @@ class RequerimientoServicio(ModeloBase):
     nombre_contacto = models.CharField(max_length=255)
     email_contacto = models.EmailField()
     telefono_contacto = models.CharField(max_length=50, blank=True)
-    espacio_fisico = models.ForeignKey(EspacioFisico, null=True, blank=True, on_delete=models.SET_NULL, related_name="requerimientos")
+    tiposervicio = models.ForeignKey(TipoServicio, null=True, blank=True, on_delete=models.SET_NULL, related_name="requerimientos")
     descripcion = models.TextField()
     archivo = models.FileField(upload_to="requerimientos/", blank=True)
 
@@ -17969,9 +17970,10 @@ class ProformaDetalle(ModeloBase):
     proforma = models.ForeignKey(Proforma, related_name='detalles', on_delete=models.CASCADE)
     servicio = models.ForeignKey(ServicioCatalogo, on_delete=models.PROTECT)
     descripcion = models.CharField(max_length=255, blank=True)
-
+    fecha = models.DateField(blank=True, null=True)
+    horainicio = models.TimeField(blank=True, null=True)
+    horafin = models.TimeField(blank=True, null=True)
     cantidad = models.DecimalField(max_digits=8, decimal_places=2, default=1)
-
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
 

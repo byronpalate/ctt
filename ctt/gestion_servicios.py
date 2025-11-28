@@ -11,9 +11,12 @@ from django.utils import timezone
 from decorators import secure_module, last_access
 from ctt.commonviews import adduserdata
 from ctt.funciones import log, MiPaginador, ok_json, bad_json, url_back, remover_tildes
-from ctt.models import (Proforma, RevisionProforma, SolicitudTrabajo, Trabajo, Factura, Cliente, Persona, Group, RequerimientoServicio, ProformaHistorial, ServicioCatalogo, ProformaDetalle, RubroServicio, Rubro)
+from ctt.models import (Proforma, RevisionProforma, SolicitudTrabajo, Trabajo, Factura, Cliente, Persona, Group,
+                        RequerimientoServicio, ProformaHistorial, ServicioCatalogo, ProformaDetalle, RubroServicio,
+                        Rubro, EspacioFisico)
 from ctt.forms import (RevisionProformaForm, VincularFacturaForm, GenerarTrabajoForm, ProformaForm,ProformaDetalleForm,RequerimientoServicioForm)
-
+from datetime import datetime, timedelta, time
+from django.utils import timezone
 from settings import  TIPO_IVA_0_ID
 @login_required(login_url='/login')
 @secure_module
@@ -35,7 +38,7 @@ def view(request):
                 if form.is_valid():
                     cd = form.cleaned_data
                     req = RequerimientoServicio(
-                        espacio_fisico=cd['espacio_fisico'],
+                        tiposervicio=cd['tiposervicio'],
                         descripcion=remover_tildes(cd.get('descripcion') or ""),
                         archivo=cd.get('archivo'),
                         cliente=cd['cliente'],
@@ -173,20 +176,16 @@ def view(request):
             try:
                 proforma = get_object_or_404(Proforma, pk=request.POST.get('id'))
                 form = ProformaDetalleForm(request.POST)
-
-                # Filtramos servicios según el tipo de servicio del requerimiento (si existe)
-                if proforma.requerimiento and proforma.requerimiento.espacio_fisico_id:
-                    form.fields['servicio'].queryset = ServicioCatalogo.objects.filter(
-                        espacio_fisico=proforma.requerimiento.espacio_fisico
-                    )
-
                 if not form.is_valid():
                     return bad_json(error=6)
 
                 servicio = form.cleaned_data['servicio']
-                descripcion = remover_tildes(form.cleaned_data.get('descripcion') or "")
+                descripcion = remover_tildes(form.cleaned_data['descripcion'] or "")
+                fecha = form.cleaned_data['fecha']
+                horainicio = form.cleaned_data['horainicio']
+                horafin = form.cleaned_data['horafin']
                 cantidad = form.cleaned_data['cantidad']
-                precio_unitario = form.cleaned_data.get('precio_unitario') or servicio.precio_base
+                precio_unitario = form.cleaned_data['precio_unitario'] or servicio.precio_base
 
                 # Crear el detalle
                 ProformaDetalle.objects.create(
@@ -194,7 +193,10 @@ def view(request):
                     servicio=servicio,
                     descripcion=descripcion,
                     cantidad=cantidad,
-                    precio_unitario=precio_unitario
+                    precio_unitario=precio_unitario,
+                    fecha=fecha,
+                    horainicio=datetime.strptime(horainicio, '%H:%M').time(),
+                    horafin=datetime.strptime(horafin, '%H:%M').time(),
                 )
 
                 # Recalcular totales de la proforma (incluye IVA si lo definiste en el modelo)
@@ -384,13 +386,14 @@ def view(request):
                 form = ProformaDetalleForm()
 
                 # Filtrar lista de servicios según el tipo del requerimiento (si aplica)
-                if proforma.requerimiento and proforma.requerimiento.espacio_fisico_id:
+                if proforma.requerimiento and proforma.requerimiento.tiposervicio_id:
                     form.fields['servicio'].queryset = ServicioCatalogo.objects.filter(
-                        espacio_fisico=proforma.requerimiento.espacio_fisico
+                        espacio_fisico__tipo_servicio_id=proforma.requerimiento.tiposervicio.id
                     )
 
                 data['form'] = form
                 data['proforma'] = proforma
+
                 return render(request, 'gestion_servicios/agregar_detalle.html', data)
             except Exception as ex:
                 return url_back(request, ex=ex)
@@ -441,6 +444,22 @@ def view(request):
                 data['proforma'] = proforma
                 # usamos el related_name='detalles'
                 data['detalles'] = proforma.detalles.select_related('servicio').all()
+                data['detalles'] = proforma.detalles.select_related('servicio').all()
+                if 'espacio' in request.GET:
+                    espacio = EspacioFisico.objects.get(pk=request.GET['espacio'])
+                else:
+                    espacio = EspacioFisico.objects.get(pk=3)
+
+                hoy = timezone.now().date()
+                dias = [hoy + timedelta(days=i) for i in range(7)]
+                horas = [time(h, 0) for h in range(7, 18)]
+                data['detallesproformas'] = ProformaDetalle.objects.filter(fecha__range=(hoy, hoy + timedelta(days=6)),servicio__espacio_fisico=espacio,)
+                data['misdetalles'] = ProformaDetalle.objects.filter(servicio__espacio_fisico=espacio,fecha__range=(hoy, hoy + timedelta(days=6)))
+                data['horas'] = horas
+                data['dias'] = dias
+                data['title'] = u'Espacio'
+                data['espacio'] = espacio
+                # data['bloqueos'] = DesactivarCancha.objects.filter(cancha=cancha)
                 return render(request, 'gestion_servicios/detalle_proforma.html', data)
             except Exception as ex:
                 return url_back(request, ex=ex)
@@ -492,7 +511,7 @@ def view(request):
         estado = request.GET.get('e')   # estado del requerimiento
         tipo = request.GET.get('t')     # tipo_servicio_id opcional
 
-        qs = RequerimientoServicio.objects.select_related('cliente', 'espacio_fisico').all()
+        qs = RequerimientoServicio.objects.select_related('cliente', 'tiposervicio').all()
 
         if search:
             qs = qs.filter(
@@ -505,7 +524,7 @@ def view(request):
             qs = qs.filter(estado=int(estado))
 
         if tipo and tipo.isdigit():
-            qs = qs.filter(espacio_fisico_id=int(tipo))
+            qs = qs.filter(tiposervicio_id=int(tipo))
 
         qs = qs.order_by('-fecha_recepcion', '-id')
 

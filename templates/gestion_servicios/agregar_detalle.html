@@ -1,5 +1,61 @@
 {% extends "formbs.html" %}
 {% block extrajavascript %}
+    <script>
+        function llenarHorai() {
+            const selectHora = document.querySelector('#id_horainicio');
+
+            // Limpiar opciones existentes
+            selectHora.innerHTML = '';
+
+            // Agregar opción vacía inicial
+            const optionVacia = document.createElement('option');
+            optionVacia.value = '';
+            optionVacia.textContent = '---------';
+            selectHora.appendChild(optionVacia);
+
+            // Generar horas desde 7:00 AM hasta 9:00 PM
+            for (let hora = 7; hora <= 21; hora++) {
+                const option = document.createElement('option');
+                const horaFormato12 = hora <= 12 ? hora : hora - 12;
+                const amPm = hora < 12 ? 'AM' : 'PM';
+                const valor = `${hora.toString().padStart(2, '0')}:00`;
+                const texto = `${horaFormato12}:00 ${amPm}`;
+
+                option.value = valor;
+                option.textContent = texto;
+                selectHora.appendChild(option);
+            }
+        }
+        function llenarHoraf() {
+            const selectHora = document.querySelector('#id_horafin');
+
+            // Limpiar opciones existentes
+            selectHora.innerHTML = '';
+
+            // Agregar opción vacía inicial
+            const optionVacia = document.createElement('option');
+            optionVacia.value = '';
+            optionVacia.textContent = '---------';
+            selectHora.appendChild(optionVacia);
+
+            // Generar horas desde 7:00 AM hasta 9:00 PM
+            for (let hora = 7; hora <= 21; hora++) {
+                const option = document.createElement('option');
+                const horaFormato12 = hora <= 12 ? hora : hora - 12;
+                const amPm = hora < 12 ? 'AM' : 'PM';
+                const valor = `${hora.toString().padStart(2, '0')}:00`;
+                const texto = `${horaFormato12}:00 ${amPm}`;
+
+                option.value = valor;
+                option.textContent = texto;
+                selectHora.appendChild(option);
+            }
+        }
+
+        // Ejecutar cuando se cargue la página
+        llenarHorai();
+        llenarHoraf();
+    </script>
 {% endblock %}
 {% block atras %}/gestion_servicios?action=competenciase&id={{ malla.id }}{% endblock %}
 {% block formdestination %}/gestion_servicios?action=detalle_proforma&id={{ proforma.id }}{% endblock %}
@@ -8,5 +64,32 @@
 {% block formextra %}
     <input type='hidden' name='action' value='agregar_detalle'/>
     <input type='hidden' name='id' value='{{ proforma.id }}'/>
+    <table class="table table-bordered">
+                <thead>
+                <tr>
+                    <th>Hora</th>
+                    {% for dia in dias %}
+                        <th style="width: 14%">{{ dia|date:"D d/m" }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for hora in horas %}
+                    <tr>
+                        <td>{{ hora|time:"H:i" }}</td>
+                        {% for dia in dias %}
+                            <td class="text-center">
+                                {% for df in detallesproforma %}
+                                    {% if df.fecha == dia and hora >= df.hora_inicio and hora < df.hora_fin %}
+                                        <strong class="text-danger">Reservado</strong><br>
+                                        {{ reserva.estudiante }}
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
 {% endblock %}
 {% block formback %}/gestion_servicios?action=competenciase&id={{ requerimiento.id }}{% endblock %}
