@@ -33,8 +33,41 @@
                 }
             }, "json");
         }
+
+        function aprobarProforma(id) {
+            if (!confirm("¿Confirmas que apruebas esta proforma?")) return;
+            $.post("/gestion_servicios", {
+                action: "approve",
+                id: id,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            }, function (data) {
+                if (data.result === 'ok') {
+                    location.reload();
+                } else {
+                    alert(data.mensaje || 'Ocurrió un error al aprobar la proforma');
+                }
+            }, "json");
+        }
+
+        function rechazarProforma(id) {
+            if (!confirm("¿Seguro que deseas rechazar esta proforma?")) return;
+            $.post("/gestion_servicios", {
+                action: "reject",
+                id: id,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            }, function (data) {
+                if (data.result === 'ok') {
+                    location.reload();
+                } else {
+                    alert(data.mensaje || 'Ocurrió un error al rechazar la proforma');
+                }
+            }, "json");
+        }
+
     </script>
 {% endblock %}
+
+{% block atras %}/gestion_servicios?action=detalle_requerimiento&id={{ proforma.requerimiento.id }}{% endblock %}
 
 {% block headcanvas %}
     <div class="row">
@@ -105,12 +138,25 @@
                     <i class="icon-edit"></i> Editar
                 </a>
 
+                {# Botones de aprobar / rechazar solo cuando está ENVIADA #}
                 {% if proforma.estado == 1 %}
                     <a href="javascript:;" class="btn btn-sm btn-outline-success"
-                       onclick="enviarProforma({{ proforma.id }});">
-                        <i class="icon-mail-forward"></i> Enviar al cliente
+                       onclick="aprobarProforma({{ proforma.id }});">
+                        <i class="icon-ok"></i> Aprobar proforma
+                    </a>
+                    <a href="javascript:;" class="btn btn-sm btn-outline-danger"
+                       onclick="rechazarProforma({{ proforma.id }});">
+                        <i class="icon-remove"></i> Rechazar proforma
                     </a>
                 {% endif %}
+
+
+                {#                {% if proforma.estado == 1 %}#}
+                {#                    <a href="javascript:;" class="btn btn-sm btn-outline-success"#}
+                {#                       onclick="enviarProforma({{ proforma.id }});">#}
+                {#                        <i class="icon-mail-forward"></i> Enviar al cliente#}
+                {#                    </a>#}
+                {#                {% endif %}#}
             </div>
 
             {% if proforma.solicitud_trabajo %}

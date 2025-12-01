@@ -98,9 +98,12 @@ def calendarboxdetailssubir(var, dia):
 def times(number):
     return range(number)
 
+from collections.abc import Mapping
 @register.filter
 def get_item(dictionary, key):
-    return dictionary.get(key)
+    if isinstance(dictionary, Mapping):
+        return dictionary.get(key)
+    return None
 
 @register.filter
 def index(sequence, position):

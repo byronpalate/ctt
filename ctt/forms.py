@@ -37,7 +37,10 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor
     ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, \
     MateriaCursoEscuelaComplementaria, \
     Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, \
-    TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente,  Factura, EspacioFisico, ServicioCatalogo, TipoServicio
+    TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente, Factura, EspacioFisico, ServicioCatalogo, TipoServicio, \
+    Proforma
+
+
 # Servicio,
 
 
@@ -2935,8 +2938,8 @@ class TipoCostoCursoForm(BaseForm):
 
 class ProformaForm(BaseForm):
     observaciones = forms.CharField(label=u"Observaciones", required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}))
-    descuento = forms.FloatField(label=u"Descuento", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-moneda', 'decimales': '2'}))
-    iva = ModelChoiceField(label=u'IVA', queryset=IvaAplicado.objects.all(), required=False, widget=forms.Select())
+    # descuento = forms.FloatField(label=u"Descuento", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-moneda', 'decimales': '2'}))
+    # iva = ModelChoiceField(label=u'IVA', queryset=IvaAplicado.objects.all(), required=False, widget=forms.Select())
 
     def editar(self, proforma):
         if proforma and proforma.estado != Proforma.Estado.BORRADOR:
@@ -3016,6 +3019,7 @@ class GenerarTrabajoForm(BaseForm):
 
 class RequerimientoServicioForm(BaseForm):
     tiposervicio = forms.ModelChoiceField(label=u"Tipo de Requerimiento", queryset=TipoServicio.objects.all(), widget=forms.Select())
+    espacio_fisico = forms.ModelChoiceField(label=u"Laboratorio / área", queryset=EspacioFisico.objects.all(), widget=forms.Select())
     cliente = forms.ModelChoiceField(label=u"Cliente", queryset=Cliente.objects.all(), widget=forms.Select())
     descripcion = forms.CharField(label=u"Descripción del requerimiento",widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'}))
     archivo = forms.FileField(label=u"Archivo adjunto (opcional)",required=False,widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))
@@ -3037,6 +3041,42 @@ class ProformaDetalleForm(BaseForm):
     def add(self, espaciofisico):
         self.fields['servicio'].queryset = ServicioCatalogo.objects.filter(espacio_fisico=espaciofisico)
 
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+class RegistroExternoForm(BaseForm):
+    cedula = forms.CharField(label=u"Cédula", max_length=10, required=False, widget=forms.TextInput())
+    pasaporte = forms.CharField(label=u"Pasaporte", max_length=15, initial='', required=False, widget=forms.TextInput())
+    nombre1 = forms.CharField(label=u"1er Nombre", max_length=50, widget=forms.TextInput())
+    nombre2 = forms.CharField(label=u"2do Nombre", max_length=50, required=False, widget=forms.TextInput())
+    apellido1 = forms.CharField(label=u"1er Apellido", max_length=50, widget=forms.TextInput())
+    apellido2 = forms.CharField(label=u"2do Apellido", max_length=50, required=False, widget=forms.TextInput())
+    sexo = forms.ModelChoiceField(label=u"Género", queryset=Sexo.objects.all(), widget=forms.Select())
+    direccion = forms.CharField(label=u"Dirección", max_length=100, required=False, widget=forms.TextInput())
+    telefono = forms.CharField(label=u"Teléfono Movil", max_length=10, required=False, widget=forms.TextInput())
+    email = forms.CharField(label=u"Correo Electrónico", max_length=240, required=False, widget=forms.TextInput())
+    empresa = forms.BooleanField(label=u"Pertenece a Empresa?", required=False, initial=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
+    ruc = forms.CharField(label=u"Ruc", max_length=13, required=False, widget=forms.TextInput())
+    nombreempresa = forms.CharField(label=u"Nombre Empresa", max_length=50,required=False, widget=forms.TextInput())
+    direccionempresa = forms.CharField(label=u"Dirección Empresa", max_length=100, required=False, widget=forms.TextInput())
+    telefonoempresa = forms.CharField(label=u"Teléfono Empresa", max_length=10, required=False, widget=forms.TextInput())
+    personacontacto = forms.CharField(label=u"Persona Contacto", max_length=50,required=False, widget=forms.TextInput())
+    telefonocontacto = forms.CharField(label=u"Teléfono Movil Contacto", max_length=10, required=False, widget=forms.TextInput())
+    emailcontacto = forms.CharField(label=u"Correo Electrónico Contacto", max_length=240, required=False, widget=forms.TextInput())
+
+    section_titles = {
+        'cedula': 'Información del Cliente',
+        'ruc': 'Datos de la empresa',
+        'personacontacto': 'Datos de la Contacto',
+    }
+
+    def extra_paramaters(self):
+        self.fields['formwidth'].initial = 'md'
+
+class SolicitarRequerimientoServicioForm(BaseForm):
+    descripcion = forms.CharField(label=u"Descripción del requerimiento", widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'})
+    )
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
         self.fields['formtype'].initial = 'vertical'

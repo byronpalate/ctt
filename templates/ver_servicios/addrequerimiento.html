@@ -1,0 +1,12 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+{% endblock %}
+{% block atras %}/ver_servicios{% endblock %}
+{% block formdestination %}/ver_servicios?action{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/ver_servicios{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addrequerimiento'/>
+    <input type='hidden' name='id' value={{ espacio.id }}/>
+{% endblock %}
+{% block formback %}/{% endblock %}

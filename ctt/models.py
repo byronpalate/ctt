@@ -9964,8 +9964,16 @@ class IvaAplicado(ModeloBase):
 class Cliente(ModeloBase):
     persona = models.ForeignKey(Persona, verbose_name=u"Persona", on_delete=models.CASCADE)
     empresa = models.ForeignKey(EmpresaEmpleadora, verbose_name=u"Empresa",blank=True, null=True, on_delete=models.CASCADE)
+    personacontacto = models.CharField(max_length=300, blank=True, null=True, verbose_name=u'personacontacto')
+    telefonocontacto = models.CharField(max_length=300, blank=True, null=True, verbose_name=u'telefonocontacto')
+    emailcontacto = models.CharField(max_length=300, blank=True, null=True, verbose_name=u'emailcontacto')
     activo = models.BooleanField(default=True, verbose_name=u"Activo")
 
+    def correo_de_envio(self):
+        lista = []
+        lista.append(self.emailcontacto)
+
+        return lista
     def chequea_mora(self):
         for rubro in self.rubro_set.filter(cancelado=False):
             rubro.cheque_mora()
@@ -17841,11 +17849,11 @@ class RequerimientoServicio(ModeloBase):
         PROFORMA_ENVIADA = 3, "Proforma enviada al cliente"
         CERRADO          = 4, "Cerrado"
 
-    cliente = models.ForeignKey(Cliente, null=True, blank=True, on_delete=models.SET_NULL, related_name="requerimientos")
+    cliente = models.ForeignKey(Cliente, null=True, blank=True, on_delete=models.SET_NULL, related_name="cliente")
     nombre_contacto = models.CharField(max_length=255)
     email_contacto = models.EmailField()
     telefono_contacto = models.CharField(max_length=50, blank=True)
-    tiposervicio = models.ForeignKey(TipoServicio, null=True, blank=True, on_delete=models.SET_NULL, related_name="requerimientos")
+    espacio_fisico = models.ForeignKey(EspacioFisico, null=True, blank=True, on_delete=models.SET_NULL, related_name="espaciofisico")
     descripcion = models.TextField()
     archivo = models.FileField(upload_to="requerimientos/", blank=True)
 

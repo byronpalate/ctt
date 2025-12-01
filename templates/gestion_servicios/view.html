@@ -79,9 +79,11 @@
                 <th style="width: 80px;"># Req</th>
                 <th style="width: 160px;">Fecha recepción</th>
                 <th>Contacto</th>
+                <th>Espacio Fisico</th>
                 <th>Tipo servicio</th>
                 <th style="width: 140px; text-align: center;">Estado</th>
                 <th style="width: 130px; text-align: center;">Proformas</th>
+                <th style="width: 120px;">Eliminar</th>
                 <th style="width: 120px;"></th>
             </tr>
             </thead>
@@ -97,8 +99,15 @@
                         </small>
                     </td>
                     <td>
-                        {% if req.tiposervicio %}
-                            {{ req.tiposervicio.nombre }}
+                        {% if req.espacio_fisico %}
+                            {{ req.espacio_fisico.nombre }}
+                        {% else %}
+                            <span class="text-muted">No especificado</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if req.espacio_fisico.tipo_servicio %}
+                            {{ req.espacio_fisico.tipo_servicio.nombre }}
                         {% else %}
                             <span class="text-muted">No especificado</span>
                         {% endif %}
@@ -121,6 +130,9 @@
                             {{ pros|length }} proforma{{ pros|length|pluralize }}
                         {% endwith %}
                     </td>
+                <td>
+                    <a href="javascript:;" nhref='/gestion_servicios?action=delrequerimiento&id={{ req.id }}' class='btn btn-ssm btn-danger btn-form eliminacionmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                </td>
 
                 <td>
     <div class="btn-group dropdown">
@@ -137,7 +149,6 @@
             </li>
 
             {% with req.proformas.all as pros %}
-
                     <li class="smaller">
                         <a href="/gestion_servicios?action=detalle_requerimiento&id={{ req.id }}"
                            class="dropdown-item">

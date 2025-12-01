@@ -9,6 +9,16 @@
         {% block formprefix %}{% endblock %}
         {% if form.fields.formtype.initial  == 'horizontal' %}
             {% for field in form %}
+                {% with form.section_titles|get_item:field.name as section_title %}
+                    {% if section_title %}
+                        <div class="control-group"
+                             id="fieldset_titulo_{{ field.name }}"
+                             style="display:none;">
+                            <h4 class="mt-3 mb-2">{{ section_title }}</h4>
+                            <hr>
+                        </div>
+                    {% endif %}
+                {% endwith %}
                 {% if not field.field.widget.is_hidden %}
                     <div class="mb-1 row" id="fieldset_{{ field.name }}">
                         <label for="id_{{ field.name }}" style="font-size: 13px;" class="col-sm-3 col-form-label">{{ field.label }}</label>

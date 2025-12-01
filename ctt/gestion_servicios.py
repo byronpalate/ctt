@@ -38,7 +38,7 @@ def view(request):
                 if form.is_valid():
                     cd = form.cleaned_data
                     req = RequerimientoServicio(
-                        tiposervicio=cd['tiposervicio'],
+                        espacio_fisico=cd['espacio_fisico'],
                         descripcion=remover_tildes(cd.get('descripcion') or ""),
                         archivo=cd.get('archivo'),
                         cliente=cd['cliente'],
@@ -371,6 +371,84 @@ def view(request):
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
+        if action == 'delrequerimiento':
+            try:
+                req = RequerimientoServicio.objects.get(pk=request.POST['id'])
+                log(u'Elimino curso: %s' % req, request, "del")
+                req.delete()
+                return ok_json()
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=2, ex=ex)
+
+        # ========= APPROVE (cliente aprueba) =========
+        if action == 'approve':
+            try:
+                proforma = get_object_or_404(Proforma, pk=request.POST.get('id'))
+
+                estado_anterior = proforma.estado
+                proforma.estado = Proforma.Estado.APROBADA
+                proforma.fecha_respuesta = timezone.now()
+                proforma.save()
+
+                # si hay requerimiento, lo cierras o lo pasas a "CERRADO"
+                if proforma.requerimiento:
+                    req = proforma.requerimiento
+                    # asumiendo que tienes un estado CERRADO = 4
+                    req.estado = RequerimientoServicio.Estado.CERRADO
+                    req.save()
+
+                proforma.registrar_evento(
+                    tipo=ProformaHistorial.TipoEvento.EDICION,
+                    mensaje=u"Proforma aprobada por el administrador.",
+                    actor_persona=None,
+                    actor_externo=u"Cliente",
+                    estado_anterior=estado_anterior,
+                    estado_nuevo=proforma.estado,
+                )
+
+                log(u'Administrador aprobó proforma: %s' % proforma, request, "edit")
+                return ok_json()
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
+
+        # ========= REJECT (cliente rechaza) =========
+        if action == 'reject':
+            try:
+                proforma = get_object_or_404(Proforma, pk=request.POST.get('id'))
+
+                estado_anterior = proforma.estado
+                proforma.estado = Proforma.Estado.RECHAZADA
+                proforma.fecha_respuesta = timezone.now()
+                proforma.save()
+
+                if proforma.requerimiento:
+                    req = proforma.requerimiento
+                    # puedes devolverlo a EN_PROFORMA o dejarlo como PROFORMA_ENVIADA_RECHAZADA
+                    # depende de tu modelo de estados
+                    # ejemplo: lo dejamos como CERRADO también o un estado de "Rechazada"
+                    req.estado = RequerimientoServicio.Estado.CERRADO
+                    req.save()
+
+                proforma.registrar_evento(
+                    tipo=ProformaHistorial.TipoEvento.EDICION,
+                    mensaje=u"Proforma rechazada por el administrador.",
+                    actor_persona=None,
+                    actor_externo=u"Cliente",
+                    estado_anterior=estado_anterior,
+                    estado_nuevo=proforma.estado,
+                )
+
+                log(u'Administrador rechazó proforma: %s' % proforma, request, "edit")
+                return ok_json()
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
+
+
+        return bad_json(error=0)
+
         return bad_json(error=0)  # acción no reconocida
 
     # ====================== GET ======================
@@ -386,9 +464,9 @@ def view(request):
                 form = ProformaDetalleForm()
 
                 # Filtrar lista de servicios según el tipo del requerimiento (si aplica)
-                if proforma.requerimiento and proforma.requerimiento.tiposervicio_id:
+                if proforma.requerimiento and proforma.requerimiento.espacio_fisico.tipo_servicio_id:
                     form.fields['servicio'].queryset = ServicioCatalogo.objects.filter(
-                        espacio_fisico__tipo_servicio_id=proforma.requerimiento.tiposervicio.id
+                        espacio_fisico__tipo_servicio_id=proforma.requerimiento.espacio_fisico.tipo_servicio.id
                     )
 
                 data['form'] = form
@@ -444,12 +522,7 @@ def view(request):
                 data['proforma'] = proforma
                 # usamos el related_name='detalles'
                 data['detalles'] = proforma.detalles.select_related('servicio').all()
-                data['detalles'] = proforma.detalles.select_related('servicio').all()
-                if 'espacio' in request.GET:
-                    espacio = EspacioFisico.objects.get(pk=request.GET['espacio'])
-                else:
-                    espacio = EspacioFisico.objects.get(pk=3)
-
+                espacio = proforma.requerimiento.espacio_fisico
                 hoy = timezone.now().date()
                 dias = [hoy + timedelta(days=i) for i in range(7)]
                 horas = [time(h, 0) for h in range(7, 18)]
@@ -502,6 +575,14 @@ def view(request):
             except Exception as ex:
                 pass
 
+        if action == 'delrequerimiento':
+            try:
+                data['title'] = u'Borrar requerimiento de servicio'
+                data['req'] = curso = RequerimientoServicio.objects.get(pk=request.GET['id'])
+                return render(request, "gestion_servicios/delcurso.html", data)
+            except Exception as ex:
+                pass
+
         return url_back(request)
 
     # ====== LISTADO PRINCIPAL: REQUERIMIENTOS ======
@@ -511,7 +592,7 @@ def view(request):
         estado = request.GET.get('e')   # estado del requerimiento
         tipo = request.GET.get('t')     # tipo_servicio_id opcional
 
-        qs = RequerimientoServicio.objects.select_related('cliente', 'tiposervicio').all()
+        qs = RequerimientoServicio.objects.select_related('cliente', 'espacio_fisico').all()
 
         if search:
             qs = qs.filter(
@@ -524,7 +605,7 @@ def view(request):
             qs = qs.filter(estado=int(estado))
 
         if tipo and tipo.isdigit():
-            qs = qs.filter(tiposervicio_id=int(tipo))
+            qs = qs.filter(espacio_fisico_id=int(tipo))
 
         qs = qs.order_by('-fecha_recepcion', '-id')
 

@@ -64,6 +64,16 @@ def view(request):
                 except:
                     return bad_json(error=3)
 
+            if action == 'datosempresa':
+                try:
+                    login_required_inside(request)
+                    empresa = EmpresaEmpleadora.objects.get(ruc=request.POST['ruc'])
+                    return ok_json({'nombre': empresa.nombre,
+                                    'direccion':empresa.direccion,
+                                    'celular':empresa.celular})
+                except:
+                    return bad_json(error=3)
+
             if action == 'nivelestitulacion':
                 try:
                     login_required_inside(request)
