@@ -52,9 +52,7 @@
             {% if perms.ctt.puede_importar_inscripciones and not PERSONA_ADMINS_ACADEMICO_ID and not admisiones %}
                 <a href="javascript:;" nhref="/inscripciones?action=importar" class='btn btn-sm btn-success formmodal'><i class="icon-link"></i> Importar</a>
             {% endif %}
-            {% if perms.ctt.puede_modificar_parametros_de_la_institucion and not PERSONA_ADMINS_ACADEMICO_ID %}
-                <a href="javascript:;" nhref="/inscripciones?action=importarcanvas" class='btn btn-sm btn-info formmodal'><i class="icon-check"></i> ID´s CANVAS</a>
-            {% endif %}
+
           
         </div>
         <div class='col-12 col-md-3 mb-2'>

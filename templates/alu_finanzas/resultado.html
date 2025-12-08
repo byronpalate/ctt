@@ -1,0 +1,43 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+        });
+    </script>
+{% endblock %}
+{% block atras %}/alu_finanzas{% endblock %}
+{% block headcanvas %}
+<div class='row'>
+    <div class='col-2'>
+    </div>
+    <div class='col-8'>
+        {% if autorizacion.aprobada %}
+        <div class="alert alert-success">
+            <h4 class="alert-heading">Transacción procesada exitosamente</h4><br>
+            {% autoescape on %}
+            <h5>El pago de los valores fue procesado sin errores, podrá consultar su comprobante en la sesión de facturas, en caso de que haya pagado valores pre facturados podrá consultar su comprobante en la sección de recibos.</h5>
+            {% endautoescape %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Información:</h4><br>
+            <h4>
+                Por razones de seguridad, queremos informarle que solo tendrá tres (3) intentos antes de que su tarjeta quede bloqueada por 30 dias.
+                <br>
+                Le recomendamos que lea detenidamente el mensaje enviado por su entidad financiera (mensaje siguiente), <br>verifique sus credenciales y asegúrese de ingresarlas correctamente en su próximo intento para evitar el bloqueo de su tarjeta con nuestra institución.
+            </h4>
+        </div>
+        <div class="alert alert-danger">
+            <h3 class="alert-heading">Error al procesar la transacción</h3><br>
+            {% autoescape on %}
+            <h3>Mensaje emitido por su ENTIDAD FINANCIERA:</h3><br>
+            <h3>{{ autorizacion.mensaje }}</h3>
+            {% endautoescape %}
+        </div>
+        {% endif %}
+        <div style="place-items: center;margin: auto">
+            <a href="/alu_finanzas" class="btn btn-warning btn-large">VER FINANZAS</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

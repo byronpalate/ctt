@@ -1,0 +1,95 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+
+            verificar=function(){
+                var x = $("#seleccionados").val();
+                if (x.length > 0){
+                    $("#formbutton").show();
+                } else {
+                    $("#formbutton").hide();
+                }
+             };
+
+            actualizar_lista = function(){
+                var selected = [];
+                $('.selector').each(function() {
+                    if  ($(this).is(":checked")) {
+                        selected.push($(this).attr('id'));
+                    }
+                });
+                $("#seleccionados").val(selected);
+
+                verificar();
+            };
+
+            todos = function(){
+                if ($('#todos').is(":checked")){
+                    $(".selector").prop('checked', true);
+                } else{
+                    $(".selector").removeAttr('checked');
+                }
+                actualizar_lista();
+            };
+
+            rubros = function(){
+                var idorigen = $("#id_inscripcionorigen").val();
+                 $("#contenido").empty();
+                if (idorigen == 0){
+                    actualizar_lista();
+                } else {
+                    var iddestino = $("#id_inscripciondestino").val();
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/finanzas",
+                        data: {'action': 'inscripcionrubros', 'idorigen': idorigen, 'iddestino': iddestino, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === "ok") {
+                                $("#contenido").html(data.segmento);
+                                $(".selector").click(function () {
+                                    actualizar_lista();
+                                });
+                                $("#todos").click(function () {
+                                    todos();
+                                });
+                                actualizar_lista();
+                            } else {
+                                $("#id_inscripcionorigen, #id_inscripciondestino").val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            $("#id_inscripcionorigen. #id_inscripciondestino").val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            };
+
+            $("#id_inscripcionorigen").change(function() {
+                rubros();
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formextra %}
+    <input type="hidden" name="action" value="moverpagos"/>
+    <input type="hidden" name="idorigen" value="{{ inscripcionorigen.id }}"/>
+    <input type="hidden" name="iddestino" value="{{ inscripciondestino.id }}"/>
+    <input type='hidden' name='seleccionados' id="seleccionados" value='0'/>
+{% endblock %}
+{% block formsuffix %}
+    <div style="float: left; width: 100%" id="contenido"></div>
+{% endblock %}
+{% block formback %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block buttonname %}Transferir{% endblock %}

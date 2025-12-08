@@ -1,0 +1,44 @@
+<table class="table table-bordered">
+    <thead class="table-light">
+    <tr>
+        <th style="text-align: center; width: 30px"><input type="checkbox" id="todos"></th>
+        <th>Nombre</th>
+        <th style="width: 120px">Tipo</th>
+        <th style="width: 60px">Periodo</th>
+        <th style="text-align: center; width: 75px">Fecha</th>
+        <th style="text-align: center; width: 70px">Valor</th>
+        <th style="text-align: center; width: 50px">IVA</th>
+        <th style="text-align: center; width: 70px">Total</th>
+        <th style="text-align: center; width: 70px">Abono</th>
+        <th style="text-align: center; width: 70px">Saldo</th>
+        <th style="text-align: center; width: 60px">Cance.</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for rubro in rubrosinscripcion %}
+        <tr>
+            <td style="text-align: center"><input type="checkbox" id="{{ rubro.id }}" class="selector"></td>
+            <td class="smaller">{{ rubro.nombre }}</td>
+            <td class="smaller">{{ rubro.tipo }}</td>
+            <td class="smaller" style="text-align: center">{{ rubro.periodo.nombre }}</td>
+            <td class="smaller">{{ rubro.fecha|date:"Y-m-d" }}</td>
+            <td class="smaller" style="text-align: right">$ {{ rubro.valor|floatformat:2 }}</td>
+            <td class="smaller" style="text-align: right">$ {{ rubro.valoriva|floatformat:2 }}</td>
+            <td class="smaller" style="text-align: right">$ {{ rubro.valortotal|floatformat:2 }}</td>
+            <td class="smaller" style="text-align: right">$ {{ rubro.total_pagado|floatformat:2 }}</td>
+            <td class="smaller" style="text-align: right">$ {{ rubro.saldo|floatformat:2 }}</td>
+            <td class="smaller" style="text-align: center">
+                {% if rubro.cancelado %}
+                    <span class="badge text-bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelado">Si</span>
+                {% else %}
+                    <span class="badge text-bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelado">No</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="20">NO EXISTEN DATOS</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

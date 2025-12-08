@@ -1,0 +1,97 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+
+{% block heading %}
+<style>
+    .success-fullscreen {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at top left, #eef2ff 0, #f9fafb 45%, #e0f2fe 100%);
+    }
+
+    .success-card {
+        max-width: 520px;
+        width: 100%;
+        border-radius: 18px;
+        border: none;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+    }
+
+    .success-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #dcfce7;
+        margin-bottom: 1rem;
+    }
+
+    .success-icon i {
+        font-size: 38px;
+        color: #16a34a;
+    }
+
+    .success-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: .3rem;
+        color: #111827;
+    }
+
+    .success-subtitle {
+        font-size: 1rem;
+        color: #4b5563;
+        margin-bottom: .9rem;
+    }
+
+    .success-text {
+        font-size: .95rem;
+        color: #4b5563;
+    }
+
+    .btn-success-full {
+        width: 100%;
+        border-radius: 999px;
+        padding: .7rem 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block headcanvas %}
+<div class="success-fullscreen">
+    <div class="card success-card">
+        <div class="card-body text-center p-3 p-md-5">
+
+            <div class="success-icon">
+                <!-- Si usas FontAwesome -->
+                <i class="fa fa-check"></i>
+            </div>
+
+            <h1 class="success-title">¡Felicitaciones!</h1>
+            <p class="success-subtitle">Su registro fue exitoso.</p>
+
+            <p class="success-text mb-2">
+                Su usuario y contraseña han sido enviados al correo electrónico que registró.
+            </p>
+            <p class="success-text mb-4">
+                Por favor revise su bandeja de entrada (y la carpeta de spam). Luego ingrese al sistema para continuar.
+            </p>
+
+            {# Cambia "login" por el nombre de tu URL o por el link directo #}
+            <a href="https://sga.uti.edu.ec/login?next=/" class="btn btn-success btn-success-full">
+                Ingresar al sistema
+            </a>
+
+            <p class="mt-3 mb-0 text-muted" style="font-size: .8rem;">
+                ¿No recibió el correo? Verifique también la carpeta de correo no deseado.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

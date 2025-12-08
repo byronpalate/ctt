@@ -1,0 +1,34 @@
+<thead class="table-light">
+<tr>
+    <th>Concepto</th>
+    <th style="width: 80px; text-align: center;">Valor</th>
+    <th style="width: 80px; text-align: center;">Fecha</th>
+    <th style="width: 40px; text-align: center;">IVA</th>
+    <th style="width: 80px;"></th>
+</tr>
+</thead>
+<tbody>
+{% for tipootro in tiposotros %}
+    <tr>
+        <td>
+            <input type="text" class="form-control form-control-sm" style="margin: 0; text-transform: uppercase;" id='ta{{ tipootro.id }}' placeholder="{{ tipootro.nombre }}">
+        </td>
+        <td style="vertical-align: middle;text-align: center;">
+            <input type='text' id='vr{{ tipootro.id }}' style="margin: 0" class="imp-moneda otrosrubrosinput form-control form-control-sm" value='{{ tipootro.precio_sugerido|floatformat:2 }}'/>
+        </td>
+        <td style="vertical-align: middle;text-align: center;">
+            <input class="fechainput selectorfecha form-control form-control-sm" id='fe{{ tipootro.id }}' style="margin: 0" type="text" value='{{ hoy|date:'d-m-Y' }}'/>
+        </td>
+        <td style="vertical-align: middle;text-align: center;">
+            <select id="iva{{ tipootro.id }}" style="width: 100px" class="form-select form-select-sm">
+                {% for ivaaplicado in tiposivaaplicado %}
+                    <option value="{{ ivaaplicado.id }}">{{ ivaaplicado }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td style="vertical-align: middle;text-align: center;">
+            <a href='javascript:;' class="btn btn-success btn-ssm btn-cobrar" style="margin: 0" tid='{{ tipootro.id }}'><i class="icon-plus"></i> Adicionar</a>
+        </td>
+    </tr>
+{% endfor %}
+</tbody>

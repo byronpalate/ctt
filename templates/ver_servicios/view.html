@@ -1,0 +1,357 @@
+{% extends "basebs.html" %}
+{% load static %}
+
+{% block extracss %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.lab-servicios-toggle').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const wrapper = btn.closest('.lab-card-body').querySelector('.lab-servicios-wrapper');
+                    const fade = wrapper.querySelector('.lab-servicios-fade');
+                    const state = btn.getAttribute('data-state') || 'collapsed';
+
+                    if (state === 'collapsed') {
+                        wrapper.classList.add('expanded');
+                        if (fade) fade.style.display = 'none';
+                        btn.textContent = 'Ver menos';
+                        btn.setAttribute('data-state', 'expanded');
+                    } else {
+                        wrapper.classList.remove('expanded');
+                        if (fade) fade.style.display = '';
+                        btn.textContent = 'Ver más servicios';
+                        btn.setAttribute('data-state', 'collapsed');
+                    }
+                });
+            });
+        });
+    </script>
+
+    <style>
+        body {
+            background-color: #f3f4f6;
+        }
+
+        .lab-page-wrapper {
+            padding: 1.5rem 0 2.5rem;
+        }
+
+        .lab-page-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: .25rem;
+        }
+
+        .lab-page-subtitle {
+            font-size: .95rem;
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+
+        .lab-card {
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.14);
+            border: none;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .lab-card-img-wrapper {
+            height: 180px;
+            overflow: hidden;
+            background: #e5e7eb;
+        }
+
+        .lab-card-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .lab-card-body {
+            padding: 1rem 1.1rem 0.8rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lab-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: .25rem;
+        }
+
+        .lab-card-tag {
+            display: inline-block;
+            font-size: .75rem;
+            padding: 0.12rem .5rem;
+            border-radius: 999px;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            margin-bottom: .35rem;
+        }
+
+        .lab-card-code {
+            font-size: .8rem;
+            color: #6b7280;
+            margin-bottom: .4rem;
+        }
+
+        .lab-card-desc {
+            font-size: .85rem;
+            color: #4b5563;
+            margin-bottom: .7rem;
+        }
+
+        .lab-card-meta {
+            font-size: .8rem;
+            color: #6b7280;
+            margin-bottom: .4rem;
+        }
+
+        .lab-servicios-title {
+            font-size: .82rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #4b5563;
+            margin-bottom: .25rem;
+        }
+
+        .lab-servicios-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .8rem;
+            margin-bottom: .2rem;
+        }
+
+        .lab-servicios-table th,
+        .lab-servicios-table td {
+            border-bottom: 1px solid #e5e7eb;
+            padding: .25rem .3rem;
+            vertical-align: top;
+        }
+
+        .lab-servicios-table th {
+            font-weight: 600;
+            color: #4b5563;
+            background-color: #f9fafb;
+        }
+
+        .lab-servicios-empty {
+            font-size: .8rem;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .lab-card-footer {
+            padding: 0 .9rem 0.9rem;
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .lab-btn-solicitar {
+            border-radius: 999px;
+            font-size: .85rem;
+            font-weight: 600;
+            padding: .5rem 1.4rem;
+        }
+
+        .lab-badge-precio {
+            font-size: .8rem;
+            color: #16a34a;
+            font-weight: 600;
+        }
+
+        @media (max-width: 767px) {
+            .lab-page-wrapper {
+                padding: 1rem 0 1.8rem;
+            }
+        }
+
+        .lab-servicios-wrapper {
+            position: relative;
+            max-height: 200px; /* altura visible por defecto */
+            overflow: hidden;
+            transition: max-height .25s ease;
+            margin-bottom: .25rem;
+        }
+
+        .lab-servicios-wrapper.expanded {
+            max-height: 400px; /* o none si quieres sin límite */
+            overflow: auto;
+        }
+
+        .lab-servicios-fade {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 35px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff);
+            pointer-events: none;
+        }
+
+        .lab-servicios-toggle {
+            border: none;
+            background: none;
+            padding: 0;
+            font-size: .8rem;
+            color: #2563eb;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+{% endblock %}
+
+{% block canvas %}
+    <div class="container lab-page-wrapper">
+        <div class="row mb-3">
+            <div class="col-12">
+                <h1 class="lab-page-title">Laboratorios y espacios físicos</h1>
+                <p class="lab-page-subtitle">
+                    Revisa la información de cada laboratorio y solicita el espacio que necesites para tus prácticas,
+                    ensayos o servicios técnicos.
+                </p>
+            </div>
+        </div>
+
+        {% if laboratorios %}
+            <div class="row">
+                {% for lab in laboratorios %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="lab-card">
+
+                            <!-- Imagen del laboratorio -->
+                            <div class="lab-card-img-wrapper">
+                                {# Si luego agregas un ImageField en EspacioFisico.imagen, usa esto: #}
+                                {% if lab.imagen %}
+                                    <img src="{{ lab.imagen.url }}" alt="Imagen {{ lab.nombre }}">
+                                {% else %}
+                                    <img src="{% static 'images/ctt_lab.webp' %}" alt="Laboratorio">
+                                {% endif %}
+                            </div>
+
+                            <div class="lab-card-body">
+                                {% if lab.tipo_servicio %}
+                                    <span class="lab-card-tag">
+                                    {{ lab.tipo_servicio.nombre }}
+                                </span>
+                                {% endif %}
+
+                                <h2 class="lab-card-title">
+                                    {{ lab.nombre }}
+                                </h2>
+
+                                <div class="lab-card-code">
+                                    <strong>Código:</strong> {{ lab.codigo }}
+                                </div>
+
+                                {% if lab.descripcion %}
+                                    <p class="lab-card-desc">
+                                        {{ lab.descripcion }}
+                                    </p>
+                                {% else %}
+                                    <p class="lab-card-desc" style="font-style: italic; color:#9ca3af;">
+                                        Sin descripción registrada.
+                                    </p>
+                                {% endif %}
+
+                                <div class="lab-card-meta">
+                                    <strong>ID interno:</strong> {{ lab.id }}
+                                </div>
+
+                                <!-- Servicios de catálogo -->
+                                <div class="mt-1">
+                                    <div class="lab-servicios-title">Servicios disponibles</div>
+                                    {% if lab.servicios.all %}
+                                        {% if lab.servicios.all.count > 0 %}
+                                            <div class="lab-servicios-wrapper">
+                                                <table class="lab-servicios-table">
+                                                    <thead>
+                                                    <tr>
+                                                        <th style="width: 45%;">Servicio</th>
+                                                        <th style="width: 20%;">Tipo cobro</th>
+                                                        <th style="width: 20%;">Precio base</th>
+                                                        <th style="width: 15%;">Obs.</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    {% for serv in lab.servicios.all %}
+                                                        <tr>
+                                                            <td>{{ serv.nombre }}</td>
+                                                            <td>{{ serv.get_tipo_cobro_display }}</td>
+                                                            <td>${{ serv.precio_base }}</td>
+                                                            <td>
+                                                                {% if serv.observacion %}
+                                                                    <span title="{{ serv.observacion }}">Ver</span>
+                                                                {% else %}
+                                                                    -
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                                <div class="lab-servicios-fade"></div>
+                                            </div>
+
+                                            <button type="button"
+                                                    class="lab-servicios-toggle"
+                                                    data-state="collapsed">
+                                                Ver más servicios
+                                            </button>
+                                        {% else %}
+                                            <div class="lab-servicios-empty">
+                                                Este laboratorio aún no tiene servicios configurados.
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="lab-servicios-empty">
+                                            Este laboratorio aún no tiene servicios configurados.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Footer con botón de solicitud -->
+                            <div class="lab-card-footer">
+                                <div class="lab-badge-precio">
+                                    {% with first_serv=lab.servicios.all.0 %}
+                                        {% if first_serv %}
+                                            Desde $ {{ first_serv.precio_base }}
+                                        {% else %}
+                                            Sin precios definidos
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+
+
+                                {# Cambia 'solicitar_laboratorio' por el nombre real de tu URL #}
+                                <a href=""
+                                   class="btn btn-success lab-btn-solicitar">
+                                    Solicitar laboratorio
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                No se han registrado laboratorios o espacios físicos en el sistema.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

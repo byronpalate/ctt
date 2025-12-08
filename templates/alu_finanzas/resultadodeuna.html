@@ -1,0 +1,34 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+        });
+    </script>
+{% endblock %}
+{% block atras %}/alu_finanzas{% endblock %}
+{% block headcanvas %}
+    <div class="row">
+        <div class="col-2">
+        </div>
+        <div class="col-8">
+            {% if autorizacion %}
+                <div class="alert alert-success">
+                    <h4 class="alert-heading">Transacción procesada exitosamente</h4><br>
+                    {% autoescape on %}
+                        <h5>El pago de los valores fue procesado sin errores, podrá consultar su comprobante en la sesión de facturas, en caso de que haya pagado valores pre facturados podrá consultar su comprobante en la sección de recibos.</h5>
+                    {% endautoescape %}
+                </div>
+            {% else %}
+                <div class="alert alert-danger">
+                    <h4 class="alert-heading">Error al procesar la transacción</h4><br>
+                    {% autoescape on %}
+                        <h5>{{ autorizacion.motivo }}</h5>
+                    {% endautoescape %}
+                </div>
+            {% endif %}
+            <div align="center">
+                <a href="/alu_finanzas" class="btn btn-warning btn-large">VER FINANZAS</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function () {
+
+            $("#id_nacimiento").addClass("validate[required]");
+            $("#fieldset_ruc,#fieldset_nombreempresa,#fieldset_emailempresa,#fieldset_direccionempresa,#fieldset_telefonoempresa").hide()
+
+            empresa = function () {
+                if ($("#id_empresa").is(':checked')) {
+                    $("#fieldset_ruc,#fieldset_nombreempresa,#fieldset_emailempresa,#fieldset_direccionempresa,#fieldset_telefonoempresa").show()
+                } else {
+                    $("#fieldset_ruc,#fieldset_nombreempresa,#fieldset_emailempresa,#fieldset_direccionempresa,#fieldset_telefonoempresa").hide()
+                }
+            };
+
+            empresa();
+
+            $("#id_empresa").click(function () {
+                empresa();
+            });
+
+            validarcedula = function () {
+                var valor = $("#id_cedula").val().trim();
+                $("#id_cedula").val(valor);
+                if (valor.length > 0) {
+                    $("#id_cedula").addClass("validate[required,cedula]");
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'datosexternospersona', 'cedula': valor},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                datosconsulta = data;
+                                $("#id_nombre1").val(data['nombre1']);
+                                $("#id_nombre2").val(data['nombre2']);
+                                $("#id_apellido1").val(data['apellido1']);
+                                $("#id_apellido2").val(data['apellido2']);
+                                $('#id_direccion').val(data['calledomicilio'])
+                                $('#id_telefono').val(data['celular'])
+                                $('#id_email').val(data['email'])
+                                if ($('#id_sexo')) {
+                                    if ('idsexo' in data) {
+                                        $('#id_sexo').val((data['idsexo']));
+                                    }
+                                }
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                        },
+                        dataType: "json"
+                    });
+                } else {
+                    $("#id_cedula").removeClass("validate[required,cedula]");
+                }
+            };
+            $("#id_cedula").blur(function () {
+                validarcedula();
+            });
+
+            validarruc = function () {
+                var valor = $("#id_cedula").val().trim();
+                $("#id_ruc").val(valor);
+                if (valor.length > 0) {
+                    $("#id_ruc").addClass("validate[required,cedula]");
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'datosexternospersona', 'cedula': valor},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                datosconsulta = data;
+                                $("#id_nombre1").val(data['nombre1']);
+                                $("#id_nombre2").val(data['nombre2']);
+                                $("#id_apellido1").val(data['apellido1']);
+                                $("#id_apellido2").val(data['apellido2']);
+                                $('#id_direccion').val(data['calledomicilio'])
+                                $('#id_telefono').val(data['celular'])
+                                $('#id_email').val(data['email'])
+                                if ($('#id_sexo')) {
+                                    if ('idsexo' in data) {
+                                        $('#id_sexo').val((data['idsexo']));
+                                    }
+                                }
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                        },
+                        dataType: "json"
+                    });
+                } else {
+                    $("#id_cedula").removeClass("validate[required,cedula]");
+                }
+            };
+            $("#id_ruc").blur(function () {
+                validarruc();
+            });
+
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cliente{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cliente{% endblock %}
+{% block formdestination %}/adm_cliente{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='add'/>
+{% endblock %}
+{% block formback %}/adm_cliente{% endblock %}

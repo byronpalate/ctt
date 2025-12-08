@@ -1,0 +1,12 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+{% endblock %}
+{% block atras %}/servicios?action=competenciase&id={{ malla.id }}{% endblock %}
+{% block formdestination %}/servicios?action=competenciase&id={{ malla.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/servicios{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='add'/>
+    <input type='hidden' name='id' value=''/>
+{% endblock %}
+{% block formback %}/servicios?action=competenciase&id={{ malla.id }}{% endblock %}

@@ -1,0 +1,378 @@
+{% extends "formbs.html" %}
+{% load ctt_extras %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function () {
+            $("#id_apellido1, #id_nombre1, #id_email, #id_comoseinformo").addClass("validate[required]");
+
+            $("#id_nacimiento,#id_personacontacto,#id_telefonocontacto,#id_emailcontacto").addClass("validate[required]");
+            $("#fieldset_ruc,#fieldset_nombreempresa,#fieldset_emailempresa,#fieldset_direccionempresa,#fieldset_telefonoempresa").hide()
+            $("#fieldset_titulo_cedula,#fieldset_titulo_personacontacto").show()
+
+            empresa = function () {
+                if ($("#id_empresa").is(':checked')) {
+                    $("#fieldset_ruc,#fieldset_nombreempresa,#fieldset_emailempresa,#fieldset_direccionempresa,#fieldset_telefonoempresa,#fieldset_titulo_ruc").show()
+                } else {
+                    $("#fieldset_ruc,#fieldset_nombreempresa,#fieldset_emailempresa,#fieldset_direccionempresa,#fieldset_telefonoempresa,#fieldset_titulo_ruc").hide()
+                }
+            };
+
+            empresa();
+
+            $("#id_empresa").click(function () {
+                empresa();
+            });
+
+            // Aplicar estilos sólo a este formulario
+            $('form').first().addClass('form-publico-inscripcion');
+
+            // Opcional: título amigable arriba (si formbs no lo pinta como quieres)
+            $('.breadcrumbs, .page-header').remove(); // si te estorban migas
+            // Puedes jugar con esto según la estructura real del template base.
+
+
+
+            verifica_tipo_identificacion = function () {
+                no_existe();
+                $("#id_cedula, #id_pasaporte").val('');
+                if (parseInt($("#id_tipoidentificacion").val()) === 1) {
+                    $("#fieldset_cedula").show();
+                    $("#fieldset_pasaporte").hide();
+                    $("#id_cedula").addClass("validate[required,cedula]").val('');
+                    $("#id_pasaporte").removeClass("validate[required]").val('');
+
+                } else {
+                    $("#fieldset_cedula").hide();
+                    $("#fieldset_pasaporte").show();
+                    $("#id_pasaporte").addClass("validate[required]").val('');
+                    $("#id_cedula").removeClass("validate[required,cedula]").val('');
+                }
+            };
+
+            $("#id_tipoidentificacion").change(function () {
+                verifica_tipo_identificacion();
+            });
+
+        });
+
+        validarcedula = function () {
+            var valor = $("#id_cedula").val().trim();
+            $("#id_cedula").val(valor);
+            if (valor.length > 0) {
+                $("#id_cedula").addClass("validate[required,cedula]");
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/api",
+                    data: {'a': 'datosexternospersona', 'cedula': valor},
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            datosconsulta = data;
+                            $("#id_nombre1").val(data['nombre1']);
+                            $("#id_nombre2").val(data['nombre2']);
+                            $("#id_apellido1").val(data['apellido1']);
+                            $("#id_apellido2").val(data['apellido2']);
+                            $('#id_direccion').val(data['calledomicilio'])
+                            $('#id_telefono').val(data['celular'])
+                            $('#id_email').val(data['email'])
+                            // datos factura
+                            var value1 = $('#id_nombre1').val();
+                            var value2 = $('#id_nombre2').val();
+                            var value3 = $('#id_apellido1').val();
+                            var value4 = $('#id_apellido2').val();
+                            $("#id_personacontacto").val(value1 + " " + value2 + " " + value3 + " " + value4);
+
+
+                            if ($('#id_sexo')) {
+                                if ('idsexo' in data) {
+                                    $('#id_sexo').val((data['idsexo']));
+                                }
+                            }
+
+                            if ($('#id_direccion')) {
+                                if ('calledomicilio' in data) {
+                                    $('#id_direccion').val(data['calledomicilio']);
+                                }
+                            }
+
+                            if ($('#id_telefono')) {
+                                if ('celular' in data) {
+                                    $('#id_telefono').val(data['celular']);
+                                }
+                            }
+
+                            if ($('#id_email')) {
+                                if ('email' in data) {
+                                    $('#id_email').val(data['email']);
+                                }
+                            }
+
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                    },
+                    dataType: "json"
+                });
+            } else {
+                $("#id_cedula").removeClass("validate[required,cedula]");
+            }
+        };
+
+        $("#id_cedula").change(function () {
+            validarcedula();
+        });
+
+        let contactoEditado = false;
+
+        $('#id_telefonocontacto').on('input', function () {
+            contactoEditado = true;  // el usuario ya lo tocó, deja de sobreescribir
+        });
+
+        $('#id_telefono').on('input', function () {
+            if (!contactoEditado || $('#id_telefonocontacto').val().trim() === '') {
+                $('#id_telefonocontacto').val($(this).val());
+            }
+        });
+
+        let emailEditado = false;
+
+        $('#id_emailcontacto').on('input', function () {
+            emailEditado = true;  // el usuario ya lo tocó, deja de sobreescribir
+        });
+
+        $('#id_email').on('input', function () {
+            if (!emailEditado || $('#id_emailcontacto').val().trim() === '') {
+                $('#id_emailcontacto').val($(this).val());
+            }
+        });
+
+
+
+        validarruc = function () {
+            var valor = $("#id_ruc").val().trim();
+            $("#id_ruc").val(valor);
+            if (valor.length === 13) {
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/api",
+                    data: {'a': 'datosempresa', 'ruc': valor},
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            datosconsulta = data;
+                            $("#id_nombreempresa").val(data['nombre']);
+                            $("#id_direccionempresa").val(data['direccion']);
+                            $("#id_telefonoempresa").val(data['celular']);
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                    },
+                    dataType: "json"
+                });
+            }else{
+                  NotificacionAlerta('warning','RUC invalido','Tiene que ingresar un RUC')
+            }
+        };
+
+        $("#id_ruc").change(function () {
+            validarruc();
+        });
+
+    </script>
+
+    <style>
+        /* Fondo general un poco más suave */
+        body {
+            background-color: #f5f5f9;
+        }
+
+        /* Card principal del formulario */
+        .form-publico-inscripcion {
+            max-width: 960px;
+            margin: 2rem auto 3rem;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, .12);
+        }
+
+        /* Título del formulario */
+        .form-publico-inscripcion-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1f2933;
+        }
+
+        .form-publico-inscripcion-subtitle {
+            font-size: 0.95rem;
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Cada fila de campo (usa la estructura de formbs: fieldset/control-label/control) */
+        .form-publico-inscripcion fieldset.control-group {
+            border: 0;
+            margin: 0 0 .9rem 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .form-publico-inscripcion .control-label.label-text {
+            float: none !important;
+            width: 30% !important;
+            text-align: right;
+            padding-right: 0 !important;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            height: auto !important;
+        }
+
+        .form-publico-inscripcion .control-label.label-text label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #111827;
+        }
+
+        .form-publico-inscripcion .control {
+            float: none !important;
+            width: 70% !important;
+        }
+
+        /* Inputs, selects, etc. */
+        .form-publico-inscripcion input[type="text"],
+        .form-publico-inscripcion input[type="email"],
+        .form-publico-inscripcion input[type="tel"],
+        .form-publico-inscripcion input[type="number"],
+        .form-publico-inscripcion input[type="date"],
+        .form-publico-inscripcion select,
+        .form-publico-inscripcion textarea {
+            width: 100% !important;
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            padding: 0.45rem 0.75rem;
+            font-size: 0.95rem;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .form-publico-inscripcion input:focus,
+        .form-publico-inscripcion select:focus,
+        .form-publico-inscripcion textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 1px rgba(79, 70, 229, .25);
+        }
+
+        /* Secciones (Datos personales, contacto, etc. si luego quieres agrupar) */
+        .form-section-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #374151;
+            margin: 1.2rem 0 .4rem;
+        }
+
+        .form-section-divider {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            margin: 0 0 1rem 0;
+        }
+
+        /* Bloque de términos y nota final */
+        .form-terminos-wrapper {
+            margin-top: 1.5rem;
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 1rem 1rem 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .form-terminos-wrapper p {
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            color: #4b5563;
+        }
+
+        .form-terminos-wrapper a {
+            text-decoration: underline;
+        }
+
+        /* Botón principal */
+        .form-publico-inscripcion .btn-form {
+            padding: 0.6rem 2.5rem;
+            font-size: 1rem;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        /* Versión móvil */
+        @media (max-width: 768px) {
+            .form-publico-inscripcion {
+                padding: 1.5rem 1.25rem;
+                margin-top: 1rem;
+            }
+
+            .form-publico-inscripcion fieldset.control-group {
+                display: block;
+            }
+
+            .form-publico-inscripcion .control-label.label-text {
+                width: 100% !important;
+                text-align: left;
+                justify-content: flex-start;
+                margin-bottom: 0.25rem;
+            }
+
+            .form-publico-inscripcion .control {
+                width: 100% !important;
+            }
+        }
+    </style>
+
+{% endblock %}
+{% block titulo %}{% endblock %}
+{% block formaction %}/registroexterno{% endblock %}
+{% block formdestination %}/registroexterno?action=registrook{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='registro'/>
+    <input type='hidden' name='key' value='{{ key }}'/>
+    <input type='hidden' name='numero' value='{{ numero }}'/>
+{% endblock %}
+{% block formsuffix %}
+    {% if usa_capcha %}
+        {# tu fieldset del captcha tal como está, ya toma los nuevos estilos #}
+    {% endif %}
+
+    <div class="form-terminos-wrapper">
+        <input class="form-check-input validate[required]" type="checkbox" value="" name="terminos" id="terminos">
+        <span style="font-size: medium">
+                Acepta nuestras
+                <a href="https://www.indoamerica.edu.ec/politicas-de-confidencialidad-universidad-indoamerica/"
+                   target="_blank">
+                    Políticas de Uso de Datos
+                </a>
+                y
+                <a href="https://www.indoamerica.edu.ec/clausula-de-proteccion-de-datos/" target="_blank">
+                    Cláusula de protección de datos
+                </a>
+            </span>
+        </p>
+        <p>
+            *El usuario y contraseña seran enviados a los correos de contacto que ingreso, y que pueda hacer uso de
+            nuestra plataforma.
+        </p>
+    </div>
+
+    <div style="place-items: center;margin: 1.5rem auto 0; width: 100%">
+        <p style="text-align: center; margin-bottom: 0">
+            <a href="javascript:;" class="btn btn-success btn-form" id="formbutton">Registrarme</a>
+        </p>
+    </div>
+{% endblock %}

@@ -49,11 +49,6 @@ def costo_materia(inscripcion, asignatura, nivel):
         if inscripcion.recordacademico_set.filter(asignatura=asignatura, aprobada=False).exists():
             record = inscripcion.recordacademico_set.filter(asignatura=asignatura, aprobada=False)[0]
             matriculas = record.historicorecordacademico_set.filter(aprobada=False).count()
-    if malla.modulomalla_set.filter(asignatura=asignatura).exists():
-        modulomalla = malla.modulomalla_set.filter(asignatura=asignatura)[0]
-        if inscripcion.recordacademico_set.filter(asignatura=asignatura, aprobada=False).exists():
-            record = inscripcion.recordacademico_set.filter(asignatura=asignatura, aprobada=False)[0]
-            matriculas = record.historicorecordacademico_set.filter(aprobada=False).count()
             # matriculas = 0
     preciosotros = inscripcion.carrera.precio_modulo_inscripcion(nivel.periodo, inscripcion.sede, inscripcion.modalidad, malla)
     if asignaturamalla:
@@ -75,9 +70,6 @@ def costo_materia(inscripcion, asignatura, nivel):
         if totalcreditos > 0:
             costocreditos = valor_arancel / totalcreditos
         return [asignaturamalla.creditos * costocreditos, matriculas, preciosotros.porcentajesegundamatricula, preciosotros.porcentajeterceramatricula, esprontopago]
-    elif modulomalla:
-        if matriculas >= 1 and preciosotros:
-            return [preciosotros.precioarrastremodulo, matriculas, preciosotros.porcentajesegundamatricula, preciosotros.porcentajeterceramatricula, esprontopago]
     return [0, 0, 0, 0, esprontopago]
 
 

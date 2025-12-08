@@ -1,0 +1,972 @@
+{% extends "basebs.html" %}
+{% block extracss %}
+    <style>
+        .pago-boton {
+            border: 2px solid #cbc2f5;
+
+            border-radius: 12px;
+            padding: 15px;
+            display: inline-block;
+            transition: all 0.2s ease-in-out;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .pago-boton:hover {
+            border-color: #662db0;
+            box-shadow: 10px 15px 2px rgb(0, 0, 0);
+            transform: scale(1.05);
+            color: #662db0;
+        }
+
+        .paylogo {
+            width:220px;
+            height:140px;
+            object-fit:contain;
+            display:block;
+            max-width:100%;
+        }
+    </style>
+{% endblock %}
+{% block heading %}
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script src="https://pay.payphonetodoesposible.com/api/button/js?appId=ugi4FFRFEiePzOIPlF2jQ"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-M1ym3gQdQnY8rV7r4rQ6rj8eI3k8vGxQq5D1aJ/0e4yH3b5mV9r2dXb7y8v3r5v7k4u+JYhXwA5kJ5l2z7Y6nA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script src="/static/js/json2.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script src="/static/js/big.min.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+        });
+
+        var ajustar;
+        var rubros;
+        var rubroslista;
+        var pagos;
+        var todos;
+        var personalizacion = null;
+        var lista_items1 = [];
+        var inscripcion;
+        var deuda = {{ totalapagar }};
+        var mitiempo = 60;
+        var mitiempo2 = '';
+        var mitiempos = '';
+        var mitiempom = '';
+        var toMinute=2;
+        var toSecond=0;
+        var rubrosDescuentoPorFP = {{ rubros_descuento_por_fp|safe }};
+        var soloPP = {{ solo_pp_seleccionados_y_todos|yesno:"true,false" }};
+
+        $(function() {
+
+            $("#facturanumero").blur(function () {
+                numerico($(this), 1, 999999999);
+            });
+
+            $("#facturaemail").css({'text-transform': 'none'});
+
+            var excedente;
+            pagos = [];
+            excedente = Big(0);
+            rubros = [
+                {% for rubro in rubros %}{% if not forloop.first %},{% endif %}{"id": {{ rubro.id}}, "deuda": Big("{{ rubro.saldo }}"), "asignados": [] }{% endfor %}
+            ];
+
+            rubroslista = [
+                {% for rubro in rubros %}{% if not forloop.first %},{% endif %}{{ rubro.id}}{% endfor %}
+            ];
+
+            inscripcion = {{ inscripcion.id }};
+
+            validaidentificacion = function(numero, tipo) {
+                if (parseInt(tipo) === 1){
+                    if (numero.length !== 10){
+                        return false;
+                    }
+                } else if (parseInt(tipo) === 2){
+                    return numero.length === 13;
+                }
+                var digito_region = numero.substring(0, 2);
+
+                //Pregunto si la region existe ecuador se divide en 24 regiones
+                if ((parseInt(digito_region) >= 1 && parseInt(digito_region) <= 24) || parseInt(digito_region) === 30 ) {
+
+                    // Extraigo el ultimo digito
+                    var ultimo_digito = parseInt(numero.substring(9, 10));
+
+                    //Agrupo todos los pares y los sumo
+                    var pares = parseInt(numero.substring(1, 2)) + parseInt(numero.substring(3, 4)) + parseInt(numero.substring(5, 6)) + parseInt(numero.substring(7, 8));
+
+                    //Agrupo los impares, los multiplico por un factor de 2, si la resultante es > que 9 le restamos el 9 a la resultante
+                    var numero1 = numero.substring(0, 1);
+                    var numero1 = (numero1 * 2);
+                    if (parseInt(numero1) > 9) {
+                        var numero1 = (numero1 - 9);
+                    }
+
+                    var numero3 = numero.substring(2, 3);
+                    var numero3 = (numero3 * 2);
+                    if (parseInt(numero3) > 9) {
+                        var numero3 = (numero3 - 9);
+                    }
+
+                    var numero5 = numero.substring(4, 5);
+                    var numero5 = (numero5 * 2);
+                    if (parseInt(numero5) > 9) {
+                        var numero5 = (numero5 - 9);
+                    }
+
+                    var numero7 = numero.substring(6, 7);
+                    var numero7 = (numero7 * 2);
+                    if (parseInt(numero7) > 9) {
+                        var numero7 = (numero7 - 9);
+                    }
+
+                    var numero9 = numero.substring(8, 9);
+                    var numero9 = (numero9 * 2);
+                    if (parseInt(numero9) > 9) {
+                        var numero9 = (numero9 - 9);
+                    }
+
+                    var impares = numero1 + numero3 + numero5 + numero7 + numero9;
+
+                    //Suma total
+                    var suma_total = (pares + impares);
+
+                    //extraemos el primero digito
+                    var primer_digito_suma = String(suma_total).substring(0, 1);
+
+                    //Obtenemos la decena inmediata
+                    var decena = (parseInt(primer_digito_suma) + 1) * 10;
+
+                    //Obtenemos la resta de la decena inmediata - la suma_total esto nos da el digito validador
+                    var digito_validador = decena - suma_total;
+                    //Si el digito validador es = a 10 toma el valor de 0
+
+                    if (parseInt(digito_validador) === 10)
+                        digito_validador = 0;
+
+                    var digito_validador_final = parseInt(String(digito_validador).substring(String(digito_validador).length-1));
+                    //Validamos que el digito validador sea igual al de la cedula
+                    if (digito_validador_final !== ultimo_digito) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+                return true;
+            };
+
+            actualizar_lista = function () {
+                lista_items1 = [];
+                var total = 0;
+                $(".valor_pago").each(function () {
+                    var id = $(this).attr('idr');
+                    var valor = parseFloat($(this).val());
+                    if (valor > 0) {
+                        var item = {
+                            id: id,
+                            valor: valor
+                        };
+                        total += parseFloat(valor);
+                        lista_items1.push(item);
+                    }
+                });
+                $("#total_pago ").val(total.toFixed(2));
+                $("#tt ").html(total.toFixed(2));
+            };
+
+            {#//////////////////////////////////////////////////////////#}
+            // Ocultar el monto de descuento al cargar
+            $('#vdpp').text("$ 0.00");
+            // Marcar cuáles inputs eran editables originalmente y guardar su saldo inicial
+            $('.valor_pago').each(function () {
+                if (!$(this).is('[readonly]')) {
+                    $(this).addClass('editable-original'); // estos podrán volver a editarse al desmarcar
+                }
+                const saldoInicial = parseFloat($(this).attr('ids') || $(this).val() || 0);
+                $(this).data('saldo-inicial', saldoInicial.toFixed(2));
+            });
+
+            // Parse YYYY-MM-DD como FECHA LOCAL (00:00:00 hora local)
+            function parseFechaLocal(ymd) {
+                const [a, m, d] = ymd.split('-').map(Number);
+                return new Date(a, m - 1, d); // año, mes-1, día (local)
+            }
+            // “Recorta” hora/min/seg/ms para comparar solo por día
+            function soloFechaLocal(date) {
+                return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            }
+
+            function descuentoVigenteInfo() {
+                // Usas clave 3 (TARJETA) en tu JSON actual rubrosDescuentoPorFP
+                const info = rubrosDescuentoPorFP && rubrosDescuentoPorFP[3];
+                if (!info) return null;
+
+                // Fechas como LOCAL, no UTC
+                const hoy = soloFechaLocal(new Date());
+                const ini = soloFechaLocal(parseFechaLocal(info.fechainicio)); // ej: "2025-08-01"
+                const fin = soloFechaLocal(parseFechaLocal(info.fechafin));    // ej: "2025-08-15"
+
+                // Rango inclusivo: inicio <= hoy <= fin
+                return (hoy >= ini && hoy <= fin) ? info : null;
+            }
+
+            function sumaInputsValorPago() {
+                let total = 0;
+                $('.valor_pago').each(function () {
+                    const v = parseFloat($(this).val());
+                    if (!isNaN(v)) total += v;
+                });
+                return total;
+            }
+
+            function sumaInicialSaldo() {
+                let total = 0;
+                $('.valor_pago').each(function () {
+                    const ini = parseFloat($(this).data('saldo-inicial') || $(this).attr('ids') || 0);
+                    if (!isNaN(ini)) total += ini;
+                });
+                return total;
+            }
+
+            function aplicarBloqueoYValoresIniciales() {
+                $('.valor_pago').each(function () {
+                    const ini = parseFloat($(this).data('saldo-inicial') || $(this).attr('ids') || 0);
+                    $(this).val(ini.toFixed(2)).prop('readonly', true);
+                });
+            }
+
+            function restaurarEditablesOriginales() {
+                $('.valor_pago.editable-original').prop('readonly', false);
+            }
+
+// --- recalcular el total mostrado (#tt y #total_pago) ---
+            function recalcularTotalConDescuentoSiAplica() {
+                const info = descuentoVigenteInfo();
+                const aceptado = $('#aceptaprontopago').is(':checked');
+
+                if (aceptado && info) {
+                    // total base: suma de saldos iniciales del semestre
+                    const base = sumaInicialSaldo();
+                    const desc = parseFloat(info.total_descuento || 0);
+                    let total = base - desc;
+                    if (total < 0) total = 0;
+
+                    // mostrar valor de descuento y actualizar totales
+                    $('#vdpp').text('$ ' + desc.toFixed(2)).show();
+                    $('#total_pago').val(total.toFixed(2));
+                    $('#tt').text(total.toFixed(2));
+                } else {
+                    // comportamiento normal: suma lo que el usuario editó
+                    const total = sumaInputsValorPago();
+                    $('#vdpp').text('$ 0.00');
+                    $('#total_pago').val(total.toFixed(2));
+                    $('#tt').text(total.toFixed(2));
+                }
+            }
+            // Ajuste: actualizar_lista ya no pisa el total cuando pronto pago está activo
+            const _actualizar_lista_original = actualizar_lista;
+            actualizar_lista = function () {
+                // Recalculamos lista_items1 como antes
+                lista_items1 = [];
+                let total = 0;
+                $(".valor_pago").each(function () {
+                    const id = $(this).attr('idr');
+                    const valor = parseFloat($(this).val());
+                    if (valor > 0) {
+                        lista_items1.push({ id: id, valor: valor });
+                        total += valor;
+                    }
+                });
+
+                // Si NO está activo pronto pago, mostramos suma de inputs; si está activo, dejamos que lo haga recalcularTotal...
+                if (!$('#aceptaprontopago').is(':checked')) {
+                    $("#total_pago").val(total.toFixed(2));
+                    $("#tt").html(total.toFixed(2));
+                }
+
+                // Si está activo pronto pago, la función global se encargará:
+                recalcularTotalConDescuentoSiAplica();
+            };
+
+            // Mostrar u ocultar el texto dpp desde el inicio según vigencia
+            function initProntoPagoUI() {
+                const info = descuentoVigenteInfo(); // null si no hay/ no vigente
+
+                // Regla: solo mostrar/activar si:
+                // 1) el usuario seleccionó EXACTAMENTE todos los rubros PP, y
+                // 2) el descuento está vigente (info != null)
+                if (!soloPP || !info) {
+                    $('#row_prontopago').hide();
+                    $('#aceptaprontopago').prop('checked', false);
+                    $('#dpp').hide().text('');
+                    $('#vdpp').hide().text('');
+                    restaurarEditablesOriginales();
+                    recalcularTotalConDescuentoSiAplica();
+                    return;
+                }
+
+                // Aplica: mostrar fila, texto, activar check, bloquear y recalcular con descuento
+                $('#row_prontopago').show();
+
+                const texto = "Acepta el descuento con " + info.nombre + " (" + info.porcentaje + "%). " +
+                    "Aplica solo si cancela la totalidad del semestre. " +
+                    "Desde: " + info.fechainicio + " Hasta: " + info.fechafin;
+                $('#dpp').text(texto).show();
+
+                $('#aceptaprontopago').prop('checked', true);
+                aplicarBloqueoYValoresIniciales();
+                recalcularTotalConDescuentoSiAplica();
+            }
+
+            // Llamada única al cargar:
+            initProntoPagoUI();
+
+            // Evento único para el checkbox (elimina otros handlers duplicados)
+            $('#aceptaprontopago').off('change.prontopago').on('change.prontopago', function () {
+                if (this.checked) {
+                    aplicarBloqueoYValoresIniciales();
+                } else {
+                    restaurarEditablesOriginales();
+                }
+                recalcularTotalConDescuentoSiAplica();
+            });
+
+            // Recalcular cuando el usuario modifica los inputs manualmente (solo si no está activo pronto pago)
+            $('.valor_pago').off('blur.prontopago keyup.prontopago change.prontopago')
+                .on('blur.prontopago keyup.prontopago change.prontopago', function () {
+                    if (!$('#aceptaprontopago').is(':checked')) {
+                        recalcularTotalConDescuentoSiAplica();
+                    }
+                });
+
+            // Recalcular al cargar
+            recalcularTotalConDescuentoSiAplica();
+
+// ==== FIN CONFIGURACIÓN DE PRONTO PAGO ====
+
+            $(".valor_pago").blur(function () {
+                var saldo = parseFloat($(this).attr('ids'));
+                numerico($(this), 0, saldo, 2);
+                actualizar_lista();
+            });
+
+            {#fin descuento pronto pago#}
+
+            cargarscript = function (url) {
+                $.ajax({
+                    type: "GET",
+                    url: url,
+                    success: function(data) {
+                        desbloqueointerface();
+                        script = document.createElement("script");
+                        script.type = "text/javascript";
+                        script.textContent = data;
+                        document.body.appendChild(script);
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "html"
+                });
+            };
+
+            tiempo = function () {
+                toSecond=toSecond-1;
+                if(toSecond<0)
+                {
+                    toSecond=59;
+                    toMinute=toMinute-1;
+                }
+                if(toSecond.length == 1){
+                    mitiempos="0"+toSecond;
+                }else{
+                    mitiempos=toSecond;
+                }
+                if(toMinute===0 && toSecond===0)
+                {
+                    bloqueointerface();
+                    location.href = "/alu_finanzas";
+                }
+                mitiempom=toMinute;
+                mitiempo2 = mitiempom + ":" + mitiempos;
+                $("#tiempo_resta").html(mitiempo2);
+            };
+
+            {#boton datafast#}
+            $("#pagar").click(function () {
+                var valorpago = parseFloat($("#total_pago").val());
+                var telefono = "";
+                var email = "";
+                var direccion = "";
+                var nombre = "";
+                var identificacion = "";
+                var tipoidentificacion = "";
+                if (lista_items1.length === 0) {
+                    smoke.alert("Debe detallar valores a pagar.");
+                    return;
+                }
+                if (valorpago < 5) {
+                    smoke.alert("El valor a pagar debe ser igual o mayor a 5 dólares.");
+                    return;
+                }
+                {% if not tiene_nota_debito %}
+                    identificacion = $("#facturaidentificacion").val();
+                    tipoidentificacion = $("#tipo_identificacion").val();
+                    nombre = $("#facturanombre").val();
+                    direccion = $("#facturadireccion").val();
+                    telefono = $("#facturatelefono").val();
+                    email = $("#facturaemail").val();
+                    {#if (!identificacion.length || !nombre.length || !direccion.length || !telefono.length{% if facturacion_electronica %} ||!email.length{% endif %}) {#}
+                    if (!identificacion.length || !nombre.length || !direccion.length || !telefono.length || !email.length) {
+                        smoke.alert("Los 'DATOS DE LA FACTURA' tienen que estar completos. Favor ingrese toda la información");
+                        return;
+                    }else{
+                        if($("#facturaemail").val().indexOf('@', 0) == -1 || $("#facturaemail").val().indexOf('.', 0) == -1) {
+                            smoke.alert("El correo electrónico introducido no es correcto.");
+                            return;
+                        }
+                    }
+                    if (parseInt(tipoidentificacion) === 1) {
+                        if (!validaidentificacion(identificacion, "1")) {
+                            smoke.alert("El número de cédula es incorrecto.");
+                            return;
+                        }
+                    }
+                    if (parseInt(tipoidentificacion) === 2) {
+                        if (!validaidentificacion(identificacion, "2")) {
+                            smoke.alert("El número de ruc es incorrecto.");
+                            return;
+                        }
+                    }
+                {% endif %}
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_finanzas",
+                    data: {
+                        'action': 'act_valor_autorizacion',
+                        'email': email,
+                        'telefono': telefono,
+                        'direccion': direccion,
+                        'nombre': nombre,
+                        'tipoidentificacion': tipoidentificacion,
+                        'identificacion': identificacion,
+                        'valort': valorpago,
+                        'td': ($('#aceptaprontopago').is(':checked') && soloPP),
+                        'lista_items1': JSON.stringify(lista_items1),
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        if (data.result === "ok") {
+                            if (data.procede) {
+                                $("#previo_pago, #pagar").hide();
+                                $("#pago_datafast").show();
+                                cargarscript("{{ script_url }}" + data['autorizacion']);
+                                adddata = function () {
+                                    if ($(".wpwl-button-pay").length > 0) {
+                                        var numberOfInstallmentsHtml = data.datosextra;
+                                        $('form.wpwl-form-card').find('.wpwl-button').before(numberOfInstallmentsHtml);
+                                        clearInterval(personalizacion);
+                                        desbloqueointerface();
+                                        {#                                        conteotiempo = setInterval(tiempo,1000);#}
+                                    }
+                                };
+                                personalizacion = setInterval(adddata, 3000);
+                            } else {
+                                desbloqueointerface();
+                                smoke.alert("No se pudo generar la transaccion con DataFast - 1");
+                            }
+                        } else {
+                            desbloqueointerface();
+                            smoke.alert("No se pudo generar la transaccion con DataFast - 2");
+                            $("#previo_pago").show();
+                            $("#pago_datafast").hide();
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        smoke.alert("No se pudo generar la transaccion con DataFast - 3");
+                        $("#previo_pago").show();
+                        $("#pago_datafast").hide();
+                    },
+                    dataType: "json"
+                });
+            });
+
+            {#boton payphone#}
+            $("#pagarpp").click(function (){
+                var valorpago =   parseFloat($("#total_pago").val());
+                var telefono = "";
+                var email = "";
+                var direccion = "";
+                var nombre = "";
+                var identificacion = "";
+                var tipoidentificacion = "";
+                if (lista_items1.length === 0){
+                    smoke.alert("Debe detallar valores a pagar.");
+                    return;
+                }
+                if (valorpago < 5){
+                    smoke.alert("El valor a pagar debe ser igual o mayor a 5 dólares.");
+                    return;
+                }
+                {% if not tiene_nota_debito %}
+                    identificacion = $("#facturaidentificacion").val();
+                    tipoidentificacion = $("#tipo_identificacion").val();
+                    nombre = $("#facturanombre").val();
+                    direccion = $("#facturadireccion").val();
+                    telefono = $("#facturatelefono").val();
+                    email = $("#facturaemail").val();
+                    if (!identificacion.length || !nombre.length || !direccion.length || !telefono.length{% if facturacion_electronica %}||!email.length{% endif %}){
+                        smoke.alert("Los datos del cliente de la factura tienen que estar completos.");
+                        return;
+                    }
+                    if(parseInt(tipoidentificacion) === 1){
+                        if (!validaidentificacion(identificacion, "1")){
+                            smoke.alert("El número de cédula es incorrecto.");
+                            return;
+                        }
+                    }
+                    if(parseInt(tipoidentificacion) === 2){
+                        if (!validaidentificacion(identificacion, "2")){
+                            smoke.alert("El número de ruc es incorrecto.");
+                            return;
+                        }
+                    }
+                {% endif %}
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_finanzas",
+                    data: {'action': 'act_valor_autorizacion_payphone',
+                        'email': email,
+                        'telefono': telefono,
+                        'direccion': direccion,
+                        'nombre': nombre,
+                        'tipoidentificacion': tipoidentificacion,
+                        'identificacion': identificacion,
+                        'valort': valorpago,
+                        'td': ($('#aceptaprontopago').is(':checked') && soloPP),
+                        'lista_items1': JSON.stringify(lista_items1),
+                        'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === "ok") {
+                            if (data.procede) {
+                                location.href=data.url;
+                            }else{
+                                desbloqueointerface();
+                                smoke.alert("No se pudo generar la solicitud de transacción con PayPhone-1");
+                            }
+                        } else {
+                            desbloqueointerface();
+                            smoke.alert("No se pudo generar la solicitud de transacción con PayPhone-2");
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        smoke.alert("No se pudo generar la solicitud de transacción con PayPhone-3");
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $("#pagar_nuevo").click(function () {
+                var valorpago = parseFloat($("#total_pago").val());
+                var telefono = "";
+                var email = "";
+                var direccion = "";
+                var nombre = "";
+                var identificacion = "";
+                var tipoidentificacion = "";
+
+                if (lista_items1.length === 0) {
+                    smoke.alert("Debe detallar valores a pagar.");
+                    return;
+                }
+                if (valorpago < 0.5) {
+                    smoke.alert("El valor a pagar debe ser mayor a 0.50 USD.");
+                    return;
+                }
+
+                {% if not tiene_nota_debito %}
+                    identificacion = $("#facturaidentificacion").val();
+                    tipoidentificacion = $("#tipo_identificacion").val();
+                    nombre = $("#facturanombre").val();
+                    direccion = $("#facturadireccion").val();
+                    telefono = $("#facturatelefono").val();
+                    email = $("#facturaemail").val();
+
+                    if (!identificacion.length || !nombre.length || !direccion.length || !telefono.length || !email.length) {
+                        smoke.alert("Los 'DATOS DE LA FACTURA' deben estar completos.");
+                        return;
+                    }
+                    if($("#facturaemail").val().indexOf('@', 0) == -1 || $("#facturaemail").val().indexOf('.', 0) == -1) {
+                        smoke.alert("El correo electrónico introducido no es correcto.");
+                        return;
+                    }
+                    if (parseInt(tipoidentificacion) === 1 && !validaidentificacion(identificacion, "1")) {
+                        smoke.alert("El número de cédula es incorrecto.");
+                        return;
+                    }
+                    if (parseInt(tipoidentificacion) === 2 && !validaidentificacion(identificacion, "2")) {
+                        smoke.alert("El número de RUC es incorrecto.");
+                        return;
+                    }
+                {% endif %}
+
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_finanzas",
+                    data: {
+                        'action': 'act_valor_autorizacion_deuna',
+                        'email': email,
+                        'telefono': telefono,
+                        'direccion': direccion,
+                        'nombre': nombre,
+                        'tipoidentificacion': tipoidentificacion,
+                        'identificacion': identificacion,
+                        'valort': valorpago,
+                        'td': ($('#aceptaprontopago').is(':checked') && soloPP),
+                        'lista_items1': JSON.stringify(lista_items1),
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === "ok" && data.procede) {
+                            // Limpia contenedor
+                            $("#deunaQrWrapper").empty();
+                            $("#deunaDeeplink").addClass('d-none').attr('href', '#');
+                            $("#deunaInfo").text("");
+
+                            // Asegura objeto
+                            var r = data.respuesta || {};
+                            if (typeof r === "string") {
+                                try { r = JSON.parse(r); } catch(e) { r = {}; }
+                            }
+                            // 1) Detección de QR flexible
+                            var qrRaw = r.qrImage || r.qrContent || r.qr || null;
+
+                            if (!qrRaw) {
+                                smoke.alert("DeUna no devolvió datos de QR.");
+                                return;
+                            }
+                            // 2) Construye el src del <img>
+                            // - Si ya viene como data URI (data:image/png;base64,...) úsalo tal cual.
+                            // - Si es solo base64, le anteponemos el prefijo.
+                            var imgSrc = (typeof qrRaw === "string" && qrRaw.startsWith("data:image"))
+                                ? qrRaw
+                                : "data:image/png;base64," + qrRaw;
+                            // Limpia contenedor y pinta el QR
+                            $("#deunaQrWrapper").empty();
+                            $("#deunaDeeplink").addClass('d-none').attr('href', '#');
+                            $("#deunaInfo").text("");
+                            // Inserta imagen
+                            var img = document.createElement("img");
+                            img.className = "img-fluid";
+                            img.alt = "QR DeUna";
+                            img.src = imgSrc;
+                            $("#deunaQrWrapper").append(img);
+                            // Deeplink si viene
+                            if (r.deeplink) {
+                                $("#deunaDeeplink").removeClass('d-none').attr('href', r.deeplink);
+                            }
+                            // Muestra info útil (transactionId / referencia)
+                            var info = [];
+                            if (r.transactionId) info.push("Txn: " + r.transactionId);
+                            if (data.referencia) info.push("Ref: " + data.referencia);
+                            $("#deunaInfo").text(info.join(" · "));
+                            // Abre el modal
+                            var modal = new bootstrap.Modal(document.getElementById('modalDeUna'));
+                            modal.show();
+
+                            ////////////////////
+                            // === POLLING HASTA QUE EL WEBHOOK PROCese ===
+                            var pollParams = { action: 'check_pago_deuna' };
+                            // preferible por aut_id (único)
+                            if (data.aut_id) {
+                                pollParams.aut_id = data.aut_id;
+                             } else if (data.referencia) {
+                                // respaldo por referencia
+                                pollParams.ref = data.referencia;
+                             }
+
+                            var tries = 0;
+                            var maxTries = 90; // ~4.5 minutos (90 * 3s)
+                            var pollTimer = setInterval(function () {
+                                $.get('/alu_finanzas', pollParams, function (r) {
+                                    if (r.result === 'ok' && r.pagado) {
+                                        clearInterval(pollTimer);
+                                        window.location.href = '/alu_finanzas'; // 👈 redirección final
+                                    }
+                                }).fail(function () {
+                                    // si falla el GET, no interrumpas, volverá a intentar
+                                });
+
+                                tries += 1;
+                                if (tries >= maxTries) {
+                                    clearInterval(pollTimer);
+                                    // opcional: informar que tomó demasiado tiempo
+                                    smoke.alert("El pago está demorando en confirmarse. Puedes seguir consultando en Mis Pagos.");
+                                }
+                             }, 3000);
+                            // (opcional) si cierran el modal, detén el polling
+                            document.getElementById('modalDeUna').addEventListener('hidden.bs.modal', function () {
+                                try { clearInterval(pollTimer); } catch (e) {}
+                             });
+                            ////////////////////
+
+
+                        } else {
+                            let msg = (data.mensaje || "No se pudo generar la solicitud con DeUna.");
+                            smoke.alert(msg);
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        smoke.alert("Error al conectar con DeUna.");
+                    },
+                    dataType: "json"
+                });
+             });
+
+
+            actualizar_lista();
+        });
+
+    </script>
+{% endblock %}
+{% block atras %}/alu_finanzas{% endblock %}
+{% block headcanvas %}
+    <div class='row' id="previo_pago">
+        <div class='row'>
+            <div class='col-12'>
+                <div class="alert alert-info">
+                    <h4>CONFIRME EL CAMPO "VALOR A PAGAR" Y VERIFIQUE LOS DATOS DE LA FACTURA</h4>
+                </div>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-8'>
+                <div class="row">
+                    <table class='table table-bordered table-hover'>
+                        <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th style="width: 100px;">Tipo</th>
+                            <th style="width: 60px; text-align: center">IVA</th>
+                            <th style="width: 80px;text-align: center;">Fecha</th>
+                            <th style="width: 80px;text-align: center;">Vence</th>
+                            <th style="width: 80px;text-align: center;">Descuento</th>
+                            <th style="width: 80px;text-align: center;">Deuda</th>
+                            <th style="width: 60px;text-align: center;color: red">VALOR A PAGAR</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for rubro in rubros %}
+                            <tr>
+                                <td>{{ rubro.nombre }}</td>
+                                <td>{{ rubro.tipo }}</td>
+                                <td style="text-align: center;">
+                                    <span class="badge text-bg-warning">{{ rubro.iva }}</span>
+                                </td>
+                                <td style="text-align: center;">{{ rubro.fecha|date:"Y-m-d" }}</td>
+                                <td style="text-align: center;">
+                                    {% if not rubro.cancelado %}
+                                        {{ rubro.fechavence|date:"Y-m-d" }}
+                                        {% if rubro.vencido %}
+                                            <br><span class="badge text-bg-danger">VENCIDO</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center;">{% if rubro.descuento %}{{ rubro.descuento.porciento }}%{% endif %}</td>
+                                <td style="text-align: right;"><b>$&nbsp;{{ rubro.saldo|floatformat:2 }}</b></td>
+                                <td>
+                                    <input type="text" value="{{ rubro.saldo|floatformat:2 }}" ids="{{ rubro.saldo }}" class="valor_pago imp-moneda form-control form-control-sm" idr="{{ rubro.id }}" style="width: 80px" {% if rubro.tiene_iva %}readonly{% endif %}>
+                                    {#                                    <input type="text" value="{{ rubro.saldo|floatformat:2 }}" ids="{{ rubro.saldo }}" class="valor_pago imp-moneda" idr="{{ rubro.id }}" style="width: 80px">#}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="20">NO EXISTEN DATOS</td>
+                            </tr>
+                        {% endfor %}
+                        <tr id="row_prontopago">
+                            <td colspan="6">
+                                <input id="aceptaprontopago" style="text-transform: uppercase; transform: scale(1.5);" type='checkbox'/>&nbsp;&nbsp;
+                                <span id="dpp"></span>
+                            </td>
+                            <td><b>Total Desc.</b></td>
+                            <td style="text-align: end">
+                                <span id="vdpp" style="text-align: right"></span>
+                                <input type="text" class="form-control form-control-sm" value="{{ info.totalDescuento|floatformat:2 }}" id="total_descuento" style="width: 80px; text-align: center; display: none">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="7" style="text-align: right;"><b>Total a pagar</b></td>
+                            <td style="text-align: right;">
+                                <b>$ <span id="tt"> {{ totalapagar|floatformat:2 }}</span></b>
+                                {#                                <input type="text" class="form-control form-control-sm" value="{{ totalapagar|floatformat:2 }}" id="total_pago"  style="width: 80px; text-align: center; display: none">#}
+                                <input type="text" class="form-control form-control-sm" value="{{ totalapagar|floatformat:2 }}" id="total_pago" style="width: 80px; text-align: center; display: none">
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="formaspagosboton">
+                    <div class="row g-2">
+
+                        <!-- Botón Datafast -->
+                        <div class="col-12 col-md-6">
+                            <a href="javascript:;" id="pagar"
+                               facturar="{% if tiene_nota_debito %}no{% else %}si{% endif %}"
+                               class="btn w-100 shadow-sm pago-boton d-flex flex-column align-items-center justify-content-center p-3">
+                                <img src="/static/images/datafast.jpg" alt="Datafast" class="paylogo">
+                                <div class="mt-2 fw-bold">Pagar con Datafast</div>
+                            </a>
+                        </div>
+
+                        <!-- Botón PayPhone -->
+                        <div class="col-12 col-md-6">
+                            <a href="javascript:;" id="pagarpp"
+                               facturar="{% if tiene_nota_debito %}no{% else %}si{% endif %}"
+                               class="btn w-100 shadow-sm pago-boton d-flex flex-column align-items-center justify-content-center p-3">
+                                <img src="/static/images/payphone.jpg" alt="PayPhone" class="paylogo">
+                                <div class="mt-2 fw-bold">Pagar con PayPhone</div>
+                            </a>
+                        </div>
+
+                        <!-- Botón DeUna (nuevo) -->
+                        <div class="col-1 col-md-1">
+                            <a href="javascript:;" id="pagar_nuevo" facturar="{% if tiene_nota_debito %}no{% else %}si{% endif %}" class="btn">
+                                <div class="mt-2 fw-bold">&nbsp;</div>
+                            </a>
+                        </div>
+
+                        {#                    <!-- Botón DeUna (nuevo) -->#}
+                        {#                        <div class="col-12 col-md-4">#}
+                        {#                            <a href="javascript:;" id="pagar_nuevo"#}
+                        {#                               facturar="{% if tiene_nota_debito %}no{% else %}si{% endif %}"#}
+                        {#                               class="btn w-100 shadow-sm pago-boton d-flex flex-column align-items-center justify-content-center p-3">#}
+                        {#                                <img src="/static/images/deuna.jpg" alt="Mi Nueva Pasarela" class="paylogo">#}
+                        {#                                <div class="mt-2 fw-bold">Pagar con DeUna</div>#}
+                        {#                            </a>#}
+                        {#                        </div>#}
+
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-4">
+                {% if not tiene_nota_debito %}
+                    <table class="table-striped table-condensed" style="width: 500px;">
+                        <thead class="table-light">
+                        <tr>
+                            <th style="text-align: center" colspan="2">DATOS DE LA FACTURA</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style="vertical-align: middle;">Tipo Identificación</td>
+                            <td style="vertical-align: middle;">
+                                <select id="tipo_identificacion" style="width: 100%" class="form-select form-select-sm">
+                                    <option value="1" {% if tipo_identificacion == 1 %}selected="selected" {% endif %}>CEDULA</option>
+                                    <option value="2" {% if tipo_identificacion == 2 %}selected="selected" {% endif %}>RUC</option>
+                                    <option value="3" {% if tipo_identificacion == 3 %}selected="selected" {% endif %}>PASAPORTE</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;">Nº Identificación:</td>
+                            <td style="vertical-align: middle;"><input id="facturaidentificacion" type='text' class="imp-cedula form-control form-control-sm" value="{{ facturaidentificacion }}"/></td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;">Nombre:</td>
+                            <td style="vertical-align: middle;"><input id="facturanombre" style="text-transform: uppercase;" class="input-block-level form-control form-control-sm" type='text' value="{{ facturanombre }}"/></td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;">Dirección:</td>
+                            <td style="vertical-align: middle;"><input id="facturadireccion" style="text-transform: uppercase;" class="input-block-level form-control form-control-sm" type='text' value="{{ facturadireccion }}"/></td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;">Tel&eacute;fono:</td>
+                            <td style="vertical-align: middle;"><input id="facturatelefono" style="text-transform: uppercase;" class="input-block-level form-control form-control-sm" type='text' value="{{ facturatelefono }}"/></td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;">Email:</td>
+                            <td style="vertical-align: middle;"><input id="facturaemail" style="text-transform: uppercase;" class="input-block-level form-control form-control-sm" type='text' value="{{ facturaemail }}"/></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class='row' id="pago_datafast" style="display: none">
+        <div class="row">
+            <div class='col-12'>
+                <div class="alert alert-danger" align="center">
+                    <h4>PARA REALIZAR DIFERIDOS SELECCIONAR EN <i>Tipo Tarjeta</i>: "NACIONAL"</h4>
+                </div>
+            </div>
+        </div>
+        <div class='col-3'>
+        </div>
+        <div class="col-6" id="formpago" style="border: 0">
+            <form action="{{ url_app_datafast }}/alu_finanzas?action=resultado" style="border: 0" class="paymentWidgets" id="paymentWidgets" data-brands="VISA MASTER AMEX DINERS DISCOVER">
+                <div class="alert alert-warning">
+                    CARGANDO FORMULARIO DE PAGO.
+                </div>
+            </form>
+            <script type="text/javascript">
+                var wpwlOptions = {
+                    onReady: function() {
+                        var datafast= '<br/><br/><img src='+'"https://www.datafast.com.ec/images/verified.png" style='+'"display:block;margin:0 auto; width:100%;">';
+                        $('form.wpwl-form-card').find('.wpwl-button').after(datafast);
+                    },
+                    style: "card",
+                    locale: "es",
+                    labels: {cvv: "CVV", cardHolder: "Nombre(Igual que en la tarjeta)"},
+                    onBeforeSubmitCard: function(){
+                        if ( $(".wpwl-control-cardHolder").val() === "" ){
+                            $(".wpwl-control-cardHolder").addClass("wpwl-has-error");
+                            $(".wpwl-control-cardHolder").after("<div class='wpwl-hint-cardHolderError'>Campo requerido</div>");
+                            $(".wpwl-button-pay").addClass("wpwl-button-error").attr("disabled", "disabled");
+                            return false;
+                        }else
+                            return true;
+                    }
+                }
+            </script>
+            {# <p id="tiempo_resta" style="text-align: center; font-size: 20pt">2:00</p>#}
+        </div>
+        <div class='col-3'>
+        </div>
+    </div>
+    <!-- Modal QR DeUna -->
+    <div class="modal fade" id="modalDeUna" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Paga con DeUna (Banco Pichincha)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="deunaQrWrapper" class="mb-3">
+                        <!-- Aquí insertamos la imagen/base64 o el canvas del QR -->
+                    </div>
+                    <div id="deunaInfo" class="small text-muted"></div>
+                </div>
+                <div class="modal-footer">
+                    <a id="deunaDeeplink" href="#" target="_blank" class="btn btn-primary d-none">Abrir en DeUna</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

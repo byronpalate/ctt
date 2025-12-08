@@ -53,12 +53,13 @@ from settings import CLASES_HORARIO_ESTRICTO, CLASES_APERTURA_ANTES, CLASES_APER
     PERFIL_PROFESOR_ID, PERFIL_EMPLEADOR_ID, TIPO_COLEGIO_FISCAL, TIPO_COLEGIO_MUNICIPAL, TIPO_COLEGIO_PARTICULAR, \
     TIPO_COLEGIO_FISCOMISIONAL, TIPO_RESPUESTA_ENCUESTA_FECHA_ID, CARRERA_FORMACION_CONTINUA_ID, COLEGIO_UTI_ID, \
     PROCESADOR_PAGO_DATAFAST, TIPO_CONVENIO_INDIVIDUAL, PROVEEDOR_PAGOONLINE_PAYPHONE, \
-    OTROS_BANCOS_EXTERNOS_ID, PROVEEDOR_PAGOONLINE_DATAFAST, TIPO_IVA_15_ID, APP_DOMAIN, SITE_ROOT, FORMA_PAGO_TARJETA
+    OTROS_BANCOS_EXTERNOS_ID, PROVEEDOR_PAGOONLINE_DATAFAST, TIPO_IVA_15_ID, APP_DOMAIN, SITE_ROOT, FORMA_PAGO_TARJETA, \
+    PERFIL_CLIENTE_ID
 from settings import NOTA_ESTADO_REPROBADO, NOTA_ESTADO_SUPLETORIO, NIVEL_MALLA_CERO, \
     NIVEL_MALLA_UNO, SEXO_FEMENINO, SEXO_MASCULINO, TIPO_MORA_RUBRO, GENERAR_RUBRO_MORA, VALOR_MORA_RUBRO
 from ctt.funciones import enletras, validarRGB
 from ctt.tasks import send_mail, send_html_mail
-
+from django.core.validators import MinValueValidator
 
 def ctt_list_classes():
     listclass = []
@@ -410,7 +411,6 @@ class ModeloBase(models.Model):
         return [True, False]
 
     def delete(self, force=True, extra=None, *args, **kwargs):
-        """ Método para eliminar un registro """
         extra = self.extra_delete()
         if not extra[0]:
             raise Exception('No se puede eliminar')
@@ -1435,7 +1435,7 @@ class Persona(ModeloBase):
     apellido2 = models.CharField(default='', max_length=50, verbose_name=u"2do Apellido")
     cedula = models.CharField(default='', max_length=13, verbose_name=u"Cedula")
     pasaporte = models.CharField(default='', max_length=15, verbose_name=u"Pasaporte")
-    nacimiento = models.DateField(verbose_name=u"Fecha de nacimiento")
+    nacimiento = models.DateField(verbose_name=u"Fecha de nacimiento",blank=True, null=True)
     sexo = models.ForeignKey(Sexo, verbose_name=u'Sexo', on_delete=models.CASCADE)
     genero = models.ForeignKey(Genero, blank=True, null=True, verbose_name=u'Genero', on_delete=models.CASCADE)
     otrogenero = models.CharField(default='', max_length=200, verbose_name=u"Otro Genero")
@@ -1476,7 +1476,7 @@ class Persona(ModeloBase):
 
     class Meta:
         verbose_name_plural = u"Personas"
-        unique_together = ('emailinst',)
+        # unique_together = ('emailinst',)
         ordering = ['apellido1', 'apellido2', 'nombre1', 'nombre2']
 
     @staticmethod
@@ -1597,7 +1597,7 @@ class Persona(ModeloBase):
             return True
         return False
 
-    def crear_perfil(self, administrativo=None, inscripcion=None, profesor=None, empleador=None):
+    def crear_perfil(self, administrativo=None, inscripcion=None, profesor=None, empleador=None,cliente=None):
         if inscripcion:
             perfil = PerfilUsuario(persona=self,
                                    inscripcion=inscripcion,
@@ -1617,6 +1617,11 @@ class Persona(ModeloBase):
             perfil = PerfilUsuario(persona=self,
                                    empleador=empleador,
                                    tipoperfilusuario_id=PERFIL_EMPLEADOR_ID)
+            perfil.save()
+        elif cliente:
+            perfil = PerfilUsuario(persona=self,
+                                   cliente=cliente,
+                                   tipoperfilusuario_id=PERFIL_CLIENTE_ID)
             perfil.save()
 
     def lista_perfiles(self):
@@ -1660,6 +1665,8 @@ class Persona(ModeloBase):
             return self.perfilusuario_set.filter(inscripcion__isnull=False, inscripcion__activo=True).order_by('-principal')[0]
         elif self.perfilusuario_set.filter(empleador__isnull=False, empleador__activo=True).exists():
             return self.perfilusuario_set.filter(empleador__isnull=False, empleador__activo=True)[0]
+        elif self.perfilusuario_set.filter(cliente__isnull=False, cliente__activo=True).exists():
+            return self.perfilusuario_set.filter(cliente__isnull=False, cliente__activo=True)[0]
         return None
 
     def tiene_ficha(self):
@@ -1690,6 +1697,9 @@ class Persona(ModeloBase):
     def es_estudiante(self):
         return self.perfilusuario_set.filter(inscripcion__isnull=False).exists()
 
+    def es_cliente(self):
+        return self.perfilusuario_set.filter(cliente__isnull=False).exists()
+
     def es_estudiante_matriculado(self):
         return self.perfilusuario_set.filter(inscripcion__isnull=False, inscripcion__matricula__cerrada=False).exclude(inscripcion__coordinacion__id__in=(22, 23)).exists()
 
@@ -1707,6 +1717,9 @@ class Persona(ModeloBase):
 
     def es_profesor(self):
         return self.perfilusuario_set.filter(profesor__isnull=False).exists()
+
+    def es_cliente(self):
+        return self.perfilusuario_set.filter(cliente__isnull=False).exists()
 
     def mis_inscripciones(self):
         return self.perfilusuario_set.filter(inscripcion__isnull=False)
@@ -1905,6 +1918,8 @@ class Persona(ModeloBase):
 
     def mi_cumpleannos(self):
         hoy = datetime.now().date()
+        if not self.nacimiento:
+            return False
         nacimiento = self.nacimiento
         if nacimiento.day == hoy.day and nacimiento.month == hoy.month:
             return True
@@ -3634,7 +3649,7 @@ class Malla(ModeloBase):
         return self.asignaturamalla_set.filter( nivelmalla=nivelmalla, ejeformativo=eje).distinct()
 
     def asignaturas_malla_sin_itinerario(self, eje, nivelmalla):
-        return self.asignaturamalla_set.filter(itinerario__isnull=True, nivelmalla=nivelmalla, ejeformativo=eje)
+        return self.asignaturamalla_set.filter(nivelmalla=nivelmalla, ejeformativo=eje)
 
     def asignaturas_malla_sin_itinerario_basico(self, eje, nivelmalla):
         return self.asignaturamalla_set.filter(nivelmalla=nivelmalla, ejeformativo=eje)
@@ -3940,7 +3955,7 @@ class AsignaturaMalla(ModeloBase):
         return Inscripcion.objects.filter(inscripcionmalla__malla=self.malla, inscripcionnivel__nivel__id__gt=self.nivelmalla.id).exists()
 
     def es_itinerario(self):
-        return self.itinerario_id is not None and self.itinerario_id > 0
+        return None
 
     def save(self, *args, **kwargs):
         self.identificacion = null_to_text(self.identificacion)
@@ -4797,6 +4812,39 @@ class TipoInscripcion(ModeloBase):
         self.alias = null_to_text(self.alias)
         super(TipoInscripcion, self).save(*args, **kwargs)
 
+
+
+class TipoSolicitudSecretariaDocente(ModeloBase):
+    nombre = models.CharField(default='', max_length=200, verbose_name=u'Nombre')
+    valor = models.FloatField(default=0, verbose_name=u'Valor')
+    descripcion = models.TextField(default="", verbose_name=u'Descripción')
+    costo_unico = models.BooleanField(default=True, verbose_name=u'Costo Unico')
+    costo_base = models.FloatField(default=0, verbose_name=u'Costo Base')
+    grupos = models.ManyToManyField(Group, verbose_name=u'Grupos Responsables')
+    gratismatricula = models.IntegerField(default=0, verbose_name=u'Cantidad gratuitas')
+    activo = models.BooleanField(default=True, verbose_name=u'Activo')
+    validamatricula = models.BooleanField(default=True, verbose_name=u'Valida matricula')
+    respuesta = models.TextField(default="", verbose_name=u'Respuesta automática')
+    plantilla = models.CharField(max_length=300, blank=True, null=True, verbose_name=u'Plantilla')
+
+    def __str__(self):
+        return u'%s' % self.nombre
+
+    class Meta:
+        verbose_name_plural = u"Tipos de solicitudes a secretaria docente"
+        ordering = ['nombre']
+        unique_together = ('nombre',)
+
+    def tiene_costo(self):
+        return self.valor > 0 or self.costo_base > 0
+
+    def save(self, *args, **kwargs):
+        self.nombre = null_to_text(self.nombre)
+        self.descripcion = null_to_text(self.descripcion)
+        self.respuesta = null_to_text(self.respuesta)
+        super(TipoSolicitudSecretariaDocente, self).save(*args, **kwargs)
+
+
 class Inscripcion(ModeloBase):
     persona = models.ForeignKey(Persona, verbose_name=u'Persona', on_delete=models.CASCADE)
     fecha = models.DateField(verbose_name=u'Fecha de inscripción')
@@ -5206,8 +5254,6 @@ class Inscripcion(ModeloBase):
         if self.periodo:
             costo_periodo = self.carrera.precio_modulo_inscripcion(self.periodo, self.sede, self.modalidad, malla)
             costo_conveniohomologacion = None
-            if PreciosConvenioHomologacion.objects.filter(periodo=self.periodo).exists():
-                costo_conveniohomologacion = PreciosConvenioHomologacion.objects.filter(periodo=self.periodo)[0]
             documentos = self.documentos_entregados()
             if costo_periodo.precioinscripcion:
                 if documentos.conveniohomologacion:
@@ -5813,11 +5859,8 @@ class Inscripcion(ModeloBase):
             numeronivel = minivel
             total_optativas_nivel = 0
             total_libreopcion_nivel = 0
-            itinerarios = 0
-            if malla.asignaturamalla_set.filter(nivelmalla__id=minivel, itinerario__isnull=False).exists():
-                itinerarios = 1
             total_regulares_nivel = malla.asignaturamalla_set.filter(nivelmalla__id=minivel).count()
-            total_nivel_malla = total_optativas_nivel + total_libreopcion_nivel + total_regulares_nivel - itinerarios
+            total_nivel_malla = total_optativas_nivel + total_libreopcion_nivel + total_regulares_nivel
             aprobadas_nivel = malla.asignaturamalla_set.filter(asignatura__id__in=aprobadas, nivelmalla__id=minivel).count()
             if aprobadas_nivel < total_nivel_malla:
                 cantidad_arrastres += total_nivel_malla - aprobadas_nivel
@@ -6383,6 +6426,7 @@ class Inscripcion(ModeloBase):
 
     def tiene_nee(self):
         return self.inclusionbienestar_set.exists()
+
 
     def save(self, *args, **kwargs):
         self.identificador = null_to_text(self.identificador)
@@ -7735,8 +7779,7 @@ class Matricula(ModeloBase):
             if UTILIZA_GRATUIDADES:
                 nivel = self.nivelmalla
                 malla = self.inscripcion.mi_malla()
-                itinerario = self.inscripcion.mi_itinerario()
-                cantidadmateriasnivel = malla.asignaturamalla_set.filter(Q(itinerario=itinerario) | Q(itinerario__isnull=True), nivelmalla=nivel).distinct().count()
+                cantidadmateriasnivel = malla.asignaturamalla_set.filter( nivelmalla=nivel).distinct().count()
                 cantidadperiodo = self.materiaasignada_set.filter(asignaturamalla__isnull=False).count()
                 porciento = (100.0/cantidadmateriasnivel)*cantidadperiodo
                 if porciento < PORCIENTO_PERDIDA_PARCIAL_GRATUIDAD:
@@ -9915,9 +9958,120 @@ class IvaAplicado(ModeloBase):
         self.descripcion = null_to_text(self.descripcion)
         super(IvaAplicado, self).save(*args, **kwargs)
 
+class Cliente(ModeloBase):
+    persona = models.ForeignKey(Persona, verbose_name=u"Persona", on_delete=models.CASCADE)
+    empresa = models.ForeignKey(EmpresaEmpleadora, verbose_name=u"Empresa",blank=True, null=True, on_delete=models.CASCADE)
+    personacontacto = models.CharField(max_length=300, blank=True, null=True, verbose_name=u'personacontacto')
+    telefonocontacto = models.CharField(max_length=300, blank=True, null=True, verbose_name=u'telefonocontacto')
+    emailcontacto = models.CharField(max_length=300, blank=True, null=True, verbose_name=u'emailcontacto')
+    activo = models.BooleanField(default=True, verbose_name=u"Activo")
+
+    def correo_de_envio(self):
+        lista = []
+        lista.append(self.emailcontacto)
+
+        return lista
+    def chequea_mora(self):
+        for rubro in self.rubro_set.filter(cancelado=False):
+            rubro.cheque_mora()
+
+    def total_rubros(self):
+        return null_to_numeric(self.rubro_set.aggregate(valor=Sum('valortotal'))['valor'], 2)
+
+    def total_rubros_sin_notadebito(self):
+        return null_to_numeric(
+            self.rubro_set.exclude(rubronotadebito__rubro__inscripcion=self).aggregate(valor=Sum('valortotal'))[
+                'valor'], 2)
+
+    def total_rubros_pendientes(self):
+        return null_to_numeric(self.rubro_set.filter(cancelado=False).aggregate(valor=Sum('saldo'))['valor'], 2)
+
+    def rubros_pendientes(self):
+        return self.rubro_set.filter(cancelado=False).order_by('fechavence')
+
+    def total_descuento(self):
+        return null_to_numeric(
+            DescuentoRecargoRubro.objects.filter(rubro__cliente=self, recargo=False).distinct().aggregate(
+                valor=Sum('valordescuento'))['valor'], 2)
+
+    def total_descuento_pendiente(self):
+        return null_to_numeric(DescuentoRecargoRubro.objects.filter(rubro__cliente=self, recargo=False,
+                                                                    rubro__cancelado=False).distinct().aggregate(
+            valor=Sum('valordescuento'))['valor'], 2)
+
+    def total_liquidado(self):
+        return null_to_numeric(
+            RubroLiquidado.objects.filter(rubro__cliente=self).distinct().aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def total_pagado(self):
+        return null_to_numeric(
+            Pago.objects.filter(rubro__cliente=self, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def total_pagado_periodo(self, periodo):
+        return null_to_numeric(
+            Pago.objects.filter(rubro__cliente=self, rubro__periodo=periodo, valido=True).aggregate(
+                valor=Sum('valor'))['valor'], 2)
+
+    def total_valores_periodo(self, periodo):
+        return null_to_numeric(
+            Rubro.objects.filter(inscripcion=self, periodo=periodo).aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def total_valores_periodo_prontopago(self, periodo):
+        return null_to_numeric(Rubro.objects.filter(inscripcion=self, periodo=periodo, validoprontopago=True).aggregate(
+            valor=Sum('valor'))['valor'], 2)
+
+    def total_cancelado(self):
+        return null_to_numeric(
+            PagoCancelado.objects.filter(rubro__cliente=self).aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def total_pagado_pendiente(self):
+        return null_to_numeric(
+            Pago.objects.filter(rubro__cliente=self, rubro__cancelado=False, valido=True).aggregate(
+                valor=Sum('valor'))['valor'], 2)
+
+    def total_notacredito(self):
+        return null_to_numeric(self.notacredito_set.all().aggregate(valor=Sum('valorinicial'))['valor'], 2)
+
+    def total_adeudado(self):
+        return null_to_numeric(self.rubro_set.aggregate(valor=Sum('saldo'))['valor'], 2)
+
+    def adeuda_a_la_fecha(self):
+        return null_to_numeric(
+            self.rubro_set.filter(fechavence__lt=datetime.now().date()).aggregate(valor=Sum('saldo'))['valor'], 2)
+
+    def credito_a_la_fecha(self):
+        return null_to_numeric(
+            self.rubro_set.filter(fechavence__gte=datetime.now().date()).aggregate(valor=Sum('saldo'))['valor'], 2)
+
+    def tiene_deuda_vencida(self):
+        return self.rubro_set.filter(cancelado=False, fechavence__lt=datetime.now().date()).exists()
+
+    def tiene_deuda_fuera_periodo(self, periodo):
+        return Rubro.objects.filter(cancelado=False, fechavence__lt=datetime.now().date(), inscripcion=self).exclude(
+            periodo=periodo).exists()
+
+    def tiene_deuda(self):
+        return self.rubro_set.filter(cancelado=False).exists()
+
+    def tiene_deuda_orientacion(self):
+        return self.rubro_set.filter(cancelado=True, nombre='DERECHO ORIENTACIÓN PROFESIONAL').exists()
+
+    def tiene_deuda_inscripcion(self):
+        return self.rubro_set.filter(nombre__icontains='INSCRIPCION').exists()
+
+    def tiene_deuda_inscripcion_pagada(self):
+        return self.rubro_set.filter(cancelado=True, nombre__icontains='INSCRIPCION').exists()
+
+    def tiene_credito(self):
+        return self.rubro_set.filter(cancelado=False, fechavence__gte=datetime.now().date()).exists()
+
+    def __str__(self):
+        return u'%s' % self.persona
 
 class Rubro(ModeloBase):
-    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True,  verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente, blank=True, null=True,  verbose_name=u'Cliente', on_delete=models.CASCADE)
+    persona = models.ForeignKey(Persona, blank=True, null=True,  verbose_name=u'Persona', on_delete=models.CASCADE)
     periodo = models.ForeignKey(Periodo, blank=True, null=True, verbose_name=u'Periodo', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=300, verbose_name=u'Nombre')
     fecha = models.DateField(verbose_name=u'Fecha')
@@ -10051,8 +10205,6 @@ class Rubro(ModeloBase):
     def es_curso(self):
         return self.rubrocursoescuelacomplementaria_set.exists()
 
-    def es_curso_titulacion(self):
-        return self.rubrocursounidadtitulacion_set.exists()
 
     def es_mora(self):
         return self.rubrootro_set.filter(tipo__id=TIPO_MORA_RUBRO).exists()
@@ -10206,8 +10358,6 @@ class Rubro(ModeloBase):
             return "ARANCEL"
         if self.rubrocursoescuelacomplementaria_set.exists():
             return "CURSO"
-        if self.rubrocursounidadtitulacion_set.exists():
-            return "CURSO TITULACION"
         if self.rubroagregacion_set.exists():
             return "AGREGACION MATERIAS"
         if self.rubronotadebito_set.exists():
@@ -10272,8 +10422,6 @@ class Rubro(ModeloBase):
                 return "CUR"
         if self.rubrocursoescuelacomplementaria_set.exists():
             return "CUR"
-        if self.rubrocursounidadtitulacion_set.exists():
-            return "CURT"
         if self.rubroagregacion_set.exists():
             return "AGR"
         if self.rubronotadebito_set.exists():
@@ -10285,8 +10433,6 @@ class Rubro(ModeloBase):
             return str(self.rubroespecievalorada_set.all()[0].tipoespecie.id)
         if self.rubrocursoescuelacomplementaria_set.exists():
             return str(self.rubrocursoescuelacomplementaria_set.all()[0].participante.curso.tipocurso.id)
-        if self.rubrocursounidadtitulacion_set.exists():
-            return str(self.rubrocursounidadtitulacion_set.all()[0].participante.curso.tipocurso.id)
         return ""
 
     def relacionado(self):
@@ -10310,8 +10456,6 @@ class Rubro(ModeloBase):
             return self.rubrocuota_set.all()[0]
         if self.rubrocursoescuelacomplementaria_set.exists():
             return self.rubrocursoescuelacomplementaria_set.all()[0]
-        if self.rubrocursounidadtitulacion_set.exists():
-            return self.rubrocursounidadtitulacion_set.all()[0]
         if self.rubroagregacion_set.exists():
             return self.rubroagregacion_set.all()[0]
         if self.rubronotadebito_set.exists():
@@ -10340,8 +10484,6 @@ class Rubro(ModeloBase):
             return u"ARANCEL: %s"[:299] % self.rubroagregacion_set.all()[0].materiaasignada.materia.asignatura.nombre
         if self.rubrocursoescuelacomplementaria_set.exists():
             return u"CURSO: %s"[:299] % self.rubrocursoescuelacomplementaria_set.all()[0].participante.curso.nombre
-        if self.rubrocursounidadtitulacion_set.exists():
-            return u"CURSO TITULACIÓN: %s"[:299] % self.rubrocursounidadtitulacion_set.all()[0].participante.curso.nombre
         if self.rubroespecievalorada_set.exists():
             return u"%s"[:299] % self.rubroespecievalorada_set.all()[0].tipoespecie.nombre
         if self.rubronotadebito_set.exists():
@@ -10802,9 +10944,179 @@ class PrecioTipoOtroRubro(ModeloBase):
         unique_together = ('tipo', 'fecha',)
 
 
+class SolicitudSecretariaDocente(ModeloBase):
+    inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True, verbose_name=u'Solicitante', on_delete=models.CASCADE)
+    tipo = models.ForeignKey(TipoSolicitudSecretariaDocente, verbose_name=u'Tipo de solicitud', on_delete=models.CASCADE)
+    fecha = models.DateField(verbose_name=u'Fecha de solictud')
+    hora = models.TimeField(verbose_name=u'Hora')
+    descripcion = models.TextField(default='', verbose_name=u'Descripción')
+    respuesta = models.TextField(default='', blank=True, null=True, verbose_name=u'Respuesta')
+    cerrada = models.BooleanField(default=False, verbose_name=u'Cerrada')
+    siendoatendida = models.BooleanField(default=False, verbose_name=u'Siendo Atendida')
+    fechacierre = models.DateField(null=True, blank=True, verbose_name=u'Fecha de entrega')
+    numero_tramite = models.IntegerField(default=0, verbose_name=u'Numero de Trámite')
+    matricula = models.ForeignKey(Matricula, blank=True, null=True, verbose_name=u'Matrícula', on_delete=models.CASCADE)
+    materiaasignada = models.ForeignKey(MateriaAsignada, blank=True, null=True, verbose_name=u'Materia Asignada', on_delete=models.CASCADE)
+    responsable = models.ForeignKey(Persona, related_name='responsable', blank=True, null=True, verbose_name=u'Responsable', on_delete=models.CASCADE)
+    archivado = models.CharField(default='', max_length=100, verbose_name=u'Archivado en')
+    archivo = models.FileField(upload_to='archivo/%Y/%m/%d', blank=True, null=True, verbose_name=u'Solicitudes')
+    valorprorroga = models.FloatField(default=0, blank=True, null=True, verbose_name=u'Valor prorroga')
+
+    def __str__(self):
+        return u'%s %s %s' % (self.inscripcion.persona, self.tipo, self.fecha.strftime("%d-%m-%Y"))
+
+    class Meta:
+        verbose_name_plural = u"Solicitudes"
+        ordering = ['cerrada', '-numero_tramite', '-fecha', '-hora']
+        unique_together = ('inscripcion', 'tipo', 'fecha', 'hora',)
+
+    def rubrootro(self):
+        if self.rubrootro_set.exists():
+            return self.rubrootro_set.all()[0]
+        return None
+
+    def verificar_gratuidad(self):
+        if SOLICITUD_SECRETARIA_MATRICULA_GRATUITAS:
+            if self.rubrootro_set.exists() and self.matricula:
+                if self.matricula.solicitudsecretariadocente_set.filter(tipo=self.tipo).count() <= self.tipo.gratismatricula:
+                    rubro = self.rubro()
+                    rubro.liquidar('SOLICITUD GRATUITA')
+
+    def rubro(self):
+        rubrootro = self.rubrootro()
+        return rubrootro.rubro if rubrootro else None
+
+    def especie(self):
+        if RubroEspecieValorada.objects.filter(solicitud=self).exists():
+            return RubroEspecieValorada.objects.filter(solicitud=self)[0]
+        return None
+
+    def especiepagada(self):
+        rubro = self.especie().rubro
+        return rubro.cancelado if rubro else True
+
+    def valor(self):
+        rubro = self.rubro()
+        return rubro.valor if rubro else 0
+
+    def pagada(self):
+        rubro = self.rubro()
+        return rubro.cancelado if rubro else True
+
+    def vencida(self):
+        if DIAS_VENCIMIENTO_SOLICITUD:
+            return not self.siendoatendida and datetime.now().date() > (datetime(self.fecha.year, self.fecha.month, self.fecha.day, 0, 0, 0) + timedelta(days=DIAS_VENCIMIENTO_SOLICITUD)).date()
+        return False
+
+    def mail_subject_nuevo(self):
+        send_mail(subject='Nueva solicitud a registrada.',
+                  html_template='emails/nuevasolicitud.html',
+                  data={'d': self},
+                  recipient_list=[self.inscripcion.persona])
+
+    def mail_subject_cierre(self):
+        send_mail(subject='Su solicitud ya fue atendida y cerrada.',
+                  html_template='emails/respuestasolicitud.html',
+                  data={'d': self},
+                  recipient_list=[self.inscripcion.persona])
+
+    def mail_asignacion(self):
+        send_mail(subject='Solicitud asiganda.',
+                  html_template='emails/asignarsolicitud.html',
+                  data={'d': self},
+                  recipient_list=[self.inscripcion.persona])
+
+    def mail_reenvio(self):
+        send_mail(subject='Solicitud asiganda.',
+                  html_template='emails/reasignarsolicitud.html',
+                  data={'d': self},
+                  recipient_list=[self.inscripcion.persona])
+
+    def mail_subject_comentar(self):
+        send_mail(subject='La solicitud recibida ha sido atendida.',
+                  html_template='emails/comentarsolicitud.html',
+                  data={'d': self},
+                  recipient_list=[self.inscripcion.persona])
+
+    def ultima_respuesta(self):
+        if self.historialsolicitud_set.exists():
+            return self.historialsolicitud_set.all().order_by('-fecha')[0]
+        else:
+            historial = HistorialSolicitud(solicitud=self,
+                                           fecha=self.fecha,
+                                           )
+            historial.save()
+            return historial
+        return None
+
+    def asignaciones(self):
+        return self.historialsolicitud_set.all()
+
+    def tiene_costo(self):
+        rubro = self.rubro()
+        if rubro:
+            return rubro.valor > 0
+        return False
+
+    def tiene_rubros_pagados(self):
+        return Pago.objects.filter(rubro__rubrootro__solicitud=self).exists()
+
+    def eliminar_rubros(self):
+        for rubro in RubroOtro.objects.filter(solicitud=self):
+            r = rubro.rubro
+            rubro.delete()
+            r.verifica_rubro_otro(RUBRO_OTRO_SOLICITUD_ID)
+
+    def valorprorrogar(self, periodo):
+        rm = null_to_decimal(self.inscripcion.rubro_set.filter(rubromatricula__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        rc = null_to_decimal(self.inscripcion.rubro_set.filter(rubrocuota__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        rg = null_to_decimal(self.inscripcion.rubro_set.filter(rubroagregacion__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        rom = null_to_decimal(self.inscripcion.rubro_set.filter(rubrootromatricula__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        roa = null_to_decimal(self.inscripcion.rubro_set.filter(rubrootro__isnull=False, rubrootro__tipo__id__in=(10, 11, 12, 13, 14, 18), cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        rnd = null_to_decimal(self.inscripcion.rubro_set.filter(rubronotadebito__isnull=False, cancelado=False, periodo=periodo).aggregate(valor=Sum('saldo'))['valor'], 2)
+        return null_to_decimal(rm+rc+rg+rom+roa+rnd, 2)
+
+    def total_cuotas(self):
+        return null_to_decimal(self.diferimientosolicitudprorrogasecretaria_set.aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def tiene_requisitos(self):
+        return self.requisitossolicitudsecretariadocente_set.exists()
+
+    def es_medica(self):
+        return self.solicitudsecretariafaltas_set.filter(medica=True).exists()
+
+    def responsablen(self):
+        return PersonalSolicitudProrroga.objects.filter(carrera=self.inscripcion.carrera,modalidad=self.inscripcion.modalidad,sede=self.inscripcion.sede,nivel=self.matricula.nivelmalla).last()
+
+
+    def save(self, *args, **kwargs):
+        self.descripcion = null_to_text(self.descripcion)
+        self.respuesta = null_to_text(self.respuesta)
+        self.archivado = null_to_text(self.archivado)
+        super(SolicitudSecretariaDocente, self).save(*args, **kwargs)
+
+
+
+class HistorialSolicitud(ModeloBase):
+    solicitud = models.ForeignKey(SolicitudSecretariaDocente, verbose_name=u'Solicitud', on_delete=models.CASCADE)
+    fecha = models.DateTimeField(verbose_name=u'Fecha de solictud')
+    persona = models.ForeignKey(Persona, verbose_name=u'Persona', on_delete=models.CASCADE,blank=True,null=True)
+    respuesta = models.TextField(default='', blank=True, null=True, verbose_name=u'Respuesta')
+
+    class Meta:
+        ordering = ['fecha']
+        unique_together = ('solicitud', 'fecha', 'persona',)
+
+    def save(self, *args, **kwargs):
+        self.respuesta = null_to_text(self.respuesta)
+        super(HistorialSolicitud, self).save(*args, **kwargs)
+
+
 class RubroOtro(ModeloBase):
     rubro = models.ForeignKey(Rubro, verbose_name=u'Rubro', on_delete=models.CASCADE)
     tipo = models.ForeignKey(TipoOtroRubro, verbose_name=u'Tipo', on_delete=models.CASCADE)
+    solicitud = models.ForeignKey(SolicitudSecretariaDocente, blank=True, null=True, verbose_name=u'Solicitud', on_delete=models.CASCADE)
+
 
     def __str__(self):
         return u'Rubro: %s %s' % (self.rubro.inscripcion, str(self.rubro.valor))
@@ -12591,7 +12903,8 @@ class DiferidoTarjeta(ModeloBase):
 
 
 class ReciboCajaInstitucion(ModeloBase):
-    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    inscripcion = models.ForeignKey(Inscripcion,  blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente,  blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
     pago = models.ForeignKey(Pago, blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
     motivo = models.TextField(default='', verbose_name=u'Motivo')
     fecha = models.DateField(verbose_name=u'Fecha')
@@ -12643,6 +12956,7 @@ class ReciboCajaInstitucion(ModeloBase):
 
 class NotaCredito(ModeloBase):
     inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente,  blank=True, null=True, verbose_name=u'Cliente', on_delete=models.CASCADE)
     fecha = models.DateField(verbose_name=u'Fecha')
     numero = models.CharField(default='', max_length=20, verbose_name=u"Numero")
     motivo = models.CharField(default='', max_length=200, verbose_name=u'Motivo')
@@ -14597,6 +14911,7 @@ class PerfilUsuario(ModeloBase):
     administrativo = models.ForeignKey(Administrativo, blank=True, null=True, verbose_name=u'Administrativo', on_delete=models.CASCADE)
     profesor = models.ForeignKey(Profesor, blank=True, null=True, verbose_name=u'Profesor', on_delete=models.CASCADE)
     inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente, blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
     principal = models.BooleanField(default=False, verbose_name=u'Inscripción principal')
     codigo_texto = models.CharField(default='', max_length=200, verbose_name=u"Código Texto")
     codigo_qr = models.FileField(upload_to='qr', verbose_name=u'Códigos QR', blank=True, null=True)
@@ -14626,6 +14941,9 @@ class PerfilUsuario(ModeloBase):
 
     def es_empleador(self):
         return self.empleador is not None
+
+    def es_cliente(self):
+        return self.cliente is not None
 
     def establecer_estudiante_principal(self):
         if self.es_estudiante() and not self.principal:
@@ -17474,7 +17792,6 @@ class RubroCursoEscuelaComplementaria(ModeloBase):
         verbose_name_plural = u"Rubros de cursos complementarios"
         unique_together = ('rubro',)
 
-
 class TipoTerminosAcuerdos(ModeloBase):
     nombre = models.TextField(default='', blank=True, null=True, verbose_name=u"Tipo de terminos y acuerdos")
     textomostrar = models.TextField(default='', blank=True, null=True, verbose_name=u"Texto a mostrar")
@@ -17490,3 +17807,282 @@ class AceptacionTerminosAcuerdos(ModeloBase):
     persona = models.ForeignKey(Persona, verbose_name=u'personaaceptaterminos', on_delete=models.CASCADE)
     tipoacuerdo = models.ForeignKey(TipoTerminosAcuerdos, verbose_name=u'Tipo de terminos y acuerdos', on_delete=models.CASCADE)
     fechaaceptacion = models.DateField(default=timezone.now, blank=True, null=True, verbose_name=u'Fecha aceptacion')
+
+class TipoServicio(ModeloBase):
+    nombre = models.CharField(max_length=180)           # "Salón Ágora", "Lab Materiales"
+
+    def __str__(self):
+        return self.nombre
+
+class EspacioFisico(ModeloBase):
+    codigo = models.CharField(max_length=20, unique=True)  # AGORA, LAB_MAT, etc.
+    nombre = models.CharField(max_length=150)              # "Salón Ágora", "Lab Materiales"
+    descripcion = models.TextField(blank=True)
+    tipo_servicio = models.ForeignKey(TipoServicio, blank=True, null=True,verbose_name=u'tiposervicio', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.nombre
+
+class ServicioCatalogo(ModeloBase):
+    class TipoCobro(models.IntegerChoices):
+        POR_ITEM = 1, "Por ítem (muestra / pieza / ensayo / paquete)"
+        POR_HORA = 2, "Por hora"
+
+    espacio_fisico = models.ForeignKey(EspacioFisico, on_delete=models.PROTECT, related_name="servicios", verbose_name="Laboratorio / Área")
+    nombre = models.TextField()  # descripción larga del ítem
+    tipo_cobro = models.PositiveSmallIntegerField(choices=TipoCobro.choices, default=TipoCobro.POR_ITEM)
+    precio_base = models.DecimalField(max_digits=10, decimal_places=2)
+    observacion = models.TextField(blank=True)
+
+    def __str__(self):
+        txt = (self.nombre or "").strip()
+        return (txt[:80] + "…") if len(txt) > 80 else txt
+
+
+class RequerimientoServicio(ModeloBase):
+    class Estado(models.IntegerChoices):
+        RECIBIDO         = 1, "Recibido"
+        EN_PROFORMA      = 2, "Proforma en elaboración"
+        PROFORMA_ENVIADA = 3, "Proforma enviada al cliente"
+        CERRADO          = 4, "Cerrado"
+
+    cliente = models.ForeignKey(Cliente, null=True, blank=True, on_delete=models.SET_NULL, related_name="cliente")
+    nombre_contacto = models.CharField(max_length=255)
+    email_contacto = models.EmailField()
+    telefono_contacto = models.CharField(max_length=50, blank=True)
+    espacio_fisico = models.ForeignKey(EspacioFisico, null=True, blank=True, on_delete=models.SET_NULL, related_name="espaciofisico")
+    descripcion = models.TextField()
+    archivo = models.FileField(upload_to="requerimientos/", blank=True)
+
+    estado = models.PositiveSmallIntegerField(
+        choices=Estado.choices,
+        default=Estado.RECIBIDO
+    )
+
+    fecha_recepcion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Req #{self.id} - {self.nombre_contacto}"
+
+
+class Proforma(ModeloBase):
+    class Estado(models.IntegerChoices):
+        BORRADOR  = 1, "Borrador"
+        ENVIADA   = 2, "Enviada"
+        APROBADA  = 3, "Aprobada"
+        RECHAZADA = 4, "Rechazada"
+
+    numero = models.CharField(max_length=30, unique=True)
+    cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="proformas")
+    estado = models.PositiveSmallIntegerField(choices=Estado.choices, default=Estado.BORRADOR)
+    iva = models.ForeignKey(IvaAplicado, verbose_name="IVA", on_delete=models.PROTECT, null=True, blank=True,)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    descuento = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    impuestos = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    observaciones = models.TextField(blank=True)
+    fecha_envio = models.DateTimeField(null=True, blank=True)
+    fecha_respuesta = models.DateTimeField(null=True, blank=True)
+    creado_por = models.ForeignKey('ctt.Persona', null=True, blank=True, on_delete=models.SET_NULL, related_name="proformas_creadas")
+
+    requerimiento = models.ForeignKey(
+        RequerimientoServicio,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='proformas'
+    )
+
+    def tiene_rubro(self):
+        return bool(getattr(self, 'rubro_servicio', None))
+
+    def rubro_pagado(self):
+        rs = getattr(self, 'rubro_servicio', None)
+        if not rs or not getattr(rs, 'rubro', None):
+            return False
+        return bool(rs.rubro.cancelado)
+
+    def recomputar_totales(self):
+        detalles = self.detalles.all()
+
+        # Subtotal = suma de subtotales de detalles
+        sub = sum((d.subtotal for d in detalles), Decimal('0.00'))
+        self.subtotal = sub.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        # Aseguramos descuento como Decimal
+        descuento = self.descuento or Decimal('0.00')
+
+        # Base imponible = subtotal - descuento (no negativa)
+        base_imponible = (self.subtotal - descuento).quantize(
+            Decimal('0.01'),
+            rounding=ROUND_HALF_UP
+        )
+        if base_imponible < 0:
+            base_imponible = Decimal('0.00')
+
+        # porcientoiva viene como 0.15 (equivale a 15%)
+        if self.iva and self.iva.porcientoiva is not None:
+            porcentaje = Decimal(str(self.iva.porcientoiva))  # 0.15
+        else:
+            porcentaje = Decimal('0.00')
+
+        # impuestos = base * porcentaje  (ya NO se divide para 100)
+        self.impuestos = (base_imponible * porcentaje).quantize(
+            Decimal('0.01'),
+            rounding=ROUND_HALF_UP
+        )
+
+        # Total final
+        self.total = (base_imponible + self.impuestos).quantize(
+            Decimal('0.01'),
+            rounding=ROUND_HALF_UP
+        )
+
+
+    def enviar_al_cliente(self, actor_persona=None):
+        estado_anterior = self.estado
+        # recalcula totales antes de enviar
+        self.recomputar_totales()
+        self.estado = self.Estado.ENVIADA
+        self.fecha_envio = timezone.now()
+        self.save()
+
+        self.registrar_evento(
+            tipo=ProformaHistorial.TipoEvento.ENVIO,
+            mensaje="Proforma enviada al cliente.",
+            actor_persona=actor_persona,
+            estado_anterior=estado_anterior,
+            estado_nuevo=self.estado,
+        )
+
+    def registrar_evento(self, tipo, mensaje="", actor_persona=None, actor_externo="", estado_anterior=None,
+                         estado_nuevo=None):
+        from .models import ProformaHistorial  # o ajusta el import según tu estructura
+
+        ProformaHistorial.objects.create(
+            proforma=self,
+            tipo=tipo,
+            mensaje=mensaje,
+            actor_persona=actor_persona,
+            actor_externo=actor_externo,
+            estado_anterior=estado_anterior,
+            estado_nuevo=estado_nuevo,
+        )
+
+    def __str__(self): return f"Proforma {self.numero}"
+
+
+class ProformaDetalle(ModeloBase):
+    proforma = models.ForeignKey(Proforma, related_name='detalles', on_delete=models.CASCADE)
+    servicio = models.ForeignKey(ServicioCatalogo, on_delete=models.PROTECT)
+    descripcion = models.CharField(max_length=255, blank=True)
+    fecha = models.DateField(blank=True, null=True)
+    horainicio = models.TimeField(blank=True, null=True)
+    horafin = models.TimeField(blank=True, null=True)
+    cantidad = models.DecimalField(max_digits=8, decimal_places=2, default=1)
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+
+    def save(self, *args, **kwargs):
+        if not self.precio_unitario:
+            self.precio_unitario = self.servicio.precio_base
+
+        # cantidad = piezas / ensayos (POR_ITEM) o horas (POR_HORA)
+        self.subtotal = self.cantidad * self.precio_unitario
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.servicio.nombre} x {self.cantidad}"
+
+
+class RevisionProforma(ModeloBase):
+    proforma = models.OneToOneField(Proforma, on_delete=models.CASCADE, related_name="revision")
+    revisado_por = models.ForeignKey('Persona', on_delete=models.PROTECT, related_name="proformas_revisadas")
+    cumple = models.BooleanField()
+    comentarios = models.TextField(blank=True)
+
+class SolicitudTrabajo(ModeloBase):
+    class Estado(models.IntegerChoices):
+        PEND_PAGO = 1, "Pendiente de pago"
+        PAGADA    = 2, "Pagada"
+        EN_PROCESO= 3, "En proceso"
+        ENTREGADA = 4, "Entregada"
+        CERRADA   = 5, "Cerrada"
+        NO_CUMPLE = 6, "No cumplimiento"
+
+    proforma = models.OneToOneField(Proforma, on_delete=models.PROTECT, related_name="solicitud_trabajo")
+    cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT)
+    estado = models.PositiveSmallIntegerField(choices=Estado.choices, default=Estado.PEND_PAGO)
+
+    def __str__(self):
+        return f"Solicitud #{self.pk} - {self.cliente} - {self.get_estado_display()}"
+
+class FacturaItem(ModeloBase):
+    factura = models.ForeignKey('Factura', related_name="items", on_delete=models.CASCADE)
+    descripcion = models.CharField(max_length=255)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2,
+                                   validators=[MinValueValidator(Decimal("0.01"))])
+    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
+
+    @property
+    def total(self): return self.cantidad * self.precio_unitario
+
+
+class Trabajo(ModeloBase):
+    solicitud = models.OneToOneField(SolicitudTrabajo, related_name="trabajo", on_delete=models.PROTECT)
+    responsable = models.ForeignKey('Persona', on_delete=models.PROTECT, related_name="trabajos_asignados")
+    descripcion = models.TextField(blank=True)
+    fecha_inicio = models.DateTimeField(null=True, blank=True)
+    fecha_fin = models.DateTimeField(null=True, blank=True)
+
+class EntregaResultado(ModeloBase):
+    trabajo = models.OneToOneField(Trabajo, related_name="entrega", on_delete=models.PROTECT)
+    recibido_por = models.CharField(max_length=255)
+    observaciones = models.TextField(blank=True)
+    archivo = models.FileField(upload_to="resultados/", blank=True)
+    fecha_entrega = models.DateTimeField(auto_now_add=True)
+
+class InformeNoCumplimiento(ModeloBase):
+    proforma = models.ForeignKey(Proforma, on_delete=models.PROTECT, related_name="informes_no_cumplimiento")
+    descripcion = models.TextField()
+    adjunto = models.FileField(upload_to="no_cumple/", blank=True)
+
+class ProformaHistorial(ModeloBase):
+    class TipoEvento(models.IntegerChoices):
+        CREACION   = 1, "Creación"
+        EDICION    = 2, "Edición"
+        ENVIO      = 3, "Envío al cliente"
+        APROBACION = 4, "Aprobación del cliente"
+        RECHAZO    = 5, "Rechazo del cliente"
+        COMENTARIO = 6, "Comentario / observación"
+
+    proforma = models.ForeignKey(
+        Proforma,
+        related_name="historial",
+        on_delete=models.CASCADE
+    )
+
+    tipo = models.PositiveSmallIntegerField(choices=TipoEvento.choices)
+    fecha = models.DateTimeField(default=timezone.now)
+
+    # Quién hizo la acción
+    actor_persona = models.ForeignKey('ctt.Persona', null=True, blank=True, on_delete=models.SET_NULL, related_name="eventos_proforma")
+    actor_externo = models.CharField(max_length=255, blank=True, help_text="Nombre o referencia del cliente externo si no está logueado.")
+
+    estado_anterior = models.PositiveSmallIntegerField(null=True, blank=True)
+    estado_nuevo = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    mensaje = models.TextField(blank=True)  # aquí va el “por qué”, comentario, etc.
+
+    def __str__(self):
+        return f"[{self.get_tipo_display()}] Proforma {self.proforma.numero} - {self.fecha:%Y-%m-%d %H:%M}"
+
+class RubroServicio(ModeloBase):
+    rubro = models.OneToOneField('Rubro', on_delete=models.CASCADE, related_name='rubro_servicio')
+    proforma = models.OneToOneField('Proforma', on_delete=models.PROTECT, related_name='rubro_servicio')
+    descripcion = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"Rubro servicio {self.rubro_id} - proforma {self.proforma.numero}"
+
+
+

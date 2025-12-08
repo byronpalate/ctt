@@ -21,13 +21,30 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 
-from ctt import commonviews, inscripciones, matriculas, fecha_evaluaciones, adm_periodos, pro_horarios, pro_asistencias, pro_planificacion, \
-    adm_mallas, pro_aperturaclase, alu_automatricula, pro_clases, alu_finanzas, alu_notas, pro_evaluaciones, alu_asistencias, alu_horarios, \
-    alu_cursoscomplementarios, adm_caja, alu_materias, finanzas, adm_facturas, printdoc, adm_recibopago, adm_notacredito, adm_valecaja, adm_recibo_caja, \
-    adm_transferencias, adm_depositos, adm_tecnologicouniversidad, adm_depositoinscripcion, adm_carreras, api, mailbox, adm_coordinaciones, \
-    adm_institucion, adm_colegios, adm_cursoscomplementarios, adm_evaluaciones, niveles, administrativos, adm_asignaturas, adm_modelosevaluativos, docentes, \
-    adm_calculofinanzas, adm_pagosnivel
+from ctt import commonviews, inscripciones, matriculas, fecha_evaluaciones, adm_periodos, pro_horarios, pro_asistencias, \
+    pro_planificacion, \
+    adm_mallas, pro_aperturaclase, alu_automatricula, pro_clases, alu_finanzas, alu_notas, pro_evaluaciones, \
+    alu_asistencias, alu_horarios, \
+    alu_cursoscomplementarios, adm_caja, alu_materias, finanzas, adm_facturas, printdoc, adm_recibopago, \
+    adm_notacredito, adm_valecaja, adm_recibo_caja, \
+    adm_transferencias, adm_depositos, adm_tecnologicouniversidad, adm_depositoinscripcion, adm_carreras, api, mailbox, \
+    adm_coordinaciones, \
+    adm_institucion, adm_colegios, adm_cursoscomplementarios, adm_evaluaciones, niveles, administrativos, \
+    adm_asignaturas, adm_modelosevaluativos, docentes, \
+    adm_calculofinanzas, adm_pagosnivel, servicios, gestion_servicios, registroexterno, ver_servicios, \
+    adm_ordenestrabajo
 
+from ctt import commonviews, inscripciones, matriculas, fecha_evaluaciones, adm_periodos, pro_horarios, pro_asistencias, \
+    pro_planificacion, \
+    adm_mallas, pro_aperturaclase, alu_automatricula, pro_clases, alu_finanzas, alu_notas, pro_evaluaciones, \
+    alu_asistencias, alu_horarios, \
+    alu_cursoscomplementarios, adm_caja, alu_materias, finanzas, adm_facturas, printdoc, adm_recibopago, \
+    adm_notacredito, adm_valecaja, adm_recibo_caja, \
+    adm_transferencias, adm_depositos, adm_tecnologicouniversidad, adm_depositoinscripcion, adm_carreras, api, mailbox, \
+    adm_coordinaciones, \
+    adm_institucion, adm_colegios, adm_cursoscomplementarios, adm_evaluaciones, niveles, administrativos, \
+    adm_asignaturas, adm_modelosevaluativos, docentes, \
+    adm_calculofinanzas, adm_pagosnivel, adm_cliente, cli_finanzas
 
 import django.views.static
 
@@ -76,6 +93,7 @@ urlpatterns = [
     path('alu_notas', alu_notas.view),
 
     path('alu_finanzas', alu_finanzas.view),
+    path('cli_finanzas', cli_finanzas.view),
 
     path('adm_asignaturas', adm_asignaturas.view),
     path('adm_mallas', adm_mallas.view),
@@ -149,6 +167,12 @@ urlpatterns = [
 
     path('adm_evaluaciones', adm_evaluaciones.view),
     path('adm_pagosnivel', adm_pagosnivel.view),
+    path('adm_cliente', adm_cliente.view),
+    path('servicios', servicios.view),
+    path('gestion_servicios', gestion_servicios.view),
+    path('registroexterno', registroexterno.view),
+    path('ver_servicios', ver_servicios.view),
+    path('adm_ordenestrabajo', adm_ordenestrabajo.view),
 
 
 

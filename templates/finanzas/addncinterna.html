@@ -1,0 +1,22 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_motivo, #id_valorinicial").addClass("validate[required]");
+            $("#id_fecha").datepicker({format:"dd-mm-yyyy"});
+
+            $("#id_valorinicial").blur(function(){
+                numerico($(this), 1, 0, 2);
+            });
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block atras %}/finanzas{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addncinterna'/>
+    <input type='hidden' name='id' value='{{ inscripcion.id }}'/>
+{% endblock %}
+{% block formback %}/finanzas{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_fecha").datepicker({format:"dd-mm-yyyy"});
+            $("#id_fecha, #id_cuentabanco, #id_referencia, #id_archivo ").addClass("validate[required]");
+
+            $("#id_deposito").click(function(){
+                if ($("#id_deposito").prop('checked')){
+                    $("#id_transferencia").prop('checked', false);
+                } else {
+                    $("#id_transferencia").prop('checked', true);
+                }
+            });
+
+            $("#id_transferencia").click(function(){
+                if ($("#id_transferencia").prop('checked')){
+                    $("#id_deposito").prop('checked', false);
+                } else {
+                    $("#id_deposito").prop('checked', true);
+                }
+            });
+
+            $("#id_valor").blur(function(){
+                numerico($(this), 0, 0, 2);
+            }).addClass("validate[min[0.01]]");
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block atras%}/finanzas{% endblock %}
+{% block formaction %}/finanzas{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='adddeposito'/>
+    <input type='hidden' name='inscripcion' value='{{ inscripcion.id }}'/>
+{% endblock %}
+{% block formback %}/finanzas{% endblock %}

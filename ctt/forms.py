@@ -9,6 +9,7 @@ from django.db.models import Q
 from django.forms.models import ModelChoiceField
 from django.forms.widgets import DateTimeInput
 from django.utils.safestring import mark_safe
+from decimal import Decimal
 
 from settings import FORMA_PAGO_RECIBOCAJAINSTITUCION, ALUMNOS_GROUP_ID, FORMA_PAGO_NOTA_CREDITO, MAXIMO_MATERIA_ONLINE, \
     NIVEL_MALLA_UNO, CANTIDAD_MATRICULAS_MAXIMAS, EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES, EMAIL_INSTITUCIONAL_AUTOMATICO_DOCENTES,\
@@ -36,7 +37,11 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor
     ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, \
     MateriaCursoEscuelaComplementaria, \
     Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, \
-    TipoIntegracion, CodigoEvaluacion, IvaAplicado
+    TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente, Factura, EspacioFisico, ServicioCatalogo, TipoServicio, \
+    Proforma
+
+
+# Servicio,
 
 
 class BaseForm(forms.Form):
@@ -599,6 +604,27 @@ class AdministrativosForm(BaseForm):
         self.fields['parroquia'].queryset = Parroquia.objects.filter(canton=administrativo.persona.canton)
         self.fields['cantonnac'].queryset = Canton.objects.filter(provincia=administrativo.persona.provincianac)
         self.fields['parroquianac'].queryset = Parroquia.objects.filter(canton=administrativo.persona.cantonnac)
+
+class ClientesForm(BaseForm):
+    cedula = forms.CharField(label=u"Cédula", max_length=10, required=False, widget=forms.TextInput())
+    pasaporte = forms.CharField(label=u"Pasaporte", max_length=15, initial='', required=False, widget=forms.TextInput())
+    nombre1 = forms.CharField(label=u"1er Nombre", max_length=50, widget=forms.TextInput())
+    nombre2 = forms.CharField(label=u"2do Nombre", max_length=50, required=False, widget=forms.TextInput())
+    apellido1 = forms.CharField(label=u"1er Apellido", max_length=50, widget=forms.TextInput())
+    apellido2 = forms.CharField(label=u"2do Apellido", max_length=50, required=False, widget=forms.TextInput())
+    sexo = forms.ModelChoiceField(label=u"Género", queryset=Sexo.objects.all(), widget=forms.Select())
+    direccion = forms.CharField(label=u"Calle Principal", max_length=100, required=False, widget=forms.TextInput())
+    telefono = forms.CharField(label=u"Teléfono Movil", max_length=10, required=False, widget=forms.TextInput())
+    email = forms.CharField(label=u"Correo Electrónico", max_length=240, required=False, widget=forms.TextInput())
+    empresa = forms.BooleanField(label=u"Pertenece a Empresa?", required=False, initial=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
+    ruc = forms.CharField(label=u"Ruc", max_length=13, required=False, widget=forms.TextInput())
+    nombreempresa = forms.CharField(label=u"Nombre Empresa", max_length=50,required=False, widget=forms.TextInput())
+    emailempresa = forms.CharField(label=u"Correo Electrónico Empresa", max_length=240, required=False, widget=forms.TextInput())
+    direccionempresa = forms.CharField(label=u"Dirección Empresa", max_length=100, required=False, widget=forms.TextInput())
+    telefonoempresa = forms.CharField(label=u"Teléfono Empresa", max_length=10, required=False, widget=forms.TextInput())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
 
 class GrupoUsuarioForm(BaseForm):
@@ -2907,3 +2933,151 @@ class TipoCostoCursoForm(BaseForm):
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+
+class ProformaForm(BaseForm):
+    observaciones = forms.CharField(label=u"Observaciones", required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}))
+    # descuento = forms.FloatField(label=u"Descuento", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-moneda', 'decimales': '2'}))
+    # iva = ModelChoiceField(label=u'IVA', queryset=IvaAplicado.objects.all(), required=False, widget=forms.Select())
+
+    def editar(self, proforma):
+        if proforma and proforma.estado != Proforma.Estado.BORRADOR:
+            deshabilitar_campo(self, 'cliente')
+            deshabilitar_campo(self, 'observaciones')
+            deshabilitar_campo(self, 'descuento')
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+# =========================
+#    GESTIÓN (ADMIN) sfd
+# =========================
+
+class RevisionProformaForm(BaseForm):
+    cumple = forms.BooleanField(label=u"Verificación cumple", required=False, initial=False)
+    comentarios = forms.CharField(label=u"Comentarios", required=False, widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'}))
+
+    def editar(self, revision):
+        # si ya hay decisión, bloquear el cambio
+        if revision and revision.pk:
+            deshabilitar_campo(self, 'cumple')
+            # permitir comentar, si quieres bloquear también:
+            # deshabilitar_campo(self, 'comentarios')
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+
+class EmitirFacturaForm(BaseForm):
+    numero = forms.CharField(label=u"Número de factura", max_length=30)
+    fecha_emision = forms.DateField(label=u"Fecha de emisión", widget=forms.TextInput(attrs={'class': 'selectorfecha'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+    def editar(self, factura):
+        if factura and factura.pk:
+            deshabilitar_campo(self, 'numero')
+            deshabilitar_campo(self, 'fecha_emision')
+
+
+class GenerarTrabajoForm(BaseForm):
+    descripcion = forms.CharField(label=u"Descripción", required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+
+class RevisionProformaForm(BaseForm):
+    cumple = forms.BooleanField(label=u"Verificación cumple", required=False, initial=False)
+    comentarios = forms.CharField(label=u"Comentarios", required=False, widget=forms.Textarea(attrs={'rows':'4','class':'form-control'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+class VincularFacturaForm(BaseForm):
+    factura = forms.ModelChoiceField(label=u"Factura existente", queryset=Factura.objects.all(), widget=forms.Select())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+class GenerarTrabajoForm(BaseForm):
+    responsable = forms.ModelChoiceField(label=u"Responsable", queryset=Persona.objects.all(), widget=forms.Select())
+    descripcion = forms.CharField(label=u"Descripción", required=False, widget=forms.Textarea(attrs={'rows':'3','class':'form-control'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+
+class RequerimientoServicioForm(BaseForm):
+    tiposervicio = forms.ModelChoiceField(label=u"Tipo de Requerimiento", queryset=TipoServicio.objects.all(), widget=forms.Select())
+    espacio_fisico = forms.ModelChoiceField(label=u"Laboratorio / área", queryset=EspacioFisico.objects.all(), widget=forms.Select())
+    cliente = forms.ModelChoiceField(label=u"Cliente", queryset=Cliente.objects.all(), widget=forms.Select())
+    descripcion = forms.CharField(label=u"Descripción del requerimiento",widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'}))
+    archivo = forms.FileField(label=u"Archivo adjunto (opcional)",required=False,widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+
+class ProformaDetalleForm(BaseForm):
+    servicio = forms.ModelChoiceField(label=u"Servicio", queryset=ServicioCatalogo.objects, widget=forms.Select())
+    fecha = forms.DateField(label=u"Fecha", input_formats=['%d-%m-%Y'], initial=datetime.now().date(), widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
+    horainicio = forms.CharField(label='Hora Inicio',widget=forms.Select(), required=False)
+    horafin = forms.CharField(label='Hora Fin',widget=forms.Select(), required=False)
+    descripcion = forms.CharField(label=u"Descripción", required=False, widget=forms.Textarea(attrs={'rows': '2', 'class': 'form-control'}))
+    cantidad = forms.DecimalField(label=u"Cantidad", max_digits=8, decimal_places=2, initial=Decimal('1.00'))
+    precio_unitario = forms.DecimalField(label=u"Precio unitario", max_digits=10, decimal_places=2, required=False, help_text=u"Si lo dejas vacío, se tomará el precio base del servicio.")
+
+    def add(self, espaciofisico):
+        self.fields['servicio'].queryset = ServicioCatalogo.objects.filter(espacio_fisico=espaciofisico)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+class RegistroExternoForm(BaseForm):
+    cedula = forms.CharField(label=u"Cédula", max_length=10, required=False, widget=forms.TextInput())
+    pasaporte = forms.CharField(label=u"Pasaporte", max_length=15, initial='', required=False, widget=forms.TextInput())
+    nombre1 = forms.CharField(label=u"1er Nombre", max_length=50, widget=forms.TextInput())
+    nombre2 = forms.CharField(label=u"2do Nombre", max_length=50, required=False, widget=forms.TextInput())
+    apellido1 = forms.CharField(label=u"1er Apellido", max_length=50, widget=forms.TextInput())
+    apellido2 = forms.CharField(label=u"2do Apellido", max_length=50, required=False, widget=forms.TextInput())
+    sexo = forms.ModelChoiceField(label=u"Género", queryset=Sexo.objects.all(), widget=forms.Select())
+    direccion = forms.CharField(label=u"Dirección", max_length=100, required=False, widget=forms.TextInput())
+    telefono = forms.CharField(label=u"Teléfono Movil", max_length=10, required=False, widget=forms.TextInput())
+    email = forms.CharField(label=u"Correo Electrónico", max_length=240, required=False, widget=forms.TextInput())
+    empresa = forms.BooleanField(label=u"Pertenece a Empresa?", required=False, initial=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
+    ruc = forms.CharField(label=u"Ruc", max_length=13, required=False, widget=forms.TextInput())
+    nombreempresa = forms.CharField(label=u"Nombre Empresa", max_length=50,required=False, widget=forms.TextInput())
+    direccionempresa = forms.CharField(label=u"Dirección Empresa", max_length=100, required=False, widget=forms.TextInput())
+    telefonoempresa = forms.CharField(label=u"Teléfono Empresa", max_length=10, required=False, widget=forms.TextInput())
+    personacontacto = forms.CharField(label=u"Persona Contacto", max_length=50,required=False, widget=forms.TextInput())
+    telefonocontacto = forms.CharField(label=u"Teléfono Movil Contacto", max_length=10, required=False, widget=forms.TextInput())
+    emailcontacto = forms.CharField(label=u"Correo Electrónico Contacto", max_length=240, required=False, widget=forms.TextInput())
+
+    section_titles = {
+        'cedula': 'Información del Cliente',
+        'ruc': 'Datos de la empresa',
+        'personacontacto': 'Datos de la Contacto',
+    }
+
+    def extra_paramaters(self):
+        self.fields['formwidth'].initial = 'md'
+
+class SolicitarRequerimientoServicioForm(BaseForm):
+    descripcion = forms.CharField(label=u"Descripción del requerimiento", widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'})
+    )
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+

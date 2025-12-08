@@ -1,0 +1,62 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% load humanize %}
+{% block heading %}
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+        });
+
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/finanzas{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th style="width: 150px;">Referencia</th>
+                    <th style="width: 450px;">Motivo/Cuenta</th>
+                    <th style="width: 150px;">Tipo</th>
+                    <th style="width: 80px;text-align: center;">Valor</th>
+                    <th style="width: 80px;text-align: center;">Saldo</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for deposito in depositos %}
+                    <tr>
+                        <td><a href='/finanzas?action=rubros&id={{ deposito.inscripcion.id }}'>{{ deposito.inscripcion.persona }}</a></td>
+                        <td>{% if deposito.archivo %}<a href='{{ deposito.archivo.url }}' class="fancybox" rel="group">{{ deposito.referencia }}</a>{% else %}{{ deposito.referencia }}{% endif %}</td>
+                        <td>{{ deposito.motivo }}<br>{{ deposito.cuentabanco }}</td>
+                        <td>{% if deposito.deposito %}DEPOSITO{% else %}TRANSFERENCIA{% endif %}</td>
+                        <td style="text-align: right;">$ {{ deposito.valor|floatformat:2 }}</td>
+                        <td style="text-align: right;">$ {{ deposito.saldo|floatformat:2 }}</td>
+                        <td style="text-align: center">
+                           <a class="btn btn-sm btn-success" href="/finanzas?action=rubros&id={{ deposito.inscripcion.id }}"><i class="icon-list"></i> Rubros</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

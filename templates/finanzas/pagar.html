@@ -1,0 +1,1449 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script src="/static/js/json2.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script src="/static/js/big.min.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+        });
+
+        var ajustar;
+        var rubros;
+        var rubroslista;
+        var pagos;
+        var todos;
+        var inscripcion;
+        var deuda = {{ totalapagar }};
+        var deudainicial = {{ deudainicial }};
+        var rubrosDescuentoPorFP = {{ rubros_descuento_por_fp|safe }};
+        var soloPP = {{ solo_pp_seleccionados_y_todos|yesno:"true,false" }};
+
+
+        // Parse YYYY-MM-DD como FECHA LOCAL (00:00:00 local)
+        function parseFechaLocal(ymd) {
+            const [a, m, d] = ymd.split('-').map(Number);
+            return new Date(a, m - 1, d);
+        }
+        // Deja solo la parte de fecha
+        function soloFechaLocal(date) {
+            return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        }
+        // ¿info vigente hoy? (rango inclusivo)
+        function descuentoVigente(info) {
+            if (!info) return false;
+            const hoy = soloFechaLocal(new Date());
+            const ini = soloFechaLocal(parseFechaLocal(info.fechainicio));
+            const fin = soloFechaLocal(parseFechaLocal(info.fechafin));
+            return (hoy >= ini && hoy <= fin);
+        }
+
+        function calcularDescuentoParaPago(pago){
+            const v = num(pago.valor);
+
+            // Si el usuario NO marcó el check, no hay descuento
+            if (!pago.aplica_pp) {
+                pago.descuento = 0;
+                pago.total_neto = v;
+                return;
+            }
+
+            // Aplica descuento solo si seleccionaron EXACTAMENTE todos los rubros PP
+            if (!soloPP) {
+                pago.descuento = 0;
+                pago.total_neto = v;
+                return;
+            }
+
+            const fpId = parseInt(pago.formadepago);
+            const info = rubrosDescuentoPorFP[fpId];
+            const hayPP = !!(info && descuentoVigente(info));
+
+            if (!hayPP) {
+                pago.descuento = 0;
+                pago.total_neto = v;
+                return;
+            }
+
+            // === DESCUENTO GLOBAL FIJO ===
+            const totalAPagar = num("{{ totalapagar|floatformat:2 }}");
+            const descGlobal  = num(info.total_descuento || 0);
+            const objetivo    = Math.max(0, totalAPagar - descGlobal);
+
+            pago.descuento  = descGlobal;
+            pago.total_neto = objetivo;
+        }
+
+        function actualizarProntoPagoUI() {
+            const aplica = $("#id_pronto_pago").is(":checked");
+            const fpId = parseInt($("#id_formadepago").val());
+            const info = rubrosDescuentoPorFP[fpId];
+            const vigente = !!(info && descuentoVigente(info));
+
+            // limpiar VPP por defecto
+            $(".creditos_imp").each(function(){ $(this).removeAttr("vpp"); });
+
+            if (aplica && soloPP && vigente) {
+                const totalDescuento = parseFloat(info.total_descuento || 0) || 0;
+                let objetivo = Big("{{ totalapagar|floatformat:2 }}").minus(Big(totalDescuento));
+                if (objetivo.cmp(0) < 0) objetivo = Big(0);
+
+                $("#pp_info").text(`Aplica ${info.porcentaje}% | ${info.fechainicio} → ${info.fechafin}`);
+                $("#id_totaldescuento").val(totalDescuento.toFixed(2)).hide();
+                $('label[for="id_totaldescuento"]').text(`Descuento por ${info.nombre}`);
+
+                // Bloqueo del valor salvo depósito/transferencia
+                if (fpId === {{ pago_deposito_id }} || fpId === {{ pago_transferencia_id }}) {
+                    $("#id_valor").val(objetivo.toFixed(2)).prop("disabled", false);
+                    {#$("#id_valor").prop("enabled", false).val(pendinete()).focus().select();#}
+                } else {
+                    $("#id_valor").val(objetivo.toFixed(2)).prop("disabled", true);
+                    {#$("#id_valor").prop("disabled", false).val(pendinete()).focus().select();#}
+                }
+
+            } else {
+                {#// sin pronto pago: pago normal#}
+                {#$("#pp_info").text("Sin descuento");#}
+                {#$("#id_totaldescuento").val("").hide();#}
+                {#$('label[for="id_totaldescuento"]').text("No existe descuento");#}
+                {#$("#id_valor").prop("disabled", false).val(pendinete()).focus().select();#}
+
+                {#quitar#}
+                // sin pronto pago: pago normal
+                $("#pp_info").text("Sin descuento");
+                $("#id_totaldescuento").val("").hide();
+                $('label[for="id_totaldescuento"]').text("No existe descuento");
+
+                // ⛔ NO modificar el valor digitado
+                $("#id_valor").prop("disabled", false);
+                // (opcional) NO hagas focus/select aquí para no molestar al usuario
+
+                {#fin quitar#}
+
+            }
+        }
+
+        function descuentoGlobalActual() {
+            // Si el check está apagado, no hay descuento
+            if (!$("#id_pronto_pago").is(":checked")) return 0;
+            if (!soloPP || !pagos.length) return 0;
+
+            const pago0 = pagos[0];
+            // Si el primer pago no aplica PP, no hay descuento global
+            if (!pago0 || !pago0.aplica_pp) return 0;
+
+            const fpId = parseInt(pago0.formadepago);
+            const info = rubrosDescuentoPorFP[fpId];
+
+            if (info && descuentoVigente(info)) {
+                // Si el input estuvo visible (depósito/transferencia), respeta lo ingresado
+                if ($("#id_totaldescuento").is(":visible")) {
+                    return parseFloat($("#id_totaldescuento").val()) || 0;
+                }
+                return parseFloat(info.total_descuento || 0);
+            }
+            return 0;
+        }
+
+
+        function num(x) {
+            // Convierte Big, string o number a number nativo
+            if (x && typeof x === "object" && typeof x.toString === "function") {
+                // Big.js tiene .toString()
+                var s = x.toString();
+                var n = parseFloat(s);
+                return isNaN(n) ? 0 : n;
+            }
+            var n = parseFloat(x);
+            return isNaN(n) ? 0 : n;
+        }
+
+        $(function() {
+
+            $("#facturanumero").blur(function () {
+                numerico($(this), 1, 999999999);
+            });
+
+            $("#facturaemail").css({'text-transform': 'none'});
+
+            var excedente;
+            pagos = [];
+            excedente = Big(0);
+            rubros = [
+                {% for rubro in rubros %}{% if not forloop.first %},{% endif %}{"id": {{ rubro.id}}, "deuda": Big("{{ rubro.saldo }}"), "asignados": [] }{% endfor %}
+            ];
+            todos = ['cuentacheque', 'numero', 'bancocheque', 'fechacobro', 'emite','tipocheque', 'referencia', 'bancotarjeta', 'tipo', 'poseedor', 'tipotarjeta', 'tipoemisortarjeta', 'procesadorpago', 'diferido', 'referenciatransferencia', 'tipotransferencia', 'cuentabanco', 'recibocaja', 'notacredito', 'numeroret','autorizacion','autorizaciontar','fecharet','tipoctaxcruzar','lote', 'fecha'];
+            ajustar =   {
+                {% if pago_efectivo_id %}{{ pago_efectivo_id }}{% else %}0{% endif %}: [],
+                {% if pago_tarjeta_id %}{{ pago_tarjeta_id }}{% else %}0{% endif %}: ['referencia', 'bancotarjeta', 'tipo', 'poseedor', 'procesadorpago','lote','tipotarjeta', 'tipoemisortarjeta', 'diferido','autorizaciontar'],
+                {% if pago_cheque_id %}{{ pago_cheque_id }}{% else %}0{% endif %}: ['cuentacheque','numero','bancocheque','fechacobro','emite','tipocheque'],
+                {% if pago_transferencia_id %}{{ pago_transferencia_id }}{% else %}0{% endif %}: ['referenciatransferencia', 'cuentabanco', 'fecha', 'tipotransferencia'],
+                {% if pago_deposito_id %}{{ pago_deposito_id }}{% else %}0{% endif %}: ['referenciatransferencia', 'cuentabanco', 'fecha'],
+                {% if pago_recibo_caja_id %}{{ pago_recibo_caja_id }}{% else %}0{% endif %}: ['recibocaja'],
+                {% if pago_nota_credito_id %}{{ pago_nota_credito_id }}{% else %}0{% endif %}: ['notacredito'],
+                {% if pago_retencion_id %}{{ pago_retencion_id }}{% else %}0{% endif %}: ['numeroret','autorizacion','fecharet'],
+                {% if pago_cxcruza_id %}{{ pago_cxcruza_id }}{% else %}0{% endif %}: ['tipoctaxcruzar'],
+            };
+            inscripcion = {{ inscripcion.id }};
+
+            validaidentificacion = function(numero, tipo) {
+                if (parseInt(tipo) === 1){
+                    if (numero.length !== 10){
+                        return false;
+                    }
+                } else if (parseInt(tipo) === 2){
+                    return numero.length === 13;
+                }
+                var digito_region = numero.substring(0, 2);
+
+                //Pregunto si la region existe ecuador se divide en 24 regiones
+                if ((parseInt(digito_region) >= 1 && parseInt(digito_region) <= 24) || parseInt(digito_region) === 30 ) {
+
+                    // Extraigo el ultimo digito
+                    var ultimo_digito = parseInt(numero.substring(9, 10));
+
+                    //Agrupo todos los pares y los sumo
+                    var pares = parseInt(numero.substring(1, 2)) + parseInt(numero.substring(3, 4)) + parseInt(numero.substring(5, 6)) + parseInt(numero.substring(7, 8));
+
+                    //Agrupo los impares, los multiplico por un factor de 2, si la resultante es > que 9 le restamos el 9 a la resultante
+                    var numero1 = numero.substring(0, 1);
+                    var numero1 = (numero1 * 2);
+                    if (parseInt(numero1) > 9) {
+                        var numero1 = (numero1 - 9);
+                    }
+
+                    var numero3 = numero.substring(2, 3);
+                    var numero3 = (numero3 * 2);
+                    if (parseInt(numero3) > 9) {
+                        var numero3 = (numero3 - 9);
+                    }
+
+                    var numero5 = numero.substring(4, 5);
+                    var numero5 = (numero5 * 2);
+                    if (parseInt(numero5) > 9) {
+                        var numero5 = (numero5 - 9);
+                    }
+
+                    var numero7 = numero.substring(6, 7);
+                    var numero7 = (numero7 * 2);
+                    if (parseInt(numero7) > 9) {
+                        var numero7 = (numero7 - 9);
+                    }
+
+                    var numero9 = numero.substring(8, 9);
+                    var numero9 = (numero9 * 2);
+                    if (parseInt(numero9) > 9) {
+                        var numero9 = (numero9 - 9);
+                    }
+
+                    var impares = numero1 + numero3 + numero5 + numero7 + numero9;
+
+                    //Suma total
+                    var suma_total = (pares + impares);
+
+                    //extraemos el primero digito
+                    var primer_digito_suma = String(suma_total).substring(0, 1);
+
+                    //Obtenemos la decena inmediata
+                    var decena = (parseInt(primer_digito_suma) + 1) * 10;
+
+                    //Obtenemos la resta de la decena inmediata - la suma_total esto nos da el digito validador
+                    var digito_validador = decena - suma_total;
+                    //Si el digito validador es = a 10 toma el valor de 0
+
+                    if (parseInt(digito_validador) === 10)
+                        digito_validador = 0;
+
+                    var digito_validador_final = parseInt(String(digito_validador).substring(String(digito_validador).length-1));
+                    //Validamos que el digito validador sea igual al de la cedula
+                    if (digito_validador_final !== ultimo_digito) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+                return true;
+            };
+
+            $("#id_valor").blur(function(){
+                if ($(this).attr('exacto')){
+                    numerico($(this), parseFloat($(this).attr('exacto')), parseFloat($(this).attr('exacto')), 2);
+                } else {
+                    numerico($(this), 0, 0, 2);
+                }
+            });
+
+            $(".btn-cerrar").click(function() {
+                $("#pagospanel").modal('hide');
+                $("#excedentepanel").modal('hide');
+                return false;
+            });
+
+            pagar = function(){
+                var facturar;
+                var data;
+                var sec;
+                var pagosfianles;
+                var key;
+                var keys;
+                var spago;
+                var pago;
+                var spagos;
+                var excluir;
+                var telefono;
+                var email;
+                var direccion;
+                var nombre;
+                var identificacion;
+                var tipoidentificacion;
+                var facturacredito;
+                if (pagos.length === 0){
+                    return false;
+                }
+                facturar = $("#pagar").attr("facturar");
+
+                if (facturar === "si"){
+                    identificacion = $("#facturaidentificacion").val().trim();
+                    tipoidentificacion = $("#tipo_identificacion").val().trim();
+                    nombre = $("#facturanombre").val().trim();
+                    direccion = $("#facturadireccion").val().trim();
+                    telefono = $("#facturatelefono").val().trim();
+                    email = $("#facturaemail").val().trim();
+                    facturacredito = $("#facturacredito").is(':checked');
+                    if (!identificacion.length || !nombre.length || !direccion.length || !telefono.length{% if facturacion_electronica %}||!email.length{% endif %}){
+                        smoke.alert("Los datos del cliente de la factura tienen que estar completos.");
+                        return;
+                    }
+                    if(parseInt(tipoidentificacion) === 1){
+                        if (!validaidentificacion(identificacion, "1")){
+                            smoke.alert("El numero de cedula es incorrecto.");
+                            return;
+                        }
+                    }
+                    if(parseInt(tipoidentificacion) === 2){
+                        if (!validaidentificacion(identificacion, "2")){
+                            smoke.alert("El numero de ruc es incorrecto.");
+                            return;
+                        }
+                    }
+                } else {
+                    identificacion="";
+                    nombre="";
+                    direccion="";
+                    telefono="";
+                    tipoidentificacion="";
+                    facturacredito=false;
+                }
+                excluir = ['valor', 'formadepago', 'detalle', 'pagos', 'tipo'];
+                spagos = [];
+                for (var p in pagos) {
+                    pago = pagos[p];
+                    spago = {'formadepago': parseInt(pago.formadepago), 'valor': pago.valor.toFixed(2)};
+                    keys = Object.keys(pago);
+                    for (var k in keys) {
+                        key = keys[k];
+                        if (excluir.indexOf(key)<0) {
+                            spago[key] = pago[key];
+                        }
+                    }
+                    pagosfinales = [];
+                    for (var i in pago.pagos) {
+                        sec = pago.pagos[i];
+                        pagosfinales.push({'valor': sec.valor.toFixed(2)});
+                    }
+                    spago['pagos'] = pagosfinales;
+                    spagos.push(spago);
+                }
+                data = {'pagos': spagos};
+                data['rubros'] = rubroslista;
+                data['factura'] = {'numero': $("#facturanumero").val(),
+                    'identificacion': identificacion,
+                    'tipo': tipoidentificacion,
+                    'nombre': nombre,
+                    'direccion': direccion,
+                    'email': email,
+                    'telefono': telefono,
+                    'facturacredito': facturacredito};
+                data['excedente'] = excedente.toFixed(2);
+                {% if tiene_nota_debito %}
+                    data['notadebito'] = true;
+                {% else %}
+                    data['notadebito'] = false;
+                {% endif %}
+                if (facturar === "si"){
+                    data['facturar'] = 'si';
+                } else {
+                    data['facturar'] = 'no';
+                }
+                data['inscripcion'] = {{ inscripcion.id }};
+                showWaiting("Ingresando Pagos","Espere unos segundos por favor...");
+                $.ajax({
+                    type: "POST",
+                    url: "/finanzas",
+                    data: {'action': 'pagaryfacturar', 'data': JSON.stringify(data), 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        if (data.result === 'ok') {
+                            location.href = '/finanzas?action=rubros&id={{ inscripcion.id }}';
+                        } else {
+                            hideWaiting();
+                            smoke.alert("Error procesando el pago: "+data.error);
+                        }
+                    },
+                    error: function() {
+                        hideWaiting();
+                        smoke.alert("Error procesando el pago.");
+                    },
+                    dataType: "json"
+                });
+                return false;
+            };
+
+            $("#pagar").click(function() {
+                var pagonotdadebito = false;
+                var pago;
+                var valorinicial;
+                var tieneiva = $(this).attr("iva");
+                rubroslista = [];
+                $(".creditos_imp").each(function () {
+                    const ide = $(this).attr('ide');
+                    const val = parseFloat($(this).val()).toFixed(2);
+                    const vppAttr = $(this).attr('vpp');
+                    // Si no hay vpp (descuento no aplica), usa el mismo valor como neto
+                    const vpp = (typeof vppAttr !== "undefined" && vppAttr !== null && vppAttr !== "")
+                        ? parseFloat(vppAttr).toFixed(2)
+                        : val;
+                    rubroslista.push([ide, val, vpp]);
+                });
+
+                // === Excedente correcto para el modal (mismo criterio de refreshPagos) ===
+                var totalIngresado = Big(0);
+                for (var p in pagos) {
+                    totalIngresado = totalIngresado.plus(Big(num(pagos[p].valor)));
+                }
+
+                // objetivo = total a pagar - descuento global vigente (si aplica PP)
+                var objetivo = Big("{{ totalapagar|floatformat:2 }}")
+                    .minus(Big(descuentoGlobalActual() || 0));
+                if (objetivo.cmp(0) < 0) objetivo = Big(0);
+
+                // excedente = total ingresado - objetivo
+                var excedenteTotal = totalIngresado.minus(objetivo);
+
+                // tolerancias / clamp
+                if (num(excedenteTotal) < 0) excedenteTotal = Big(0);
+                if (Math.abs(num(excedenteTotal)) < 0.005) excedenteTotal = Big(0);
+
+
+                for (var p in pagos) {
+                    pago = pagos[p];
+                    var valorapagar = num(pago.valor)
+                    if (parseInt(pago.formadepago) === {{ pago_nota_credito_id }}){
+                        pagonotdadebito = true;
+                    }
+                }
+
+                if (excedenteTotal.cmp(0) === 1 && pagos.length > 1){
+                    smoke.alert("No puede tener mas de una forma de pago cuando hay excedente.");
+                } else if (excedenteTotal.cmp(0) === 1 && pagonotdadebito){
+                    smoke.alert("No puede existir excedente cuando se usan notas de crédito.");
+                } else if (excedenteTotal.cmp(0) === 1){
+                    $("#bodyexcedente").html(
+                        "Existe un valor excedente de $ " + excedenteTotal.toFixed(2) +
+                        ". Si está seguro(a) que los valores están correctos, continúe con la opción PAGAR."
+                    );
+                    $("#excedentepanel").modal('show');
+                } else if (tieneiva == 'si') {
+                    if (parseInt(deudainicial) !== parseInt(valorapagar)) {
+                        smoke.alert("Este rubro no se puede cancelar en abonos, debe ser el valor total.");
+                        return;
+                    } else {
+                        pagar();
+                    }
+                } else {
+                    pagar();
+                }
+            });
+
+            $("#btn-ejecutarexcedente").click(function() {
+                $("#excedentepanel").modal('hide');
+                pagar();
+            });
+
+            total_asignado = function(rubro) {
+                var asignado;
+                var sum = Big(0);
+                for (var i in rubro.asignados) {
+                    asignado = rubro.asignados[i];
+                    sum = sum.plus(asignado.valor);
+                }
+                return sum;
+            };
+
+            recalcularPagos = function() {
+                // Borrar asignacion previa
+                var total;
+                var rubro;
+                var pp;
+                var porCubrir;
+                var totalAsignado;
+                var saldoPago;
+                var pago;
+                for (var r in rubros) {
+                    rubro = rubros[r];
+                    rubro.asignados = [];
+                }
+                for (var p in pagos) {
+                    pago = pagos[p];
+                    pago.pagos = [];
+                }
+
+                // Recalcular
+                excedente = Big(0);
+                for (var p in pagos) {
+                    pago = pagos[p];
+                    saldoPago = pago.valor;
+
+                    for (var r in rubros) {
+                        rubro = rubros[r];
+                        totalAsignado = total_asignado(rubro);
+                        porCubrir = rubro.deuda.minus(totalAsignado);
+                        if (porCubrir.cmp(0) === 0) {
+                            continue;
+                        } else {
+                            // Asignarle lo mas posible a este rubro
+                            if (porCubrir.cmp(saldoPago)>=0) {
+                                pp = {valor: saldoPago, rubro: rubro};
+                                pago.pagos.push(pp);
+                                rubro.asignados.push(pp);
+                                saldoPago=Big(0);
+                            } else if (porCubrir.cmp(saldoPago) === -1) {
+                                pp = {valor: porCubrir, rubro: rubro};
+                                pago.pagos.push(pp);
+                                rubro.asignados.push(pp);
+                                saldoPago = saldoPago.minus(porCubrir);
+                            }
+                        }
+                        if (saldoPago.cmp(0) === 0) {
+                            break;
+                        }
+                    }
+                    excedente = excedente.plus(saldoPago);
+                }
+                // Refrescar Datos de asignacion
+                for (var r in rubros) {
+                    rubro = rubros[r];
+                    total = total_asignado(rubro);
+                    $("#map"+rubro.id).html(total.toFixed(2));
+                    $("#resto"+rubro.id).html((rubro.deuda.minus(total)).toFixed(2));
+                }
+
+                if (pagos.length>0) {
+                    $("#formaspagosboton").show();
+                    $("#pagar").show();
+                } else {
+                    $("#formaspagosboton").hide();
+                    $("#pagar").hide();
+                }
+            };
+
+            borrarPago = function() {
+                var i = $(this).attr('pindex');
+                pagos.splice(i,1);
+                refreshPagos();
+                return false;
+            };
+
+            total_pagos = function () {
+                var sum = 0;
+                for (var i in pagos) {
+                    sum += num(pagos[i].valor);
+                }
+                return sum;
+            };
+
+            pendinete = function () {
+                var pagado = total_pagos();
+                if ((deuda - pagado) <= 0){
+                    return 0;
+                } else {
+                    return parseFloat(deuda - pagado).toFixed(2);
+                }
+            };
+
+            refreshPagos = function() {
+                var pago;
+                var sum;
+                recalcularPagos();
+                if (pagos.length > 0) {
+                    // Listar pagos
+                    $("#listapagos").empty();
+                    sum = Big(0);
+                    for (var i in pagos) {
+                        pago = pagos[i];
+
+                        // Solo para mostrar en tabla
+                        var v  = num(pago.valor);
+                        var ds = num(pago.descuento);
+                        var tn = num(pago.total_neto);
+
+                        $("#listapagos").append(
+                            "<tr>" +
+                            "<td>" + (pago.tipo || "") + "</td>" +
+                            "<td style='text-align:right;'><b>$" + v.toFixed(2)  + "</b></td>" +
+                            "<td style='text-align:right;'><b>$" + ds.toFixed(2) + "</b></td>" +
+                            "<td style='text-align:right;'><b>$" + tn.toFixed(2) + "</b></td>" +
+                            "<td style='text-align:right;'>-</td>" + // Excedente por fila no se muestra
+                            "<td>" + (pago.detalle || "") + "</td>" +
+                            "<td style='text-align:center;'>" + (pago.repetido ? "<span class='badge text-bg-danger blinkimg'><h2>DUPLICADO</h2></span>" : "<span class='badge text-bg-success'>No</span>") + "</td>" +
+                            "<td style='text-align:center;'><a href='javascript:;' pindex='"+i+"' class='btn btn-ssm btn-danger delpago tu' data-bs-toggle='tooltip' data-bs-placement='top' title='Eliminar'><i class='icon-remove'></i></a></td>" +
+                            "</tr>"
+                        );
+                        sum = sum.plus(Big(v));
+                    }
+
+                    // === Excedente total (mostrar en la tabla) ===
+                    var totalIngresado = Big(0);
+                    for (var j in pagos) {
+                        totalIngresado = totalIngresado.plus(Big(num(pagos[j].valor)));
+                    }
+
+                    // objetivo = total a pagar - descuento global vigente (si aplica PP)
+                    var objetivo = Big("{{ totalapagar|floatformat:2 }}")
+                        .minus(Big(descuentoGlobalActual() || 0));
+                    if (objetivo.cmp(0) < 0) objetivo = Big(0);
+                    // excedente = total ingresado - objetivo
+                    var excedenteTotal = totalIngresado.minus(objetivo);
+                    // tolerancias / clamp
+                    if (num(excedenteTotal) < 0) excedenteTotal = Big(0);
+                    if (Math.abs(num(excedenteTotal)) < 0.005) excedenteTotal = Big(0);
+
+                    $("#excedente_total").text(excedenteTotal.toFixed(2));
+
+                    $(".delpago").off("click").on("click", borrarPago);
+
+                } else {
+                    $("#listapagos").html('<tr><td colspan="8">NO HAY PAGOS INGRESADOS</td></tr>');
+                    $("#excedente_total").text("0.00");
+                }
+            };
+
+            $("#btn-ejecutar").click(function() {
+                var fp = $("#id_formadepago").val().trim();
+                var valor = Big(num($("#id_valor").val()));
+                if (valor.cmp(Big(0)) === 1) {
+                    var pago = {'formadepago': fp, 'valor': valor, 'pagos': [], 'aplica_pp': $("#id_pronto_pago").is(":checked") };
+                    if (parseInt(fp) === {{ pago_efectivo_id }}) {
+                        pago['tipo'] = 'EFECTIVO';
+                        pago['detalle'] = '';
+                        pago['repetido'] = false;
+                        for (var p in pagos) {
+                            pagov = pagos[p];
+                            if (parseInt(pagov.formadepago) === parseInt(fp)){
+                                return;
+                            }
+                        }
+                        calcularDescuentoParaPago(pago);
+                        pagos.push(pago);
+                    } else if (parseInt(fp) === {{ pago_tarjeta_id }}) {
+                        idtipoemisortarjeta = $("#id_tipoemisortarjeta").val().trim();
+                        if (idtipoemisortarjeta.trim().length <= 0){
+                            $("#id_tipoemisortarjeta").focus();
+                            return;
+                        }
+                        idtarjeta = $("#id_tipotarjeta").val().trim();
+                        if (idtarjeta.trim().length <= 0){
+                            $("#id_tipotarjeta").focus();
+                            return;
+                        }
+                        idbanco= $("#id_bancotarjeta").val().trim();
+                        if (idbanco.trim().length <= 0){
+                            $("#id_bancotarjeta").focus();
+                            return;
+                        }
+                        idtipotarjeta = $("#id_tipo").val().trim();
+                        if (idtipotarjeta.trim().length <= 0){
+                            $("#id_tipo").focus();
+                            return;
+                        }
+                        idprocesadorpago = $("#id_procesadorpago").val().trim();
+                        if (idprocesadorpago.trim().length <= 0){
+                            $("#id_procesadorpago").focus();
+                            return;
+                        }
+                        idreferencia = $("#id_referencia").val().trim();
+                        if (idreferencia.trim().length <= 0){
+                            $("#id_referencia").focus();
+                            return;
+                        }
+                        idlote = $("#id_lote").val().trim();
+                        if (idlote.trim().length <= 0){
+                            $("#id_lote").focus();
+                            return;
+                        }
+
+                        idposeedor = $("#id_poseedor").val().trim();
+                        if (idposeedor.trim().length <= 0){
+                            $("#id_poseedor").focus();
+                            return;
+                        }
+                        idautorizaciontar = $("#id_autorizaciontar").val().trim();
+                        if (idautorizaciontar.trim().length <= 0){
+                            $("#id_autorizaciontar").focus();
+                            return;
+                        }
+                        pago['referencia'] = $("#id_referencia").val().trim();
+                        pago['bancotarjeta'] = $("#id_bancotarjeta").val().trim();
+                        pago['tipotarjeta'] = $("#id_tipo").val().trim();
+                        pago['tarjeta'] = $("#id_tipotarjeta").val().trim();
+                        pago['tipoemisortarjeta'] = $("#id_tipoemisortarjeta").val().trim();
+                        pago['diferido'] = $("#id_diferido").val().trim();
+                        pago['poseedor'] = $("#id_poseedor").val().trim();
+                        pago['procesadorpago'] = $("#id_procesadorpago").val().trim();
+                        pago['tipo'] = 'TARJETA';
+                        pago['lote'] =  $("#id_lote").val().trim();
+                        pago['autorizaciontar'] =  $("#id_autorizaciontar").val().trim();
+                        pago['detalle'] = "Ref: "+pago['referencia']+" Banco: "+$("#id_bancotarjeta option:selected").text()+" Tipo: "+$("#id_tipo option:selected").text()+" Tipo: "+$("#id_tipotarjeta option:selected").text()+" Aut. Tarj: "+pago['autorizaciontar'];
+                        calcularDescuentoParaPago(pago);
+                        pagos.push(pago);
+                    } else if (fp=={{ pago_cheque_id }}) {
+                        idnumerocuenta = $("#id_cuentacheque").val().trim();
+                        if (idnumerocuenta.trim().length <= 0){
+                            $("#id_cuentacheque").focus();
+                            return;
+                        }
+                        idnumero = $("#id_numero").val().trim();
+                        if (idnumero.trim().length <= 0){
+                            $("#id_numero").focus();
+                            return;
+                        }
+                        idbanco = $("#id_bancocheque").val().trim();
+                        if (idbanco.trim().length <= 0){
+                            $("#id_bancocheque").focus();
+                            return;
+                        }
+                        idemite = $("#id_emite").val().trim();
+                        if (idemite.trim().length <= 0){
+                            $("#id_emite").focus();
+                            return;
+                        }
+                        idtipocheque = $("#id_tipocheque").val().trim();
+                        if (idtipocheque.trim().length <= 0){
+                            $("#id_tipocheque").focus();
+                            return;
+                        }
+                        pago['emite'] = $("#id_emite").val().trim();
+                        pago['cuenta'] = $("#id_cuentacheque").val().trim();
+                        pago['banco'] = $("#id_bancocheque").val().trim();
+                        pago['numero'] = $("#id_numero").val().trim();
+                        pago['tipocheque'] = $("#id_tipocheque").val().trim();
+                        pago['tipo'] = 'CHEQUE';
+                        pago['bancocheque'] = $("#id_bancocheque").val().trim();
+                        pago['fechacobro'] = $("#id_fechacobro").val().trim();
+                        pago['emite'] = $("#id_emite").val().trim();
+                        pago['detalle'] = "Numero: "+pago['numero']+" Banco: "+$("#id_bancocheque option:selected").text();
+                        calcularDescuentoParaPago(pago);
+                        pagos.push(pago);
+                        refreshPagos();
+                    } else if (fp=={{ pago_transferencia_id }}) {
+                        idreferencia = $("#id_referenciatransferencia").val().trim();
+                        if (idreferencia.trim().length <= 0){
+                            $("#id_referenciatransferencia").focus();
+                            return;
+                        }
+                        idcuentabanco = $("#id_cuentabanco").val().trim();
+                        if (idcuentabanco.trim().length <= 0){
+                            $("#id_cuentabanco").focus();
+                            return;
+                        }
+                        idtipotransferencia = $("#id_tipotransferencia").val().trim();
+                        if (idtipotransferencia.trim().length <= 0){
+                            $("#id_tipotransferencia").focus();
+                            return;
+                        }
+                        fechatransferencia = $("#id_fecha").val().trim();
+                        pago['referencia'] = $("#id_referenciatransferencia").val().trim();
+                        pago['tipo'] = 'TRANSFERENCIA';
+                        pago['cuentabanco'] = $("#id_cuentabanco").val().trim();
+                        pago['tipotransferencia'] = $("#id_tipotransferencia").val().trim();
+                        pago['detalle'] = "Ref: "+pago['referencia']+" Cuenta Banco: "+$("#id_cuentabanco option:selected").text();
+                        pago['fecha'] = fechatransferencia;
+                        bloqueointerface();
+                        $.ajax({
+                            type: "POST",
+                            url: "/finanzas",
+                            data: {'action': 'infotransferencia', 'referencia': pago['referencia'], 'fecha': pago['fecha'], 'banco': pago['cuentabanco'], 'csrfmiddlewaretoken': csrftoken},
+                            success: function(data) {
+                                desbloqueointerface();
+                                if (data.result === "ok") {
+                                    if (data.repetido) {
+                                        pago['repetido'] = true;
+                                    } else {
+                                        pago['repetido'] = false;
+                                    }
+                                } else {
+                                    pago['repetido'] = false;
+                                }
+                                pagos.push((function(pg){
+                                    // === NUEVO: calcula descuento ANTES de push ===
+                                    calcularDescuentoParaPago(pg);
+                                    return pg;
+                                })(pago));
+                                refreshPagos();
+                            },
+                            error: function() {
+                                desbloqueointerface();
+                                calcularDescuentoParaPago(pago);
+                                pagos.push(pago);
+                                refreshPagos();
+                            },
+                            dataType: "json"
+                        });
+                    } else if (fp=={{ pago_deposito_id }}) {
+                        idreferencia = $("#id_referenciatransferencia").val().trim();
+                        if (idreferencia.trim().length <= 0){
+                            $("#id_referenciatransferencia").focus();
+                            return;
+                        }
+                        idcuentabanco = $("#id_cuentabanco").val().trim();
+                        if (idcuentabanco.trim().length <= 0){
+                            $("#id_cuentabanco").focus();
+                            return;
+                        }
+                        fechadeposito = $("#id_fecha").val().trim();
+                        pago['referencia'] = $("#id_referenciatransferencia").val().trim();
+                        pago['tipo'] = 'DEPOSITO';
+                        pago['cuentabanco'] = $("#id_cuentabanco").val().trim();
+                        pago['detalle'] = "Ref: "+pago['referencia']+" Cuenta Banco: "+$("#id_cuentabanco option:selected").text();
+                        pago['fecha'] = fechadeposito;
+                        bloqueointerface();
+                        $.ajax({
+                            type: "POST",
+                            url: "/finanzas",
+                            data: {'action': 'infodeposito', 'referencia': pago['referencia'], 'fecha': pago['fecha'], 'banco': pago['cuentabanco'], 'csrfmiddlewaretoken': csrftoken},
+                            success: function(data) {
+                                desbloqueointerface();
+                                if (data.result === "ok") {
+                                    if (data.repetido) {
+                                        pago['repetido'] = true;
+                                    } else {
+                                        pago['repetido'] = false;
+                                    }
+                                } else {
+                                    pago['repetido'] = false;
+                                }
+                                calcularDescuentoParaPago(pago);
+                                pagos.push(pago);
+                                refreshPagos();
+                            },
+                            error: function() {
+                                desbloqueointerface();
+                                calcularDescuentoParaPago(pago);
+                                pagos.push(pago);
+                                refreshPagos();
+                            },
+                            dataType: "json"
+                        });
+                    } else if (fp=={{ pago_recibo_caja_id }}) {
+                        idrecibocaj = $("#id_recibocaja").val().trim();
+                        if (idrecibocaj.trim().length <= 0){
+                            $("#id_recibocaja").focus();
+                            return;
+                        }
+                        for (var p in pagos) {
+                            pagov = pagos[p];
+                            if (parseInt(pagov.formadepago) === parseInt(fp)){
+                                return;
+                            }
+                        }
+                        recibocaj = $("#id_recibocaja").val().trim();
+                        if (recibocaj.trim().length > 0){
+                            pago['tipo'] = 'RECIBO DE CAJA INSTITUCIONAL';
+                            pago['recibocaja'] = $("#id_recibocaja").val().trim();
+                            pago['detalle'] = "Recibo de Caja: "+$("#id_recibocaja option:selected").text();
+                            calcularDescuentoParaPago(pago);
+                            pagos.push(pago);
+                            refreshPagos();
+                        } else {
+                            smoke.alert("Entre datos por favor.");
+                        }
+                    } else if (fp=={{ pago_nota_credito_id }}) {
+                        idnotacredito = $("#id_notacredito").val().trim();
+                        if (idnotacredito.trim().length <= 0){
+                            $("#id_notacredito").focus();
+                            return;
+                        }
+                        notacredito = $("#id_notacredito").val().trim();
+                        if (notacredito.trim().length > 0){
+                            pago['tipo'] = 'NOTA DE CREDITO';
+                            pago['notacredito'] = $("#id_notacredito").val().trim();
+                            pago['detalle'] = "Nota de credito: "+$("#id_notacredito option:selected").text();
+                            calcularDescuentoParaPago(pago);
+                            pagos.push(pago);
+                            refreshPagos();
+                        } else {
+                            smoke.alert("Entre datos por favor.");
+                        }
+                    }
+                    $("#pagospanel").modal('hide');
+                    refreshPagos();
+                } else {
+                    $("#id_valor").focus()
+                }
+                return false;
+            });
+
+            ajustar_forma_pago = function() {
+                var eid;
+                var activar;
+                var valorDigitado = $("#id_valor").val();
+                $("#id_valor").removeAttr('exacto');
+                $("#id_cuentacheque, #id_numero, #id_emite, #id_referencia, #id_lote, #id_poseedor, #id_referenciatransferencia, #id_numeroret, #id_autorizacion, #id_autorizaciontar").val('');
+                $("#id_bancocheque, #id_tipocheque, #id_tipoemisortarjeta, #id_tipotarjeta, #id_bancotarjeta, #id_procesadorpago, #id_tipo, #id_diferido, #id_cuentabanco, #id_tipotransferencia, #id_recibocaja, #id_notacredito").val(0);
+
+                // Oculta tod o
+                for (var i in todos) {
+                    eid = todos[i];
+                    try { $($("#id_"+eid).get(0).parentNode.parentNode).hide(); } catch(err) {}
+                }
+
+                // Muestra lo que toca para la FP seleccionada
+                activar = ajustar[$("#id_formadepago").val()];
+                for (var i in activar) {
+                    eid = activar[i];
+                    try { $($("#id_"+eid).get(0).parentNode.parentNode).show(); } catch(err) {}
+                }
+
+                // Tabla de depósitos / transferencias
+                if (parseInt($("#id_formadepago").val()) === {{ pago_transferencia_id }}) {
+                    $("#tabla_depositos").show();
+                    $(".p_deposito").hide();
+                    $(".p_transferencia").show();
+                } else if (parseInt($("#id_formadepago").val()) === {{ pago_deposito_id }}) {
+                    $("#tabla_depositos").show();
+                    $(".p_deposito").show();
+                    $(".p_transferencia").hide();
+                } else {
+                    $("#tabla_depositos").hide();
+                    $(".p_deposito").hide();
+                    $(".p_transferencia").hide();
+                }
+
+                // 👉 A partir de aquí, tod o lo de descuentos/bloqueos/precargas
+                // lo resuelve actualizarProntoPagoUI en función del check.
+                actualizarProntoPagoUI();
+
+                // ⛔ Si NO es pronto pago, restaura lo digitado (no lo pises)
+                if (!$("#id_pronto_pago").is(":checked")) {
+                    $("#id_valor").prop("disabled", false).val(valorDigitado);
+                }
+            };
+
+
+
+            function mapVppPorRubro(info) {
+                const mapa = {};
+                if (info && Array.isArray(info.rubros)) {
+                    info.rubros.forEach(r => {
+                        // Usa el valor con descuento; si prefieres guardar el descuento, cambia aquí
+                        mapa[String(r.rubro_id)] = parseFloat(r.valor_con_descuento || 0);
+                    });
+                }
+                return mapa;
+            }
+
+            $("#id_fechacobro, #id_fecharet, #id_fecha").datepicker({format:"dd-mm-yyyy"});
+
+            $("#id_formadepago").change(ajustar_forma_pago);
+
+
+            // Cuando cambie la FP en el modal
+            $("#id_formadepago").on("change", function(){
+                ajustar_forma_pago();      // tu lógica actual de mostrar/ocultar campos
+                actualizarProntoPagoUI();  // aplicar/bloquear según el check
+            });
+
+            $("#id_pronto_pago").on("change", function () {
+                actualizarProntoPagoUI();
+                refreshPagos(); // <- recalcula el excedente mostrado en la tabla
+            });
+
+            // Al abrir el modal: check en falso por defecto y aplicamos UI
+            $('#pagospanel').on('shown.bs.modal', function () {
+                $("#id_pronto_pago").prop("checked", false);
+                actualizarProntoPagoUI();
+
+                // Valor inicial = totalpagar (y habilitado)
+                $("#id_valor")
+                    .prop("disabled", false)
+                    .val("{{ totalapagar|floatformat:2 }}")
+                    .focus().select();
+            });
+
+            verificar_tipo = function () {
+                var valor = parseInt($("#id_tipotarjeta").val());
+                if (valor == {{ pago_tarjeta_nacional_id }}){
+                    $("#id_bancotarjeta").val(0);
+                } else {
+                    $("#id_bancotarjeta").val({{ otros_bancos_externos_id }});
+                }
+            };
+
+            verificar_banco = function () {
+                var valor = parseInt($("#id_bancotarjeta").val());
+                if (valor == {{ otros_bancos_externos_id }}){
+                    $("#id_tipotarjeta").val(0);
+                } else {
+                    $("#id_tipotarjeta").val({{ pago_tarjeta_nacional_id }});
+                }
+            };
+
+            $("#id_tipotarjeta").change(function () {
+                verificar_tipo();
+            });
+            $("#id_bancotarjeta").change(function () {
+                verificar_banco();
+            });
+
+            verificar_credito = function () {
+                var valor = parseInt($("#id_tipo").val());
+                if (valor != {{ tipo_tarjeta_credito_id }}){
+                    $("#id_diferido").val({{ diferido_tarjeta_corriente_id }});
+                }
+            };
+
+            verificar_diferido = function () {
+                var valor = parseInt($("#id_diferido").val());
+                if (valor != {{ diferido_tarjeta_corriente_id }}){
+                    $("#id_tipo").val({{ tipo_tarjeta_credito_id }});
+                }
+            };
+
+            $("#id_tipo").change(function () {
+                verificar_credito();
+            });
+            $("#id_diferido").change(function () {
+                verificar_diferido();
+            });
+
+            verificar_tipo();
+            verificar_banco();
+            verificar_credito();
+            verificar_diferido();
+
+            $("#ingresar").click(function() {
+                $("#panelalert").empty();
+                $(".chequeprotestado").hide();
+                // Poner forma de pago en efectivo
+                $("#id_formadepago").val({{ pago_efectivo_id }});
+                {% if tiene_cheque_protestado %}
+                    $(".chequeprotestado").show();
+                    $("#id_formadepago").get(0).item(1).disabled = true;
+                    $("#id_formadepago").get(0).item(4).disabled = true;
+                {% else %}
+                    $(".chequeprotestado").hide();
+                    $("#id_formadepago").get(0).item(1).disabled = false;
+                    $("#id_formadepago").get(0).item(4).disabled = false;
+                {% endif %}
+
+                // Poner valores por defecto en los campos selectores
+                // Tarjeta
+                $("#id_bancotarjeta").val($("#id_bancotarjeta option").get(1).value);
+                $("#id_tipo").val($("#id_tipo option").get(1).value);
+                $("#id_procesadorpago").val($("#id_procesadorpago option").get(1).value);
+                // Cheque
+
+                $("#id_bancocheque").val($("#id_bancotarjeta option").get(1).value);
+                ajustar_forma_pago();
+                $("#id_valor").focus().select();
+                $("#id_tipoemisortarjeta, #id_tipo, #id_bancotarjeta, #id_tipotarjeta").val(0);
+                $("#id_diferido").empty().append("<option value='0'>CORRIENTE</option>").val(0);
+                $("#id_valor").removeAttr('exacto');
+                $('#pagospanel').modal('show');
+                return false;
+            });
+
+            {#$('#pagospanel').on('shown', function () {#}
+            {#    $("#id_valor").focus();#}
+            {# });#}
+
+            {#$('#pagospanel').modal('show');#}
+
+            $("#id_valor").keypress(function(e) {
+                if(e.which === 13) {
+                    $("#btn-ejecutar").trigger("click");
+                }
+            });
+
+            facturacion = { 'ruc': '{{ facturaidentificacion }}',
+                'nombre': '{{ facturanombre }}',
+                'direccion': '{{ facturadireccion }}',
+                'telefono': '{{ facturatelefono }}'};
+
+            $("#facturaidentificacion").change(function() {
+                var identificacion = $(this).val().trim();
+                if (identificacion.trim().length > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/finanzas",
+                        data: {'action': 'infoidentificacion', 'identificacion': identificacion, 'inscipcion': inscripcion, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result === "ok") {
+                                $("#facturanombre").val(data.nombre);
+                                $("#facturadireccion").val(data.direccion);
+                                $("#facturatelefono").val(data.telefono);
+                                $("#facturaemail").val(data.email);
+                            } else {
+                                $("#facturanombre").val("");
+                                $("#facturadireccion").val("");
+                                $("#facturatelefono").val("");
+                                $("#facturaemail").val("");
+                                $("#tipo_identificacion").val(1);
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            var ced = $("#facturaidentificacion");
+
+            refreshPagos();
+
+            valor_credito = function(){
+                deuda = 0;
+                pagos = [];
+                $(".creditos_imp").each(function () {
+                    deuda += parseFloat($(this).val());
+                });
+                var pago = {'formadepago': {{ pago_cxcruza_id }}, 'valor': Big(deuda), 'pagos': [] };
+                pago['tipo'] = 'CXC';
+                pago['detalle'] = '';
+                pagos.push(pago);
+                {#$("#totalpagar").html("$ "+ deuda.toFixed(2));#}
+            };
+
+            $(".creditos_imp").change(function () {
+                numerico($(this), 0.01, $(this).attr('va'), 2);
+                valor_credito();
+            });
+
+            verifica_credito = function () {
+                pagos = [];
+                refreshPagos();
+                if ($("#facturacredito").is(':checked')){
+                    $("#formaspagoslista, .creditos_print").hide();
+                    $("#formaspagosboton, .creditos_imp").show();
+                    $("#pagar").show();
+                    valor_credito();
+                } else {
+                    $("#formaspagoslista, .creditos_print").show();
+                    $("#formaspagosboton, .creditos_imp").hide();
+                    $("#pagar").hide();
+                    $(".creditos_imp").each(function () {
+                        $(this).val(parseFloat($(this).attr('va')).toFixed(2));
+                    });
+                    deuda = {{ totalapagar }};
+                    {#$("#totalpagar").html("$ "+ deuda.toFixed(2));#}
+                }
+            };
+
+            $("#facturacredito").click(function () {
+                verifica_credito();
+            });
+
+            $(".usar_dep").click(function () {
+                var elemento = $(this);
+                $("#id_referenciatransferencia").val(elemento.attr('referencia'));
+                $("#id_valor").val(elemento.attr('valor')).attr({'exacto': elemento.attr('valor')});
+                $("#id_fecha").val(elemento.attr('fecha'));
+                $("#id_cuentabanco").val(elemento.attr('cuenta'));
+            });
+
+            verifica_credito();
+
+            $("#id_tipoemisortarjeta, #id_tipo, #id_bancotarjeta, #id_tipotarjeta").change(function () {
+                $("#id_diferido").empty().append("<option value='0'>CORRIENTE</option>").val(0);
+                var id = parseInt($("#id_bancotarjeta").val());
+                var idtt = parseInt($("#id_tipo").val());
+                var idte = parseInt($("#id_tipoemisortarjeta").val());
+                if (id > 0 && idtt > 0 && idte > 0){
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/finanzas",
+                        data: {'action': 'permitediferir', 'id': id, 'idtt': idtt, 'idte': idte, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            desbloqueointerface();
+                            if (data.result == 'ok') {
+                                $("#id_diferido").empty();
+                                for (item in data.lista){
+                                    $("#id_diferido").append("<option id='dif_"+data.lista[item][0]+"' value='"+data.lista[item][0]+"' dif='"+data.lista[item][2]+"' interes='"+data.lista[item][1]+"'>"+data.lista[item][3]+"</option>");
+                                }
+                            }
+                        },
+                        error: function() {
+                            desbloqueointerface();
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block extracss %}
+    <style>
+        .pp-info { font-size: 13px;
+            font-weight: 600;
+            color:#cc0000;
+        }
+    </style>
+{% endblock %}
+{% block atras %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}
+                <br>Estudiante: {{ inscripcion.persona }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class="row">
+        <div class="col-8">
+            <div class="row-fluid">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                    <tr style="vertical-align: middle">
+                        <th>Nombre</th>
+                        <th style="width: 100px;">Tipo</th>
+                        <th style="width: 80px;text-align: center;">Fecha</th>
+                        <th style="width: 80px;text-align: center;">Vence</th>
+                        <th style="width: 80px;text-align: center;">Descuento</th>
+                        <th style="width: 80px;text-align: center;">Deuda</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for rubro in rubros %}
+                        <tr>
+                            <td>{{ rubro.nombre }}</td>
+                            <td>{{ rubro.tipo }}</td>
+                            <td style="text-align: center;">{{ rubro.fecha|date:"Y-m-d"  }}</td>
+                            <td style="text-align: center;">
+                                {% if not rubro.cancelado %}
+                                    {{ rubro.fechavence|date:"Y-m-d" }}
+                                    {% if rubro.vencido %}
+                                        <br><span class="badge text-bg-danger">VENCIDO</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">{% if rubro.descuento %}{{ rubro.descuento.porciento }}%{% endif %}</td>
+                            <td style="text-align: right;">
+                                {#                                <input type="text" class="creditos_imp imp-moneda form-control form-control-sm" ide="{{ rubro.id }}" style="display: none" value="{{ rubro.saldo|floatformat:2 }}" va="{{ rubro.saldo|floatformat:2 }}">#}
+                                <input type="text" class="creditos_imp imp-moneda form-control form-control-sm" ide="{{ rubro.id }}" value="{{ rubro.saldo|floatformat:2 }}" va="{{ rubro.saldo|floatformat:2 }}">
+                                <b class="creditos_print">$ {{ rubro.saldo|floatformat:2 }}</b>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    <tr>
+                        <td colspan="5" style="text-align: right;"> <b>Total a pagar</b></td>
+                        <td style="text-align: right;"><b id="totalpagar">$ {{ totalapagar|floatformat:2 }}</b></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% if puede_pagar %}
+                <div id="formaspagoslista">
+                    <div class="row">
+                        <div class="col-3">
+                            <a href="javascript:;" id="ingresar" class="btn btn-sm btn-primary"><i class="icon-plus"></i> INGRESAR</a>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="row-fluid">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                            <tr>
+                                <th style="width: 200px;">Forma de Pago</th>
+                                <th style="width: 80px;text-align: center;">Valor<br>Ingresado</th>
+                                <th style="width: 80px;text-align: center;">Desc.Global</th>
+                                <th style="width: 80px;text-align: center;">Total</th>
+                                <th style="width: 80px;text-align: center;">Excedente</th>
+                                <th>Detalle</th>
+                                <th style="width: 100px; text-align: center">Repetido</th>
+                                <th style="width: 60px;"> </th>
+                            </tr>
+                            </thead>
+                            <tbody id="listapagos">
+                            <tr><td colspan="8">NO HAY PAGOS INGRESADOS</td></tr>
+                            </tbody>
+                            <tfoot>
+                            <tr>
+                                <td colspan="4" style="text-align:right;"><b>Excedente total</b></td>
+                                <td style="text-align:right;">
+                                    <span class="badge text-bg-warning">$ <span id="excedente_total">0.00</span></span>
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div id="formaspagosboton">
+                    <div class="row">
+                        <a id="pagar" class="btn btn-success btn-large" iva="{% if tiene_iva %}si{% else %}no{% endif %}" facturar="{% if tiene_nota_debito %}no{% else %}si{% endif %}">PAGAR</a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-4">
+            {% if not tiene_nota_debito %}
+                <table class="table table-bordered table-hover table-condensed">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 30%;">FACTURA</th>
+                        <th style="width: 70%;">DATOS</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td style="vertical-align: middle;">Facturar a credito</td>
+                        <td style="vertical-align: middle;"><input id="facturacredito" style="text-transform: uppercase; transform: scale(1.5);" type='checkbox'/></td>
+                    </tr>
+                    <tr  {% if caja.puntodeventa.facturaelectronica %} style="display: none"{% endif %}>
+                        <td style="vertical-align: middle;">N&uacute;mero</td>
+                        <td style="vertical-align: middle;"><input type="text" id="facturanumero" value="{{ factura }}"/></td>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: middle;">Tipo Identificación</td>
+                        <td style="vertical-align: middle;">
+                            <select id="tipo_identificacion" class="form-select-sm form-select">
+                                <option value="1" {% if tipo_identificacion == 1 %}selected="selected" {% endif %}>CEDULA</option>
+                                <option value="2" {% if tipo_identificacion == 2 %}selected="selected" {% endif %}>RUC</option>
+                                <option value="3" {% if tipo_identificacion == 3 %}selected="selected" {% endif %}>PASAPORTE</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: middle;">Nº Identificación</td>
+                        <td style="vertical-align: middle;"><input id="facturaidentificacion" type='text' class="imp-cedula form-control form-control-sm" value="{{ facturaidentificacion }}"/></td>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: middle;">Nombre</td>
+                        <td style="vertical-align: middle;"><input id="facturanombre" style="text-transform: uppercase;" class="input-block-level form-control form-control-sm" type='text' value="{{ facturanombre }}"/></td>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: middle;">Dirección</td>
+                        <td style="vertical-align: middle;"><input id="facturadireccion" style="text-transform: uppercase;" class="input-block-level form-control form-control-sm" type='text' value="{{ facturadireccion }}"/></td>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: middle;">Teléfono</td>
+                        <td style="vertical-align: middle;"><input id="facturatelefono" style="text-transform: uppercase;" class="input-block-level form-control form-control-sm" type='text' value="{{ facturatelefono }}"/></td>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: middle;">Email</td>
+                        <td style="vertical-align: middle;"><input id="facturaemail" style="text-transform: uppercase;" class="input-block-level form-control form-control-sm" type='text' value="{{ facturaemail }}"/></td>
+                    </tr>
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="modal fade" id="pagospanel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="pagospanelLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="pagospanelLabel">Ingresar Forma de Pago</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="panelcontent">
+                        <div class='alert alert-danger chequeprotestado'>CHEQUE PROTESTADO</div>
+                        <form id="formulario" class='well form-horizontal' action="/finanzas" method="POST">
+                            <input type="hidden" name="action" value="addpago"/>
+                            <input type='hidden' name='rubroid' id="rubroid" value=""/>
+                            {% if solo_pp_seleccionados_y_todos %}
+                                <fieldset class="control-group nomargins">
+                                    <label class="control-label" for="id_pronto_pago">Pronto pago</label>
+                                    <div class="controls">
+                                        <input type="checkbox" id="id_pronto_pago">
+                                        <span id="pp_info" class="pp-info help-text" style="margin-left:8px;"></span>
+                                    </div>
+                                </fieldset>
+                            {% endif %}
+                            {% for field in form %}
+                                {% if not field.field.widget.is_hidden %}
+                                    <fieldset class="control-group nomargins">
+                                        <label class="control-label" for="id_{{ field.name }}">{{ field.label }}</label>
+                                        <div class="controls">
+                                            {{ field }}
+                                            <p class="help-text" alert="{{ field.help_text }}" style="font-size: xx-small; margin-bottom: 0; height: 13px; line-height: 13px">{{ field.help_text }}</p>
+                                        </div>
+                                    </fieldset>
+                                {% endif %}
+                            {% endfor %}
+                        </form>
+                        {% if depositos %}
+                            <table class='table table-bordered table-striped' id="tabla_depositos">
+                                <thead class="table-light">
+                                <tr>
+                                    <th style="width: 80px; text-align: center">Fecha</th>
+                                    <th>Referencia</th>
+                                    <th style="width: 80px; text-align: center">Valor</th>
+                                    <th style="width: 80px; text-align: center">Saldo</th>
+                                    <th style="width: 30px;"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for deposito in depositos %}
+                                    <tr class="{% if deposito.deposito %}p_deposito{% else %}p_transferencia{% endif %}">
+                                        <td>{{ deposito.fecha|date:"d-m-Y" }}</td>
+                                        <td>{% if deposito.archivo %}<a href='{{ deposito.archivo.url }}' class="fancybox" rel="group">{{ deposito.referencia }}</a>{% else %}{{ deposito.referencia }}{% endif %}</td>
+                                        <td style="text-align: right">$ {{ deposito.valor|floatformat:2 }}</td>
+                                        <td style="text-align: right">$ {{ deposito.saldo|floatformat:2 }}</td>
+                                        <td style="text-align: center"><a class="btn btn-ssm btn-success tu usar_dep" data-bs-toggle="tooltip" data-bs-placement="top" title="Usar" cuenta="{{ deposito.cuentabanco.id }}" fecha="{{ deposito.fecha|date:"Y-m-d" }}" referencia="{{ deposito.referencia }}" valor="{{ deposito.saldo|floatformat:2 }}"><i class="icon-arrow-up"></i></a></td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                    <div id="panelalert">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-success" id="btn-ejecutar">Ingresar Pago</button>
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="excedentepanel" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="excedentepanelLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="excedentepanelLabel">Excedente en el pago</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="bodyexcedente">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-success" id="btn-ejecutarexcedente">PAGAR</button>
+                    <button type="button" class="btn btn-sm btn-cerrar btn-info" data-bs-dismiss="modal">Revisar Pagos</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
