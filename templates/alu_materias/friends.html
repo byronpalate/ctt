@@ -1,0 +1,67 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script>
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+        });
+    </script>
+{% endblock %}
+{% block atras %}/alu_materias{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+            <h4>Materia: {{ materia }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th style="width: 20%;">Email</th>
+                    <th style="width: 20%;">Tel&eacute;fono</th>
+                    <th style="width:60px;text-align: center">Foto</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for materiaasignada in materiasasignadas %}
+                    <tr>
+                        <td>{{ materiaasignada.matricula.inscripcion.persona.nombre_completo }}</td>
+                        <td>
+                            {% if materiaasignada.matricula.inscripcion.persona.emails %}
+                                <a href="mailto:{{ materiaasignada.matricula.inscripcion.persona.emails }}">{{ materiaasignada.matricula.inscripcion.persona.emails }}</a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for telefono in materiaasignada.matricula.inscripcion.persona.telefonos %}
+                                {{ telefono }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if materiaasignada.matricula.inscripcion.persona.foto %}
+                                <a data-bs-toggle="tooltip" data-bs-placement="top" title="{{ materiaasignada.matricula.inscripcion.persona.nombre_completo }}" href='{{ materiaasignada.matricula.inscripcion.persona.foto.foto.url }}' class="fancybox" rel="group"><img src="{{ materiaasignada.matricula.inscripcion.persona.foto.foto.url }}" width="30px"></a>
+                            {% else %}
+                                {% if materiaasignada.matricula.inscripcion.persona.es_mujer %}
+                                    <img src="/static/images/iconos/mujer_small.png" width="30">
+                                {% else %}
+                                    <img src="/static/images/iconos/hombre_small.png" width="30">
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

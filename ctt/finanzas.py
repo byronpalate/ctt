@@ -24,7 +24,7 @@ from ctt.commonviews import adduserdata, obtener_reporte
 from ctt.forms import RubroForm, FormaPagoForm, EliminarRubroForm, MoverPagoRubroForm
 from ctt.funciones import MiPaginador, log, convertir_fecha, ok_json, bad_json, empty_json, url_back, generar_nombre
 from ctt.models import Inscripcion, Rubro, Pago, Banco, TipoOtroRubro, RubroOtro, Persona, ClienteFactura, \
-    PagoCheque, RubroEspecieValorada, PagoTransferenciaDeposito, TipoEspecieValorada, DepositoInscripcion, \
+    PagoCheque, RubroEspecieValorada, PagoTransferenciaDeposito, TipoEspecieValorada, DepositoPersona, \
     InscripcionFlags, RubroLiquidado, ValeCaja, \
     TipoCheque, TipoEmisorTarjeta, IvaAplicado, null_to_numeric, DatoCheque, DatoTransferenciaDeposito, Periodo, \
     RubroAnticipado, TipoTarjetaBanco, RubroCuota, FormaDePago, RubroNotaDebito, DescuentoRecargoRubro, Cliente
@@ -1279,17 +1279,17 @@ def view(request):
                 try:
                     data['title'] = u'Listado de rubros del alumno'
                     pp = None
-                    data['inscripcion'] = inscripcion = Inscripcion.objects.get(pk=request.GET['id'])
-                    inscripcion.chequea_mora()
-                    flags = inscripcion.mis_flag()
-                    rubrosnocancelados = inscripcion.rubro_set.filter(cancelado=False).order_by('cancelado', 'fechavence')
-                    rubroscanceldos = inscripcion.rubro_set.filter(cancelado=True).order_by('-fecha')
+                    data['personarubro'] = persona = Persona.objects.get(pk=request.GET['id'])
+                    persona.chequea_mora()
+                    flags = persona.mis_flag()
+                    rubrosnocancelados = persona.rubro_set.filter(cancelado=False).order_by('cancelado', 'fechavence')
+                    rubroscanceldos = persona.rubro_set.filter(cancelado=True).order_by('-fecha')
                     rubros = list(chain(rubrosnocancelados, rubroscanceldos))
                     data['rubros'] = rubros
-                    data['reciboscaja'] = inscripcion.recibocajainstitucion_set.all()
-                    data['notascredito'] = inscripcion.notacredito_set.all()
+                    data['reciboscaja'] = persona.recibocajainstitucion_set.all()
+                    data['notascredito'] = persona.notacredito_set.all()
                     data['especies'] = TipoEspecieValorada.objects.filter(activa=True)
-                    data['tiene_nota_debito'] = RubroNotaDebito.objects.filter(rubro__inscripcion=inscripcion, rubro__cancelado=False).exists()
+                    data['tiene_nota_debito'] = RubroNotaDebito.objects.filter(rubro__persona=persona, rubro__cancelado=False).exists()
                     if DescuentoRecargoRubro.objects.filter(recargo=True).exists():
                         ultima = DescuentoRecargoRubro.objects.filter(recargo=True).order_by('-id')[0]
                         data['motivo_recargo'] = ultima.motivo
@@ -1297,14 +1297,15 @@ def view(request):
                     else:
                         data['motivo_recargo'] = ""
                         data['porciento_recargo'] = 0
-                    data['depositosinscipcion'] = inscripcion.depositoinscripcion_set.all()
-                    data['flags'] = inscripcion.mis_flag()
-                    data['ci'] = inscripcion.persona.cedula
-                    data['pasaporte'] = inscripcion.persona.pasaporte
-                    data['email'] = inscripcion.persona.email
+                    data['depositosinscipcion'] = persona.depositopersona_set.all()
+                    data['flags'] = persona.mis_flag()
+                    data['ci'] = persona.cedula
+                    data['pasaporte'] = persona.pasaporte
+                    data['email'] = persona.email
                     data['reporte_0'] = obtener_reporte('listado_deuda_xinscripcion')
                     data['periodos_rubros'] = Periodo.objects.all()
                     data['cobro_deuda_anterior_primero'] = COBRO_DEUDA_ANTERIOR_PRIMERO
+                    data['guayas'] = True if persona.provincia_id == 9 else False
                     return render(request, "finanzas/rubros.html", data)
                 except Exception as ex:
                     transaction.set_rollback(True)
@@ -1515,98 +1516,11 @@ def view(request):
                 except Exception as ex:
                     pass
 
-            if action == 'clientes':
-                try:
-                    data['title'] = u'Finanzas'
-                    search = None
-                    ids = None
-                    if 's' in request.GET:
-                        search = request.GET['s'].strip()
-                        ss = search.split(' ')
-                        if len(ss) == 1:
-                            clientes = Cliente.objects.filter(Q(persona__nombre1__icontains=search) |
-                                                                       Q(persona__nombre2__icontains=search) |
-                                                                       Q(persona__apellido1__icontains=search) |
-                                                                       Q(persona__apellido2__icontains=search) |
-                                                                       Q(persona__cedula__icontains=search) |
-                                                                       Q(persona__pasaporte__icontains=search) |
-                                                                       Q(identificador__icontains=search) |
-                                                                       Q(carrera__nombre__icontains=search)).distinct().order_by(
-                                'persona__apellido1', 'persona__apellido2', 'persona__nombre1', 'persona__nombre2')
-                        else:
-                            clientes = Cliente.objects.filter(Q(persona__apellido1__icontains=ss[0]) & Q(
-                                persona__apellido2__icontains=ss[1])).distinct().order_by('persona__apellido1',
-                                                                                          'persona__apellido2',
-                                                                                          'persona__nombre1',
-                                                                                          'persona__nombre2')
-                    elif 'id' in request.GET:
-                        ids = int(request.GET['id'])
-                        clientes = Cliente.objects.filter(id=ids)
-                    else:
-                        clientes = Cliente.objects.all().order_by('persona__apellido1', 'persona__apellido2',
-                                                                           'persona__nombre1', 'persona__nombre2')
-                    paging = MiPaginador(clientes, 10)
-                    p = 1
-                    try:
-                        paginasesion = 1
-                        if 'paginador' in request.session and 'paginador_url' in request.session:
-                            if request.session['paginador_url'] == 'finanzas':
-                                paginasesion = int(request.session['paginador'])
-                        if 'page' in request.GET:
-                            p = int(request.GET['page'])
-                        else:
-                            p = paginasesion
-                        page = paging.page(p)
-                    except Exception as ex:
-                        p = 1
-                        page = paging.page(p)
-                    request.session['paginador'] = p
-                    request.session['paginador_url'] = 'finanzas'
-                    data['paging'] = paging
-                    data['rangospaging'] = paging.rangos_paginado(p)
-                    data['page'] = page
-                    data['search'] = search if search else ""
-                    data['ids'] = ids if ids else ""
-                    data['clientes'] = page.object_list
-                    if sesion_caja:
-                        data['total_notacredito_sesion'] = sesion_caja.total_notadecredito_sesion()
-                        data['total_efectivo_sesion'] = sesion_caja.total_efectivo_sesion()
-                        data['cantidad_facturas_sesion'] = sesion_caja.cantidad_facturas_sesion()
-                        data['cantidad_recibopago_sesion'] = sesion_caja.cantidad_recibopago_sesion()
-                        data['cantidad_cheques_sesion'] = sesion_caja.cantidad_cheques_sesion()
-                        data['total_cheque_sesion'] = sesion_caja.total_cheque_sesion()
-                        data['cantidad_tarjetas_sesion'] = sesion_caja.cantidad_tarjetas_sesion()
-                        data['total_tarjeta_sesion'] = sesion_caja.total_tarjeta_sesion()
-                        data['cantidad_depositos_sesion'] = sesion_caja.cantidad_depositos_sesion()
-                        data['total_deposito_sesion'] = sesion_caja.total_deposito_sesion()
-                        data['cantidad_transferencias_sesion'] = sesion_caja.cantidad_transferencias_sesion()
-                        data['total_transferencia_sesion'] = sesion_caja.total_transferencia_sesion()
-                        data['cantidad_recibocaja_sesion'] = sesion_caja.cantidad_recibocaja_sesion()
-                        data['total_recibocaja_sesion'] = sesion_caja.total_recibocaja_sesion()
-                        data['total_otros_ingresos'] = null_to_numeric(
-                            ValeCaja.objects.filter(sesion=sesion_caja, tipooperacion=2).distinct().aggregate(
-                                valor=Sum('valor'))['valor'], 2)
-                        data['total_otros_egresos'] = null_to_numeric(
-                            ValeCaja.objects.filter(sesion=sesion_caja, tipooperacion=1).distinct().aggregate(
-                                valor=Sum('valor'))['valor'], 2)
-                        data['depositos_pendientes_procesar'] = DepositoInscripcion.objects.filter(procesado=False,
-                                                                                                   autorizado=True,
-                                                                                                   saldo__gt=0).count()
-                        data['total_sesion'] = sesion_caja.total_sesion()
-                    data['pago_efectivo_id'] = FORMA_PAGO_EFECTIVO
-                    data['pago_tarjeta_id'] = FORMA_PAGO_TARJETA
-                    data['pago_cheque_id'] = FORMA_PAGO_CHEQUE
-                    data['pago_deposito_id'] = FORMA_PAGO_DEPOSITO
-                    data['pago_transferencia_id'] = FORMA_PAGO_TRANSFERENCIA
-                    data['pago_recibo_caja_id'] = FORMA_PAGO_RECIBOCAJAINSTITUCION
-                    data['reporte_0'] = obtener_reporte("certificado_matricula_alumno")
-                    data['reporte_1'] = obtener_reporte("reporte_compromiso_pago")
-                    data['reporte_2'] = obtener_reporte("cronograma_pagos")
-                    return render(request, "finanzas/clientes.html", data)
-                except Exception as ex:
-                    pass
+
 
             return url_back(request, ex=ex if 'ex' in locals() else None)
+
+
 
         else:
             try:
@@ -1617,22 +1531,22 @@ def view(request):
                     search = request.GET['s'].strip()
                     ss = search.split(' ')
                     if len(ss) == 1:
-                        inscripciones = Inscripcion.objects.filter(Q(persona__nombre1__icontains=search) |
-                                                                   Q(persona__nombre2__icontains=search) |
-                                                                   Q(persona__apellido1__icontains=search) |
-                                                                   Q(persona__apellido2__icontains=search) |
-                                                                   Q(persona__cedula__icontains=search) |
-                                                                   Q(persona__pasaporte__icontains=search) |
+                        personas = Persona.objects.filter(Q(nombre1__icontains=search) |
+                                                                   Q(nombre2__icontains=search) |
+                                                                   Q(apellido1__icontains=search) |
+                                                                   Q(apellido2__icontains=search) |
+                                                                   Q(cedula__icontains=search) |
+                                                                   Q(pasaporte__icontains=search) |
                                                                    Q(identificador__icontains=search) |
-                                                                   Q(carrera__nombre__icontains=search)).distinct().order_by('persona__apellido1', 'persona__apellido2', 'persona__nombre1', 'persona__nombre2')
+                                                                   Q(carrera__nombre__icontains=search)).distinct().order_by('apellido1', 'apellido2', 'nombre1', 'nombre2')
                     else:
-                        inscripciones = Inscripcion.objects.filter(Q(persona__apellido1__icontains=ss[0]) & Q(persona__apellido2__icontains=ss[1])).distinct().order_by('persona__apellido1', 'persona__apellido2', 'persona__nombre1', 'persona__nombre2')
+                        personas = Persona.objects.filter(Q(apellido1__icontains=ss[0]) & Q(apellido2__icontains=ss[1])).distinct().order_by('apellido1', 'apellido2', 'nombre1', 'nombre2')
                 elif 'id' in request.GET:
                     ids = int(request.GET['id'])
-                    inscripciones = Inscripcion.objects.filter(id=ids)
+                    personas = Persona.objects.filter(id=ids)
                 else:
-                    inscripciones = Inscripcion.objects.all().order_by('persona__apellido1', 'persona__apellido2', 'persona__nombre1', 'persona__nombre2')
-                paging = MiPaginador(inscripciones, 10)
+                    personas = Persona.objects.all().order_by('apellido1', 'apellido2', 'nombre1', 'nombre2')
+                paging = MiPaginador(personas, 10)
                 p = 1
                 try:
                     paginasesion = 1

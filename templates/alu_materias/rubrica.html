@@ -1,0 +1,15 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        var lista_items1 = [];
+        $(function(){
+            $("#id_evidencia, #id_criterio").addClass("validate[required]");
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/alu_materias?action=planificacion&id={{ materia.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/alu_materias{% endblock %}
+{% block formdestination%}/alu_materias?action=planificacion&id={{ materia.id }}{% endblock %}
+{% block formback %}/alu_materias?action=planificacion&id={{ materia.id }}{% endblock %}

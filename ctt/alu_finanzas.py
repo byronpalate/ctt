@@ -23,8 +23,8 @@ from settings import PAYMENT_ENTITYID, PAYMENT_URL, PERMITE_PAGO_ONLINE, \
 from ctt.commonviews import adduserdata, obtener_reporte
 from ctt.funciones import generar_nombre, log, ok_json, bad_json, url_back, remover_caracteres_especiales, \
     remover_tildes
-from ctt.models import Rubro, DepositoInscripcion, mi_institucion, Banco, \
-    LugarRecaudacion, null_to_numeric, Pago
+from ctt.models import Rubro, DepositoPersona, mi_institucion, Banco, \
+    LugarRecaudacion, null_to_numeric, Pago, Factura, ReciboPago
 
 
 def paymentrequest(request, extradata, autorizaciondatafast):
@@ -421,7 +421,11 @@ def view(request):
                     data['title'] = u'Pagos del rubro'
                     data['rubro'] = rubro = Rubro.objects.get(pk=request.GET['id'])
                     data['pagos'] = rubro.pago_set.all().order_by('fecha')
-                    data['factura'] = rubro.pago_set.all()[0].factura()
+                    if rubro.pago_set.exists():
+                        data['factura'] = rubro.pago_set.first().factura()
+                    else:
+                        data['factura'] = None
+
                     data['pagos'] = Pago.objects.filter(rubro=rubro)
                     return render(request, "alu_finanzas/pagos.html", data)
                 except Exception as ex:
@@ -604,21 +608,21 @@ def view(request):
                         return HttpResponseRedirect('/')
                 else:
                     return HttpResponseRedirect('/')
-                inscripcion.chequea_mora()
-                rubrosnocancelados = inscripcion.rubro_set.filter(cancelado=False).order_by('cancelado', 'fechavence')
-                rubroscanceldos = inscripcion.rubro_set.filter(cancelado=True).order_by('cancelado', '-fechavence')
+                persona.chequea_mora()
+                rubrosnocancelados = persona.rubro_set.filter(cancelado=False).order_by('cancelado', 'fechavence')
+                rubroscanceldos = persona.rubro_set.filter(cancelado=True).order_by('cancelado', '-fechavence')
                 data['rubros'] = list(chain(rubrosnocancelados, rubroscanceldos))
-                data['depositos'] = inscripcion.depositoinscripcion_set.all()
-                data['facturas'] = Factura.objects.filter(pagos__rubro__inscripcion=inscripcion).order_by('-fecha').distinct()
-                data['recibos'] = ReciboPago.objects.filter(pagos__rubro__inscripcion=inscripcion).distinct()
-                data['total_rubros'] = inscripcion.total_rubros()
-                data['total_pagado'] = inscripcion.total_pagado()
-                data['total_adeudado'] = inscripcion.total_adeudado()
+                data['depositos'] = persona.depositopersona_set.all()
+                data['facturas'] = Factura.objects.filter(pagos__rubro__persona=persona).order_by('-fecha').distinct()
+                data['recibos'] = ReciboPago.objects.filter(pagos__rubro__persona=persona).distinct()
+                data['total_rubros'] = persona.total_rubros()
+                data['total_pagado'] = persona.total_pagado()
+                data['total_adeudado'] = persona.total_adeudado()
                 data['reporte_0'] = obtener_reporte('listado_deuda_xinscripcion')
                 data['ruc_institucion'] = mi_institucion().ruc
                 data['permite_pago_online'] = PERMITE_PAGO_ONLINE
-                data['reciboscaja'] = inscripcion.recibocajainstitucion_set.all()
-                data['notascredito'] = inscripcion.notacredito_set.all()
+                data['reciboscaja'] = persona.recibocajainstitucion_set.all()
+                data['notascredito'] = persona.notacredito_set.all()
                 return render(request, "alu_finanzas/view.html", data)
             except Exception as ex:
                 return HttpResponseRedirect('/')

@@ -12,7 +12,7 @@ from settings import URL_APP_DATAFAST
 from ctt.commonviews import adduserdata
 from ctt.forms import DepositoInscripcionForm, ReasignarDepositosResponsableForm, ObservacionesPlanoficacionForm
 from ctt.funciones import MiPaginador, url_back, ok_json, bad_json, log
-from ctt.models import DepositoInscripcion, Sede, \
+from ctt.models import DepositoPersona, Sede, \
     Carrera, Modalidad, null_to_text
 from ctt.tasks import send_mail
 
