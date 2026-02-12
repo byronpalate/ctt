@@ -298,6 +298,7 @@ def calculo(matricula):
                           valoriva=0,
                           valortotal=costomatricula[3],
                           saldo=costomatricula[3],
+                          persona=matricula.inscripcion.persona,
                           inscripcion=matricula.inscripcion)
             rubro.save()
             ro = RubroOtroMatricula(rubro=rubro,
@@ -316,6 +317,7 @@ def calculo(matricula):
                           valortotal=costomatricula[0],
                           saldo=costomatricula[0],
                           inscripcion=matricula.inscripcion,
+                          persona=matricula.inscripcion.persona,
                           validoprontopago=True if costomatricula[12] else False)
             rubro.save()
             ro = RubroMatricula(rubro=rubro,
@@ -345,6 +347,7 @@ def calculo(matricula):
                               valortotal=cuota_final,
                               saldo=cuota_final,
                               inscripcion=matricula.inscripcion,
+                              persona=matricula.inscripcion.persona,
                               valornivelactual=costomatricula[10],
                               validoprontopago=True if costomatricula[12] else False)
                 rubro.save()
@@ -369,6 +372,7 @@ def calculo(matricula):
                       valortotal=valor_segunda_matricula,
                       saldo=valor_segunda_matricula,
                       inscripcion=matricula.inscripcion,
+                      persona=matricula.persona,
                       validoprontopago=True if costomatricula[12] else False)
         rubro.save()
         if matricula.inscripcion.carrera.posgrado:
@@ -393,6 +397,7 @@ def calculo(matricula):
                       valortotal=valor_tercera_matricula,
                       saldo=valor_tercera_matricula,
                       inscripcion=matricula.inscripcion,
+                      persona=matricula.inscripcion.persona,
                       validoprontopago=True if costomatricula[12] else False)
         rubro.save()
         if matricula.inscripcion.carrera.posgrado:
@@ -415,6 +420,7 @@ def calculo(matricula):
                       valoriva=0,
                       valortotal=valor_modulos,
                       saldo=valor_modulos,
+                      persona=matricula.inscripcion.persona,
                       inscripcion=matricula.inscripcion)
         rubro.save()
         ro = RubroOtroMatricula(rubro=rubro,
@@ -456,6 +462,7 @@ def calculo_rubros_homologacion(inscripcion):
                       valoriva=0,
                       valortotal=numerocreditos*preciosotros.preciohexterna,
                       saldo=numerocreditos*preciosotros.preciohexterna,
+                      persona=inscripcion.persona,
                       inscripcion=inscripcion)
         rubro.actulizar_nombre('HOMOLOGACION EXTERNA')
         rubro.save()
@@ -511,6 +518,7 @@ def calcular_agregacion(matricula, asignatura, tiponominacion):
                   valortotal=costo,
                   saldo=costo,
                   inscripcion=inscripcion,
+                  persona=inscripcion.persona,
                   validoprontopago=True if costom[4] else False)
     rubro.save()
     ro = RubroAgregacion(rubro=rubro,
@@ -537,6 +545,7 @@ def calcular_agregacion(matricula, asignatura, tiponominacion):
                           valoriva=0,
                           valortotal=valor_segunda_matricula,
                           saldo=valor_segunda_matricula,
+                          persona=inscripcion.persona,
                           inscripcion=inscripcion)
             rubro.save()
             if matricula.inscripcion.carrera.posgrado:
@@ -561,6 +570,7 @@ def calcular_agregacion(matricula, asignatura, tiponominacion):
                           valoriva=0,
                           valortotal=valor_tercera_matricula,
                           saldo=valor_tercera_matricula,
+                          persona=inscripcion.persona,
                           inscripcion=inscripcion)
             rubro.save()
             ro = RubroOtroMatricula(rubro=rubro,
