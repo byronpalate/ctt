@@ -93,12 +93,10 @@ def view(request):
                         personaadmin.emailinst = form.cleaned_data['emailinst']
                     personaadmin.save(request)
                     personaadmin.crear_perfil(administrativo=administrativo)
-                    personaadmin.mi_ficha()
                     perfil = personaadmin.mi_perfil()
                     perfil.raza = form.cleaned_data['etnia']
                     perfil.nacionalidadindigena = form.cleaned_data['nacionalidadindigena']
                     perfil.save(request)
-                    personaadmin.datos_extension()
                     log(u'Adiciono personal administrativo: %s' % administrativo, request, "add")
                     return ok_json({"id": administrativo.id})
                 else:

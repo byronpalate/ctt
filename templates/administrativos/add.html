@@ -1,0 +1,374 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            var datosnacimiento = []
+            var datosresidencia = []
+
+            $("#id_nacimiento, #id_fecha, #id_fecha_ingreso").datepicker({format:"dd-mm-yyyy"});
+            $("#id_etnia, #id_paisnac, #id_pais, #id_nacionalidad, #id_nombre1, #id_apellido1, #id_sexo, #id_nacimiento").addClass("validate[required]");
+            $("#id_email").css({'text-transform': 'none'}).addClass("validate[custom[email],correoprivado[@{{ email_domain }}#@{{ email_domain_estudiante }}]]");
+            $("#id_emailinst").css({'text-transform': 'none'}).addClass("validate[custom[email],correoinstitucional[@{{ email_domain }}#@{{ email_domain_estudiante }}]]");
+            $("#id_telefono").addClass("validate[movil]");
+            $("#id_telefono_conv").addClass("validate[fijo]");
+
+
+            validarcedula = function () {
+                var valor = $("#id_cedula").val().trim();
+                $("#id_cedula").val(valor);
+                if (valor.length>0){
+                    $("#id_cedula").addClass("validate[required,cedula]");
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'datosexternospersona', 'cedula': valor},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                datosconsulta = data;
+                                $("#id_nombre1").val(data['nombre1']);
+                                $("#id_nombre2").val(data['nombre2']);
+                                $("#id_apellido1").val(data['apellido1']);
+                                $("#id_apellido2").val(data['apellido2']);
+                                $('#id_direccion').val(data['calledomicilio'])
+                                $('#id_telefono').val(data['celular'])
+                                $('#id_email').val(data['email'])
+                                // datos factura
+                                var value1 = $('#id_nombre1').val();
+                                var value2 = $('#id_nombre2').val();
+                                var value3 = $('#id_apellido1').val();
+                                var value4 = $('#id_apellido2').val();
+                                $("#id_facturanombre").val(value1 + " " + value2 + " " + value3 + " " + value4);
+                                var valuedireccion = $('#id_direccion').val();
+                                $("#id_facturadireccion").val(valuedireccion);
+                                var valuecelular = $('#id_telefono').val();
+                                $("#id_facturatelefono").val(valuecelular);
+                                var valueemail = $('#id_email').val();
+                                $("#id_facturaemail").val(valueemail);
+
+
+                                if ($('#id_paisnac')){
+                                    if ('idpaisnacimiento' in data){
+                                        $('#id_paisnac').val(parseInt(data['idpaisnacimiento'])).trigger('change');
+                                    }
+                                }
+
+                                if ($('#id_nacionalidad')){
+                                    if ('idnacionalidad' in data){
+                                        $('#id_nacionalidad').val(parseInt(data['idnacionalidad'])).trigger('change');
+                                    }
+                                }
+
+                                if ($('#id_provincianac')){
+                                    datosnacimiento = [];
+                                    if ('idprovicianacimiento' in data){
+                                        idprovicianacimiento = parseInt(data['idprovicianacimiento']);
+                                        idcantonac = parseInt(data['idcantonnacimiento']);
+                                        idparroquianac = parseInt(data['idparroquianacimiento']);
+                                        if (idcantonac > 0){
+                                            datosnacimiento.push(idcantonac);
+                                        }
+                                        if (idparroquianac > 0){
+                                            datosnacimiento.push(idparroquianac);
+                                        }
+                                        if (idprovicianacimiento > 0){
+                                            $('#id_provincianac').val(idprovicianacimiento).trigger('change');
+                                        }
+                                    }
+                                }
+
+
+
+                                if ($('#id_nacimiento')){
+                                    if ('nacimiento' in data){
+                                        $('#id_nacimiento').val((data['nacimiento']));
+                                    }
+                                }
+
+                                if ($('#id_sexo')){
+                                    if ('idsexo' in data){
+                                        $('#id_sexo').val((data['idsexo']));
+                                    }
+                                }
+
+                                if ($('#id_estadocivil')){
+                                    if ('idestadocivil' in data){
+                                        $('#id_estadocivil').val((data['idestadocivil']));
+                                    }
+                                }
+
+                                if ($('#id_pais')){
+                                    if ('idprovinciadom' in data){
+                                        if (parseInt(data['idprovinciadom']) > 0){
+                                            $('#id_pais').val({{ pais_ecuador_id }}).trigger('change');
+                                        }
+                                    }
+                                }
+
+                                if ($('#id_provincia')){
+                                    datosresidencia = [];
+                                    if ('idprovinciadom' in data){
+                                        idprovicia = parseInt(data['idprovinciadom']);
+                                        idcanton = parseInt(data['idcantondom']);
+                                        idparroquia = parseInt(data['idparroquiadom']);
+                                        if (idcanton > 0){
+                                            datosresidencia.push(idcanton);
+                                        }
+                                        if (idparroquianac > 0){
+                                            datosresidencia.push(idparroquia);
+                                        }
+                                        if (idprovicia > 0){
+                                            $('#id_provincia').val(idprovicia).trigger('change');
+                                        }
+                                    }
+                                }
+
+
+                                if ($('#id_sector')){
+                                    if ('sector' in data){
+                                        $('#id_sector').val(data['sector']);
+                                    }
+                                }
+
+                                if ($('#id_direccion')){
+                                    if ('calledomicilio' in data){
+                                        $('#id_direccion').val(data['calledomicilio']);
+                                    }
+                                }
+
+                                if ($('#id_num_direccion')){
+                                    if ('numerodomicilio' in data){
+                                        $('#id_num_direccion').val(data['numerodomicilio']);
+                                    }
+                                }
+
+                                if ($('#id_telefono_conv')){
+                                    if ('telefono' in data){
+                                        $('#id_telefono_conv').val(data['telefono']);
+                                    }
+                                }
+
+                                if ($('#id_telefono')){
+                                    if ('celular' in data){
+                                        $('#id_telefono').val(data['celular']);
+                                    }
+                                }
+
+                                if ($('#id_email')){
+                                    if ('email' in data){
+                                        $('#id_email').val(data['email']);
+                                    }
+                                }
+
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                        },
+                        dataType: "json"
+                    });
+                }else {
+                    $("#id_cedula").removeClass("validate[required,cedula]");
+                }
+            };
+
+            $("#id_cedula").blur(function () {
+                validarcedula();
+            });
+
+            $('#id_provincia').change(function () {
+                var elemento = $(this);
+                $('#id_canton, #id_parroquia').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'cantones', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_canton').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>');
+                                }
+                                if (datosresidencia.length > 0){
+                                    $('#id_canton').val(datosresidencia[0]).trigger('change');
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $('#id_canton').change(function () {
+                var elemento = $(this);
+                $('#id_parroquia').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'parroquias', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_parroquia').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>');
+                                }
+                                if (datosresidencia.length > 0){
+                                    $('#id_parroquia').val(datosresidencia[1]);
+                                    datosresidencia = [];
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            verifica_paisnacimiento = function () {
+                var valor = $('#id_paisnac').val();
+                if (parseInt(valor) === {{ pais_ecuador_id }}) {
+                    $('#id_provincianac, #id_cantonnac, #id_parroquianac').removeAttr("disabled").addClass("validate[required]");
+                } else {
+                    $('#id_provincianac, #id_cantonnac, #id_parroquianac').attr({"disabled":"disabled"}).removeClass("validate[required]");
+                }
+            };
+
+            $('#id_paisnac').change(function(){
+                verifica_paisnacimiento();
+            });
+
+            verifica_paisnacimiento();
+
+            verifica_paisresidencia = function () {
+                var valor = $('#id_pais').val();
+                if (parseInt(valor) === {{ pais_ecuador_id }}) {
+                    $('#id_provincia, #id_canton, #id_parroquia').removeAttr("disabled").addClass("validate[required]");
+                } else {
+                    $('#id_provincia, #id_canton, #id_parroquia').attr({"disabled":"disabled"}).removeClass("validate[required]");
+                }
+            };
+
+            $('#id_pais').change(function(){
+                verifica_paisresidencia();
+            });
+
+            verifica_paisresidencia();
+
+            $('#id_provincianac').change(function () {
+                var elemento = $(this);
+                $('#id_cantonnac').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'cantones', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_cantonnac').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>');
+                                }
+                                if (datosnacimiento.length > 0){
+                                    $('#id_cantonnac').val(datosnacimiento[0]).trigger('change');
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            $('#id_cantonnac').change(function () {
+                var elemento = $(this);
+                $('#id_parroquianac').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0 ) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'parroquias', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_parroquianac').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>');
+                                }
+                                if (datosnacimiento.length > 0){
+                                    $('#id_parroquianac').val(datosnacimiento[1]);
+                                    datosnacimiento = [];
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
+            });
+
+            verificaetnia= function () {
+                var valor = $("#id_etnia").val();
+                if (parseInt(valor) === {{ nacionalidad_indigena_id  }} ) {
+                    $("#id_nacionalidadindigena").removeAttr("disabled").addClass("validate[required]");
+                }else {
+                    $("#id_nacionalidadindigena").attr({"disabled":'disabled'}).removeClass("validate[required]");
+                }
+            };
+
+            verificaetnia();
+
+            $('#id_etnia').change(function(){
+                verificaetnia();
+            });
+
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/administrativos{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/administrativos{% endblock %}
+{% block formdestination %}/administrativos{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='add'/>
+{% endblock %}
+{% block formback %}/administrativos{% endblock %}

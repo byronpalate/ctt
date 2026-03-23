@@ -892,7 +892,7 @@ def consulta_datos(cedula):
     from django.db.models import Q
     headers = {'AUTHORIZATION': u'RVNQQcORQTQ0'}
     try:
-        url = 'https://datos.los4rios.com/api_basico_dp/' + cedula
+        url = 'https://loscuatrorios.com/api_basico_dp/' + cedula
         solicitud = requests.get(url, headers=headers, verify=False, timeout=7)
         r = solicitud.json()
         r = r['data'][0]
@@ -1057,7 +1057,7 @@ def consultar_titulos(persona):
     headers = {'AUTHORIZATION': u'SVNURVIgVElUVUxPUzUy'}
     try:
         # url = 'http://192.168.220.71:8085/api_titulo/' + persona.cedula
-        url = 'https://datos.los4rios.com/api_titulo/' + persona.cedula
+        url = 'https://loscuatrorios.com/api_titulo/' + persona.cedula
         solicitud = requests.get(url, headers=headers, verify=False, timeout=6)
         r = solicitud.json()
         r = r['data'][0]

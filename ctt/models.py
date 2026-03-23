@@ -1673,19 +1673,6 @@ class Persona(ModeloBase):
             return self.perfilusuario_set.filter(cliente__isnull=False, cliente__activo=True)[0]
         return None
 
-    def tiene_ficha(self):
-        from socioecon.models import FichaSocioeconomicaINEC
-        return self.fichasocioeconomicainec_set.exists()
-
-    def mi_ficha(self):
-        from socioecon.models import FichaSocioeconomicaINEC
-        if self.tiene_ficha():
-            ficha = self.fichasocioeconomicainec_set.all()[0]
-        else:
-            ficha = FichaSocioeconomicaINEC(persona=self)
-            ficha.save()
-        return ficha
-
     def tiene_mensajes(self):
         return self.mensajedestinatario_set.filter(leido=False).exists()
 

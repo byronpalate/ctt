@@ -378,27 +378,27 @@ class AsignaturaMallaForm(BaseForm):
         self.fields['nivelmalla'].widget.attrs['readonly'] = True
         self.fields['identificacion'].widget.attrs['readonly'] = True
         self.fields['ejeformativo'].widget.attrs['readonly'] = True
-        self.fields['itinerario'].widget.attrs['readonly'] = True
+        # self.fields['itinerario'].widget.attrs['readonly'] = True
         self.fields['areaconocimiento'].widget.attrs['readonly'] = True
         self.fields['tipomateria'].widget.attrs['readonly'] = True
-        self.fields['campoformacion'].widget.attrs['readonly'] = True
+        # self.fields['campoformacion'].widget.attrs['readonly'] = True
         self.fields['practicas'].widget.attrs['readonly'] = True
         self.fields['codigopracticas'].widget.attrs['readonly'] = True
         self.fields['obligatoria'].widget.attrs['readonly'] = True
         self.fields['matriculacion'].widget.attrs['readonly'] = True
         self.fields['horassemanales'].widget.attrs['readonly'] = True
         self.fields['horas'].widget.attrs['readonly'] = True
-        self.fields['horasdocencia'].widget.attrs['readonly'] = True
-        self.fields['horascolaborativas'].widget.attrs['readonly'] = True
-        self.fields['horasasistidas'].widget.attrs['readonly'] = True
-        self.fields['organizacionaprendizaje'].widget.attrs['readonly'] = True
-        self.fields['horasorganizacionaprendizaje'].widget.attrs['readonly'] = True
-        self.fields['horasautonomas'].widget.attrs['readonly'] = True
-        self.fields['horaspracticas'].widget.attrs['readonly'] = True
+        # self.fields['horasdocencia'].widget.attrs['readonly'] = True
+        # self.fields['horascolaborativas'].widget.attrs['readonly'] = True
+        # self.fields['horasasistidas'].widget.attrs['readonly'] = True
+        # self.fields['organizacionaprendizaje'].widget.attrs['readonly'] = True
+        # self.fields['horasorganizacionaprendizaje'].widget.attrs['readonly'] = True
+        # self.fields['horasautonomas'].widget.attrs['readonly'] = True
+        # self.fields['horaspracticas'].widget.attrs['readonly'] = True
         self.fields['creditos'].widget.attrs['readonly'] = True
         self.fields['cantidadmatriculas'].widget.attrs['readonly'] = True
         self.fields['sinasistencia'].widget.attrs['readonly'] = True
-        self.fields['titulacion'].widget.attrs['readonly'] = True
+        # self.fields['titulacion'].widget.attrs['readonly'] = True
         self.fields['validacreditos'].widget.attrs['readonly'] = True
         self.fields['validapromedio'].widget.attrs['readonly'] = True
         if not malla.nivelacion:
@@ -406,8 +406,8 @@ class AsignaturaMallaForm(BaseForm):
         else:
             self.fields['nivelmalla'].queryset = NivelMalla.objects.filter(id__lte=malla.nivelesregulares)
 
-    def noes_itinerario(self):
-        del self.fields['itinerario']
+    # def noes_itinerario(self):
+    #     del self.fields['itinerario']
 
 
 # class ItinerarioMallaForm(BaseForm):
@@ -3075,8 +3075,7 @@ class RegistroExternoForm(BaseForm):
         self.fields['formwidth'].initial = 'md'
 
 class SolicitarRequerimientoServicioForm(BaseForm):
-    descripcion = forms.CharField(label=u"Descripción del requerimiento", widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'})
-    )
+    descripcion = forms.CharField(label=u"Descripción del requerimiento", widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'}))
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
         self.fields['formtype'].initial = 'vertical'

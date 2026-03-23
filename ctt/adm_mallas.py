@@ -956,35 +956,36 @@ def view(request):
                                                         "identificacion": am.identificacion,
                                                         "practicas": am.practicas,
                                                         "codigopracticas": am.codigopracticas,
-                                                        "practicasasistenciales": am.practicasasistenciales,
+                                                        # "practicasasistenciales": am.practicasasistenciales,
                                                         "obligatoria": am.obligatoria,
                                                         "matriculacion": am.matriculacion,
                                                         "horassemanales": am.horassemanales,
                                                         "horas": am.horas,
-                                                        "horasdocencia": am.horasdocencia,
-                                                        "horascolaborativas": am.horascolaborativas,
-                                                        "horasasistidas": am.horasasistidas,
-                                                        "organizacionaprendizaje": am.malla.organizacionaprendizaje,
-                                                        "horasorganizacionaprendizaje": am.horasorganizacionaprendizaje,
-                                                        "horasautonomas": am.horasautonomas,
-                                                        "horaspracticas": am.horaspracticas,
+                                                        # "horasdocencia": am.horasdocencia,
+                                                        # "horascolaborativas": am.horascolaborativas,
+                                                        # "horasasistidas": am.horasasistidas,
+                                                        # "organizacionaprendizaje": am.malla.organizacionaprendizaje,
+                                                        # "horasorganizacionaprendizaje": am.horasorganizacionaprendizaje,
+                                                        # "horasautonomas": am.horasautonomas,
+                                                        # "horaspracticas": am.horaspracticas,
                                                         "creditos": am.creditos,
                                                         "cantidadmatriculas": am.cantidadmatriculas,
                                                         "sinasistencia": am.sinasistencia,
-                                                        "titulacion": am.titulacion,
+                                                        # "titulacion": am.titulacion,
                                                         "validacreditos": am.validacreditos,
                                                         "validapromedio": am.validapromedio,
                                                         "competencia": am.competencia,
                                                         "totalhorasaprendizajecontactodocente": am.totalhorasaprendizajecontactodocente,
                                                         "totalhorasaprendizajepracticoexperimental": am.totalhorasaprendizajepracticoexperimental,
-                                                        "totalhorasaprendizajeautonomo": am.totalhorasaprendizajeautonomo,
-                                                        "lms": am.lms,
-                                                        "plantillalms": am.plantillaslms})
+                                                        "totalhorasaprendizajeautonomo": am.totalhorasaprendizajeautonomo
+                                                        # "lms": am.lms,
+                                                        # "plantillalms": am.plantillaslms
+                                                        })
                     if malla.permite_modificar():
                         form.editar(malla)
                     else:
                         form.editarcompetencia(malla)
-                    form.noes_itinerario()
+                    # form.noes_itinerario()
                     data['form'] = form
                     data['permite_modificar'] = am.malla.permite_modificar()
                     return render(request, "adm_mallas/editasign.html", data)
