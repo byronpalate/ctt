@@ -436,9 +436,11 @@ def panel(request):
                 data['grupos_con_mods'] = (misgrupos.order_by('grupo__name').prefetch_related(modulos_activos))
                 grupos = persona.usuario.groups.exclude(id__in=[ALUMNOS_GROUP_ID, PROFESORES_GROUP_ID])
                 if persona.es_administrador():
-                    data['incidencias'] = Incidencia.objects.filter(cerrada=False).order_by('-lecciongrupo__fecha')[:25]
+                    # data['incidencias'] = Incidencia.objects.filter(cerrada=False).order_by('-lecciongrupo__fecha')[:25]
+                    data['incidencias'] = ''
                 else:
-                    data['incidencias'] = Incidencia.objects.filter(cerrada=False, tipo__responsabletipoincidencia__responsable=persona).order_by('-lecciongrupo__fecha')[:25]
+                    # data['incidencias'] = Incidencia.objects.filter(cerrada=False, tipo__responsabletipoincidencia__responsable=persona).order_by('-lecciongrupo__fecha')[:25]
+                    data['incidencias'] = ''
                 # NOTICIAS Y AVISOS DEL DIA
                 data['noticias'] = Noticia.objects.filter(desde__lte=hoy, hasta__gte=hoy, imagen=None, tipo__in=[1, 2, 3], estado=2).order_by('-desde', 'id')[0:5]
                 data['noticiasgraficas'] = Noticia.objects.filter(desde__lte=hoy, hasta__gte=hoy, imagen__isnull=False, tipo__in=[1, 2, 3], estado=2).order_by('-desde', 'id')
@@ -476,24 +478,18 @@ def panel(request):
                 else:
                     request.session['notificar_deuda'] = False
                     data['notificar_deuda'] = False
-
-
             if perfilprincipal.es_administrativo():
-
                 # data['reporte_1'] = obtener_reporte('carnet_admin')
                 data['reporte_1'] = None
                 data['actualizar_foto'] = ACTUALIZAR_FOTO_ADMINISTRATIVOS
                 if persona.tiene_deuda_vencida():
                     request.session['notificar_deuda'] = False
                     data['notificar_deuda'] = False
-
             if perfilprincipal.es_profesor():
                 data['actualizar_foto'] = ACTUALIZAR_FOTO_PROFESOR
                 data['reporte_2'] = obtener_reporte('carnet_profesor')
                 request.session['notificar_deuda'] = False
                 data['notificar_deuda'] = False
-
-
             return render(request, "panel.html", data)
         except Exception as ex:
             return HttpResponseRedirect('/logout')
