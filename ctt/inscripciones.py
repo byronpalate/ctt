@@ -21,19 +21,13 @@ EMAIL_DOMAIN_ESTUDIANTES, NACIONALIDAD_INDIGENA_ID, PAIS_ECUADOR_ID,MODALIDAD_DI
 
 from ctt.commonviews import adduserdata, obtener_reporte
 from ctt.forms import InscripcionForm, RecordAcademicoForm, HistoricoRecordAcademicoForm, CargarFotoForm, \
-    CambiomallaForm, NuevaInscripcionForm, \
-    CambionivelmallaForm, EstudioEducacionSuperiorForm, EstudioEducacionBasicaForm, \
-    CambiaDatosCarreraForm, ImportarArchivoXLSForm, \
-    RetiradoCarreraForm, \
-    CambiarFichaInscripcionForm, \
-    ImportarArchivoXLSPeriodoForm
+    CambiomallaForm, NuevaInscripcionForm, CambionivelmallaForm, EstudioEducacionSuperiorForm, EstudioEducacionBasicaForm, \
+    CambiaDatosCarreraForm, ImportarArchivoXLSForm, RetiradoCarreraForm, CambiarFichaInscripcionForm, ImportarArchivoXLSPeriodoForm
 
-from ctt.funciones import log, generar_usuario, \
-    generar_nombre, resetear_clave, MiPaginador, bad_json, ok_json, url_back, generar_email, \
+from ctt.funciones import log, generar_usuario, generar_nombre, resetear_clave, MiPaginador, bad_json, ok_json, url_back, generar_email, \
     puede_modificar_inscripcion_post, convertir_fecha, remover_tildes
-from ctt.models import InscripcionMalla, EstudioPersona
 
-from ctt.models import Persona, Inscripcion, RecordAcademico, HistoricoRecordAcademico, \
+from ctt.models import InscripcionMalla, EstudioPersona, Persona, Inscripcion, RecordAcademico, HistoricoRecordAcademico, \
     FotoPersona, Archivo, NivelMalla, EjeFormativo, AsignaturaMalla, Periodo, \
     Carrera,  Asignatura, Nivel, Matricula, Clase, RetiroCarrera, \
     Modalidad, Sede, Administrativo, Profesor, Materia, Turno,  Rubro, Pago, Sesion, Malla, TipoTerminosAcuerdos, \
@@ -2117,102 +2111,101 @@ def view(request):
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
-        if action == 'importar':
-            try:
-                #  SE NECESITA EN LA PLANTILLA EXCEL SUBIR EL ID DE PAIS, CANTON, PROVINCIA,PARROQUIA
-                #  ESTOS DATOS SE UTILIZA PARA CARGAR CLIENTES EN-SEVEN"
-                form = ImportarArchivoXLSForm(request.POST, request.FILES)
-                if form.is_valid():
-                    hoy = datetime.now().date()
-                    nfile = request.FILES['archivo']
-                    nfile._name = generar_nombre("importacion_", nfile._name)
-                    archivo = Archivo(nombre='IMPORTACION INSCRIPCIONES',
-                                      fecha=datetime.now(),
-                                      archivo=nfile,
-                                      tipo_id=ARCHIVO_TIPO_GENERAL)
-                    archivo.save(request)
-                    workbook = xlrd.open_workbook(archivo.archivo.file.name)
-                    sheet = workbook.sheet_by_index(0)
-                    linea = 1
-                    for rowx in range(sheet.nrows):
-                        if linea > 1:
-                            puntosalva = transaction.savepoint()
-                            try:
-                                cols = sheet.row_values(rowx)
-                                cedula = smart_str(cols[0]).strip()
-                                pasaporte = smart_str(cols[1]).strip()
-                                persona = None
-                                if cedula:
-                                    if Persona.objects.filter(cedula=cedula).exists():
-                                        persona = Persona.objects.filter(cedula=cedula)[0]
-                                elif pasaporte:
-                                    if Persona.objects.filter(pasaporte=pasaporte).exists():
-                                        persona = Persona.objects.filter(pasaporte=pasaporte)[0]
-                                if not persona:
-                                    persona = Persona(cedula=cedula,
-                                                      pasaporte=pasaporte,
-                                                      apellido1=smart_str(cols[2]),
-                                                      apellido2=smart_str(cols[3]),
-                                                      nombre1=smart_str(cols[4]),
-                                                      nombre2=smart_str(cols[5]),
-                                                      sexo_id=int(cols[6]),
-                                                      nacimiento=xlrd.xldate.xldate_as_datetime(cols[7], workbook.datemode).date(),
-                                                      email=smart_str(cols[8]),
-                                                      telefono_conv=smart_str(cols[9]),
-                                                      telefono=smart_str(cols[10]),
-                                                      direccion=smart_str(cols[11]))
-                                    persona.save(request)
-                                    generar_usuario(persona=persona, group_id=ALUMNOS_GROUP_ID)
-                                if EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES:
-                                    persona.emailinst = generar_email(persona, estudiante=True)
-                                    persona.save(request)
-                                sede = Sede.objects.get(pk=int(cols[12]))
-                                coordinacion = sede.coordinacion_set.get(pk=int(cols[13]))
-                                carrera = coordinacion.carrera.get(pk=int(cols[14]))
-                                modalidad = Modalidad.objects.get(pk=int(cols[15]))
-                                sesion =  sede.sesion_set.get(pk=int(cols[16]))
-                                malla = carrera.malla_set.get(pk=int(cols[17]))
-                                periodo = None
-                                if Periodo.objects.filter(id=int(cols[20])).exists():
-                                    periodo = Periodo.objects.filter(id=int(cols[20]))[0]
-                                existe = False
-                                for i in Inscripcion.objects.filter(persona__cedula=cedula):
-                                    if i.coordinacion == coordinacion and i.carrera == carrera:
-                                        existe = True
-                                if not existe:
-                                    inscripcion = Inscripcion(persona=persona,
-                                                              fecha=datetime.now().date(),
-                                                              hora=datetime.now().time(),
-                                                              fechainiciocarrera=xlrd.xldate.xldate_as_datetime(cols[19], workbook.datemode).date(),
-                                                              carrera=carrera,
-                                                              modalidad=modalidad,
-                                                              sesion=sesion,
-                                                              sede=sede,
-                                                              periodo=periodo,
-                                                              tipogratuidad_id=TIPO_GRATUIDAD_NINGUNA)
-                                    inscripcion.save(request)
-                                    persona.crear_perfil(inscripcion=inscripcion)
-                                    documentos = DocumentosDeInscripcion(inscripcion=inscripcion,
-                                                                         pre=True if smart_str(cols[21]) == 'S' else False,
-                                                                         observaciones_pre=smart_str(cols[22]))
-                                    documentos.save(request)
-                                    inscripcion.persona.mi_perfil()
-                                    inscripcion.generar_rubro_inscripcion(malla)
-                                    inscripcion.mi_malla(malla=malla)
-                                    inscripcion.actualizar_nivel()
-                                    inscripcion.actualiza_tipo_inscripcion()
-                                    log(u'Importo inscripcion: %s' % persona.identificacion(), request, "add")
-                                transaction.savepoint_commit(puntosalva)
-                            except Exception as ex:
-                                transaction.savepoint_rollback(puntosalva)
-                                return bad_json(mensaje=u'Error al ingresar la línea: %s' % linea)
-                        linea += 1
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
+
+        # if action == 'importar':
+        #     try:
+        #         form = ImportarArchivoXLSForm(request.POST, request.FILES)
+        #         if form.is_valid():
+        #             hoy = datetime.now().date()
+        #             nfile = request.FILES['archivo']
+        #             nfile._name = generar_nombre("importacion_", nfile._name)
+        #             archivo = Archivo(nombre='IMPORTACION INSCRIPCIONES',
+        #                               fecha=datetime.now(),
+        #                               archivo=nfile,
+        #                               tipo_id=ARCHIVO_TIPO_GENERAL)
+        #             archivo.save(request)
+        #             workbook = xlrd.open_workbook(archivo.archivo.file.name)
+        #             sheet = workbook.sheet_by_index(0)
+        #             linea = 1
+        #             for rowx in range(sheet.nrows):
+        #                 if linea > 1:
+        #                     puntosalva = transaction.savepoint()
+        #                     try:
+        #                         cols = sheet.row_values(rowx)
+        #                         cedula = smart_str(cols[0]).strip()
+        #                         pasaporte = smart_str(cols[1]).strip()
+        #                         persona = None
+        #                         if cedula:
+        #                             if Persona.objects.filter(cedula=cedula).exists():
+        #                                 persona = Persona.objects.filter(cedula=cedula)[0]
+        #                         elif pasaporte:
+        #                             if Persona.objects.filter(pasaporte=pasaporte).exists():
+        #                                 persona = Persona.objects.filter(pasaporte=pasaporte)[0]
+        #                         if not persona:
+        #                             persona = Persona(cedula=cedula,
+        #                                               pasaporte=pasaporte,
+        #                                               apellido1=smart_str(cols[2]),
+        #                                               apellido2=smart_str(cols[3]),
+        #                                               nombre1=smart_str(cols[4]),
+        #                                               nombre2=smart_str(cols[5]),
+        #                                               sexo_id=int(cols[6]),
+        #                                               nacimiento=xlrd.xldate.xldate_as_datetime(cols[7], workbook.datemode).date(),
+        #                                               email=smart_str(cols[8]),
+        #                                               telefono_conv=smart_str(cols[9]),
+        #                                               telefono=smart_str(cols[10]),
+        #                                               direccion=smart_str(cols[11]))
+        #                             persona.save(request)
+        #                             generar_usuario(persona=persona, group_id=ALUMNOS_GROUP_ID)
+        #                         if EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES:
+        #                             persona.emailinst = generar_email(persona, estudiante=True)
+        #                             persona.save(request)
+        #                         sede = Sede.objects.get(pk=int(cols[12]))
+        #                         coordinacion = sede.coordinacion_set.get(pk=int(cols[13]))
+        #                         carrera = coordinacion.carrera.get(pk=int(cols[14]))
+        #                         modalidad = Modalidad.objects.get(pk=int(cols[15]))
+        #                         sesion =  sede.sesion_set.get(pk=int(cols[16]))
+        #                         malla = carrera.malla_set.get(pk=int(cols[17]))
+        #                         periodo = None
+        #                         if Periodo.objects.filter(id=int(cols[20])).exists():
+        #                             periodo = Periodo.objects.filter(id=int(cols[20]))[0]
+        #                         existe = False
+        #                         for i in Inscripcion.objects.filter(persona__cedula=cedula):
+        #                             if i.coordinacion == coordinacion and i.carrera == carrera:
+        #                                 existe = True
+        #                         if not existe:
+        #                             inscripcion = Inscripcion(persona=persona,
+        #                                                       fecha=datetime.now().date(),
+        #                                                       hora=datetime.now().time(),
+        #                                                       fechainiciocarrera=xlrd.xldate.xldate_as_datetime(cols[19], workbook.datemode).date(),
+        #                                                       carrera=carrera,
+        #                                                       modalidad=modalidad,
+        #                                                       sesion=sesion,
+        #                                                       sede=sede,
+        #                                                       periodo=periodo,
+        #                                                       tipogratuidad_id=TIPO_GRATUIDAD_NINGUNA)
+        #                             inscripcion.save(request)
+        #                             persona.crear_perfil(inscripcion=inscripcion)
+        #                             documentos = DocumentosDeInscripcion(inscripcion=inscripcion,
+        #                                                                  pre=True if smart_str(cols[21]) == 'S' else False,
+        #                                                                  observaciones_pre=smart_str(cols[22]))
+        #                             documentos.save(request)
+        #                             inscripcion.persona.mi_perfil()
+        #                             inscripcion.generar_rubro_inscripcion(malla)
+        #                             inscripcion.mi_malla(malla=malla)
+        #                             inscripcion.actualizar_nivel()
+        #                             inscripcion.actualiza_tipo_inscripcion()
+        #                             log(u'Importo inscripcion: %s' % persona.identificacion(), request, "add")
+        #                         transaction.savepoint_commit(puntosalva)
+        #                     except Exception as ex:
+        #                         transaction.savepoint_rollback(puntosalva)
+        #                         return bad_json(mensaje=u'Error al ingresar la línea: %s' % linea)
+        #                 linea += 1
+        #             return ok_json()
+        #         else:
+        #             return bad_json(error=6)
+        #     except Exception as ex:
+        #         transaction.set_rollback(True)
+        #         return bad_json(error=1, ex=ex)
 
         if action == 'importarcanvas':
             try:
@@ -4045,6 +4038,14 @@ def view(request):
                     data['title'] = u'Importar inscripciones'
                     data['form'] = ImportarArchivoXLSForm()
                     return render(request, "inscripciones/importar.html", data)
+                except Exception as ex:
+                    pass
+
+            if action == 'importarestudiante':
+                try:
+                    data['title'] = u'Importar'
+                    data['form'] = ImportarArchivoXLSForm()
+                    return render(request, "inscripciones/importarestudiante.html", data)
                 except Exception as ex:
                     pass
 

@@ -1,0 +1,19 @@
+{% load ctt_extras %}
+<table class="table table-condensed">
+    <tr>
+        {% for campo in materiaasignada.nombre_campos %}
+            <td style="text-align: center">
+                <span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ campo.alternativa }}">{{ campo.nombre }}</span>
+            </td>
+        {% endfor %}
+        <td></td>
+    </tr>
+    <tr>
+        {% for campo in materiaasignada.valor_campos %}
+            <td style="text-align: center; width: 20px">
+                {{ campo.valor|floatformat:campo.detallemodeloevaluativo.decimales }}
+            </td>
+        {% endfor %}
+        <td></td>
+    </tr>
+</table>

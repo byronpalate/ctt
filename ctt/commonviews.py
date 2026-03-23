@@ -252,7 +252,7 @@ def adduserdata(request, data):
             else:
                 data['periodos'] = None
         if data['periodos']:
-            request.session['periodo'] = data['periodos'].first()
+            request.session['periodo'] = data['periodos'][0]
         else:
             request.session['periodo'] = None
     elif perfilprincipal.es_empleador():
@@ -353,8 +353,7 @@ def panel(request):
                 data['inscripcion'] = inscripcion = perfilprincipal.inscripcion
                 data['reporte_0'] = obtener_reporte('ficha_preinscripcion')
                 data['imprimirficha'] = (datetime(inscripcion.fecha.year, inscripcion.fecha.month, inscripcion.fecha.day, 0, 0, 0) + timedelta(days=30)).date() > datetime.now().date()
-                data['ofertasdisponibles'] = inscripcion.tiene_ofertas_disponibles()
-                data['entrevistaspendientes'] = inscripcion.tiene_entrevistas_pendientes()
+
                 data['proceso'] = None
                 data['es_profesor'] = False
                 data['necesita_evaluarse'] = False
@@ -367,8 +366,6 @@ def panel(request):
 
                 if periodo:
                     matricula = inscripcion.matricula_periodo(periodo)
-                    data['proceso'] = proceso = periodo.proceso_evaluativo()
-                    data['procesodocente'] = procesodocente = periodo.proceso_evaluativo_docente()
                     data['necesita_evaluar'] = False
                     tiene_deuda = inscripcion.tiene_deuda_vencida()
                     tiene_notificacion = inscripcion.mis_flag().notificardeuda
@@ -377,13 +374,11 @@ def panel(request):
                         evaluar = False
 
                 data['datosincompletos'] = persona.datos_incompletos()
-                data['hojavidallena'] = False if persona.hojavida_llena() else True
+
                 # NOTICIAS Y AVISOS DEL DIA
                 data['noticias'] = Noticia.objects.filter(desde__lte=hoy, hasta__gte=hoy, imagen=None, tipo__in=[1, 2, 4], estado=2).order_by('-desde', 'id')[0:5]
                 data['noticiasgraficas'] = Noticia.objects.filter(desde__lte=hoy, hasta__gte=hoy, imagen__isnull=False, tipo__in=[1, 2, 4], estado=2).order_by('-desde', 'id')
-                encuestas = encuesta(grupos, persona)
-                if encuestas:
-                    return HttpResponseRedirect('/com_responderencuestas?action=responder&id=' + str(encuestas.first().id))
+
             elif perfilprincipal.es_empleador():
                 data['empleador'] = empleador = perfilprincipal.empleador
                 data['proceso'] = None
@@ -434,10 +429,7 @@ def panel(request):
                 data['hojavidallena'] = False
                 # NOTICIAS Y AVISOS DEL DIA
                 data['noticias'] = []
-                # data['noticiasgraficas'] = []
-                # encuestas = encuesta(grupos, persona)
-                # if encuestas:
-                #     return HttpResponseRedirect('/com_responderencuestas?action=responder&id=' + str(encuestas.first().id))
+
             else:
                 misgrupos = GruposModulos.objects.filter(grupo__in=persona.usuario.groups.exclude(id__in=[ALUMNOS_GROUP_ID, PROFESORES_GROUP_ID, EMPLEADORES_GRUPO_ID])).distinct()
                 modulos_activos = Prefetch('modulos', queryset=Modulo.objects.filter(activo=True).order_by('nombre'), to_attr='modulos_activos')
@@ -471,8 +463,6 @@ def panel(request):
             data['alertanoticias'] = request.session['alertanoticias']
             request.session['alertanoticias'] = True
             if perfilprincipal.es_estudiante():
-                if inscripcion.egresado_set.exists() and not persona.seg_graduado   :
-                    return HttpResponseRedirect('/alu_seggraduados')
                 data['reporte_0'] = obtener_reporte('carnet')
                 data['actualizar_foto'] = ACTUALIZAR_FOTO_ALUMNOS
                 if persona.tiene_deuda_vencida():

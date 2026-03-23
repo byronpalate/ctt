@@ -1,0 +1,333 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript" src="/static/js/bootstrap-filestyle.min.js?v={{ institucion.versionstaticsjs }}"> </script>
+    <script type="text/javascript">
+        $(function() {
+
+            conectar_texto = function () {
+                $(".entradatexto").unbind();
+                $(".entradatexto").focusin(function () {
+                    $(".entradatexto").attr({'rows': '1'});
+                    $(this).attr({'rows': '5'});
+                });
+                $(".entradatexto").focusout(function () {
+                    $(this).attr({'rows': '1'});
+                });
+            };
+
+            conectar_texto();
+
+
+            $(".confirma_leccion").click(function () {
+                var elemento = $(this);
+                var valor = $(this).is(':checked');
+                var id = elemento.attr('idl');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_materias",
+                    data: {'action': 'confirmaasistencia', 'id': id, 'val': valor, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop({'checked': !valor});
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop({'checked': !valor});
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $(".confirma_leccion_asist").click(function () {
+                var elemento = $(this);
+                var valor = $(this).is(':checked');
+                var id = elemento.attr('idl');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_materias",
+                    data: {'action': 'confirmadocenciaasist', 'id': id, 'val': valor, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop({'checked': !valor});
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop({'checked': !valor});
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $(".confirma_leccion_colab").click(function () {
+                var elemento = $(this);
+                var valor = $(this).is(':checked');
+                var id = elemento.attr('idl');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_materias",
+                    data: {'action': 'confirmadocenciacolab', 'id': id, 'val': valor, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop({'checked': !valor});
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop({'checked': !valor});
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $(".confirma_leccion_auto").click(function () {
+                var elemento = $(this);
+                var valor = $(this).is(':checked');
+                var id = elemento.attr('idl');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_materias",
+                    data: {'action': 'confirmadocenciaauto', 'id': id, 'val': valor, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop({'checked': !valor});
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop({'checked': !valor});
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $(".confirma_leccion_pract").click(function () {
+                var elemento = $(this);
+                var valor = $(this).is(':checked');
+                var id = elemento.attr('idl');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_materias",
+                    data: {'action': 'confirmadocenciapract', 'id': id, 'val': valor, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                        } else {
+                            elemento.prop({'checked': !valor});
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop({'checked': !valor});
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+            $(".confirmar_todos").click(function () {
+                var elemento = $(this);
+                var valor = $(this).is(':checked');
+                var id = elemento.attr('idl');
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_materias",
+                    data: {'action': 'confirmartodos', 'id': id, 'val': valor, 'csrfmiddlewaretoken': csrftoken },
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            if(valor){
+                                $('#confirma_'+id).prop('checked', true);
+                                if(!$('#confirmaasist_'+id).attr('disabled')){
+                                    $('#confirmaasist_'+id).prop('checked', true);
+                                }
+                                if(!$('#confirmacolab_'+id).attr('disabled')){
+                                    $('#confirmacolab_'+id).prop('checked', true);
+                                }
+                                if(!$('#confirmapract_'+id).attr('disabled')){
+                                    $('#confirmapract_'+id).prop('checked', true);
+                                }
+                                if(!$('#confirmaauto_'+id).attr('disabled')){
+                                    $('#confirmaauto_'+id).prop('checked', true);
+                                }
+                            }else{
+                                $('#confirma_'+id).prop('checked', false);
+                                if(!$('#confirmaasist_'+id).attr('disabled')){
+                                    $('#confirmaasist_'+id).prop('checked', false);
+                                }
+                                if(!$('#confirmacolab_'+id).attr('disabled')){
+                                    $('#confirmacolab_'+id).prop('checked', false);
+                                }
+                                if(!$('#confirmapract_'+id).attr('disabled')){
+                                    $('#confirmapract_'+id).prop('checked', false);
+                                }
+                                if(!$('#confirmaauto_'+id).attr('disabled')){
+                                    $('#confirmaauto_'+id).prop('checked', false);
+                                }
+                            }
+                        } else {
+                            elemento.prop({'checked': !valor});
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        elemento.prop({'checked': !valor});
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/alu_materias{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h6>{{ title }}
+                <br>Materia: {{ planificacionmateria.materia }}</h6>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class="table table-bordered">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 90px;">Fecha</th>
+                        <th style="width: 90px;">Fecha<br>fin act.</th>
+                        <th style="width: 350px">Contenido</th>
+                        <th>Actividades</th>
+                        <th style="width: 60px; text-align: center">Hrs.</th>
+                    <th style="width: 230px; text-align: center">Confirmar</th>
+                </tr>
+                </thead>
+                <tbody id="contenidotaller_{{ clase.tallerplanificacionmateria.id }}">
+                {% for clase in clases %}
+                    <tr id="fila1_{{ clase.id }}" ida="{{ clase.id }}" class="filasclases">
+                        <td style="text-align: center; vertical-align: middle">{{ clase.fecha|date:"Y-m-d" }}</td>
+                            <td style="text-align: center; vertical-align: middle">{{ clase.fechafinactividades|date:"Y-m-d" }}</td>
+                            <td style="vertical-align: middle">
+                                {{ clase.contenido }}
+                            </td>
+                            <td style="padding: 0">
+                                <table class="table table-condensed" style="width:100px; margin-bottom: 10px; margin-top: 10px">
+                                    {% if clase.actividadesaprendizajecondocenciaasistida_uno %}
+                                        <tr>
+                                            <td style="width: 40px; text-align: center"><span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horas asistidas">HD</span></td>
+                                            <td style="width: 60px; text-align: center">{{ clase.horasdocente_uno|floatformat:1  }}</td>
+                                            <td>{{ clase.actividadesaprendizajecondocenciaasistida_uno  }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if clase.actividadesaprendizajecondocenciaasistida_dos %}
+                                        <tr>
+                                            <td style="width: 40px; text-align: center"><span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horas asistidas">HD</span></td>
+                                            <td style="width: 60px; text-align: center">{{ clase.horasdocente_dos|floatformat:1  }}</td>
+                                            <td>{{ clase.actividadesaprendizajecondocenciaasistida_dos  }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if clase.actividadesaprendizajecolaborativas %}
+                                        <tr>
+                                            <td style="width: 40px; text-align: center"><span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horas colaborativas">HC</span></td>
+                                            <td style="width: 60px; text-align: center">{{ clase.horascolaborativas|floatformat:1  }}</td>
+                                            <td>{{ clase.actividadesaprendizajecolaborativas }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if clase.actividadestrabajoautonomas %}
+                                        <tr>
+                                            <td style="width: 40px; text-align: center"><span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horas autonomas">HA</span></td>
+                                            <td style="width: 60px; text-align: center">{{ clase.horasautonomas|floatformat:1  }}</td>
+                                            <td>{{ clase.actividadestrabajoautonomas }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if clase.actividadesaprendizajepractico %}
+                                        <tr>
+                                            <td style="width: 40px; text-align: center"><span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Horas practicas">HP</span></td>
+                                            <td style="width: 60px; text-align: center">{{ clase.horaspracticas|floatformat:1  }}</td>
+                                            <td>{{ clase.actividadesaprendizajepractico }}</td>
+                                        </tr>
+                                    {% endif %}
+                                </table>
+                            </td>
+                            <td style="text-align: center">
+                                {{ clase.total_horas|floatformat:1 }}
+                            </td>
+                        <td style="vertical-align: middle; text-align: center">
+                            {% for leccion in clase.lecciones %}
+                                {% with asistencia=leccion|args:materiaasignada|call:'mi_asistencia_inscripcion' %}
+                                    <table class="table-bordered" style="margin-bottom: 2px">
+                                        <thead class="table-light">
+                                        <tr>
+                                            <th style="text-align: center">
+                                                <input type="checkbox" {% if asistencia.materiaasignada.materia.cerrado %}disabled="disabled"{% endif %} {% if asistencia.confirmada %}checked="checked"{% endif %} class="confirmar_todos tu" data-bs-toggle="tooltip" data-bs-placement="top" title='Todos' id="confirmatodos_{{ asistencia.id }}" idl="{{ asistencia.id }}">
+                                            </th>
+                                            <th colspan="4">
+                                                Turno: {{ leccion.turno.nombre_horario }}
+                                            </th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr>
+                                            <td style="text-align: center; width: 20%">
+                                                <input type="checkbox" {% if asistencia.materiaasignada.materia.cerrado %}disabled="disabled"{% endif %} {% if asistencia.confirmada %}checked="checked"{% endif %} class="confirma_leccion tu" data-bs-toggle="tooltip" data-bs-placement="top" title='Contenido' id="confirma_{{ asistencia.id }}" idl="{{ asistencia.id }}">
+                                            </td>
+                                            <td style="text-align: center; width: 20%">
+                                                <input type="checkbox" {% if asistencia.materiaasignada.materia.cerrado %}disabled="disabled"{% endif %} {% if clase.horasdocente == 0 %}disabled="disabled"{% endif %} {% if asistencia.confirmadaasistencia %}checked="checked"{% endif %} class="confirma_leccion_asist tu" data-bs-toggle="tooltip" data-bs-placement="top" title='Docencia asistida' id="confirmaasist_{{ asistencia.id }}" idl="{{ asistencia.id }}">
+                                            </td>
+                                            <td style="text-align: center; width: 20%">
+                                                <input type="checkbox" {% if asistencia.materiaasignada.materia.cerrado %}disabled="disabled"{% endif %} {% if clase.horascolaborativas == 0 %}disabled="disabled"{% endif %} {% if asistencia.confirmadacolaborativa %}checked="checked"{% endif %} class="confirma_leccion_colab tu" data-bs-toggle="tooltip" data-bs-placement="top" title='Aprend. colab.' id="confirmacolab_{{ asistencia.id }}" idl="{{ asistencia.id }}">
+                                            </td>
+                                            <td style="text-align: center; width: 20%">
+                                                <input type="checkbox" {% if asistencia.materiaasignada.materia.cerrado %}disabled="disabled"{% endif %} {% if clase.horasautonomas == 0 %}disabled="disabled"{% endif %} {% if asistencia.confirmadaautonoma %}checked="checked"{% endif %} class="confirma_leccion_auto tu" data-bs-toggle="tooltip" data-bs-placement="top" title='Trabajo autónomas' id="confirmaauto_{{ asistencia.id }}" idl="{{ asistencia.id }}">
+                                            </td>
+                                            <td style="text-align: center; width: 20%">
+                                                <input type="checkbox" {% if asistencia.materiaasignada.materia.cerrado %}disabled="disabled"{% endif %} {% if clase.horaspracticas == 0 %}disabled="disabled"{% endif %} {% if asistencia.confirmadapractica %}checked="checked"{% endif %} class="confirma_leccion_pract tu" data-bs-toggle="tooltip" data-bs-placement="top" title='Aprend. práct.' id="confirmapract_{{ asistencia.id }}" idl="{{ asistencia.id }}">
+                                            </td>
+                                            <td style="text-align: center; width: 20%">
+                                                <input type="hidden" {% if asistencia.materiaasignada.materia.cerrado %}disabled="disabled"{% endif %} {% if clase.horaspracticas == 0 %}disabled="disabled"{% endif %} {% if asistencia.confirmadapractica %}checked="checked"{% endif %} class="confirma_leccion_pract tu" data-bs-toggle="tooltip" data-bs-placement="top" title='Aprend. práct.' id="confirmapract_{{ asistencia.id }}" idl="{{ asistencia.id }}">
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                {% endwith %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr id="vacio">
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

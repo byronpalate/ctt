@@ -288,6 +288,10 @@ ACTIVE_DIRECTORY_CHOICES = (
     (3, u'DESACTIVAR')
 )
 
+TIPO_CALCULO_NIVELACION_CHOICES = (
+    (0, u'MODELO - 0'),
+)
+
 class DiasEvaluacion(models.IntegerChoices):
     SEMANA_1 = 7, "1 SEMANA ANTES"
     SEMANA_2 = 14, "2 SEMANAS ANTES"
@@ -2265,6 +2269,57 @@ class Persona(ModeloBase):
         cantidadsinentregar = 0
         return cantidadsinentregar
 
+    def chequea_mora(self):
+        for rubro in self.rubro_set.filter(cancelado=False):
+            rubro.cheque_mora()
+
+    def mis_flag(self):
+        if self.personaflags_set.exists():
+            return self.personaflags_set.all()[0]
+        else:
+            flag = PersonaFlags(persona=self)
+            flag.save()
+            return flag
+
+    def total_rubros(self):
+        return null_to_numeric(self.rubro_set.aggregate(valor=Sum('valortotal'))['valor'], 2)
+
+    def total_rubros_sin_notadebito(self):
+        return null_to_numeric(
+            self.rubro_set.exclude(rubronotadebito__rubro__persona=self).aggregate(valor=Sum('valortotal'))[
+                'valor'], 2)
+
+    def total_rubros_pendientes(self):
+        return null_to_numeric(self.rubro_set.filter(cancelado=False).aggregate(valor=Sum('saldo'))['valor'], 2)
+
+    def rubros_pendientes(self):
+        return self.rubro_set.filter(cancelado=False).order_by('fechavence')
+
+    def total_descuento(self):
+        return null_to_numeric(
+            DescuentoRecargoRubro.objects.filter(rubro__persona=self, recargo=False).distinct().aggregate(
+                valor=Sum('valordescuento'))['valor'], 2)
+
+    def total_descuento_pendiente(self):
+        return null_to_numeric(DescuentoRecargoRubro.objects.filter(rubro__persona=self, recargo=False,
+                                                                    rubro__cancelado=False).distinct().aggregate(
+            valor=Sum('valordescuento'))['valor'], 2)
+
+    def total_liquidado(self):
+        return null_to_numeric(
+            RubroLiquidado.objects.filter(rubro__persona=self).distinct().aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def total_pagado(self):
+        return null_to_numeric(
+            Pago.objects.filter(rubro__persona=self, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
+
+    def total_adeudado(self):
+        return null_to_numeric(self.rubro_set.aggregate(valor=Sum('saldo'))['valor'], 2)
+
+    def total_pagado_periodo(self, periodo):
+        return null_to_numeric(
+            Pago.objects.filter(rubro__persona=self, rubro__periodo=periodo, valido=True).aggregate(
+                valor=Sum('valor'))['valor'], 2)
 
     def save(self, *args, **kwargs):
         self.nombre1 = null_to_text(self.nombre1)
@@ -4907,6 +4962,7 @@ class Inscripcion(ModeloBase):
     puede_solicitar_noadeudar = models.BooleanField(default=False, blank=True, null=True)
     pre_retirocarrera = models.BooleanField(default=False, verbose_name=u'Pre retiro')
     padre = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Inscripción padre', help_text='Otra inscripción que actúa como padre (p.ej., reinscripción, cambio, etc.)')
+    tipocalculonivelacion = models.IntegerField(choices=TIPO_CALCULO_NIVELACION_CHOICES, default=1, verbose_name=u'Tipo calculo')
 
     def __str__(self):
         return u'%s' % self.persona
@@ -5538,10 +5594,6 @@ class Inscripcion(ModeloBase):
             return self.matricula_set.filter(nivel__periodo_id=periodo.id)[0]
         return None
 
-    def matricula_periodo_internado_rotativo(self, periodo):
-        if self.tiene_matricula_internado_rotatito(periodo):
-            return self.matriculainternadorotativo_set.filter(internado__periodo_inicio_internado_id=periodo.id)[0]
-        return None
 
     def matricula_tiene_pago_minimo(self):
         if self.matriculado():
@@ -11496,12 +11548,15 @@ ESTADOS_DEPOSITO_INSCRIPCION = (
     (3, u'NO'),
 )
 
-class DepositoInscripcion(ModeloBase):
-    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+
+class DepositoPersona(ModeloBase):
+    persona = models.ForeignKey(Persona, verbose_name=u'Persona', on_delete=models.CASCADE)
+    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE, blank=True, null=True)
+    cliente = models.ForeignKey(Cliente, verbose_name=u'Cliente', on_delete=models.CASCADE, blank=True, null=True)
     cuentabanco = models.ForeignKey(CuentaBanco, verbose_name=u'Cuenta banco', on_delete=models.CASCADE)
     periodo = models.ForeignKey(Periodo, blank=True, null=True, verbose_name=u'Periodo al que pertenece el pago', on_delete=models.CASCADE)
     fecha = models.DateField(verbose_name=u'Fecha deposito')
-    fechaaprobacion = models.DateField(verbose_name=u'Fecha deposito', blank=True, null=True)
+    fechaaprobacion = models.DateField(verbose_name=u'Fecha aprobación', blank=True, null=True)
     motivo = models.CharField(default='', max_length=200, verbose_name=u'Motivo')
     archivo = models.FileField(upload_to='documentos/%Y/%m/%d', verbose_name=u'Archivo')
     procesado = models.BooleanField(default=False, verbose_name=u'Procesado')
@@ -11512,77 +11567,92 @@ class DepositoInscripcion(ModeloBase):
     deposito = models.BooleanField(default=True, verbose_name=u"Deposito")
     ventanilla = models.BooleanField(default=True, verbose_name=u"Pago en ventanilla/Depósito")
     movilweb = models.BooleanField(default=False, verbose_name=u"Pago con aplicación movil-web/Transf.")
-    responsable = models.ForeignKey(Persona, related_name='responsabledeposito', blank=True, null=True, verbose_name=u'Responsable', on_delete=models.CASCADE)
+    responsable = models.ForeignKey(Persona, related_name='responsabledepositopersona', blank=True, null=True, verbose_name=u'Responsable', on_delete=models.CASCADE)
     valor = models.FloatField(default=0, verbose_name=u"Valor")
-    saldo = models.FloatField(default=0, verbose_name=u"Valor")
+    saldo = models.FloatField(default=0, verbose_name=u"Saldo")
     observacion = models.BooleanField(default=False, verbose_name=u'Observacion')
     observaciones = models.TextField(default='', blank=True, null=True, verbose_name=u'Observaciones')
-
-    mimetype = models.CharField(max_length=100, null=True, blank=True, verbose_name='MIME real')
-    hash_archivo = models.CharField(max_length=64, null=True, blank=True, db_index=True, verbose_name='SHA-256')
-    firma_logica = models.CharField(max_length=128, null=True, blank=True, db_index=True, verbose_name='Firma lógica')
-
-    autenticidad_score = models.IntegerField(default=0, verbose_name='Score autenticidad')
-    motivo_no_aut = models.CharField(max_length=255, null=True, blank=True, verbose_name='Motivo no auto-aut')
-
-    ocr_texto = models.TextField(null=True, blank=True)
-    ocr_banco = models.CharField(max_length=64, null=True, blank=True)
-    ocr_empresa = models.CharField(max_length=128, null=True, blank=True)
-    ocr_referencia = models.CharField(max_length=64, null=True, blank=True, db_index=True)
-    ocr_documento = models.CharField(max_length=64, null=True, blank=True)  # alias de ref si viene como "Documento" o comprobante pud ser
-    ocr_monto = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    ocr_fecha_pago = models.DateField(null=True, blank=True)
-    comparado_ok = models.BooleanField(default=False, verbose_name='Comparación OCR OK')
-
 
     def __str__(self):
         return u'%s %s %s' % (self.referencia, self.cuentabanco, str(self.valor))
 
     class Meta:
-        verbose_name_plural = u"Depositos de inscripciones"
-        unique_together = ('inscripcion', 'cuentabanco', 'fecha', 'referencia', 'deposito',)
+        verbose_name = u"Depósito por persona"
+        verbose_name_plural = u"Depósitos por persona"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['persona', 'cuentabanco', 'fecha', 'referencia', 'deposito'],
+                name='uq_deppersona_persona_cta_fecha_ref_dep'
+            )
+        ]
+
+    @property
+    def origen(self):
+        if self.cliente_id:
+            return "CLIENTE"
+        if self.inscripcion_id:
+            return "INSCRIPCION"
+        return "PERSONA"
+
+    def clean(self):
+        # Consistencia persona-inscripción
+        if self.inscripcion_id and self.inscripcion.persona_id != self.persona_id:
+            raise ValidationError(u"La inscripción no pertenece a la persona seleccionada.")
+        # Consistencia persona-cliente
+        if self.cliente_id and self.cliente.persona_id != self.persona_id:
+            raise ValidationError(u"El cliente no pertenece a la persona seleccionada.")
 
     def liquidar(self):
-        liquidado = DepositoInscripcionLiquidado(depositoinscripcion=self,
-                                                 fecha=datetime.now().date(),
-                                                 valor=self.saldo)
+        liquidado = DepositoPersonaLiquidado(deposito=self, fecha=timezone.now().date(), valor=self.saldo)
         liquidado.save()
         self.save()
 
     def esta_liquidado(self):
-        return self.depositoinscripcionliquidado_set.exists()
+
+        return self.liquidaciones.exists()
 
     def esta_registrado(self):
         return DatoTransferenciaDeposito.objects.filter(deposito=self.deposito, cuentabanco=self.cuentabanco, fechabanco=self.fecha, referencia=self.referencia).exists()
 
     def saldo_actual(self):
         if not self.esta_liquidado():
-            return null_to_numeric(self.valor - null_to_numeric(DatoTransferenciaDeposito.objects.filter(deposito=self.deposito, cuentabanco=self.cuentabanco, fechabanco=self.fecha, referencia=self.referencia).aggregate(valor=Sum('valor'))['valor'], 2), 2)
+            usado = null_to_numeric(DatoTransferenciaDeposito.objects.filter(deposito=self.deposito, cuentabanco=self.cuentabanco, fechabanco=self.fecha, referencia=self.referencia).aggregate(valor=Sum('valor'))['valor'], 2)
+            return null_to_numeric(self.valor - usado, 2)
         return 0
 
     def save(self, *args, **kwargs):
-        super(DepositoInscripcion, self).save(*args, **kwargs)
         self.motivo = null_to_text(self.motivo)
-        self.saldo = self.saldo_actual()
-        if self.saldo <= 0:
-            self.estadoprocesado = 1
-        else:
-            if self.estadoprocesado == 2:
-                self.estadoprocesado = 2
-            else:
-                self.estadoprocesado = 3
         self.referencia = null_to_text(self.referencia)
-        super(DepositoInscripcion, self).save(*args, **kwargs)
+
+        # valida consistencia
+        self.full_clean()
+
+        # primer save para asegurar PK
+        super(DepositoPersona, self).save(*args, **kwargs)
+
+        # recalcular saldo/estado
+        nuevo_saldo = self.saldo_actual()
+        if nuevo_saldo <= 0:
+            nuevo_estado = 1
+        else:
+            nuevo_estado = 2 if self.estadoprocesado == 2 else 3
+
+        if (self.saldo != nuevo_saldo) or (self.estadoprocesado != nuevo_estado):
+            self.saldo = nuevo_saldo
+            self.estadoprocesado = nuevo_estado
+            super(DepositoPersona, self).save(update_fields=['saldo', 'estadoprocesado'])
 
 
-class DepositoInscripcionLiquidado(ModeloBase):
-    depositoinscripcion = models.ForeignKey(DepositoInscripcion, verbose_name=u'Deposito Inscripcion', on_delete=models.CASCADE)
+
+
+class DepositoPersonaLiquidado(ModeloBase):
+    depositopersona = models.ForeignKey(DepositoPersona, verbose_name=u'Deposito Persona', on_delete=models.CASCADE)
     fecha = models.DateField(verbose_name=u'Fecha de aprobación')
     valor = models.FloatField(default=0, verbose_name=u'Valor liquidado')
 
     class Meta:
-        verbose_name_plural = u"Deposito Inscripcion liquidados"
-        unique_together = ('depositoinscripcion',)
+        verbose_name_plural = u"Deposito Persona liquidados"
+        unique_together = ('depositopersona',)
 
 
 class Pago(ModeloBase):
@@ -11595,7 +11665,7 @@ class Pago(ModeloBase):
     anticipado = models.BooleanField(default=False, verbose_name=u'Pago de Factura anticipada')
     descuento = models.FloatField(default=0, verbose_name=u'Descuento')
     valido = models.BooleanField(default=True, verbose_name=u"Valido")
-    depositoinscripcion = models.ForeignKey(DepositoInscripcion, null=True, blank=True, verbose_name=u'Deposito Inscripcion', on_delete=models.CASCADE)
+    depositopersona= models.ForeignKey(DepositoPersona, null=True, blank=True, verbose_name=u'Deposito Persona', on_delete=models.CASCADE)
     codigocontable = models.IntegerField(default=0, verbose_name=u'Codigo contable')
     codigocontablenumero = models.IntegerField(default=0, verbose_name=u'Codigo contable numero')
     registrocontable = models.BooleanField(default=False, verbose_name=u'Registro en contable')
@@ -12141,6 +12211,29 @@ class NivelLibreCoordinacion(ModeloBase):
     class Meta:
         verbose_name_plural = u"Niveles libres de coordinaciones"
         unique_together = ('nivel',)
+
+
+class PersonaFlags(ModeloBase):
+    persona = models.ForeignKey(Persona, verbose_name=u'Persona', on_delete=models.CASCADE)
+    tienechequeprotestado = models.BooleanField(default=False, verbose_name=u'Tiene protestos')
+    tienedeudaexterna = models.BooleanField(default=False, verbose_name=u'Deuda desde otra plataforma')
+    permitepagoparcial = models.BooleanField(default=False, verbose_name=u'Permite pagos parciales')
+    motivo = models.TextField(default='', verbose_name=u'Motivo')
+    puedecobrar = models.BooleanField(default=False, verbose_name=u'Puede cobrar con nota de debito')
+    nogeneracosto = models.BooleanField(default=False, verbose_name=u'Genera costos')
+    notificardeuda = models.BooleanField(default=False, verbose_name=u'Notificar Deuda')
+    puedetomarsupletorio = models.BooleanField(default=False, verbose_name=u'Puede tomar o dar supletorio sin pago')
+
+    def __str__(self):
+        return u'%s' % self.inscripcion
+
+    class Meta:
+        verbose_name_plural = u"Inscripciones con observaciones"
+        unique_together = ('persona',)
+
+    def save(self, *args, **kwargs):
+        self.motivo = null_to_text(self.motivo)
+        super(PersonaFlags, self).save(*args, **kwargs)
 
 
 class InscripcionFlags(ModeloBase):
@@ -12901,50 +12994,27 @@ class DiferidoTarjeta(ModeloBase):
         self.nombre = null_to_text(self.nombre)
         super(DiferidoTarjeta, self).save(*args, **kwargs)
 
-
 class ReciboCajaInstitucion(ModeloBase):
-    inscripcion = models.ForeignKey(Inscripcion,  blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
-    cliente = models.ForeignKey(Cliente,  blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
-    pago = models.ForeignKey(Pago, blank=True, null=True, verbose_name=u'Inscripción', on_delete=models.CASCADE)
-    motivo = models.TextField(default='', verbose_name=u'Motivo')
-    fecha = models.DateField(verbose_name=u'Fecha')
-    hora = models.TimeField(verbose_name=u'Hora')
-    valorinicial = models.FloatField(default=0, verbose_name=u'Valor')
-    saldo = models.FloatField(default=0, verbose_name=u'Saldo')
-    sesioncaja = models.ForeignKey(SesionCaja, blank=True, null=True, verbose_name=u'Sesion de caja', on_delete=models.CASCADE)
-    anticipado = models.BooleanField(default=False, verbose_name=u"Valido")
+    persona = models.ForeignKey(Persona, blank=True, null=True, on_delete=models.CASCADE)
+    inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True, on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente, blank=True, null=True, on_delete=models.CASCADE)
+    pago = models.ForeignKey(Pago, blank=True, null=True, on_delete=models.CASCADE)
+    motivo = models.TextField(default='')
+    fecha = models.DateField()
+    hora = models.TimeField()
+    valorinicial = models.FloatField(default=0)
+    saldo = models.FloatField(default=0)
+    sesioncaja = models.ForeignKey(SesionCaja, blank=True, null=True, on_delete=models.CASCADE)
+    anticipado = models.BooleanField(default=False)
 
-    def __str__(self):
-        return u'Recibo caja: %s $%s de $%s - %s' % (self.inscripcion, self.saldo, self.valorinicial, self.fecha.strftime("%d-%m-%Y"))
+    def normalizar_persona(self):
+        if self.inscripcion_id and not self.persona_id:
+            self.persona_id = self.inscripcion.persona_id
+        if self.cliente_id and not self.persona_id:
+            self.persona_id = self.cliente.persona_id
 
-    class Meta:
-        verbose_name_plural = u"Recibos de caja institución"
-
-    def esta_liquidado(self):
-        return self.recibocajaliquidado_set.exists()
-
-    def datos_liquidado(self):
-        if self.esta_liquidado():
-            return self.recibocajaliquidado_set.all()[0]
-        return None
-
-    def valor_restante(self):
-        if not self.esta_liquidado():
-            return null_to_numeric(self.valorinicial - null_to_numeric(self.pagorecibocajainstitucion_set.filter(valido=True).aggregate(valor=Sum('valor'))['valor'], 2), 2)
-        return 0
-
-    def actualiza_valor(self):
-        pass
-
-    def tiene_pagos(self):
-        return self.pagorecibocajainstitucion_set.exists()
-
-    def extra_delete(self):
-        if self.pagorecibocajainstitucion_set.exists():
-            return [False, False]
-        return [True, False]
-
-    def save(self, valor=None, *args, **kwargs):
+    def save(self, *args, **kwargs):
+        self.normalizar_persona()
         self.motivo = null_to_text(self.motivo)
         self.valorinicial = null_to_numeric(self.valorinicial, 2)
         if self.id:
@@ -12953,60 +13023,28 @@ class ReciboCajaInstitucion(ModeloBase):
             self.saldo = self.valorinicial
         super(ReciboCajaInstitucion, self).save(*args, **kwargs)
 
-
 class NotaCredito(ModeloBase):
-    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
-    cliente = models.ForeignKey(Cliente,  blank=True, null=True, verbose_name=u'Cliente', on_delete=models.CASCADE)
-    fecha = models.DateField(verbose_name=u'Fecha')
-    numero = models.CharField(default='', max_length=20, verbose_name=u"Numero")
-    motivo = models.CharField(default='', max_length=200, verbose_name=u'Motivo')
-    valorinicial = models.FloatField(default=0, verbose_name=u'Valor inicial')
-    saldo = models.FloatField(default=0, verbose_name=u'Saldo')
+    persona = models.ForeignKey(Persona, blank=True, null=True, on_delete=models.CASCADE)
+    inscripcion = models.ForeignKey(Inscripcion, blank=True, null=True, on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente, blank=True, null=True, on_delete=models.CASCADE)
+    fecha = models.DateField()
+    numero = models.CharField(default='', max_length=20)
+    motivo = models.CharField(default='', max_length=200)
+    valorinicial = models.FloatField(default=0)
+    saldo = models.FloatField(default=0)
     electronica = models.BooleanField(default=False)
-    esbecaoayuda = models.BooleanField(default=False, verbose_name=u"Es beca o ayuda")
-    periodo = models.CharField(default='', max_length=20, blank=True, null=True, verbose_name=u'Nombre Periodo')
-    motivootros = models.CharField(default='', max_length=200, verbose_name=u'Motivo Otros')
+    esbecaoayuda = models.BooleanField(default=False)
+    periodo = models.CharField(default='', max_length=20, blank=True, null=True)
+    motivootros = models.CharField(default='', max_length=200)
 
-    def __str__(self):
-        return u'%s $%s de $%s - %s' % (self.numero, self.saldo, self.valorinicial, self.fecha.strftime("%d-%m-%Y"))
-
-    class Meta:
-        verbose_name_plural = u"Notas de crédito"
-        ordering = ['-fecha', 'numero']
-
-    def adeudado(self):
-        return null_to_numeric(self.valorinicial - self.total_pagado(), 2)
-
-    def total_pagado(self):
-        return null_to_numeric(Pago.objects.filter(pagonotacredito__notacredito=self, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
-
-    def enletras(self):
-        return enletras(self.valorinicial)
-
-    def tiene_pagos(self):
-        return self.pagonotacredito_set.exists()
-
-    def esta_liquidado(self):
-        return self.notacreditoaliquidado_set.exists()
-
-    def datos_liquidado(self):
-        if self.esta_liquidado():
-            return self.notacreditoaliquidado_set.all()[0]
-        return None
-
-    def valor_restante(self):
-        if not self.esta_liquidado():
-            return null_to_numeric(self.valorinicial - null_to_numeric(PagoNotaCredito.objects.filter(notacredito=self, valido=True).aggregate(valor=Sum('valor'))['valor'], 2), 2)
-        return 0
-
-    def actualiza_valor(self):
-        self.saldo = self.valor_restante()
-        self.save()
-
-    def extra_delete(self):
-        return [True, True]
+    def normalizar_persona(self):
+        if self.inscripcion_id and not self.persona_id:
+            self.persona_id = self.inscripcion.persona_id
+        if self.cliente_id and not self.persona_id:
+            self.persona_id = self.cliente.persona_id
 
     def save(self, *args, **kwargs):
+        self.normalizar_persona()
         self.numero = null_to_text(self.numero)
         self.motivo = null_to_text(self.motivo)
         self.motivootros = null_to_text(self.motivootros)
@@ -13253,9 +13291,9 @@ class Factura(ModeloBase):
         ordering = ['numero']
         unique_together = ('numero', 'electronica')
 
-    def inscripcion(self):
+    def persona(self):
         if self.pagos.exists():
-            return self.pagos.all()[0].rubro.inscripcion
+            return self.pagos.all()[0].rubro.persona
         return None
 
     def enletras(self):
@@ -13352,9 +13390,9 @@ class Factura(ModeloBase):
             pagocancelado.save()
             pago.valido = False
             pago.save()
-            if pago.depositoinscripcion:
-                depositoinscripcion = pago.depositoinscripcion
-                depositoinscripcion.save()
+            if pago.depositopersona:
+                depositopersona = pago.depositopersona
+                depositopersona.save()
             relacionado = pago.relacionado()
             if relacionado:
                 relacionado.valido = False
@@ -13557,9 +13595,9 @@ class ReciboPago(ModeloBase):
             pagocancelado.save()
             pago.valido = False
             pago.save()
-            if pago.depositoinscripcion:
-                depositoinscripcion = pago.depositoinscripcion
-                depositoinscripcion.save()
+            if pago.depositopersona:
+                depositopersona = pago.depositopersona
+                depositopersona.save()
             relacionado = pago.relacionado()
             if relacionado:
                 relacionado.valido = False

@@ -1,0 +1,283 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% load ctt_extras %}
+{% block heading %}
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <script>
+        $(document).ready(function() {
+            $(".fancybox").fancybox();
+
+            $("#matriculasel").change(function() {
+                var id = $(this).val();
+                bloqueointerface();
+                location.href = '/alu_materias?matriculaid='+ id;
+            });
+
+            $(".verdetalle").click(function () {
+                var id = $(this).attr('idm');
+                $.ajax({
+                    type: "POST",
+                    url: "/alu_materias",
+                    data: { 'action': 'segmento', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                    success: function(data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok'){
+                            $("#detalle_"+id).html(data.data);
+                        } else {
+                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                        }
+                    },
+                    error: function() {
+                        desbloqueointerface();
+                        NotificacionError('!!!', 'Error de conexión');
+                    },
+                    dataType: "json"
+                });
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <select id='matriculasel' class="form-select form-select-sm">
+                {% for matricula in matriculas %}
+                    <option value='{{ matricula.id }}' {% if matriculaid == matricula.id %}selected="selected"{% endif %}>{{ matricula.nivel.periodo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class="row-fluid">
+        <div class="col-12 responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                <tr>
+                    <th >Asignatura</th>
+                    <th style="width: 500px"></th>
+                    <th style="width: 50px; text-align: center;">Debe Asistir</th>
+                    <th style="text-align: center; width: 50px;">Nota Final</th>
+                    <th style="text-align: center; width: 50px;">Asist.</th>
+                    {% if matricula_nivelacion %}
+                        {% if muestra_estado_nivelacion %}
+                            <th style="text-align: center; width: 90px;">Estado</th>
+                        {% endif %}
+                    {% else %}
+                        <th style="text-align: center; width: 90px;">Estado</th>
+                    {% endif %}
+                    <th style="text-align: center;">Comp.</th>
+                    <th style="text-align: center;width: 90px;"></th>
+                    <th style="text-align: center;width: 90px;"></th>
+
+                     {% if requiere_pago_materia %}
+                        <th style="text-align: center;width: 80px;">Solicitar Supletorio</th>
+                        {% endif %}
+                {% if matricula.inscripcion.carrera.posgrado %}
+                    <th style="width: 20px;text-align: center;">Solic.</th>
+                    <th style="width: 50px;text-align: center;">Valor</th>
+                    <th style="width: 20px;text-align: center;">Pagado</th>
+                    <th style="text-align: center;">Descargar</th>
+                {% endif %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for materiaasignada in materiasasignadas %}
+                    <tr>
+                        <td>
+                            {{ materiaasignada.materia.nombre_completo }}
+                            {% if materiaasignada.materia.asignatura != materiaasignada.asignaturareal %}
+                                <br><span class="smaller"><b>{{ materiaasignada.asignaturareal }}</b></span>
+                            {% endif %}
+                            <br><span class="smaller">{{ materiaasignada.materia.modeloevaluativo }}</span><br>
+                            {% if materiaasignada.materia.nivel != matricula.nivel %}
+                                <span class='smaller error'>{{ materiaasignada.materia.nivel }}</span> <br>
+                            {% endif %}
+                            {{ materiaasignada.materia.profesor_principal|default_if_none:"SIN DOCENTE" }}<br>
+                            <span class="badge {% if materiaasignada.aprobada %}text-bg-success{% else %}text-bg-info{% endif %}">{{ materiaasignada.estado }}</span>
+                            {% if materiaasignada.asignaturamalla %}
+                                <span class="badge text-bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Materia de la malla">MA</span>
+                            {% elif materiaasignada.modulomalla %}
+                                <span class="badge text-bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Materia de modulo">MO</span>
+                            {% else %}
+                                <span class="badge text-bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Fuera de malla">FM</span>
+                            {% endif %}
+                            {% if materiaasignada.validacreditos %}
+                                <span class="badge text-bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Válida para créditos">VC</span>
+                            {% endif %}
+                            {% if materiaasignada.validapromedio %}
+                                <span class="badge text-bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Válida promedio">VP</span>
+                            {% endif %}
+                            {% if materiaasignada.convalidada or materiaasignada.homologada or materiaasignada.retirado %}
+                                {% if materiaasignada.retirado %}
+                                    <span class="badge text-bg-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Se retiró de la materia">RETIRADO</span>
+                                {% endif %}
+                                {% if materiaasignada.convalidada or materiaasignada.homologada %}
+                                    <span class="badge text-bg-success">HOMOLOGADA</span>
+                                {% endif %}
+                            {% else %}
+                                {% if materiaasignada.sinasistencia %}
+                                    <span class="badge text-bg-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="No valida asistencia">NA</span>
+                                {% endif %}
+                                {% if materiaasignada.valida_pararecord %}
+                                    <span class="badge text-bg-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Pasa al record">VALIDA</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="No pasa al record">NO VALIDA</span>
+                                {% endif %}
+                                {% if materiaasignada.evaluar %}
+                                    <span class="badge text-bg-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Autorizado a evaluar">AE</span>
+                                {% endif %}
+                                {% if materiaasignada.evaluada %}
+                                    <span class="badge text-bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Realizó evaluación">EVALU&Oacute;</span>
+                                {% endif %}
+                                {% if materiaasignada.materia.cerrado %}
+                                    <span class="badge text-bg-danger">CERRADA {{ materiaasignada.fechacierre|date:"Y-m-d" }}</span>
+                                {% else %}
+                                    {% if materiaasignada.matriculas > 1 %}
+                                        <span class="badge text-bg-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Cantidad de matriculas">{{ materiaasignada.matriculas }} MATRÍCULA</span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            <div style="overflow-x: scroll; width: 500px" id="detalle_{{ materiaasignada.id }}">
+                                <a href="javascript:;" class="btn btn-sm btn-info verdetalle" idm="{{ materiaasignada.id }}">Ver detalle</a>
+                            </div>
+                        </td>
+                        <td style="text-align: center; vertical-align: middle">
+                            {% if materiaasignada.verificahorario %}
+                                <span class="badge text-bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Debe asistir">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Debe asistir">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; vertical-align: middle">
+                            {% if not materiaasignada.homologada and not materiaasignada.convalidada %}
+                                <b>{{  materiaasignada.notafinal }}</b>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; vertical-align: middle">
+                            {% if not materiaasignada.homologada and not materiaasignada.convalidada %}
+                                <span><b>{{ materiaasignada.asistenciafinal|floatformat:0 }}%</b></span>
+                                <br/>
+                            {% endif %}
+                        </td>
+                        {% if matricula_nivelacion %}
+                            {% if muestra_estado_nivelacion %}
+                                <td style="text-align: center; vertical-align: middle">
+                                    {% if not materiaasignada.homologada and not materiaasignada.convalidada %}
+                                        {% if materiaasignada.retirado %}
+                                            <span class="badge text-bg-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Se retiro de la materia">RETIRADO</span>
+                                        {% else %}
+                                            <span class="badge {% if materiaasignada.aprobada %}text-bg-success{% endif %}{% if materiaasignada.reprobado %}text-bg-danger{% endif %}">{{ materiaasignada.estado }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge text-bg-success">HOMOLOGADA</span>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                        {% else %}
+                            <td style="text-align: center;vertical-align: middle;">
+                                {% if not materiaasignada.homologada and not materiaasignada.convalidada %}
+                                    {% if materiaasignada.retirado %}
+                                        <span class="badge text-bg-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Se retiro de la materia">RETIRADO</span>
+                                    {% else %}
+                                        <span class="badge {% if materiaasignada.aprobada %}text-bg-success{% endif %}{% if materiaasignada.reprobado %}text-bg-danger{% endif %}{% if materiaasignada.encurso %}text-bg-primary{% endif %}{% if materiaasignada.recuperacion %}text-bg-warning {% endif %}">{{ materiaasignada.estado }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge text-bg-success">HOMOLOGADA</span>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                        <td style="text-align: center; width: 50px; vertical-align: middle">
+                            <a href="/alu_materias?action=friends&id={{ matricula.id }}&m={{ materiaasignada.materia.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title='Compañeros' class="tu"><img src="/static/images/iconos/friends.png"/></a>
+                        </td>
+                        <td style="text-align: center; width: 50px; vertical-align: middle">
+                            {% if materiaasignada.materia.tiene_planificacion_aprobada %}
+                                <a href="/alu_materias?action=planificacion&id={{ materiaasignada.id }}" class="btn btn-sm btn-info"><i class="icon-list"></i> Planif.</a>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; width: 50px; vertical-align: middle">
+                            {% if materiaasignada.materia.tiene_planificacion_aprobada %}
+                                <a href="/alu_materias?action=guias&id={{ materiaasignada.materia.id }}&idm={{ materiaasignada.id }}" class="btn btn-sm btn-info"><i class="icon-list"></i> Guías</a>
+                            {% endif %}
+                        </td>
+                        {% if materiaasignada.recuperacion and materiaasignada.materia.modeloevaluativo.requiere_pago %}
+                            <td style="text-align: center; width:50px; vertical-align: middle">
+                                {% if not materiaasignada.tiene_solicitud_derecho_supletorio %}
+                                    <a class="btn btn-success btn-sm confirmacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Generar Solicitud Supletorio" href="javascript:;" nhref='/alu_materias?action=solicitarsupletorio&id={{ materiaasignada.id }}'><i class="icon-plus"></i></a>
+                                {% else %}
+                                    {#            <span class="badge text-bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Tiene una solicitud">Sí</span>#}
+                                    {% if materiaasignada.solicitud_derecho_supletorio.rubro %}
+                                        {#                <br>#}
+                                        ${{ materiaasignada.solicitud_derecho_supletorio.rubro.valor|floatformat:2|intcomma }}
+                                        <br>
+                                        {% if materiaasignada.tiene_pagado_recuperacion %}
+                                            <span class="badge text-bg-success">Pagado</span>
+                                        {% else %}
+                                            <span class="badge text-bg-danger" title="Pendiente de pago">No pagado</span>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                        {% if matricula.inscripcion.carrera.posgrado %}
+                            <td style="text-align: center; width: 50px; vertical-align: middle">
+                                {% if materiaasignada.materia.cerrado and materiaasignada.cerrado and materiaasignada.estado_id == 1 %}
+                                    {% if not materiaasignada.tiene_solicitud_secretaria_certificado_culminacion %}
+                                        <a class="btn btn-success btn-sm confirmacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Generar Solicitud de certificado de materia" href="javascript:;" nhref='/alu_materias?action=solicitar&id={{ materiaasignada.id }}'><i class="icon-plus"></i></a>
+                                    {% else %}
+                                        <span class="badge text-bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Tiene una solcitud">Si</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge text-bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Aun no puede registrar">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center; width: 50px; vertical-align: middle">
+                                {% if  materiaasignada.solicitud_secretaria_certificado_culminacion.rubro %}
+                                    $
+                                    {{ materiaasignada.solicitud_secretaria_certificado_culminacion.rubro.valor|floatformat:2|intcomma }}
+                                    <br>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center; width: 50px; vertical-align: middle">
+                                {% if materiaasignada.solicitud_secretaria_certificado_culminacion.rubro %}
+                                    {% if materiaasignada.solicitud_secretaria_certificado_culminacion.rubro.cancelado %}
+                                        <span class="badge text-bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelado">Si</span>
+                                    {% else %}
+                                        <span class="badge text-bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelado">No</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center; width: 50px; vertical-align: middle">
+                                {% if materiaasignada.solicitud_secretaria_certificado_culminacion.rubro %}
+                                    {% if materiaasignada.solicitud_secretaria_certificado_culminacion.rubro.cancelado %}
+                                        <a href="javascript:;" tipos="{{ reporte.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte.nombre }}&materia={{ materiaasignada.id }}" class="reportedirecto btn descarga btn-success btn-sm"><i class="icon-download-alt"></i></a>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                <tr>
+                    <td colspan="20">
+                        <b>PROM. GEN.: {{ matricula.inscripcion.promedio_nota_nivelacion|floatformat:2 }}, PROM. ASIST.: {{ matricula.promedioasistencias|floatformat:0 }}</b> {% if matricula_nivelacion and not muestra_estado_nivelacion %}ESTADO: {% if matricula.inscripcion.aprobo_nivelacion %} <span class="badge text-bg-success">APROBADO</span>{% else %}<span class="badge text-bg-danger">REPROBADO</span>{% endif %}{% endif %}</td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+{% endblock %}
