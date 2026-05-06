@@ -12,7 +12,7 @@ from django.shortcuts import render
 
 from decorators import last_access
 from settings import JR_JAVA_COMMAND, DATABASES, JR_USEROUTPUT_FOLDER, JR_RUN, MEDIA_URL, SUBREPOTRS_FOLDER, \
-    MEDIA_ROOT, JR_REPORTS_USER, JR_REPORTS_PASSWORD, REPORTESEXTERNOS, URLREPORTESEXTERNOS
+    MEDIA_ROOT, JR_REPORTS_USER, JR_REPORTS_PASSWORD, JR_DB_TYPE, REPORTESEXTERNOS, URLREPORTESEXTERNOS
 from ctt.commonviews import adduserdata
 from ctt.funciones import bad_json, url_back, empty_json, ok_json
 from ctt.models import Reporte, CategoriaReporte
@@ -75,38 +75,62 @@ def generar_reporte(request):
         reporte = Reporte.objects.get(nombre=request.GET['n'])
     else:
         reporte = Reporte.objects.get(pk=request.GET['rid'])
-    tipo = request.GET['rt']
-    output_folder = os.path.join(JR_USEROUTPUT_FOLDER, elimina_tildes(request.user.username))
+    tipo = request.GET['rt'].strip().lower()
+
+    # `RunJasperReports.jar` (thirdparty/runjr) soporta pdf/html.
+    # Si se solicita otro formato, devolvemos un error controlado para evitar romper la UI.
+    if tipo not in ['pdf', 'html']:
+        return {"result": "bad", "mensaje": u"Formato de reporte no soportado en esta copia: %s" % tipo}
+
+    output_folder = os.path.join(str(JR_USEROUTPUT_FOLDER), elimina_tildes(request.user.username))
     try:
-        os.makedirs(output_folder)
+        os.makedirs(output_folder, exist_ok=True)
     except Exception as ex:
         pass
+
     d = datetime.now()
     pdfname = reporte.nombre + d.strftime('%Y%m%d_%H%M%S')
-    runjrcommand = [JR_JAVA_COMMAND, '-jar',
-                    os.path.join(JR_RUN, 'jasperstarter.jar'),
-                    'pr', reporte.archivo.file.name,
-                    '--jdbc-dir', JR_RUN,
-                    '-f', tipo,
-                    '-t', 'postgres',
-                    '-H', DATABASES['default']['HOST'],
-                    '-n', DATABASES['default']['NAME'],
-                    '-u', JR_REPORTS_USER,
-                    '-p', JR_REPORTS_PASSWORD,
-                    '-o', output_folder + os.sep + pdfname]
+
+    # Intentar ruta absoluta del archivo en media/
+    report_path = None
+    try:
+        report_path = reporte.archivo.path
+    except Exception:
+        try:
+            report_path = os.path.join(str(MEDIA_ROOT), reporte.archivo.file.name)
+        except Exception:
+            report_path = reporte.archivo.file.name
+
     parametros = reporte.parametros()
-    paramlist = [transform_jasperstarter(p, request) for p in parametros]
-    if paramlist:
-        runjrcommand.append('-P')
-        for parm in paramlist:
-            runjrcommand.append(parm)
-    else:
-        runjrcommand.append('-P')
-    runjrcommand.append(u'SUBREPORT_DIR=%s' % SUBREPOTRS_FOLDER)
-    runjrcommand.append(u'userreport=%s' % request.user)
-    mensaje = ''
-    for m in runjrcommand:
-        mensaje += ' ' + m
+    paramlist = []
+    for p in parametros:
+        try:
+            paramlist.append(transform(p, request))
+        except Exception:
+            # Si falta algun parametro en GET no bloqueamos toda la ejecucion.
+            pass
+
+    # Parametros tecnicos comunes
+    paramlist.append(u"SUBREPORT_DIR=string:%s" % str(SUBREPOTRS_FOLDER))
+    paramlist.append(u"userreport=string:%s" % request.user)
+    params_str = ",".join(paramlist) if paramlist else ""
+
+    runjrcommand = [
+        JR_JAVA_COMMAND, "-jar", os.path.join(str(JR_RUN), "RunJasperReports.jar"),
+        "-reports", report_path,
+        "-output", tipo,
+        "-folder", output_folder + os.sep,
+        "-pdfname", pdfname,
+        "-dbtype", JR_DB_TYPE,
+        "-dbhost", DATABASES["default"]["HOST"],
+        "-dbname", DATABASES["default"]["NAME"],
+        "-dbuser", JR_REPORTS_USER,
+        "-dbpass", JR_REPORTS_PASSWORD,
+    ]
+    if params_str:
+        runjrcommand.extend(["-params", params_str])
+
+    mensaje = " ".join([str(x) for x in runjrcommand])
     print(mensaje)
     if REPORTESEXTERNOS:
         respuesta = requests.post(URLREPORTESEXTERNOS, data={'comando': mensaje, 'app': 'ctt', 'reporte': reporte.archivo.file.name}, timeout=300, verify=False)
@@ -127,7 +151,11 @@ def generar_reporte(request):
         else:
             return {"result": "bad", "mensaje": u'Error al generar el reporte.', 'ruta': output_folder + os.sep + pdfname + "." + tipo}
     else:
-        runjr = subprocess.call(mensaje, shell=True)
+        # Ejecuta localmente. Usamos cwd para que el jar encuentre su carpeta `lib/`.
+        try:
+            subprocess.call(mensaje, shell=True, cwd=str(JR_RUN))
+        except Exception:
+            subprocess.call(mensaje, shell=True)
         sp = os.path.split(reporte.archivo.file.name)
         if os.path.exists(output_folder + os.sep + pdfname + "." + tipo):
             return {"result": "ok", "archivo": "/".join(['documentos', 'userreports', elimina_tildes(request.user.username), pdfname + "." + tipo]) , "name": (pdfname + "." + tipo), "realpath": (output_folder + os.sep + pdfname), "r": mensaje, 'reportfile': "/".join([MEDIA_URL, 'documentos', 'userreports', elimina_tildes(request.user.username), pdfname + "." + tipo])}

@@ -1,0 +1,10 @@
+{# Placeholder generico de fila de calificaciones.
+   Debe mantener el mismo numero de columnas que el encabezado generico. #}
+<td style="text-align: center;">
+    {% if asignadomateria and asignadomateria.notafinal %}
+        {{ asignadomateria.notafinal }}
+    {% else %}
+        -
+    {% endif %}
+</td>
+

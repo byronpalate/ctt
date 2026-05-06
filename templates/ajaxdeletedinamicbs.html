@@ -27,11 +27,11 @@
             }
             $.ajax({
                 type: "POST",
-                url: "{% block formaction %}/{% endblock %}",
+                url: "{% block formaction %}{% endblock %}",
                 data: formdata,
                 success: function(data) {
                     if (data.result === 'ok') {
-                        location.href = "{% block formdestination %}/{% endblock %}";
+                        location.href = "{% block formdestination %}{% endblock %}";
                     } else {
                         desbloqueointerface();
                         NotificacionAlerta(data.icono, data.titulo, data.mensaje)

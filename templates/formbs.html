@@ -101,7 +101,7 @@
 {% endblock %}
 {% block javascript %}
     <script type="text/javascript">
-        var destino = "{% block formdestination %}/{% endblock %}";
+        var destino = "{% block formdestination %}{% endblock %}";
         var cargardestino = true;
         var desbloquearformulario = true;
         var cerrarformulario = true;
@@ -268,7 +268,7 @@
                     if (script_formulario){
                         $.ajax({
                             type: "POST",
-                            url: "{% block formaction %}/{% endblock %}",
+                            url: "{% block formaction %}{% endblock %}",
                             data: formdata,
                             success: function(data) {
                                 if (data.result === 'ok') {

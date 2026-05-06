@@ -1,0 +1,13 @@
+{% extends "formbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_depositoinscripcion{% endblock %}
+{% block formdestination %}/adm_depositoinscripcion{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='{{ request.GET.action|default:"" }}'/>
+    {% for k, v in request.GET.items %}
+        {% if k != 'action' %}
+            <input type="hidden" name="{{ k }}" value="{{ v }}"/>
+        {% endif %}
+    {% endfor %}
+{% endblock %}
+{% block formback %}/adm_depositoinscripcion{% endblock %}

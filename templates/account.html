@@ -1,0 +1,9 @@
+{% extends "formbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/account{% endblock %}
+{% block formdestination %}/{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='actualizar'/>
+{% endblock %}
+{% block formback %}/{% endblock %}
+

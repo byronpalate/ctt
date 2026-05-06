@@ -1,0 +1,10 @@
+{% extends "formbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/account{% endblock %}
+{% block formdestination %}/{% endblock %}
+{% block formtagextra %}enctype="multipart/form-data"{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='cargarfoto'/>
+{% endblock %}
+{% block formback %}/account{% endblock %}
+

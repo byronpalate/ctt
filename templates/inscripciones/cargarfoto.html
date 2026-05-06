@@ -1,0 +1,15 @@
+{% extends "formbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/inscripciones{% endblock %}
+{% block formdestination %}/inscripciones{% endblock %}
+{% block formtagextra %}enctype="multipart/form-data"{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='{{ request.GET.action|default:"cargarfoto" }}'/>
+    {% for k, v in request.GET.items %}
+        {% if k != 'action' %}
+            <input type="hidden" name="{{ k }}" value="{{ v }}"/>
+        {% endif %}
+    {% endfor %}
+{% endblock %}
+{% block formback %}/inscripciones{% endblock %}
+

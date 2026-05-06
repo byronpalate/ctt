@@ -1,0 +1,13 @@
+{% extends "formbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/pro_clases{% endblock %}
+{% block formdestination %}/pro_clases{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='{{ request.GET.action|default:"" }}'/>
+    {% for k, v in request.GET.items %}
+        {% if k != 'action' %}
+            <input type="hidden" name="{{ k }}" value="{{ v }}"/>
+        {% endif %}
+    {% endfor %}
+{% endblock %}
+{% block formback %}/pro_clases{% endblock %}
