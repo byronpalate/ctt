@@ -3613,7 +3613,8 @@ class Malla(ModeloBase):
     activo = models.BooleanField(default=False, verbose_name=u"Activo")
 
     def __str__(self):
-        return u'%s - %s - %s al %s - id malla: %s' % (self.carrera, self.modalidad, self.inicio.year, self.fin.year, self.id)
+        fin_year = self.fin.year if self.fin else ''
+        return u'%s - %s - %s al %s - id malla: %s' % (self.carrera, self.modalidad, self.inicio.year, fin_year, self.id)
 
     class Meta:
         verbose_name_plural = u"Mallas curriculares"
@@ -3644,6 +3645,20 @@ class Malla(ModeloBase):
 
     def cantidad_materias(self, inscripcion=None):
         return self.asignaturamalla_set.filter().count()
+
+    def cantidad_itinerarios(self):
+        # Evita errores si el modelo Itinerario no estÃ¡ habilitado en esta versiÃ³n.
+        try:
+            return self.itinerario_set.count()
+        except Exception:
+            return 0
+
+    def cantidad_modulos(self):
+        # Evita errores si el modelo ModuloMalla no estÃ¡ habilitado en esta versiÃ³n.
+        try:
+            return self.modulomalla_set.count()
+        except Exception:
+            return 0
 
 
 
@@ -3802,7 +3817,10 @@ class Malla(ModeloBase):
         return competencia.planificacionmateria_set.filter(materia__asignaturamalla__malla=self).exists()
 
     def vigente(self):
-        return datetime.now().date() >= self.inicio and datetime.now().date() <= self.fin
+        hoy = datetime.now().date()
+        if self.fin:
+            return self.inicio <= hoy <= self.fin
+        return self.inicio <= hoy
 
     def precio_modulo_inscripcion(self, periodo, sede, carrera, modalidad, malla):
         if self.preciosperiodomodulosinscripcion_set.filter(periodo=periodo, sede=sede, carrera=carrera, modalidad=modalidad,malla=malla).exists():
