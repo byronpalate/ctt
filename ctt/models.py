@@ -3528,6 +3528,50 @@ class TipoDuraccionMalla(ModeloBase):
 
 
 
+class TituloObtenido(ModeloBase):
+    nombre = models.CharField(default='', max_length=200, verbose_name=u'Nombre')
+
+    def __str__(self):
+        return u'%s' % self.nombre
+
+    class Meta:
+        verbose_name_plural = u"Titulos obtenidos"
+        ordering = ['nombre']
+        unique_together = ('nombre',)
+
+    def save(self, *args, **kwargs):
+        self.nombre = null_to_text(self.nombre)
+        super(TituloObtenido, self).save(*args, **kwargs)
+
+    def tiene_mallas_usando(self):
+        # En uso cuando alguna malla lo referencia.
+        return Malla.objects.filter(tituloobtenido=self).exists()
+
+    def puede_eliminarse(self):
+        if self.tituloobtenidocarrera_set.exists():
+            return False
+        return not self.tiene_mallas_usando()
+
+
+class TituloObtenidoCarrera(ModeloBase):
+    carrera = models.ForeignKey(Carrera, verbose_name=u"Carrera", on_delete=models.CASCADE)
+    tituloobtenido = models.ForeignKey(TituloObtenido, verbose_name=u"Titulo obtenido", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return u'%s' % self.tituloobtenido.nombre
+
+    class Meta:
+        verbose_name_plural = u"Titulos obtenidos por carrera"
+        ordering = ['carrera', 'tituloobtenido']
+        unique_together = ('carrera', 'tituloobtenido')
+
+    def tiene_mallas_usando(self):
+        return Malla.objects.filter(carrera=self.carrera, tituloobtenido=self.tituloobtenido).exists()
+
+    def puede_eliminarse(self):
+        return not self.tiene_mallas_usando()
+
+
 
 class Malla(ModeloBase):
     carrera = models.ForeignKey(Carrera, verbose_name=u"Carrera", on_delete=models.CASCADE)
@@ -3549,7 +3593,7 @@ class Malla(ModeloBase):
     vigencia = models.IntegerField(default=1, verbose_name=u'Vigencia')
     resolucion = models.CharField(default='', verbose_name=u'Resolucion', max_length=100)
     codigo = models.CharField(default='', verbose_name=u'Codigo', max_length=30)
-    # tituloobtenido = models.ForeignKey(TituloObtenido, verbose_name=u"Titulo obtenido", blank=True, null=True, on_delete=models.CASCADE)
+    tituloobtenido = models.ForeignKey(TituloObtenido, verbose_name=u"Titulo obtenido", blank=True, null=True, on_delete=models.CASCADE)
     tipoduraccionmalla = models.ForeignKey(TipoDuraccionMalla, blank=True, null=True, on_delete=models.CASCADE)
     cantidadsemanas = models.IntegerField(default=0, verbose_name=u"Cantidad semanas")
     cantidadarrastres = models.IntegerField(default=0, verbose_name=u"Cantidad arrastres")
@@ -3580,7 +3624,17 @@ class Malla(ModeloBase):
         return eval(("Malla.objects.filter(Q(carrera__nombre__contains='%s') | Q(id=id_search('%s')))" % (q, q)) + (".filter(%s)" % filtro if filtro else "") + (".exclude(%s)" % exclude if exclude else "") + (".distinct()") + ("[:%s]" % cantidad if cantidad else ""))
 
     def flexbox_repr(self):
-        return self.carrera.nombre + " - " + str(self.inicio.year) + " - " + ((self.modalidad.nombre + " - ") if self.modalidad else "") + ((self.tituloobtenido.nombre + " - ") if self.tituloobtenido else "") + ' - ' + str(self.id)
+        titulo = getattr(self, 'tituloobtenido', None)
+        return (
+            self.carrera.nombre
+            + " - "
+            + str(self.inicio.year)
+            + " - "
+            + ((self.modalidad.nombre + " - ") if self.modalidad else "")
+            + ((titulo.nombre + " - ") if titulo else "")
+            + " - "
+            + str(self.id)
+        )
 
     def tiene_asignaturas_malla(self):
         return self.asignaturamalla_set.exists()
@@ -3588,7 +3642,7 @@ class Malla(ModeloBase):
     def codigos(self):
         return self.informacionsedemalla_set.all()
 
-    def cantidad_materias(self, inscripcion):
+    def cantidad_materias(self, inscripcion=None):
         return self.asignaturamalla_set.filter().count()
 
 
@@ -3630,7 +3684,7 @@ class Malla(ModeloBase):
         creditosmalla = null_to_numeric(self.asignaturamalla_set.filter().aggregate(valor=Sum('creditos'))['valor'], 4)
         return null_to_numeric(creditosmalla , 4)
 
-    def cantidad_creditos_solo_malla(self, inscripcion):
+    def cantidad_creditos_solo_malla(self, inscripcion=None):
         return null_to_numeric(self.asignaturamalla_set.filter().aggregate(valor=Sum('creditos'))['valor'], 4)
 
     def cantidad_materiascompletar(self):
