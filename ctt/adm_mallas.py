@@ -52,6 +52,7 @@ def view(request):
                                   codigo=form.cleaned_data['codigo'],
                                   tipo=form.cleaned_data['tipo'],
                                   modalidad=form.cleaned_data['modalidad'],
+                                  tituloobtenido=form.cleaned_data.get('titulo'),
                                   tipoduraccionmalla=form.cleaned_data['tipoduraccionmalla'],
                                   inicio=form.cleaned_data['inicio'],
                                   fin=form.cleaned_data['fin'],

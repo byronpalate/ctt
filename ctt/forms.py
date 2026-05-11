@@ -18,7 +18,7 @@ from settings import FORMA_PAGO_RECIBOCAJAINSTITUCION, ALUMNOS_GROUP_ID, FORMA_P
 from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor, Turno, Sexo, Provincia, Carrera, \
     Modalidad, Sesion, DIAS_CHOICES, Periodicidad, Nacionalidad, Pais, Parroquia, TipoSangre, Raza, \
     NacionalidadIndigena, \
-    PersonaEstadoCivil, TiposMalla, Asignatura, TipoDuraccionMalla, NivelMalla, \
+    PersonaEstadoCivil, TiposMalla, Asignatura, TipoDuraccionMalla, TituloObtenido, TituloObtenidoCarrera, NivelMalla, \
     EjeFormativo, \
     AreaConocimiento, TipoMateria, CampoFormacion, AsignaturaMalla, Coordinacion, PerfilUsuario, Sede, \
     TiempoDedicacionDocente, \
@@ -240,7 +240,7 @@ class MallaForm(BaseForm):
         widget=forms.Select()
     )
     modalidad = ModelChoiceField(label=u'Modalidad', queryset=Modalidad.objects.all(), required=False, widget=forms.Select())
-    # titulo = ModelChoiceField(label=u'Título obtenido', queryset=TituloObtenido.objects.all(), required=False, widget=forms.Select())
+    titulo = ModelChoiceField(label=u'Título obtenido', queryset=TituloObtenido.objects.all(), required=False, widget=forms.Select())
     tipoduraccionmalla = ModelChoiceField(label=u'Tipo duración', queryset=TipoDuraccionMalla.objects.all(), required=False, widget=forms.Select())
     inicio = forms.DateField(label=u"Fecha de aprobación", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     fin = forms.DateField(label=u"Fin de vigencia", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
@@ -1822,6 +1822,13 @@ class CarreraForm(BaseForm):
 #
 #     def extra_paramaters(self):
 #         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+class TituloCarreraForm(BaseForm):
+    titulo = ModelChoiceField(label=u'Título obtenido', queryset=TituloObtenido.objects.all(), required=False, widget=forms.Select())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
 
 class TituloForm(BaseForm):
