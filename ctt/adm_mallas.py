@@ -99,7 +99,10 @@ def view(request):
                         return bad_json(mensaje=u'No puede elegir un nivel de inicio de proyectos mayor a la cantidad de niveles de la malla.')
                     malla.resolucion = form.cleaned_data['resolucion']
                     malla.codigo = form.cleaned_data['codigo']
-                    malla.tituloobtenido = form.cleaned_data['titulo']
+                    # El campo `tituloobtenido` puede no existir (en models.py estÃ¡ comentado).
+                    # Evitar AttributeError/KeyError en instalaciones donde no se maneja ese dato.
+                    if hasattr(Malla, 'tituloobtenido'):
+                        malla.tituloobtenido = form.cleaned_data.get('titulo')
                     malla.tipoduraccionmalla = form.cleaned_data['tipoduraccionmalla']
                     malla.inicio = form.cleaned_data['inicio']
                     malla.fin = form.cleaned_data['fin']
@@ -108,7 +111,8 @@ def view(request):
                     malla.nivelesregulares = nivelesregulares
                     if not malla.tiene_estudiantes_usando() and malla.puede_eliminarse() :
                         malla.nivelacion = form.cleaned_data['nivelacion']
-                        malla.arrastres = form.cleaned_data['arrastres']
+                        # En el modelo el campo real es `cantidadarrastres`.
+                        malla.cantidadarrastres = int(form.cleaned_data.get('arrastres') or 0)
                         malla.libreopcion = form.cleaned_data['libreopcion']
                         malla.optativas = form.cleaned_data['optativas']
                     malla.maximomateriasonline = form.cleaned_data['maximomateriasonline']
@@ -136,31 +140,35 @@ def view(request):
                 if form.is_valid():
                     if form.cleaned_data['inicio'] >= form.cleaned_data['fin']:
                         return bad_json(mensaje=u'Fechas incorrectas.')
-                    mallanueva = Malla(carrera=malla.carrera,
-                                       resolucion=form.cleaned_data['resolucion'],
-                                       codigo=form.cleaned_data['codigo'],
-                                       tipo=malla.tipo,
-                                       modalidad=form.cleaned_data['modalidad'],
-                                       tituloobtenido=malla.tituloobtenido,
-                                       tipoduraccionmalla=malla.tipoduraccionmalla,
-                                       inicio=form.cleaned_data['inicio'],
-                                       fin=form.cleaned_data['fin'],
-                                       vigencia=form.cleaned_data['vigencia'],
-                                       nivelesregulares=malla.nivelesregulares,
-                                       nivelacion=malla.nivelacion,
-                                       organizacionaprendizaje=malla.organizacionaprendizaje,
-                                       maximomateriasonline=malla.maximomateriasonline,
-                                       cantidadarrastres=malla.cantidadarrastres,
-                                       libreopcion=malla.libreopcion,
-                                       optativas=malla.optativas,
-                                       horaspracticas=malla.horaspracticas,
-                                       nivelhoraspracticas=malla.nivelhoraspracticas,
-                                       horasvinculacion=malla.horasvinculacion,
-                                       nivelhorasvinculacion=malla.nivelhorasvinculacion,
-                                       niveltrabajotitulacion=malla.niveltrabajotitulacion,
-                                       modelosibalo=malla.modelosibalo,
-                                       perfildeegreso=malla.perfildeegreso,
-                                       observaciones=form.cleaned_data['observaciones'])
+                    mallanueva_kwargs = dict(
+                        carrera=malla.carrera,
+                        resolucion=form.cleaned_data['resolucion'],
+                        codigo=form.cleaned_data['codigo'],
+                        tipo=malla.tipo,
+                        modalidad=form.cleaned_data['modalidad'],
+                        tipoduraccionmalla=malla.tipoduraccionmalla,
+                        inicio=form.cleaned_data['inicio'],
+                        fin=form.cleaned_data['fin'],
+                        vigencia=form.cleaned_data['vigencia'],
+                        nivelesregulares=malla.nivelesregulares,
+                        nivelacion=malla.nivelacion,
+                        organizacionaprendizaje=malla.organizacionaprendizaje,
+                        maximomateriasonline=malla.maximomateriasonline,
+                        cantidadarrastres=malla.cantidadarrastres,
+                        libreopcion=malla.libreopcion,
+                        optativas=malla.optativas,
+                        horaspracticas=malla.horaspracticas,
+                        nivelhoraspracticas=malla.nivelhoraspracticas,
+                        horasvinculacion=malla.horasvinculacion,
+                        nivelhorasvinculacion=malla.nivelhorasvinculacion,
+                        niveltrabajotitulacion=malla.niveltrabajotitulacion,
+                        modelosibalo=malla.modelosibalo,
+                        perfildeegreso=malla.perfildeegreso,
+                        observaciones=form.cleaned_data['observaciones'],
+                    )
+                    if hasattr(Malla, 'tituloobtenido'):
+                        mallanueva_kwargs['tituloobtenido'] = getattr(malla, 'tituloobtenido', None)
+                    mallanueva = Malla(**mallanueva_kwargs)
                     mallanueva.save(request)
                     for am in malla.asignaturamalla_set.all():
                         asignaturamalla = AsignaturaMalla(malla=mallanueva,
@@ -896,7 +904,8 @@ def view(request):
                                               "codigo": malla.codigo,
                                               "tipo": malla.tipo,
                                               "modalidad": malla.modalidad,
-                                              "titulo": malla.tituloobtenido,
+                                              # El form ya no incluye `titulo` y el modelo puede no tener `tituloobtenido`.
+                                              "titulo": getattr(malla, 'tituloobtenido', None),
                                               "tipoduraccionmalla": malla.tipoduraccionmalla,
                                               "inicio": malla.inicio,
                                               "fin": malla.fin,
