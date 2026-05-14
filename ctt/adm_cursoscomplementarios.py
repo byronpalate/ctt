@@ -1565,7 +1565,7 @@ def view(request):
                     data['title'] = u'Editar curso o escuela'
                     data['actividad'] = actividad = CursoEscuelaComplementaria.objects.get(pk=request.GET['id'])
                     form = CursoEscuelaForm(initial={'nombre': actividad.nombre,
-                                                     'mallacurso': actividad.mallacurso,
+                                                     # 'mallacurso': actividad.mallacurso,
                                                      'tema': actividad.tema,
                                                      'permiteregistrootramodalidad': actividad.permiteregistrootramodalidad,
                                                      'usamodeloevaluativo': actividad.usamodeloevaluativo,
@@ -2295,4 +2295,7 @@ def view(request):
                 data['reporte_4'] = obtener_reporte("c_promocion_principal_masivo_ingles_cursos")
                 return render(request, "adm_cursoscomplementarios/view.html", data)
             except Exception as ex:
-                return HttpResponseRedirect('/')
+                data['title'] = u'Error en cursos complementarios'
+                data['mensaje_error'] = str(ex)
+                data['redirect_url'] = '/'
+                return render(request, "error_redirect.html", data)

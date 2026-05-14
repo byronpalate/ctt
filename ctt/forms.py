@@ -1,26 +1,25 @@
 # coding=utf-8
 import os
-from datetime import datetime, timedelta, date
+from datetime import datetime
 
 from django import forms
 from django.contrib.auth.models import Group
-from django.core.validators import EmailValidator
 from django.db.models import Q
 from django.forms.models import ModelChoiceField
 from django.forms.widgets import DateTimeInput
 from django.utils.safestring import mark_safe
 from decimal import Decimal
 
-from settings import FORMA_PAGO_RECIBOCAJAINSTITUCION, ALUMNOS_GROUP_ID, FORMA_PAGO_NOTA_CREDITO, MAXIMO_MATERIA_ONLINE, \
+from settings import FORMA_PAGO_RECIBOCAJAINSTITUCION, FORMA_PAGO_NOTA_CREDITO, MAXIMO_MATERIA_ONLINE, \
     NIVEL_MALLA_UNO, CANTIDAD_MATRICULAS_MAXIMAS, EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES, EMAIL_INSTITUCIONAL_AUTOMATICO_DOCENTES,\
     FORMA_PAGO_CTAXCRUZAR, CAJAS_DEPOSITOS
 
-from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor, Turno, Sexo, Provincia, Carrera, \
-    Modalidad, Sesion, DIAS_CHOICES, Periodicidad, Nacionalidad, Pais, Parroquia, TipoSangre, Raza, \
+from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Turno, Sexo, Provincia, Carrera, \
+    Modalidad, Sesion, DIAS_CHOICES, Nacionalidad, Pais, Parroquia, TipoSangre, Raza, \
     NacionalidadIndigena, \
     PersonaEstadoCivil, TiposMalla, Asignatura, TipoDuraccionMalla, TituloObtenido, TituloObtenidoCarrera, NivelMalla, \
     EjeFormativo, \
-    AreaConocimiento, TipoMateria, CampoFormacion, AsignaturaMalla, Coordinacion, PerfilUsuario, Sede, \
+    AreaConocimiento, TipoMateria, AsignaturaMalla, Coordinacion, PerfilUsuario, Sede, \
     TiempoDedicacionDocente, \
     DetalleNivelTitulacion, NivelTitulacion, TipoAlias, CampoAmplioConocimiento, CampoDetalladoConocimiento, \
     CampoEspecificoConocimiento, \
@@ -36,7 +35,7 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Profesor
     TIPO_EMISION_FACTURA, TIPO_AMBIENTE_FACTURACION, \
     ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, \
     MateriaCursoEscuelaComplementaria, \
-    Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, \
+    Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, Clase, \
     TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente, Factura, EspacioFisico, ServicioCatalogo, TipoServicio, \
     Proforma
 
@@ -2320,10 +2319,19 @@ class CursoEscuelaForm(BaseForm):
 
     def editar(self, coordinacion, actividad):
         self.fields['sesion'].queryset = Sesion.objects.filter(sede=actividad.coordinacion.sede)
-        if coordinacion.id in (22, 23):
-            self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(cursos=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=actividad.periodo, tipocostocursoperiodo__sede=actividad.coordinacion.sede).distinct()
-        else:
-            self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(cursos=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=actividad.periodo, tipocostocursoperiodo__sede=actividad.coordinacion.sede).exclude(id=1).distinct()
+        filtro_tipocurso = Q(cursos=True,
+                             tipocostocursoperiodo__activo=True,
+                             tipocostocursoperiodo__periodo=actividad.periodo,
+                             tipocostocursoperiodo__sede=actividad.coordinacion.sede)
+        #Ver que coordinacion excluir
+        # if coordinacion.id in (22, 23):
+        #     queryset_tipocurso = TipoCostoCurso.objects.filter(filtro_tipocurso)
+        # else:
+        #     queryset_tipocurso = TipoCostoCurso.objects.filter(filtro_tipocurso).exclude(id=1)
+        queryset_tipocurso = TipoCostoCurso.objects.filter(filtro_tipocurso)
+        if actividad.tipocurso_id:
+            queryset_tipocurso = queryset_tipocurso | TipoCostoCurso.objects.filter(pk=actividad.tipocurso_id)
+        self.fields['tipocurso'].queryset = queryset_tipocurso.distinct()
         deshabilitar_campo(self, 'usamodeloevaluativo')
         deshabilitar_campo(self, 'modeloevaluativo')
         if actividad.matriculacursoescuelacomplementaria_set.exists():
@@ -2333,6 +2341,7 @@ class CursoEscuelaForm(BaseForm):
             deshabilitar_campo(self, 'optativa')
             deshabilitar_campo(self, 'nivelacion')
         self.fields['solicitante'].widget.attrs['descripcion'] = actividad.solicitante.flexbox_repr() if actividad.solicitante else ""
+        self.fields['solicitante'].widget.attrs['va'] = actividad.solicitante_id if actividad.solicitante else ""
         if Clase.objects.filter(materiacurso__curso=actividad).exists():
             del self.fields['sesion']
             del self.fields['modalidad']

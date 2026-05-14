@@ -88,6 +88,8 @@
             ItemsDisplay = function (item) {
                 if (item.name){
                     return $('<span>' + item.name+ '</span>');
+                }else if (item.text){
+                    return $('<span>' + item.text+ '</span>');
                 }else{
                     return '---------';
                 }
@@ -131,9 +133,15 @@
                 templateSelection: ItemsDisplay
             }).on("select2:select", function (evt) {
                 $("#id_solicitante").attr({"value":(evt.params.data.id)});
+            }).on("select2:clear", function () {
+                $("#id_solicitante").attr({"value": ""});
             });
 
             actualizar_campos_select2();
+            if ($("#id_solicitante").val() && $("#id_solicitante").attr("descripcion")){
+                var solicitante = new Option($("#id_solicitante").attr("descripcion"), $("#id_solicitante").val(), true, true);
+                $("#id_solicitante_select2").append(solicitante).trigger("change");
+            }
 
             verificar_tipo_curso = function () {
                 var elemento = $("#id_tipocurso");
