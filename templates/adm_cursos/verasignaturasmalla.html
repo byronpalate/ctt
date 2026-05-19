@@ -1,0 +1,75 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-6'>
+            {% if perms.sga.puede_modificar_asignaturas %}
+                <a href="/adm_cursos?action=addasignaturasmalla&id={{ malla.id }}" class='btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+        </div>
+        <div class="col-6">
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="busqueda" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/adm_asignaturas" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row'>
+        <div class="col-12">
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Asignaturas</th>
+                    <th style="width: 250px;">Nivel</th>
+                    <th style="width: 60px; text-align: center;">Horas</th>
+                    <th style="width: 300px;">Cr&eacute;dito</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for asignatura in asignaturas %}
+                    <tr>
+                        <td>{{ asignatura.asignatura.nombre }}</td>
+                        <td>{{ asignatura.nivelmalla }}</td>
+                        <td style="text-align: center;">
+                            {{ asignatura.asignatura.horas }}
+                        </td>
+                        <td>
+                            {{ asignatura.asignatura.creditos }}
+                        </td>
+                        <td >
+                            {% if perms.sga.puede_modificar_asignaturas %}
+                                <div class="btn-group dropdown">
+                                    <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                        <li><a href='/adm_cursos?action=editcurso&id={{ asignatura.id }}'><i class="icon-edit"></i> Editar</a></li>
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

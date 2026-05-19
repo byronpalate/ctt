@@ -1,0 +1,94 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursos?action=mallas&id={{ malla.curso.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}<br>Curso: {{ malla.curso }}<br>Malla: {{ malla }}</h4>
+        </div>
+    </div>
+    {% if not malla.tiene_cursos %}
+        <div class='row mb-2'>
+            <div class='col-6'>
+                <a href="javascript:;" nhref="/adm_cursos?action=addasignaturasmalla&id={{ malla.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block canvas %}
+    <div class='row'>
+        <div class="col-12">
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Asignaturas</th>
+                    <th style="width: 150px;">Nivel</th>
+                    <th style="width: 100px; text-align: center;">Horas</th>
+                    <th style="width: 100px; text-align: center;">Cr&eacute;ditos</th>
+                    <th style="width: 60px; text-align: center;">Nota Maxima</th>
+                    <th style="width: 60px; text-align: center;">Nota Aprobar</th>
+                    <th style="width: 60px; text-align: center;">Asist. Aprobar</th>
+                    <th style="width: 50px; text-align: center;">Calificar</th>
+                    <th style="width: 50px; text-align: center;">Req.</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for asignatura in asignaturas %}
+                    <tr>
+                        <td>
+                            {{ asignatura.asignatura.nombre }}<br>
+                            {% if asignatura.validacreditos %}
+                                <span class="badge text-bg-warning tu" data-bs-toggle="tooltip" data-bs-placement="top" title="creditos">C</span>
+                            {% endif %}
+                            {% if asignatura.validapromedio %}
+                                <span class="badge text-bg-warning tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Promedio">P</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ asignatura.nivelmalla }}</td>
+                        <td style="text-align: center;">{{ asignatura.horas|floatformat:0 }}</td>
+                        <td style="text-align: center;">{{ asignatura.creditos|floatformat:4 }}</td>
+                        <td style="text-align: center;">{{ asignatura.notamaxima|floatformat:2 }}</td>
+                        <td style="text-align: center;">{{ asignatura.notaaprobar|floatformat:2 }}</td>
+                        <td style="text-align: center;">{{ asignatura.asistenciaaprobar|floatformat:0 }}</td>
+                        <td style="text-align: center;">
+                            {% if asignatura.calificar %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Se califica">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Se califica">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if asignatura.requiereaprobar %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Requerida para aprobar">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Requerida para aprobar">No</span>
+                            {% endif %}
+                        </td>
+                        <td >
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li class="smaller"><a href="javascript:;" nhref='/adm_cursos?action=editasignaturamalla&id={{ asignatura.id }}' class="dropdown-item formmodal"><i class="icon-edit"></i> Editar</a></li>
+                                    <li class="dropdown-divider"></li>
+                                    <li class="smaller"><a  href="javascript:;" class="eliminacionmodal dropdown-item" nhref="/adm_cursos?action=delasignaturamalla&id={{ asignatura.id }}"><i class="icon-remove"></i>Eliminar</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

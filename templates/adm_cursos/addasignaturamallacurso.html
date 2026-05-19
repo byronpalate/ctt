@@ -1,0 +1,60 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_asignatura, #id_nivelmalla, #id_horas, #id_creditos").addClass("validate[required]");
+
+            $("#id_creditos").blur(function(){
+                numerico($(this), 0, 20, 4);
+            });
+
+            $("#id_horas").blur(function(){
+                numerico($(this), 0, 0, 0);
+            });
+
+            $("#id_notamaxima").blur(function(){
+                numerico($(this), 0, 100, 2);
+                if (parseFloat($("#id_notaaprobar").val()) > parseFloat($("#id_notamaxima").val())){
+                    $("#id_notaaprobar").val(parseFloat($("#id_notamaxima").val()).toFixed(2));
+                }
+            });
+
+            $("#id_notaaprobar").blur(function(){
+                numerico($(this), 0, 100, 2);
+                if (parseFloat($("#id_notaaprobar").val()) > parseFloat($("#id_notamaxima").val())){
+                    $("#id_notaaprobar").val(parseFloat($("#id_notamaxima").val()).toFixed(2));
+                }
+            });
+
+            $("#id_asistenciaaprobar").blur(function(){
+                numerico($(this), 0, 100, 0);
+            });
+
+            validacalificacion= function(){
+                if ($("#id_calificar").is(":checked")){
+                    $('#id_notamaxima, #id_notaaprobar, #id_asistenciaaprobar').removeAttr('disabled').addClass('validate[required]');
+                }
+                else{
+                    $('#id_notamaxima, #id_notaaprobar, #id_asistenciaaprobar').attr({'disabled': 'disabled'}).removeClass("validate[required]");
+                }
+            };
+
+            $("#id_calificar").click(function(){
+                validacalificacion();
+            });
+
+
+            validacalificacion();
+
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursos{% endblock %}
+{% block formdestination %}/adm_cursos?action=asignaturasmalla&id={{ malla.id }}{% endblock %}
+{% block atras %}/adm_cursos?action=asignaturasmalla&id={{ malla.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addasignaturasmalla'/>
+    <input type="hidden" name='id' value='{{ malla.id }}'/>
+{% endblock %}
+{% block formback %}/adm_cursos?action=asignaturasmalla&id={{ malla.id }}{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "basebs.html" %}
+{% load sga_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            busqueda = function(){
+                var term = $("#busqueda").val().trim().toUpperCase();
+                if (term.length>0){
+                    location.href = "/adm_cursos?s="+term;
+                } else {
+                    $("#busqueda").focus();
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda();
+            });
+
+            $('#busqueda').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    busqueda();
+                }
+            }).focus().select();
+        });
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class='row mb-2'>
+        <div class='col-12 col-md-6 mb-2'>
+            <a href="javascript:;" nhref="adm_cursos?action=add" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="busqueda" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/adm_cursos" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Curso</th>
+                    <th style="width: 400px;">Certificado obtenido</th>
+                    <th style="text-align: center; width: 60px;">Mallas</th>
+                    <th style="text-align: center; width: 40px">Activo</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for actividad in actividades %}
+                    <tr>
+                        <td>
+                            {{ actividad.nombre }}
+                        </td>
+                        <td>{{ actividad.certificadoobtenido }}</td>
+                        <td style="text-align: center;">{{ actividad.totalmallas|floatformat:0 }}</td>
+                        <td style="text-align: center">
+                            {% if actividad.activa %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activo">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activo">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {% if not actividad.tiene_cursos %}
+                                        <li class="smaller"><a href="javascript:;" nhref="/adm_cursos?action=edit&id={{ actividad.id }}" class="formmodal btn-form dropdown-item"><i class="icon-edit"></i> Editar</a></li>
+                                    {% endif %}
+                                    <li class="smaller"><a href="/adm_cursos?action=mallas&id={{ actividad.id }}" class="btn-form dropdown-item"><i class="icon-list"></i> Mallas</a></li>
+                                    {% if actividad.activa %}
+                                        <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_cursos?action=desactivarcurso&id={{ actividad.id }}"><i class="icon-lock"></i> Desactivar</a></li>
+                                    {% else %}
+                                        <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_cursos?action=activarcurso&id={{ actividad.id }}"><i class="icon-unlock"></i> Activar</a></li>
+                                    {% endif %}
+                                    {% if not actividad.tiene_cursos %}
+                                        <li class="dropdown-divider"></li>
+                                        <li class="smaller"><a href="javascript:;" class="eliminacionmodal dropdown-item btn-form" nhref="/adm_cursos?action=eliminar&id={{ actividad.id }}"><i class="icon-remove"></i>Eliminar</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

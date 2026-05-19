@@ -1,0 +1,18 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function() {
+            $("#id_inicio").datepicker({format:"dd-mm-yyyy"});
+            $("#id_curso, #id_inicio").addClass("validate[required]");
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block atras %}/adm_cursos?action=mallas&id={{ curso.id }}{% endblock %}
+{% block formaction %}/adm_cursos{% endblock %}
+{% block formdestination %}/adm_cursos?action=mallas&id={{ curso.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addmalla'/>
+    <input type="hidden" name='id' value='{{ curso.id }}'/>
+{% endblock %}
+{% block formback %}/adm_cursos?action=mallas&id={{ curso.id }}{% endblock %}

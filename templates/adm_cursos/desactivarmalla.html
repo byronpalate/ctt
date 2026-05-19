@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_cursos{% endblock %}
+{% block formdestination %}/adm_cursos?action=mallas&id={{ malla.curso.id }}{% endblock %}
+{% block formactionvalue %}desactivarmalla{% endblock %}
+{% block formobjectid %}{{ malla.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea desactivar la malla:{% endblock %}
+{% block formobjectrepr %}{{ malla }}{% endblock %}

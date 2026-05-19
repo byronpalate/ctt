@@ -1,0 +1,81 @@
+{% extends "basebs.html" %}
+{% load sga_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_cursos?id={{ curso.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}<br>Curso: {{ curso.nombre }}</h4>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col-12">
+            <a href="javascript:;" nhref="adm_cursos?action=addmalla&id={{ curso.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-bordered table-striped'>
+                <thead class="table-light">
+                <tr>
+                    <th>Curso</th>
+                    <th style="text-align: center; width: 60px;">Materias</th>
+                    <th style="text-align: center; width: 60px;">Cursos</th>
+                    <th style="text-align: center; width: 100px">Aprobada</th>
+                    <th style="text-align: center; width: 40px">Activa</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for malla in mallas %}
+                    <tr>
+                        <td>
+                            {{ malla.curso }}
+                        </td>
+                        <td style="text-align: center;">{{ malla.asignaturas }}</td>
+                        <td style="text-align: center;">
+                            {{ malla.cantidad_cursos }}
+                        <td style="text-align: center;">{{ malla.inicio|date:"Y-m-d" }}</td>
+                        <td style="text-align: center">
+                            {% if malla.activa %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activa">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Activa">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li class="smaller"><a href="/adm_cursos?action=asignaturasmalla&id={{ malla.id }}" class="btn-form dropdown-item"><i class="icon-list"></i> Asignaturas</a></li>
+                                    {% if malla.activa %}
+                                        <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_cursos?action=desactivarmalla&id={{ malla.id }}"><i class="icon-lock"></i> Deshabilitar</a></li>
+                                    {% else %}
+                                        <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_cursos?action=activarmalla&id={{ malla.id }}"><i class="icon-unlock"></i> Habilitar</a></li>
+                                    {% endif %}
+                                    {% if not malla.asignaturas %}
+                                        <li class="dropdown-divider"></li>
+                                        <li class="smaller"><a href="javascript:;" class="eliminacionmodal btn-form dropdown-item" nhref="/adm_cursos?action=delmalla&id={{ malla.id }}" ><i class="icon-remove"></i>Eliminar</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
