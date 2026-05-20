@@ -32,19 +32,7 @@ from ctt import commonviews, inscripciones, matriculas, fecha_evaluaciones, adm_
     adm_institucion, adm_colegios, adm_cursoscomplementarios, adm_evaluaciones, niveles, administrativos, \
     adm_asignaturas, adm_modelosevaluativos, docentes, \
     adm_calculofinanzas, adm_pagosnivel, servicios, gestion_servicios, registroexterno, ver_servicios, \
-    adm_ordenestrabajo
-
-from ctt import commonviews, inscripciones, matriculas, fecha_evaluaciones, adm_periodos, pro_horarios, pro_asistencias, \
-    pro_planificacion, \
-    adm_mallas, pro_aperturaclase, alu_automatricula, pro_clases, alu_finanzas, alu_notas, pro_evaluaciones, \
-    alu_asistencias, alu_horarios, \
-    alu_cursoscomplementarios, adm_caja, alu_materias, finanzas, adm_facturas, printdoc, adm_recibopago, \
-    adm_notacredito, adm_valecaja, adm_recibo_caja, \
-    adm_transferencias, adm_depositos, adm_tecnologicouniversidad, adm_depositoinscripcion, adm_carreras, api, mailbox, \
-    adm_coordinaciones, \
-    adm_institucion, adm_colegios, adm_cursoscomplementarios, adm_evaluaciones, niveles, administrativos, \
-    adm_asignaturas, adm_modelosevaluativos, docentes, \
-    adm_calculofinanzas, adm_pagosnivel, adm_cliente, cli_finanzas
+    adm_ordenestrabajo, cli_finanzas, adm_cliente, adm_plantillacertificados
 
 import django.views.static
 
@@ -146,6 +134,7 @@ urlpatterns = [
     path('adm_institucion', adm_institucion.view),
 
     path('adm_cursoscomplementarios', adm_cursoscomplementarios.view),
+    #path('adm_cursos', adm_cursos.view),
 
 
 
@@ -173,7 +162,7 @@ urlpatterns = [
     path('registroexterno', registroexterno.view),
     path('ver_servicios', ver_servicios.view),
     path('adm_ordenestrabajo', adm_ordenestrabajo.view),
-
+    path('adm_plantillacertificados', adm_plantillacertificados.view),
 
 
     # INVESTIGACION MEDICINA

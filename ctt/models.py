@@ -47,9 +47,10 @@ from settings import CLASES_HORARIO_ESTRICTO, CLASES_APERTURA_ANTES, CLASES_APER
     PERFIL_CLIENTE_ID
 from settings import NOTA_ESTADO_REPROBADO, NOTA_ESTADO_SUPLETORIO, NIVEL_MALLA_CERO, \
     NIVEL_MALLA_UNO, SEXO_FEMENINO, SEXO_MASCULINO, TIPO_MORA_RUBRO, GENERAR_RUBRO_MORA, VALOR_MORA_RUBRO
-from ctt.funciones import enletras, validarRGB
+from ctt.funciones import enletras, validarRGB, validar_plantilla, validar_tamanio_archivo, TAMANIO_DIMENSIONES_MM
 from ctt.tasks import send_mail, send_html_mail
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, FileExtensionValidator
+
 
 def ctt_list_classes():
     listclass = []
@@ -3520,6 +3521,7 @@ class TipoDuraccionMalla(ModeloBase):
 
 class TituloObtenido(ModeloBase):
     nombre = models.CharField(default='', max_length=200, verbose_name=u'Nombre')
+
 
     def __str__(self):
         return u'%s' % self.nombre
@@ -8360,7 +8362,6 @@ class TipoCostoCurso(ModeloBase):
     def save(self, *args, **kwargs):
         self.nombre = null_to_text(self.nombre)
         super(TipoCostoCurso, self).save(*args, **kwargs)
-
 
 class CursoEscuelaComplementaria(ModeloBase):
     nombre = models.CharField(verbose_name=u'Nombre', max_length=250)
@@ -18171,5 +18172,157 @@ class RubroServicio(ModeloBase):
     def __str__(self):
         return f"Rubro servicio {self.rubro_id} - proforma {self.proforma.numero}"
 
+#Certificados En Linea---------------------------------
+class PlantillaCertificadosEnLinea(ModeloBase):
+    TAMANIO_CHOICES = [
+        ('A4_H',    'A4 horizontal (297 x 210 mm)'),
+        ('A4_V',    'A4 vertical (210 x 297 mm)'),
+        ('CARTA_H', 'Carta horizontal (279 x 216 mm)'),
+        ('CARTA_V', 'Carta vertical (216 x 279 mm)'),
+        ('CUSTOM',  'Personalizado'),
+    ]
+    FORMATO_CHOICES = [
+        ('PDF', 'PDF'),
+        ('PNG', 'PNG'),
+        ('JPG', 'JPG'),
+    ]
+    nombre         = models.CharField(max_length=200)
+    # tipo           = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    tamanio_pagina = models.CharField(max_length=10, choices=TAMANIO_CHOICES, default='A4_H')
+    ancho_mm       = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    alto_mm        = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    archivo        = models.FileField( upload_to='certificados/plantillas/%Y/', validators=[
+                             FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg']),
+                             validar_tamanio_archivo,
+                             validar_plantilla,
+                         ]
+                     )
+    formato        = models.CharField(max_length=5, choices=FORMATO_CHOICES, editable=False)
+    ancho_px       = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    alto_px        = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    dpi            = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    paginas        = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    activo         = models.BooleanField(default=True)
+    parametrizado  = models.BooleanField(default=False, editable=False)
 
+    def __str__(self):
+        return f'{self.nombre}'
+
+    def es_pdf(self):
+        return self.formato == 'PDF'
+
+    def es_png(self):
+        return self.formato == 'PNG'
+
+    def es_jpg(self):
+        return self.formato == 'JPG'
+
+    def dimensiones_mm(self):
+        if self.tamanio_pagina == 'CUSTOM':
+            return (float(self.ancho_mm or 0), float(self.alto_mm or 0))
+        return TAMANIO_DIMENSIONES_MM.get(self.tamanio_pagina, (0.0, 0.0))
+
+
+    def listo_para_emitir(self):
+        return self.activo and self.parametrizado
+
+
+    def clean(self):
+        super().clean()
+        if self.tamanio_pagina == 'CUSTOM':
+            errores = {}
+            if not self.ancho_mm:
+                errores['ancho_mm'] = 'El ancho es obligatorio para tamaño personalizado.'
+            if not self.alto_mm:
+                errores['alto_mm'] = 'El alto es obligatorio para tamaño personalizado.'
+            if errores:
+                raise ValidationError(errores)
+        else:
+            self.ancho_mm = None
+            self.alto_mm = None
+
+
+    def archivo_cambio(self):
+        if not self.pk:
+            return True
+        try:
+            anterior = PlantillaCertificadosEnLinea.objects.get(pk=self.pk)
+            return anterior.archivo.name != self.archivo.name
+        except PlantillaCertificadosEnLinea.DoesNotExist:
+            return True
+
+
+    def extraer_metadatos_pdf(self):
+        try:
+            import fitz
+            self.archivo.seek(0)
+            doc = fitz.open(stream=self.archivo.read(), filetype='pdf')
+            page = doc[0]
+            self.ancho_px = int(page.rect.width)
+            self.alto_px = int(page.rect.height)
+            self.paginas = doc.page_count
+            doc.close()
+            self.archivo.seek(0)
+        except Exception:
+            pass
+
+
+    def extraer_metadatos_img(self):
+        try:
+            from PIL import Image
+            self.archivo.seek(0)
+            img = Image.open(self.archivo)
+            self.ancho_px = img.width
+            self.alto_px = img.height
+            dpi_info = img.info.get('dpi', (72, 72))
+            self.dpi = int(dpi_info[0] if isinstance(dpi_info, tuple) else dpi_info)
+            self.archivo.seek(0)
+        except Exception:
+            pass
+
+    def save(self, *args, **kwargs):
+        if self.archivo:
+            ext = os.path.splitext(self.archivo.name)[1].lower()
+            self.formato = 'PDF' if ext == '.pdf' else 'JPG' if ext in ('.jpg', '.jpeg') else 'PNG'
+            if self.archivo_cambio():
+                if self.es_pdf():
+                    self.extraer_metadatos_pdf()
+                    self.dpi = None
+                else:
+                    self.extraer_metadatos_img()
+                    self.paginas = None
+        super().save(*args, **kwargs)
+
+
+class CampoPlantillaCertificado(ModeloBase):
+    TIPO_CHOICES = [
+        ('parametro', 'Parámetro Dinámico'),
+        ('texto', 'Texto Fijo'),
+    ]
+    ALINEACION_CHOICES = [
+        ('left', 'Izquierda'),
+        ('center', 'Centro'),
+        ('right', 'Derecha'),
+    ]
+    plantilla = models.ForeignKey(PlantillaCertificadosEnLinea, verbose_name=u'Plantilla', related_name='campos', on_delete=models.CASCADE)
+    identificador = models.CharField(max_length=50, null=True, blank=True, verbose_name=u'Identificador UI')
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='parametro')
+    codigo = models.CharField(max_length=50, blank=True, null=True, verbose_name=u'Campo')
+    etiqueta = models.CharField(max_length=100, verbose_name=u'Etiqueta')
+    texto = models.TextField(blank=True, null=True, verbose_name=u'Texto')
+    orden = models.PositiveIntegerField(default=0, verbose_name=u'Orden')
+    x = models.DecimalField(max_digits=6, decimal_places=3, default=0, verbose_name=u'X (%)')
+    y = models.DecimalField(max_digits=6, decimal_places=3, default=0, verbose_name=u'Y (%)')
+    ancho = models.DecimalField(max_digits=6, decimal_places=3, default=40, verbose_name=u'Ancho (%)')
+    alto = models.DecimalField(max_digits=6, decimal_places=3, default=8, verbose_name=u'Alto (%)')
+    tamanio_fuente = models.PositiveIntegerField(default=24, verbose_name=u'Tamaño de fuente')
+    color = models.CharField(max_length=7, default='#000000', verbose_name=u'Color')
+    negrita = models.BooleanField(default=True, verbose_name=u'Negrita')
+    alineacion = models.CharField(max_length=10, choices=ALINEACION_CHOICES, default='center', verbose_name=u'Alineación')
+
+    class Meta:
+        unique_together = ('plantilla', 'identificador')
+
+    def __str__(self):
+        return u'%s - %s' % (self.plantilla, self.etiqueta)
 

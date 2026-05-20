@@ -1,0 +1,21 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function () {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: '{{ mensaje_error|escapejs }}',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#E74C3C',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then(function () {
+                bloqueointerface();
+                location.href = '{{ redirect_url|escapejs }}';
+            });
+        });
+    </script>
+{% endblock %}
+{% block canvas %}
+{% endblock %}

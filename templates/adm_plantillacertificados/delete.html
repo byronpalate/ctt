@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_plantillacertificados{% endblock %}
+{% block formdestination %}/adm_plantillacertificados{% endblock %}
+{% block formactionvalue %}eliminar{% endblock %}
+{% block formobjectid %}{{ plantilla.id }}{% endblock %}
+{% block formobjectname %}La plantilla{% endblock %}
+{% block formobjectrepr %}{{ plantilla.nombre }}{% endblock %}

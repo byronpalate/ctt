@@ -1224,3 +1224,397 @@ def validarRGB(color):
         except:
             return '0,0,0'
     return '0,0,0'
+
+
+#-------------------CERTIFICADOS FUNCIONES Y PARAMETROS PARA OBTENERLOS-----------------------------
+MAX_UPLOAD_MB = 50
+MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
+MIN_DPI_PNG = 150
+
+TAMANIO_DIMENSIONES_MM = {
+    'A4_H': (297.0, 210.0),
+    'A4_V': (210.0, 297.0),
+    'CARTA_H': (279.4, 215.9),
+    'CARTA_V': (215.9, 279.4),
+}
+
+def validar_tamanio_archivo(archivo):
+    if archivo.size > MAX_UPLOAD_BYTES:
+        raise ValidationError(
+            _(
+                'El archivo no puede superar %(max)s MB. '
+                'Tamaño recibido: %(actual).1f MB.'
+            ),
+            params={
+                'max': MAX_UPLOAD_MB,
+                'actual': archivo.size / (1024 * 1024),
+            },
+        )
+
+#Valido DPI minimo
+def validar_plantilla_imagen(archivo):
+    try:
+        from PIL import Image
+
+        archivo.seek(0)
+        img = Image.open(archivo)
+        img.verify()
+        archivo.seek(0)
+        img= Image.open(archivo)
+        dpi_info=img.info.get('dpi', (72,72))
+        dpi_x = int(dpi_info[0] if isinstance(dpi_info, tuple) else dpi_info)
+
+        if dpi_x < MIN_DPI_PNG:
+            raise ValidationError(
+                _(
+                    'La imagen debe tener al menos %(min)s DPI para garantizar '
+                    'calidad de impresión. DPI detectado: %(found)s.'
+                ),
+                params={'min': MIN_DPI_PNG, 'found': dpi_x},
+            )
+        archivo.seek(0)
+    except ValidationError:
+        raise
+    except Exception as ex:
+        raise ValidationError(
+            _('No se pudo leer la imagen: %(error)s'),
+            params={'error': ex},
+        )
+
+
+def validar_plantilla_png(archivo):
+    validar_plantilla_imagen(archivo)
+
+def validar_plantilla_pdf(archivo):
+    try:
+        archivo.seek(0)
+        doc = fitz.open(stream=archivo.read(), filetype='pdf')
+        paginas = doc.page_count
+        doc.close()
+        archivo.seek(0)
+
+        if paginas != 1:
+            raise ValidationError(
+                _(
+                    'La plantilla PDF debe tener exactamente 1 página. '
+                    'Páginas detectadas: %(found)s.'
+                ),
+                params={'found': paginas},
+            )
+
+    except ValidationError:
+        raise
+    except Exception as exc:
+        raise ValidationError(
+            _('No se pudo leer el archivo PDF: %(error)s'),
+            params={'error': exc},
+        )
+
+def validar_plantilla(archivo):
+    ext = os.path.splitext(archivo.name)[1].lower()
+    if ext == '.png':
+        validar_plantilla_imagen(archivo)
+    elif ext in ('.jpg', '.jpeg'):
+        validar_plantilla_imagen(archivo)
+    elif ext == '.pdf':
+        validar_plantilla_pdf(archivo)
+
+#---Parametrizacion del reporte
+PARAMETROS_CERTIFICADO = {
+    'participante': {'label': u'Participante', 'preview': u'ING. ARIEL ALEXANDER DIAZ ALAVA', 'fuente': 'calculado.participante'},
+    'cedula': {'label': u'Cédula', 'preview': u'1712345678', 'fuente': 'calculado.cedula'},
+    'programa': {'label': u'Programa', 'preview': u'ACTUALIZACION SOBRE LA LEY DE TRANSITO', 'fuente': 'programa.nombre'},
+    'tipo': {'label': u'Tipo', 'preview': u'curso', 'fuente': 'programa.tipo'},
+    'modalidad': {'label': u'Modalidad', 'preview': u'VIRTUAL', 'fuente': 'programa.modalidad'},
+    'inicio': {'label': u'Fecha inicio', 'preview': u'01/05/2026', 'fuente': 'programa.inicio'},
+    'fin': {'label': u'Fecha fin', 'preview': u'05/05/2026', 'fuente': 'programa.fin'},
+    'horas': {'label': u'Horas', 'preview': u'40', 'fuente': 'programa.horas'},
+    'ciudad': {'label': u'Ciudad', 'preview': u'Quito', 'fuente': 'certificado.ciudad'},
+    'tema': {'label': u'Tema certificado', 'preview': u'LEY DE TRÁNSITO', 'fuente': 'certificado.tema'},
+    'aprobadoasistencia': {'label': u'Aprobado/Asistencia', 'preview': u'APROBADO', 'fuente': 'certificado.aprobadoasistencia'},
+    'fechas': {'label': u'Rango de fechas', 'preview': u'1 al 5 de mayo de 2026', 'fuente': 'calculado.fechas'},
+    'codigoverificacion': {'label': u'Código de verificación', 'preview': u'QNM13WQGIK', 'fuente': 'certificado.codigoverificacion'},
+    'mes': {'label': u'Mes de emisión','preview': u'mayo', 'fuente': 'calculado.mes'},
+    'anio': {'label': u'Año de emisión', 'preview': u'2026', 'fuente': 'calculado.anio'},
+}
+
+MESES = {
+    1: 'enero',
+    2: 'febrero',
+    3: 'marzo',
+    4: 'abril',
+    5: 'mayo',
+    6: 'junio',
+    7: 'julio',
+    8: 'agosto',
+    9: 'septiembre',
+    10: 'octubre',
+    11: 'noviembre',
+    12: 'diciembre',
+}
+
+MODALIDAD_CERTIFICADO = {
+    1: 'VIRTUAL',
+    2: 'PRESENCIAL',
+    3: 'SEMIPRESENCIAL',
+    4: 'ONLINE',
+    5: 'POR LA PLATAFORMA ZOOM',
+}
+
+TIPO_CERTIFICADO = {
+    1: 'diplomado',
+    2: 'curso',
+    3: 'taller',
+    4: 'seminario',
+    5: 'programa',
+    6: 'webinar',
+    7: 'congreso',
+    8: 'conferencia',
+    9: 'jornadas',
+}
+
+def _fecha_ddmmaaaa(fecha):
+    return fecha.strftime('%d/%m/%Y') if fecha else ''
+
+
+def _mes(fecha):
+    return MESES.get(fecha.month, '') if fecha else ''
+
+
+def _anio(fecha):
+    return str(fecha.year) if fecha else ''
+
+
+def _rango_fechas_texto(inicio, fin):
+    if not inicio and not fin:
+        return ''
+    if inicio and not fin:
+        return '%s de %s de %s' % (inicio.day, _mes(inicio), inicio.year)
+    if fin and not inicio:
+        return '%s de %s de %s' % (fin.day, _mes(fin), fin.year)
+
+    if inicio.year == fin.year:
+        if inicio.month == fin.month:
+            return '%s al %s de %s de %s' % (
+                inicio.day, fin.day, _mes(fin), fin.year
+            )
+        return '%s de %s de %s al %s de %s de %s' % (
+            inicio.day, _mes(inicio), inicio.year,
+            fin.day, _mes(fin), fin.year
+        )
+
+    return '%s de %s de %s al %s de %s de %s' % (
+        inicio.day, _mes(inicio), inicio.year,
+        fin.day, _mes(fin), fin.year
+    )
+
+
+def _participante(certificado):
+    if certificado.persona_id and certificado.persona:
+        return certificado.persona.nombre_completo_inverso()
+    return certificado.nombres or ''
+
+
+def _cedula(certificado):
+    if certificado.persona_id and certificado.persona:
+        return certificado.persona.cedula or ''
+    return certificado.identificacion or ''
+
+
+def _valor_fuente(certificado, fuente):
+    programa = certificado.programa
+    fecha_emision = certificado.fecharegistro
+
+    if fuente == 'calculado.participante':
+        return _participante(certificado)
+
+    if fuente == 'calculado.cedula':
+        return _cedula(certificado)
+
+    if fuente == 'calculado.mes':
+        return _mes(fecha_emision)
+
+    if fuente == 'calculado.anio':
+        return _anio(fecha_emision)
+
+    if fuente == 'calculado.fechas':
+        return _rango_fechas_texto(programa.inicio, programa.fin)
+
+    if fuente == 'programa.nombre':
+        return programa.nombre or ''
+
+    if fuente == 'programa.tipo':
+        return programa.get_tipo_display().lower() if programa.tipo else ''
+
+    if fuente == 'programa.modalidad':
+        return programa.get_modalidad_display().upper() if programa.modalidad else ''
+
+    if fuente == 'programa.inicio':
+        return _fecha_ddmmaaaa(programa.inicio)
+
+    if fuente == 'programa.fin':
+        return _fecha_ddmmaaaa(programa.fin)
+
+    if fuente == 'programa.horas':
+        return str(programa.horas or '')
+
+    if fuente == 'certificado.ciudad':
+        return (certificado.ciudad or '').title()
+
+    if fuente == 'certificado.tema':
+        return certificado.tema or ''
+
+    if fuente == 'certificado.aprobadoasistencia':
+        return certificado.get_aprobadoasistencia_display()
+
+    if fuente == 'certificado.codigoverificacion':
+        return certificado.codigoverificacion or ''
+
+    return ''
+
+
+def _valores_certificado(certificado):
+    valores = {}
+    for codigo, config in PARAMETROS_CERTIFICADO.items():
+        fuente = config.get('fuente')
+        valores[codigo] = _valor_fuente(certificado, fuente)
+    return valores
+
+
+def _color_hex_a_rgb01(color):
+    color = (color or '#000000').replace('#', '')
+    if len(color) != 6:
+        color = '000000'
+
+    r = int(color[0:2], 16) / 255.0
+    g = int(color[2:4], 16) / 255.0
+    b = int(color[4:6], 16) / 255.0
+    return r, g, b
+
+
+def _align_pymupdf(alineacion):
+    if alineacion == 'left':
+        return fitz.TEXT_ALIGN_LEFT
+    if alineacion == 'right':
+        return fitz.TEXT_ALIGN_RIGHT
+    return fitz.TEXT_ALIGN_CENTER
+
+
+def _texto_campo(campo, valores):
+    if campo.tipo == 'parametro':
+        return valores.get(campo.codigo, '')
+
+    texto = campo.texto or ''
+    for codigo, valor in valores.items():
+        texto = texto.replace('{{%s}}' % codigo, str(valor))
+        texto = texto.replace('{{ %s }}' % codigo, str(valor))
+    return texto
+
+
+def _strip_html_a_texto(html):
+    """Convierte HTML de Quill a texto plano preservando saltos de línea."""
+    html = re.sub(r'<br\s*/?>', '\n', html, flags=re.IGNORECASE)
+    html = re.sub(r'</p>', '\n', html, flags=re.IGNORECASE)
+    html = re.sub(r'<[^>]+>', '', html)
+    html = re.sub(r'\n{3,}', '\n\n', html)
+    return html.strip()
+
+
+def _insertar_texto(page, rect, texto, campo):
+    color = _color_hex_a_rgb01(campo.color)
+    fontsize = campo.tamanio_fuente or 12
+    align = _align_pymupdf(campo.alineacion)
+
+    if campo.tipo == 'texto':
+        css_align = {'left': 'left', 'right': 'right'}.get(campo.alineacion, 'center')
+        css = """
+            body {
+                font-family: Helvetica;
+                font-size: %dpt;
+                color: %s;
+                text-align: %s;
+            }
+        """ % (fontsize, campo.color or '#000000', css_align)
+        try:
+            page.insert_htmlbox(rect, texto, css=css)
+        except AttributeError:
+            # Fallback para PyMuPDF < 1.23: strip HTML y texto plano
+            fontname = 'hebo' if campo.negrita else 'helv'
+            page.insert_textbox(
+                rect, _strip_html_a_texto(texto),
+                fontsize=fontsize, fontname=fontname,
+                color=color, align=align
+            )
+    else:
+        # Parámetro: texto plano directo
+        fontname = 'hebo' if campo.negrita else 'helv'
+        fs = fontsize
+        r = -1
+        while r < 0 and fs >= 6:
+            r = page.insert_textbox(
+                rect, texto,
+                fontsize=fs, fontname=fontname,
+                color=color, align=align
+            )
+            if r < 0:
+                fs -= 1
+        if r < 0:
+            print(f"  ADVERTENCIA: texto '{texto[:30]}' no cabe ni con fuente mínima")
+
+def _crear_documento_base(plantilla):
+    archivo_path = plantilla.archivo.path
+
+    if plantilla.es_pdf():
+        return fitz.open(archivo_path)
+
+    ancho_mm, alto_mm = plantilla.dimensiones_mm()
+    ancho_pt = float(ancho_mm) * 72 / 25.4
+    alto_pt = float(alto_mm) * 72 / 25.4
+
+    doc = fitz.open()
+    page = doc.new_page(width=ancho_pt, height=alto_pt)
+
+    rect = fitz.Rect(0, 0, ancho_pt, alto_pt)
+    page.insert_image(rect, filename=archivo_path)
+
+    return doc
+
+
+def generar_pdf_certificado_sga(certificado):
+    programa = certificado.programa
+    plantilla = programa.plantillacertificadosga
+
+    if not plantilla:
+        raise Exception('El programa no tiene una plantilla de certificado SGA configurada.')
+
+    if not plantilla.listo_para_emitir():
+        raise Exception('La plantilla no está activa o no tiene campos parametrizados.')
+
+    doc = _crear_documento_base(plantilla)
+    page = doc[0]
+
+    valores = _valores_certificado(certificado)
+
+    page_width = page.rect.width
+    page_height = page.rect.height
+
+    for campo in plantilla.campos.all().order_by('orden', 'id'):
+        texto = _texto_campo(campo, valores)
+
+        x = float(campo.x) * page_width / 100.0
+        y = float(campo.y) * page_height / 100.0
+        w = float(campo.ancho) * page_width / 100.0
+        h = float(campo.alto) * page_height / 100.0
+
+        rect = fitz.Rect(x, y, x + w, y + h)
+
+        _insertar_texto(page, rect, texto, campo)
+    pdf_bytes = doc.tobytes(
+        garbage=4,
+        deflate=True,
+        clean=True
+    )
+    doc.close()
+
+    return pdf_bytes
+    #-------------------FIN CERTIFICADOS FUNCIONES Y PARAMETROS PARA OBTENERLOS-----------------------------

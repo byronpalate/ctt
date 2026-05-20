@@ -1,0 +1,995 @@
+{% extends "basebs.html" %}
+
+{% block heading %}
+    {# quill js para texto enriquecido#}
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
+    <style>
+        .plantillas-shell {
+            display: grid;
+            grid-template-columns: 320px minmax(0, 1fr);
+            min-height: calc(100vh - 180px);
+            border: 1px solid #e5e7eb;
+            background: #fff;
+        }
+
+        .plantillas-sidebar {
+            border-right: 1px solid #e5e7eb;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+
+        .plantillas-sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .plantillas-sidebar-header h5 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .plantillas-list {
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .plantilla-item {
+            display: block;
+            padding: 12px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: #334155;
+            text-decoration: none;
+            margin-bottom: 6px;
+            background: transparent;
+        }
+
+        .plantilla-item:hover {
+            background: #eef2f7;
+            color: #0f172a;
+            text-decoration: none;
+        }
+
+        .plantilla-item.active {
+            background: #fff;
+            border-color: #cbd5e1;
+            color: #0f172a;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+        }
+
+        .plantilla-item-title {
+            font-weight: 700;
+            line-height: 1.25;
+            margin-bottom: 4px;
+        }
+
+        .plantilla-item-meta {
+            font-size: 12px;
+            color: #64748b;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .plantillas-content {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .plantillas-toolbar {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .plantillas-toolbar h4 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .plantillas-form {
+            padding: 20px;
+            max-width: 880px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .form-grid .span-2 {
+            grid-column: 1 / -1;
+        }
+
+        .field-label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #1f2937;
+        }
+
+        .field-help {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .empty-state {
+            padding: 24px;
+            color: #64748b;
+            text-align: center;
+        }
+
+        .disabled-note {
+            margin-bottom: 16px;
+        }
+
+        .designer {
+            margin: 0 20px 20px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 18px;
+        }
+
+        .designer-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 260px;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .designer-stage-wrap {
+            overflow: auto;
+            background: #f1f5f9;
+            border: 1px solid #dbe3ec;
+            padding: 14px;
+        }
+
+        .designer-stage {
+            position: relative;
+            width: min(100%, 980px);
+        {#aspect-ratio: 1.414 / 1;#} margin: 0 auto;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .12);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .designer-stage img,
+        .designer-stage iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .field-box {
+            position: absolute;
+            min-width: 60px;
+            min-height: 28px;
+            border: 1px dashed #2563eb;
+            background: rgba(37, 99, 235, .08);
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            cursor: move;
+            overflow: hidden;
+        }
+
+        {#Para los saltos de linea#}
+        .field-box {
+            white-space: pre-line;
+        }
+
+        .field-box.active {
+            border-style: solid;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, .18);
+        }
+
+        .field-box .resize-handle {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 12px;
+            height: 12px;
+            background: #2563eb;
+            cursor: nwse-resize;
+        }
+
+        .field-box p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.3;
+        }
+
+        .designer-panel {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            background: #fff;
+        }
+
+        .designer-panel h5 {
+            font-size: 14px;
+            margin: 0 0 10px;
+            font-weight: 700;
+        }
+
+        .designer-panel .btn {
+            width: 100%;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        .param-label {
+            display: block;
+            font-weight: 600;
+        }
+
+        .param-preview {
+            display: block;
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.25;
+            margin-top: 2px;
+            white-space: normal;
+        }
+
+        .designer-view-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .designer-view-toggle .btn {
+            margin-bottom: 0;
+            text-align: center;
+        }
+
+        .designer-view-toggle .active {
+            background: #0f8f5f;
+            border-color: #0f8f5f;
+            color: #fff;
+        }
+
+        .designer-controls {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .designer-controls label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 4px;
+        }
+
+        .designer-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .plantillas-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .plantillas-sidebar {
+                border-right: 0;
+                border-bottom: 1px solid #e5e7eb;
+                max-height: 320px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .designer-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .plantilla-item-wrapper {
+            position: relative;
+        }
+
+        .plantilla-item {
+            display: block;
+            padding-right: 40px;
+        }
+
+        .plantilla-item-wrapper .btn-eliminar {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            left: auto;
+
+            z-index: 9999;
+            color: #dc3545;
+            font-size: 16px;
+            text-decoration: none;
+        }
+
+        .plantilla-item-wrapper .btn-eliminar i {
+            color: #dc3545;
+        }
+    </style>
+    <script type="text/javascript">
+        $(function () {
+            var $form = $("#formPlantillaCertificado");
+            var $fields = $form.find("input, select, textarea").not("[type=hidden]");
+            var $title = $("#plantillaFormTitle");
+            var $submit = $("#btnGuardarPlantilla");
+            var $customSize = $("#customSizeFields");
+
+            function toggleCustomSize() {
+                if ($("#id_tamanio_pagina").val() === "CUSTOM") {
+                    $customSize.show();
+                } else {
+                    $customSize.hide();
+                    $("#id_ancho_mm, #id_alto_mm").val("");
+                }
+            }
+
+            function habilitarFormulario() {
+                $fields.prop("disabled", false);
+                $submit.prop("disabled", false);
+                $("#plantilla_id").val("");
+                $("#id_nombre, #id_ancho_mm, #id_alto_mm").val("");
+                $("#id_tamanio_pagina").val("A4_H");
+                $("#id_archivo").val("");
+                $(".plantilla-item").removeClass("active");
+                $("#formModeMessage").hide();
+                $title.text("Nueva plantilla");
+                toggleCustomSize();
+                $("#id_nombre").focus();
+                $(".designer").hide();
+            }
+
+            $("#btnAgregarPlantilla").on("click", function () {
+                habilitarFormulario();
+            });
+
+            $("#id_tamanio_pagina").on("change", toggleCustomSize);
+            toggleCustomSize();
+
+            var campos = {{ campos_json|safe }};
+            var parametros = {{ parametros_json|safe }};
+            var $stage = $("#designerStage");
+            var $propPanel = $("#fieldProperties");
+            var selected = null;
+            var previewActivo = false;
+
+            {#Inicializar quilljs para texto enriquecido#}
+            var quill = new Quill('#quillEditor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline'],
+                        [{'color': []}],
+                        ['clean']
+                    ]
+                }
+            });
+
+            quill.on('text-change', function () {
+                var html = quill.root.innerHTML;
+                $("#propText").val(html);
+                var campo = campoSeleccionado();
+                if (campo && campo.tipo === "texto") {
+                    campo.texto = html;
+                    campo.etiqueta = quill.getText().substring(0, 80).trim() || "Texto fijo";
+                    renderCampos();
+                }
+            });
+            {#Inicializar quilljs para texto enriquecido#}
+
+            campos = (campos || []).map(function (campo, index) {
+                if (!campo.identificador) {
+                    campo.identificador = "el_" + Date.now() + "_" + index;
+                }
+                campo.tipo = campo.tipo || "parametro";
+                campo.texto = campo.texto || "";
+                campo.etiqueta = campo.etiqueta || (campo.codigo && parametros[campo.codigo] ? parametros[campo.codigo].label : "Texto fijo");
+                return campo;
+            });
+
+            function clamp(value, min, max) {
+                return Math.max(min, Math.min(max, value));
+            }
+
+            function stageRect() {
+                return $stage[0].getBoundingClientRect();
+            }
+
+            function nuevoId() {
+                return "el_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+            }
+
+            function resolverTextoPreview(texto) {
+                if (!previewActivo) {
+                    return texto;
+                }
+                return (texto || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, function (match, codigo) {
+                    if (parametros[codigo]) {
+                        return parametros[codigo].preview || parametros[codigo].label || match;
+                    }
+                    return match;
+                });
+            }
+
+            function textoPreview(campo) {
+                if (campo.tipo === "texto") {
+                    return resolverTextoPreview(campo.texto || "Texto fijo");
+                }
+                if (campo.codigo && parametros[campo.codigo]) {
+                    if (previewActivo) {
+                        return parametros[campo.codigo].preview || campo.etiqueta || parametros[campo.codigo].label;
+                    }
+                    return "{" + "{" + campo.codigo + "}" + "}";
+                }
+                return campo.etiqueta || "Parametro";
+            }
+
+            function actualizarModoVista() {
+                $("#btnVistaParametros").toggleClass("active", !previewActivo);
+                $("#btnVistaPreview").toggleClass("active", previewActivo);
+                $(".param-preview").toggle(previewActivo);
+                renderCampos();
+            }
+
+            function campoSeleccionado() {
+                return campos.find(function (item) {
+                    return item.identificador === selected;
+                });
+            }
+
+            function insertarParametroEnTextarea(codigo) {
+                if (!$("#textEditorBlock").is(":visible")) {
+                    return;
+                }
+                var token = "{" + "{" + codigo + "}" + "}";
+                var range = quill.getSelection(true);
+                quill.insertText(range ? range.index : quill.getLength(), token);
+            }
+
+            function renderCampos() {
+                $stage.find(".field-box").remove();
+                campos.forEach(function (campo) {
+                    var $box = $("<div/>", {
+                        "class": "field-box",
+                        "data-identificador": campo.identificador
+                    });
+
+                    if (campo.tipo === "texto") {
+                        $box.html(textoPreview(campo));
+                    } else {
+                        $box.text(textoPreview(campo));
+                    }
+                    $box.css({
+                        left: campo.x + "%",
+                        top: campo.y + "%",
+                        width: campo.ancho + "%",
+                        height: campo.alto + "%",
+                        color: campo.color || "#000000",
+                        fontSize: (campo.tamanio_fuente || 24) + "px",
+                        fontWeight: campo.negrita ? "700" : "400",
+                        justifyContent: campo.tipo === "texto" ? "flex-start" : (campo.alineacion === "left" ? "flex-start" : campo.alineacion === "right" ? "flex-end" : "center"),
+                        textAlign: campo.alineacion || "center",
+                        alignItems: campo.tipo === "texto" ? (campo.alineacion === "left" ? "flex-start" : campo.alineacion === "right" ? "flex-end" : "center") : "center",
+                        flexDirection: campo.tipo === "texto" ? "column" : "row"
+                    });
+                    $box.append($("<span/>", {"class": "resize-handle"}));
+                    $stage.append($box);
+                });
+                if (selected) {
+                    $stage.find('[data-identificador="' + selected + '"]').addClass("active");
+                }
+            }
+
+            function selectCampo(identificador) {
+                selected = identificador;
+                var campo = campoSeleccionado();
+                $stage.find(".field-box").removeClass("active");
+                $stage.find('[data-identificador="' + identificador + '"]').addClass("active");
+                if (!campo) {
+                    $propPanel.hide();
+                    $("#textEditorBlock").hide();
+                    return;
+                }
+                if (campo.tipo === "texto") {
+                    $("#textEditorBlock").show();
+                    quill.root.innerHTML = campo.texto || "";
+                    $("#propText").val(campo.texto || "");
+                } else {
+                    $("#textEditorBlock").hide();
+                }
+                $("#propFontSize").val(campo.tamanio_fuente || 24);
+                $("#propColor").val(campo.color || "#000000");
+                $("#propAlign").val(campo.alineacion || "center");
+                $("#propBold").prop("checked", !!campo.negrita);
+                $propPanel.show();
+            }
+
+            function addParametro(codigo, x, y) {
+                if (!codigo || !parametros[codigo]) {
+                    return;
+                }
+                var campo = {
+                    identificador: nuevoId(),
+                    tipo: "parametro",
+                    codigo: codigo,
+                    etiqueta: parametros[codigo].label,
+                    texto: "",
+                    x: typeof x === "number" ? x : 30,
+                    y: typeof y === "number" ? y : 40,
+                    ancho: 40,
+                    alto: 7,
+                    tamanio_fuente: codigo === "nombre_persona" ? 24 : 14,
+                    color: "#000000",
+                    negrita: true,
+                    alineacion: "center"
+                };
+                campos.push(campo);
+                renderCampos();
+                selectCampo(campo.identificador);
+            }
+
+            function addTexto() {
+                var campo = {
+                    identificador: nuevoId(),
+                    tipo: "texto",
+                    codigo: null,
+                    etiqueta: "Texto fijo",
+                    texto: "Texto fijo",
+                    x: 30,
+                    y: 50,
+                    ancho: 45,
+                    alto: 8,
+                    tamanio_fuente: 16,
+                    color: "#000000",
+                    negrita: false,
+                    alineacion: "center"
+                };
+                campos.push(campo);
+                renderCampos();
+                selectCampo(campo.identificador);
+            }
+
+            $("#btnAddText").on("click", function () {
+                addTexto();
+            });
+
+            $("#btnVistaParametros").on("click", function () {
+                previewActivo = false;
+                actualizarModoVista();
+            });
+
+            $("#btnVistaPreview").on("click", function () {
+                previewActivo = true;
+                actualizarModoVista();
+            });
+
+            var clickTimer = null;
+
+            $(".designerParam").on("click", function () {
+                var codigo = $(this).data("codigo");
+                clearTimeout(clickTimer);
+                clickTimer = setTimeout(function () {
+                    addParametro(codigo);
+                }, 250);
+            });
+
+            $(".designerParam").on("dblclick", function () {
+                clearTimeout(clickTimer); // cancela el click simple antes de que ejecute
+                insertarParametroEnTextarea($(this).data("codigo"));
+            });
+
+            $(".designerParam").on("dragstart", function (event) {
+                event.originalEvent.dataTransfer.setData("text/plain", $(this).data("codigo"));
+            });
+
+            $stage.on("dragover", function (event) {
+                event.preventDefault();
+            });
+
+            $stage.on("drop", function (event) {
+                event.preventDefault();
+                var codigo = event.originalEvent.dataTransfer.getData("text/plain");
+                var rect = stageRect();
+                var x = ((event.originalEvent.clientX - rect.left) / rect.width) * 100;
+                var y = ((event.originalEvent.clientY - rect.top) / rect.height) * 100;
+                addParametro(codigo, clamp(x, 0, 90), clamp(y, 0, 90));
+            });
+
+            $("#quillEditor").on("dragover", function (event) {
+                event.preventDefault();
+            });
+
+            $("#quillEditor").on("drop", function (event) {
+                event.preventDefault();
+                var codigo = event.originalEvent.dataTransfer.getData("text/plain");
+                insertarParametroEnTextarea(codigo);
+            });
+
+            $("#btnRemoveField").on("click", function () {
+                if (!selected) {
+                    return;
+                }
+                campos = campos.filter(function (item) {
+                    return item.identificador !== selected;
+                });
+                selected = null;
+                $propPanel.hide();
+                $("#textEditorBlock").hide();
+                renderCampos();
+            });
+
+            $("#propFontSize, #propColor, #propAlign, #propBold").on("input change", function () {
+                if (!selected) {
+                    return;
+                }
+                var campo = campoSeleccionado();
+                if (!campo) {
+                    return;
+                }
+                campo.tamanio_fuente = parseInt($("#propFontSize").val() || "24", 10);
+                campo.color = $("#propColor").val() || "#000000";
+                campo.alineacion = $("#propAlign").val() || "center";
+                campo.negrita = $("#propBold").is(":checked");
+                renderCampos();
+                selectCampo(campo.identificador);
+            });
+
+            $stage.on("mousedown", ".field-box", function (event) {
+                if (!$stage.length) {
+                    return;
+                }
+                event.preventDefault();
+                var $target = $(this);
+                var identificador = $target.data("identificador");
+                var campo = campos.find(function (item) {
+                    return item.identificador === identificador;
+                });
+                if (!campo) {
+                    return;
+                }
+                var resizing = $(event.target).hasClass("resize-handle");
+                var rect = stageRect();
+                var startX = event.clientX;
+                var startY = event.clientY;
+                var start = $.extend({}, campo);
+                selectCampo(identificador);
+
+                $(document).on("mousemove.designer", function (moveEvent) {
+                    var dx = ((moveEvent.clientX - startX) / rect.width) * 100;
+                    var dy = ((moveEvent.clientY - startY) / rect.height) * 100;
+                    if (resizing) {
+                        campo.ancho = clamp(parseFloat(start.ancho) + dx, 5, 100 - parseFloat(start.x));
+                        campo.alto = clamp(parseFloat(start.alto) + dy, 3, 100 - parseFloat(start.y));
+                    } else {
+                        campo.x = clamp(parseFloat(start.x) + dx, 0, 100 - parseFloat(start.ancho));
+                        campo.y = clamp(parseFloat(start.y) + dy, 0, 100 - parseFloat(start.alto));
+                    }
+                    renderCampos();
+                    selectCampo(identificador);
+                });
+
+                $(document).on("mouseup.designer", function () {
+                    $(document).off(".designer");
+                });
+            });
+            {#Adicionar campos#}
+
+            $("#btnGuardarCampos").on("click", function () {
+                var plantillaId = $("#plantilla_id").val();
+                if (!plantillaId) {
+                    return;
+                }
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_plantillacertificados",
+                    data: {
+                        csrfmiddlewaretoken: $form.find("[name=csrfmiddlewaretoken]").val(),
+                        action: "guardarcampos",
+                        id: plantillaId,
+                        campos: JSON.stringify(campos)
+                    },
+                    success: function (data) {
+                        if (data.result === "ok") {
+                            location.href = "/adm_plantillacertificados?action=configuracion&id=" + plantillaId;
+                        } else {
+                            alert(data.mensaje || "No se pudo guardar la configuracion.");
+                        }
+                    },
+                    error: function () {
+                        alert("No se pudo guardar la configuracion.");
+                    }
+                });
+            });
+
+            actualizarModoVista();
+        });
+    </script>
+{% endblock %}
+
+{% block atras %}/adm_plantillacertificados{% endblock %}
+
+{% block canvas %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <h4 class="mb-1">{{ title|default:"Configuracion de plantillas" }}</h4>
+            <div class="text-muted">Plantillas para la generacion de certificados de cursos.</div>
+        </div>
+    </div>
+
+    <div class="plantillas-shell">
+        <aside class="plantillas-sidebar">
+            <div class="plantillas-sidebar-header">
+                <h5>Plantillas</h5>
+                <button type="button" id="btnAgregarPlantilla" class="btn btn-sm btn-success">
+                    <i class="fa fa-plus"></i> Agregar
+                </button>
+            </div>
+            <div class="plantillas-list">
+                {% for item in plantillas %}
+                    <div class="plantilla-item-wrapper" style="position: relative;">
+
+                        <a href="/adm_plantillacertificados?action=configuracion&id={{ item.id }}"
+                           class="plantilla-item {% if plantilla and plantilla.id == item.id %}active{% endif %}"
+                           style="display: block;">
+
+                            <div class="plantilla-item-title">{{ item.nombre }}</div>
+
+                            <div class="plantilla-item-meta">
+                                <span>{{ item.get_tamanio_pagina_display }}</span>
+                                <span>{{ item.formato|default:"Sin archivo" }}</span>
+
+                                {% if item.activo %}
+                                    <span>Activa</span>
+                                {% else %}
+                                    <span>Inactiva</span>
+                                {% endif %}
+                            </div>
+                        </a>
+
+                        <a href="javascript:;"
+                           nhref="/adm_plantillacertificados?action=eliminar&id={{ item.id }}"
+                           class="btn-eliminar eliminacionmodal">
+                            <i class="bi bi-x-octagon-fill"></i>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">Aun no existen plantillas guardadas.</div>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <section class="plantillas-content">
+            <div class="plantillas-toolbar">
+                <h4 id="plantillaFormTitle">
+                    {% if plantilla %}Editar plantilla{% else %}Nueva plantilla{% endif %}
+                </h4>
+                {% if plantilla %}
+                    <span class="badge bg-info">{{ plantilla.nombre }}</span>
+                {% endif %}
+            </div>
+
+            <form id="formPlantillaCertificado"
+                  class="plantillas-form"
+                  method="post"
+                  action="/adm_plantillacertificados"
+                  enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="guardarplantilla">
+                <input type="hidden" id="plantilla_id" name="id"
+                       value="{% if plantilla %}{{ plantilla.id }}{% endif %}">
+
+                {% if not plantilla and not form.errors %}
+                    <div id="formModeMessage" class="alert alert-info disabled-note">
+                        Seleccione una plantilla del listado o use Agregar para habilitar el formulario.
+                    </div>
+                {% endif %}
+
+                <div class="form-grid">
+                    <div class="span-2">
+                        <label class="field-label" for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                            <div class="text-danger">{{ form.nombre.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="field-label"
+                               for="{{ form.tamanio_pagina.id_for_label }}">{{ form.tamanio_pagina.label }}</label>
+                        {{ form.tamanio_pagina }}
+                        {% if form.tamanio_pagina.errors %}
+                            <div class="text-danger">{{ form.tamanio_pagina.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="field-label"
+                               for="{{ form.archivo.id_for_label }}">{{ form.archivo.label }}</label>
+                        {{ form.archivo }}
+                        <div class="field-help">Formatos permitidos: PDF o PNG.</div>
+                        {% if plantilla and plantilla.archivo %}
+                            <div class="field-help">Archivo actual: {{ plantilla.archivo.name }}</div>
+                        {% endif %}
+                        {% if form.archivo.errors %}
+                            <div class="text-danger">{{ form.archivo.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div id="customSizeFields" class="span-2">
+                        <div class="form-grid">
+                            <div>
+                                <label class="field-label"
+                                       for="{{ form.ancho_mm.id_for_label }}">{{ form.ancho_mm.label }}</label>
+                                {{ form.ancho_mm }}
+                                {% if form.ancho_mm.errors %}
+                                    <div class="text-danger">{{ form.ancho_mm.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label class="field-label"
+                                       for="{{ form.alto_mm.id_for_label }}">{{ form.alto_mm.label }}</label>
+                                {{ form.alto_mm }}
+                                {% if form.alto_mm.errors %}
+                                    <div class="text-danger">{{ form.alto_mm.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-warning mt-3">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="form-actions">
+                    <a href="/adm_plantillacertificados" class="btn btn-light">Cancelar</a>
+                    <button id="btnGuardarPlantilla" type="submit" class="btn btn-success">
+                        <i class="fa fa-save"></i> Guardar plantilla
+                    </button>
+                </div>
+            </form>
+
+            {% if plantilla and plantilla.archivo %}
+                <div class="designer">
+                    <div class="plantillas-toolbar" style="padding: 0 0 14px; border-bottom: 0;">
+                        <h4>Diseño del certificado</h4>
+                        <button id="btnGuardarCampos" type="button" class="btn btn-success">
+                            <i class="fa fa-save"></i> Guardar diseño
+                        </button>
+                    </div>
+
+                    <div class="designer-layout">
+                        <div class="designer-stage-wrap">
+                            <div id="designerStage" class="designer-stage"
+                                 style="aspect-ratio: {{ plantilla_aspect_ratio }};">
+                                {% if plantilla.es_pdf %}
+                                    <iframe src="{{ plantilla.archivo.url }}"></iframe>
+                                {% else %}
+                                    <img src="{{ plantilla.archivo.url }}" alt="{{ plantilla.nombre }}">
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <aside class="designer-panel">
+                            <h5>Vista</h5>
+                            <div class="designer-view-toggle">
+                                <button type="button" id="btnVistaParametros" class="btn btn-light active">
+                                    Parámetros
+                                </button>
+                                <button type="button" id="btnVistaPreview" class="btn btn-light">
+                                    Preview
+                                </button>
+                            </div>
+
+                            <hr>
+
+                            <h5>Texto fijo</h5>
+                            <button type="button" id="btnAddText" class="btn btn-light">
+                                <i class="fa fa-plus"></i> Agregar texto
+                            </button>
+
+                            <div id="textEditorBlock" style="display:none;">
+                                <label>Contenido</label>
+                                <!-- Editor visual Quill -->
+                                <div id="quillEditor" style="height:130px; background:#fff;"></div>
+                                <!-- Input oculto que guarda el HTML resultante -->
+                                <input type="hidden" id="propText">
+                            </div>
+
+                            <hr>
+
+                            <h5>Parámetros</h5>
+                            {% for codigo, item in parametros_disponibles.items %}
+                                <button type="button"
+                                        class="btn btn-light designerParam"
+                                        data-codigo="{{ codigo }}"
+                                        data-label="{{ item.label }}"
+                                        data-preview="{{ item.preview }}"
+                                        draggable="true">
+                                    <span class="param-label">{{ item.label }}</span>
+                                    <span class="param-preview">{{ item.preview }}</span>
+                                </button>
+                            {% endfor %}
+
+                            <hr>
+
+                            <h5>Propiedades</h5>
+                            <div id="fieldProperties" class="designer-controls" style="display: none;">
+                                <div>
+                                    <label for="propFontSize">Tamaño</label>
+                                    <input id="propFontSize" type="number" class="form-control" min="8" max="80"
+                                           step="1">
+                                </div>
+                                <div>
+                                    <label for="propColor">Color</label>
+                                    <input id="propColor" type="color" class="form-control">
+                                </div>
+                                <div>
+                                    <label for="propAlign">Alineación</label>
+                                    <select id="propAlign" class="form-select">
+                                        <option value="left">Izquierda</option>
+                                        <option value="center">Centro</option>
+                                        <option value="right">Derecha</option>
+                                    </select>
+                                </div>
+                                <label>
+                                    <input id="propBold" type="checkbox"> Negrita
+                                </label>
+                                <button id="btnRemoveField" type="button" class="btn btn-danger">
+                                    <i class="fa fa-trash"></i> Quitar elemento
+                                </button>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+
+    {% if not plantilla and not form.errors %}
+        <script type="text/javascript">
+            $(function () {
+                var $form = $("#formPlantillaCertificado");
+                $form.find("input, select, textarea").not("[type=hidden], [name=csrfmiddlewaretoken]").prop("disabled", true);
+                $("#btnGuardarPlantilla").prop("disabled", true);
+            });
+        </script>
+    {% endif %}
+{% endblock %}

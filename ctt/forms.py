@@ -37,7 +37,7 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Turno, S
     MateriaCursoEscuelaComplementaria, \
     Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, Clase, \
     TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente, Factura, EspacioFisico, ServicioCatalogo, TipoServicio, \
-    Proforma
+    Proforma, PlantillaCertificadosEnLinea, CampoPlantillaCertificado
 
 
 # Servicio,
@@ -2308,17 +2308,21 @@ class CursoEscuelaForm(BaseForm):
     def adicionar(self, coordinacion, periodo):
         self.fields['sesion'].queryset = Sesion.objects.filter(sede=coordinacion.sede)
         self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(cursos=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=periodo, tipocostocursoperiodo__sede=coordinacion.sede).distinct()
+        # if coordinacion.id in (22, 23, 50):
+        #     self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(cursos=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=periodo, tipocostocursoperiodo__sede=coordinacion.sede).distinct()
+        # else:
+        #     self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(cursos=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=periodo, tipocostocursoperiodo__sede=coordinacion.sede).exclude(id=1).distinct()
 
     def adicionar_con(self, coordinacion, periodo):
         self.fields['sesion'].queryset = Sesion.objects.filter(sede=coordinacion.sede)
         self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(actualizacionconocimiento=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=periodo, tipocostocursoperiodo__sede=coordinacion.sede).distinct()
-
+        del self.fields['mallacurso']
         del self.fields['libreconfiguracion']
         del self.fields['optativa']
         del self.fields['costodiferenciado']
 
     def editar(self, coordinacion, actividad):
-        self.fields['sesion'].queryset = Sesion.objects.filter(sede=actividad.coordinacion.sede)
+        self.fields['sesion'].queryset = self.sesiones_por_sede(actividad.coordinacion.sede)
         filtro_tipocurso = Q(cursos=True,
                              tipocostocursoperiodo__activo=True,
                              tipocostocursoperiodo__periodo=actividad.periodo,
@@ -2354,7 +2358,7 @@ class CursoEscuelaForm(BaseForm):
         deshabilitar_campo(self, 'costocuota')
         deshabilitar_campo(self, 'cuotas')
         deshabilitar_campo(self, 'nivelacion')
-        self.fields['sesion'].queryset = Sesion.objects.filter(sede=actividad.coordinacion.sede)
+        self.fields['sesion'].queryset = self.sesiones_por_sede(actividad.coordinacion.sede)
         if actividad.coordinacion.id not in (22, 23):
             self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(actualizacionconocimiento=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=actividad.periodo, tipocostocursoperiodo__sede=actividad.coordinacion.sede).exclude(id=1).distinct()
         else:
@@ -3096,3 +3100,115 @@ class SolicitarRequerimientoServicioForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
         self.fields['formtype'].initial = 'vertical'
 
+#Configuracion de cursos adm_cursos
+class CursoForm(BaseForm):
+    nombre = forms.CharField(label=u"Nombre", max_length=100, widget=forms.TextInput())
+    certificadoobtenido = forms.CharField(label=u"Certificado a obtener", max_length=100, widget=forms.TextInput())
+    alias = forms.CharField(label=u"Alias", max_length=50, widget=forms.TextInput())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formwidth'].initial = 'md'
+
+
+class MallaCursoForm(BaseForm):
+    inicio = forms.DateField(label=u"Fecha aprobación", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formwidth'].initial = 'md'
+
+class AsignaturaMallaCursoForm(BaseForm):
+    asignatura = ModelChoiceField(label=u'Asignatura', queryset=Asignatura.objects.filter(), required=False)
+    nivelmalla = ModelChoiceField(label=u'Nivel Malla', queryset=NivelMalla.objects.filter(id__gte=1), required=False, widget=forms.Select())
+    validacreditos = forms.BooleanField(label=u'Válida para créditos', initial=True, required=False)
+    validapromedio = forms.BooleanField(label=u'Válida para promedio', initial=True, required=False)
+    horas = forms.IntegerField(label=u"Horas", initial=0, required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '0', 'formwidth': 300}))
+    creditos = forms.FloatField(label=u"Créditos", initial="0.0000", required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-right', 'decimales': '4', 'formwidth': 300, 'labelwidth': 60}))
+    requiereaprobar = forms.BooleanField(label=u'Requerida para aprobar', initial=True, required=False)
+    calificar = forms.BooleanField(label=u'Calificar', initial=False, required=False)
+    notamaxima = forms.FloatField(label=u"Nota máxima", initial="0.00", required=False, widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '2'}))
+    notaaprobar = forms.FloatField(label=u"Nota para aprobar", initial="0.00", required=False, widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '2'}))
+    asistenciaaprobar = forms.FloatField(label=u"Asistencia para aprobar", initial="0", required=False, widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '0'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+#Fin Configuracion de cursos adm_cursos
+
+
+#Generacion de certificados en linea
+class PlantillaCertificadosEnLineaForm(BaseForm):
+    nombre = forms.CharField(label=u"Nombre", max_length=200, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    tamanio_pagina = forms.ChoiceField(label=u"Tamaño de página", choices=PlantillaCertificadosEnLinea.TAMANIO_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
+    ancho_mm = forms.DecimalField(label=u"Ancho (mm)", max_digits=7, decimal_places=2, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}))
+    alto_mm = forms.DecimalField(label=u"Alto (mm)", max_digits=7, decimal_places=2, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}))
+    archivo = forms.FileField(label=u"Archivo de plantilla", required=False, widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+    def adicionar(self, instancia=None):
+        self.plantilla = instancia
+        self.fields['tamanio_pagina'].empty_label = None
+
+        if instancia and instancia.pk:
+            self.fields['nombre'].initial = instancia.nombre
+            self.fields['tamanio_pagina'].initial = instancia.tamanio_pagina
+            self.fields['ancho_mm'].initial = instancia.ancho_mm
+            self.fields['alto_mm'].initial = instancia.alto_mm
+            self.fields['archivo'].required = False
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get('nombre', '').strip()
+        if not nombre:
+            raise ValidationError(u'El nombre no puede estar vacío.')
+        qs = PlantillaCertificadosEnLinea.objects.filter(nombre__iexact=nombre)
+        plantilla = getattr(self, 'plantilla', None)
+        if plantilla and plantilla.pk:
+            qs = qs.exclude(pk=plantilla.pk)
+        if qs.exists():
+            raise ValidationError(u'Ya existe una plantilla con ese nombre.')
+        return nombre
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data.get('archivo')
+        if not archivo:
+            plantilla = getattr(self, 'plantilla', None)
+            if plantilla and plantilla.pk and plantilla.archivo:
+                return plantilla.archivo
+            raise ValidationError(u'Debes subir un archivo de plantilla.')
+        return archivo
+
+    def clean(self):
+        cleaned_data = super().clean()
+        tamanio_pagina = cleaned_data.get('tamanio_pagina')
+        ancho_mm = cleaned_data.get('ancho_mm')
+        alto_mm = cleaned_data.get('alto_mm')
+
+        if tamanio_pagina == 'CUSTOM':
+            errores = {}
+            if not ancho_mm:
+                errores['ancho_mm'] = u'El ancho en mm es obligatorio para tamaño personalizado.'
+            if not alto_mm:
+                errores['alto_mm'] = u'El alto en mm es obligatorio para tamaño personalizado.'
+            if errores:
+                raise ValidationError(errores)
+        else:
+            cleaned_data['ancho_mm'] = None
+            cleaned_data['alto_mm'] = None
+
+        return cleaned_data
+
+
+class ConfiguracionCertificadoProgramaForm(BaseForm):
+    plantillacertificadosga = forms.ModelChoiceField(
+        label=u"Plantilla",
+        queryset=PlantillaCertificadosEnLinea.objects.filter(activo=True).order_by('nombre'),
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formwidth'].initial = 'lg'
+#Fin Generacion de certificados en linea
