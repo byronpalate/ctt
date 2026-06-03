@@ -1229,7 +1229,7 @@ def validarRGB(color):
 #-------------------CERTIFICADOS FUNCIONES Y PARAMETROS PARA OBTENERLOS-----------------------------
 MAX_UPLOAD_MB = 50
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
-MIN_DPI_PNG = 150
+MIN_DPI_PNG = 70
 
 TAMANIO_DIMENSIONES_MM = {
     'A4_H': (297.0, 210.0),
@@ -1536,6 +1536,7 @@ def _insertar_texto(page, rect, texto, campo):
             }
         """ % (fontsize, campo.color or '#000000', css_align)
         try:
+            texto = re.sub(r'\b(\d+)\.0\b', r'\1', texto)
             page.insert_htmlbox(rect, texto, css=css)
         except AttributeError:
             # Fallback para PyMuPDF < 1.23: strip HTML y texto plano
