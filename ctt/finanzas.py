@@ -11,7 +11,6 @@ from django.db.models.aggregates import Max, Sum
 from django.db.models.query_utils import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.template.context import Context
 from django.template.loader import get_template
 
 from decorators import secure_module, last_access
@@ -24,10 +23,9 @@ from ctt.commonviews import adduserdata, obtener_reporte
 from ctt.forms import RubroForm, FormaPagoForm, EliminarRubroForm, MoverPagoRubroForm
 from ctt.funciones import MiPaginador, log, convertir_fecha, ok_json, bad_json, empty_json, url_back, generar_nombre
 from ctt.models import Inscripcion, Rubro, Pago, Banco, TipoOtroRubro, RubroOtro, Persona, ClienteFactura, \
-    PagoCheque, RubroEspecieValorada, PagoTransferenciaDeposito, TipoEspecieValorada, DepositoPersona, \
-    InscripcionFlags, RubroLiquidado, ValeCaja, \
+    PagoCheque, RubroEspecieValorada, PagoTransferenciaDeposito, TipoEspecieValorada, InscripcionFlags, RubroLiquidado, ValeCaja, \
     TipoCheque, TipoEmisorTarjeta, IvaAplicado, null_to_numeric, DatoCheque, DatoTransferenciaDeposito, Periodo, \
-    RubroAnticipado, TipoTarjetaBanco, RubroCuota, FormaDePago, RubroNotaDebito, DescuentoRecargoRubro, Cliente
+    RubroAnticipado, TipoTarjetaBanco, RubroCuota, FormaDePago, RubroNotaDebito, DescuentoRecargoRubro
 
 from ctt.printdoc import imprimir_contenido
 

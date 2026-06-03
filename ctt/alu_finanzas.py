@@ -23,7 +23,7 @@ from settings import PAYMENT_ENTITYID, PAYMENT_URL, PERMITE_PAGO_ONLINE, \
 from ctt.commonviews import adduserdata, obtener_reporte
 from ctt.funciones import generar_nombre, log, ok_json, bad_json, url_back, remover_caracteres_especiales, \
     remover_tildes
-from ctt.models import Rubro, DepositoPersona, mi_institucion, Banco, \
+from ctt.models import Rubro, mi_institucion, Banco, \
     LugarRecaudacion, null_to_numeric, Pago, Factura, ReciboPago
 
 

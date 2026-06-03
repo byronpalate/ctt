@@ -6,7 +6,6 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.template import Context
 from django.template.loader import get_template
 
 from decorators import inhouse_check, secure_module, last_access

@@ -5,13 +5,11 @@ from django.db import transaction
 from django.shortcuts import render
 
 from decorators import secure_module, last_access
-from sga.funciones import MiPaginador
-from sga.commonviews import adduserdata
-from sga.forms import CursoForm, MallaCursoForm, \
-    AsignaturaMallaCursoForm
-from sga.funciones import log, bad_json, url_back, ok_json
-from sga.models import Curso, MallaCurso, \
-    AsignaturaCurso, null_to_numeric
+from ctt.funciones import MiPaginador
+from ctt.commonviews import adduserdata
+from ctt.forms import CursoForm, MallaCursoForm, AsignaturaMallaCursoForm
+from ctt.funciones import log, bad_json, url_back, ok_json
+from ctt.models import Curso, MallaCurso, AsignaturaCurso, null_to_numeric
 
 
 @login_required(login_url='/login')

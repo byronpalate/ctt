@@ -2,9 +2,7 @@
 import calendar
 import json
 import random
-import string
 from datetime import datetime, timedelta, date
-from django.utils import timezone
 
 from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.decorators import login_required
@@ -16,7 +14,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
 
-from decorators import secure_module, last_access, db_selector
+from decorators import secure_module, last_access
 from settings import ALUMNOS_GROUP_ID, SEXO_FEMENINO, SEXO_MASCULINO, CONTACTO_EMAIL, ENVIO_CORREO_INICIO_SESION, \
     PIE_PAGINA_CREATIVE_COMMON_LICENCE, CHEQUEAR_CORREO, PROFESORES_GROUP_ID, EMPLEADORES_GRUPO_ID, TIPO_PERIODO_GRADO, \
     NOTIFICACION_DEUDA, ACTUALIZAR_FOTO_PROFESOR, ACTUALIZAR_FOTO_ADMINISTRATIVOS, ARCHIVO_TIPO_PUBLICO, \
@@ -26,11 +24,11 @@ from ctt.forms import PersonaForm, CambioClaveForm, CargarFotoForm, CambioPerfil
     CambioPeriodoForm, CambioClaveSimpleForm,FormTerminos
 from ctt.funciones import generar_nombre, log, fechatope, ok_json, bad_json, url_back, generar_clave, \
     convertir_fecha
-from ctt.models import Persona, Periodo, FotoPersona, Noticia, Profesor, Inscripcion, Archivo, GruposModulos, \
+from ctt.models import Periodo, FotoPersona, Noticia, Profesor, Inscripcion, Archivo, GruposModulos, \
     mi_institucion, \
-    Persona, Incidencia, PerfilUsuario, Modulo, Encuesta, Matricula, DatoTransferenciaDeposito, years_ago, Materia, \
+    Persona, PerfilUsuario, Modulo, Encuesta, Matricula, DatoTransferenciaDeposito, years_ago, Materia, \
     Actividad, \
-    InscripcionFlags, Reporte, Clase, CargoInstitucion, Nivel, Asignatura, MateriaAsignada
+    InscripcionFlags, Reporte, Clase, Nivel, Asignatura, MateriaAsignada
 
 from ctt.tasks import send_mail
 

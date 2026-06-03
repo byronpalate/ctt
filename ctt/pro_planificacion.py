@@ -1,16 +1,12 @@
 # coding=utf-8
-import json
-import random
 from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
-from django.db.models.aggregates import Max, Sum
-from django.http import HttpResponseRedirect, HttpResponse
+from django.db.models.aggregates import Max
+from django.http import HttpResponseRedirect
 from django.http.response import JsonResponse, HttpResponseServerError
 from django.shortcuts import render
 from django.db import transaction
-from django.template import RequestContext, Context
-from django.template.loader import get_template
 from django.db.models import Q
 
 from decorators import secure_module, last_access
@@ -23,12 +19,11 @@ from ctt.forms import PlanificacionForm, ImportarPlanificacionForm, ImportarTall
 
 from ctt.funciones import log, generar_nombre, url_back, bad_json, ok_json, convertir_fecha, generar_color_hexadecimal
 from ctt.models import Materia, PlanificacionMateria, TallerPlanificacionMateria, \
-    ContenidosTallerPlanificacionMateria, null_to_numeric, ActividadesAprendizajeCondocenciaAsistida, \
-    ActividadesTrabajoAutonomas, ActividadesAprendizajePractico, ActividadesAprendizajeColaborativas, \
-    ClasesTallerPlanificacionMateria, LeccionGrupo, BibliografiaComplementariaPlanificacion, \
+    ContenidosTallerPlanificacionMateria, null_to_numeric, ClasesTallerPlanificacionMateria, \
+    BibliografiaComplementariaPlanificacion, \
     BibliografiaBasicaPlanificacion, GuiasPracticasMateria, \
     RubricaResultadoAprendizaje, IndicadorRubrica, \
-    Asignatura, NivelMalla, Persona, Modalidad,  Profesor,  null_to_text
+    Asignatura, Profesor,  null_to_text
 
 from ctt.tasks import send_mail
 

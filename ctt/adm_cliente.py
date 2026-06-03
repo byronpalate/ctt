@@ -1,7 +1,6 @@
 # coding=utf-8
 from datetime import datetime
 
-from dateutil.relativedelta import relativedelta
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.db import transaction
@@ -11,15 +10,12 @@ from django.shortcuts import render
 
 from decorators import secure_module, last_access
 from settings import PROFESORES_GROUP_ID, ADMINISTRATIVOS_GROUP_ID, ALUMNOS_GROUP_ID, EMAIL_DOMAIN, \
-    EMPLEADORES_GRUPO_ID, PAIS_ECUADOR_ID, EMAIL_DOMAIN_ESTUDIANTES, PERM_ENTRAR_COMO_USUARIO, \
-    NACIONALIDAD_INDIGENA_ID, TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID, ESCALAFON_TITULAR_PRINCIPAL_ID, \
-    EMAIL_INSTITUCIONAL_AUTOMATICO_ADMINISTRATIVOS, PERM_DIRECTOR_SIS, CLIENTES_GROUP_ID
+    EMPLEADORES_GRUPO_ID, PAIS_ECUADOR_ID, EMAIL_DOMAIN_ESTUDIANTES, NACIONALIDAD_INDIGENA_ID, TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID, ESCALAFON_TITULAR_PRINCIPAL_ID, \
+    CLIENTES_GROUP_ID
 from ctt.commonviews import adduserdata
 from ctt.forms import AdministrativosForm, GrupoUsuarioForm, NuevaInscripcionForm, SedeAdministrativoForm, ClientesForm
-from ctt.funciones import MiPaginador, log, generar_usuario, resetear_clave, url_back, bad_json, ok_json, generar_email, \
-    remover_tildes, validarcedula
-from ctt.models import Persona, Profesor, Administrativo, Inscripcion, Carrera, Periodo, Nacionalidad, Coordinacion, \
-    Cliente, EmpresaEmpleadora
+from ctt.funciones import MiPaginador, log, generar_usuario, resetear_clave, url_back, bad_json, ok_json, remover_tildes
+from ctt.models import Persona, Profesor, Administrativo, Inscripcion, Carrera, Periodo, Cliente, EmpresaEmpleadora
 
 
 @login_required(login_url='/login')

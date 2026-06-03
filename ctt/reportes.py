@@ -14,7 +14,7 @@ from decorators import last_access
 from settings import JR_JAVA_COMMAND, DATABASES, JR_USEROUTPUT_FOLDER, JR_RUN, MEDIA_URL, SUBREPOTRS_FOLDER, \
     MEDIA_ROOT, JR_REPORTS_USER, JR_REPORTS_PASSWORD, JR_DB_TYPE, REPORTESEXTERNOS, URLREPORTESEXTERNOS
 from ctt.commonviews import adduserdata
-from ctt.funciones import bad_json, url_back, empty_json, ok_json
+from ctt.funciones import bad_json, url_back, empty_json
 from ctt.models import Reporte, CategoriaReporte
 
 

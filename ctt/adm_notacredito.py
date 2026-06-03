@@ -8,7 +8,6 @@ from django.db import transaction
 from django.db.models.query_utils import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.template.context import Context
 from django.template.loader import get_template
 
 from decorators import secure_module, last_access

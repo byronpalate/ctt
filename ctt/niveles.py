@@ -8,7 +8,6 @@ from django.db.models import Q
 from django.db.models.aggregates import Sum
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.core import serializers
 from copy import deepcopy
 
 

@@ -6,13 +6,12 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.template import RequestContext, Context
 from django.template.loader import get_template
 
 from decorators import secure_module, last_access
 from settings import MUESTRA_ESTADO_NIVELACION, SOLICITUD_NUMERO_AUTOMATICO, \
     PUEDE_ESPECIFICAR_CANTIDAD_SOLICITUD_SECRETARIA, TIPO_IVA_0_ID, \
-    RUBRO_OTRO_SOLICITUD_ID, CALCULO_ASISTENCIA_CLASE
+    RUBRO_OTRO_SOLICITUD_ID
 from ctt.commonviews import adduserdata, obtener_reporte
 from ctt.forms import RubricaTallerPlanificacionForm
 from ctt.funciones import url_back, bad_json, ok_json

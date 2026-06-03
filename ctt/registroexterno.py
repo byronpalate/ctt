@@ -1,25 +1,19 @@
 # coding=utf-8
-import os
 import random
 from datetime import datetime
 
-from captcha.image import ImageCaptcha
-from django.contrib.auth.models import Group, User
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from settings import EMAIL_DOMAIN, ALUMNOS_GROUP_ID, SITE_ROOT, USA_CAPCHA, EMAIL_DOMAIN_ESTUDIANTES, \
-    CARRERA_FORMACION_CONTINUA_ID, NOTA_ESTADO_EN_CURSO, CLIENTES_GROUP_ID
+from settings import EMAIL_DOMAIN, EMAIL_DOMAIN_ESTUDIANTES, \
+    CLIENTES_GROUP_ID
 from ctt.commonviews import obtener_reporte
 from ctt.forms import RegistroExternoForm
-from ctt.funciones import convertir_fecha, bad_json, generar_nombre, generar_clave, ok_json, \
-    generar_usuario, url_back, fechatope_cursos, remover_tildes
-from ctt.models import Inscripcion, Persona, Sede, Capcha, Malla, CursoEscuelaComplementaria, \
-    MatriculaCursoEscuelaComplementaria, \
-    MateriaAsignadaCurso, TipoEstudianteCurso, CostodiferenciadoCursoPeriodo, \
-    PorcentajeDescuentoCursos, Cliente, EmpresaEmpleadora
+from ctt.funciones import bad_json, ok_json, \
+    generar_usuario, url_back, remover_tildes
+from ctt.models import Persona, Cliente, EmpresaEmpleadora
 from ctt.tasks import send_mail
 
 

@@ -5,14 +5,13 @@ from django.db import transaction
 from django.db.models.query_utils import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.template import RequestContext
 
 from decorators import secure_module, last_access
 from settings import URL_APP_DATAFAST
 from ctt.commonviews import adduserdata
 from ctt.forms import DepositoInscripcionForm, ReasignarDepositosResponsableForm, ObservacionesPlanoficacionForm
 from ctt.funciones import MiPaginador, url_back, ok_json, bad_json, log
-from ctt.models import DepositoPersona, Sede, \
+from ctt.models import Sede, \
     Carrera, Modalidad, null_to_text
 from ctt.tasks import send_mail
 

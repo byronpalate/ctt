@@ -6,14 +6,13 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
-from django.utils import timezone
 
 from decorators import secure_module, last_access
 from ctt.commonviews import adduserdata
 from ctt.funciones import log, MiPaginador, ok_json, bad_json, url_back, remover_tildes
-from ctt.models import (Proforma, RevisionProforma, SolicitudTrabajo, Trabajo, Factura, Cliente, Persona, Group,
+from ctt.models import (Proforma, RevisionProforma, SolicitudTrabajo, Trabajo, Group,
                         RequerimientoServicio, ProformaHistorial, ServicioCatalogo, ProformaDetalle, RubroServicio,
-                        Rubro, EspacioFisico)
+                        Rubro)
 from ctt.forms import (RevisionProformaForm, VincularFacturaForm, GenerarTrabajoForm, ProformaForm,ProformaDetalleForm,RequerimientoServicioForm)
 from datetime import datetime, timedelta, time
 from django.utils import timezone

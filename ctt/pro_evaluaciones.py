@@ -1,25 +1,21 @@
 # coding=utf-8
 from datetime import datetime
 
-import xlrd
 import openpyxl
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.template import Context
 from django.template.loader import get_template
 
 from decorators import secure_module, last_access
 from settings import UTILIZA_VALIDACION_CALIFICACIONES, \
-    PERMITE_ABRIR_MATERIAS_ENFECHA, ARCHIVO_TIPO_NOTAS, MUESTRA_ESTADO_NIVELACION, NOTA_ESTADO_EN_CURSO, \
-    CALCULO_ASISTENCIA_CLASE
+    PERMITE_ABRIR_MATERIAS_ENFECHA, ARCHIVO_TIPO_NOTAS, MUESTRA_ESTADO_NIVELACION, CALCULO_ASISTENCIA_CLASE
 from ctt.commonviews import adduserdata, actualizar_nota, obtener_reporte
 from ctt.forms import ImportarArchivoXLSForm, SolicitudIngresoNotasForm
 from ctt.funciones import log, generar_nombre, url_back, bad_json, ok_json, generar_clave, MiPaginador
 from ctt.models import Materia, MateriaAsignada, Archivo, LeccionGrupo, DetalleModeloEvaluativo, \
-    SolicitudIngresoNotasAtraso, EvaluacionGenerica, null_to_numeric, ProfesorMateria, \
+    SolicitudIngresoNotasAtraso, EvaluacionGenerica, ProfesorMateria, \
     SolicitudIngresoNotasEstudiante, ModeloEvaluativo, ActualizacionAsistencia
 from ctt.tasks import send_mail
 

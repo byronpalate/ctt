@@ -3,13 +3,10 @@ from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models.query_utils import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.template import RequestContext
 
 from decorators import secure_module, last_access
-from settings import PERSONA_MODIFICA_MALLA_ID
 from ctt.commonviews import adduserdata
 from ctt.forms import MallaForm, AsignaturaMallaForm,  \
     AsignaturaMallaPredecesoraForm,EvidenciaMallaForm, InformacionSedeMallaForm, InfoMallasedeForm, \
@@ -1263,6 +1260,7 @@ def view(request):
             try:
                 data['title'] = u'Mallas curriculares'
                 carrera = None
+                coordinacion_seleccionada = request.session['coordinacionseleccionada']
                 data['carreras'] = carreras = persona.lista_carreras_coordinacion(request.session['coordinacionseleccionada'])
                 if 'carreraseleccionada' in request.session:
                     carrera = request.session['carreraseleccionada']

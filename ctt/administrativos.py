@@ -11,9 +11,8 @@ from django.shortcuts import render
 
 from decorators import secure_module, last_access
 from settings import PROFESORES_GROUP_ID, ADMINISTRATIVOS_GROUP_ID, ALUMNOS_GROUP_ID, EMAIL_DOMAIN, \
-    EMPLEADORES_GRUPO_ID, PAIS_ECUADOR_ID, EMAIL_DOMAIN_ESTUDIANTES,PERM_ENTRAR_COMO_USUARIO, \
-    NACIONALIDAD_INDIGENA_ID, TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID, ESCALAFON_TITULAR_PRINCIPAL_ID, \
-    EMAIL_INSTITUCIONAL_AUTOMATICO_ADMINISTRATIVOS, PERM_DIRECTOR_SIS
+    EMPLEADORES_GRUPO_ID, PAIS_ECUADOR_ID, EMAIL_DOMAIN_ESTUDIANTES, NACIONALIDAD_INDIGENA_ID, TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID, ESCALAFON_TITULAR_PRINCIPAL_ID, \
+    EMAIL_INSTITUCIONAL_AUTOMATICO_ADMINISTRATIVOS
 from ctt.commonviews import adduserdata
 from ctt.forms import AdministrativosForm, GrupoUsuarioForm, NuevaInscripcionForm, SedeAdministrativoForm
 from ctt.funciones import MiPaginador, log, generar_usuario, resetear_clave, url_back, bad_json, ok_json, generar_email, \
