@@ -1588,7 +1588,7 @@ def _crear_documento_base(plantilla):
     return doc
 
 
-def generar_pdf_certificado_sga(certificado):
+def generar_pdf_certificado_ctt(certificado):
     programa = certificado.programa
     plantilla = programa.plantillacertificadosga
 

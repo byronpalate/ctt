@@ -1,0 +1,82 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row mb-2'>
+        <div class='col-6'>
+            <a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref="adm_emisioncertificados?action=addprograma"><i class="icon-plus"></i> Adicionar programa</a>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped filterable1'>
+                <thead class="table-light">
+                <tr>
+                    <th>Programa</th>
+                    <th style="width: 150px; text-align: center;">Dirigido a</th>
+                    <th style="width: 150px; text-align: center;">Es de pago?</th>
+                    <th style="width: 150px; text-align: center;">Aprobado por financiero</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for programa in programas %}
+                    <tr>
+                        <td>
+                            {{ programa.nombre }}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if programa.tipopersona == 1 %}
+                                <span class="badge text-bg-warning tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Participantes">PARTICIPANTES</span>
+                            {% elif programa.tipopersona == 2 %}
+                                <span class="badge text-bg-info tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Instructores">INSTRUCTORES</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if programa.debepagar %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="DebePagar">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="DebePagar">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if programa.debepagar %}
+                                {% if programa.aprobadofinanciero %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="AprobadoFinanciero">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="AprobadoFinanciero">No</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge text-bg-warning tu" data-bs-toggle="tooltip" data-bs-placement="top" title="AprobadoFinanciero">-</span>
+                            {% endif %}
+                        </td>
+                        <td >
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li class="smaller"><a href='/adm_emisioncertificados?action=registrados&id={{ programa.id }}' class="dropdown-item"><i class='icon-list '></i> Registrados</a></li>
+                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="adm_emisioncertificados?action=editprograma&id={{ programa.id }}" ><i class="icon-edit"></i> Editar</a></li>
+                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="adm_emisioncertificados?action=configuracionCertificado&id={{ programa.id }}" ><i class="bi bi-file-earmark-check"></i></i> Configurar certificado</a></li>
+                                    {% if not programa.tiene_registrados %}
+                                    <li class="smaller"><a href="javascript:;" nhref="/adm_emisioncertificados?action=del&id={{ programa.id }}" class="btn-form confirmacionmodal dropdown-item"><i class="icon-trash"></i> Eliminar</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

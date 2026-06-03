@@ -18519,3 +18519,122 @@ class ProcesoEvaluativoAcreditacion(ModeloBase):
         if self.detalleinstrumentoevaluacionheteroactivo_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad).exists():
             return self.detalleinstrumentoevaluacionheteroactivo_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad)[0]
         return None
+
+class Egresado(ModeloBase):
+    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripción', on_delete=models.CASCADE)
+    notaegreso = models.FloatField(default=0, verbose_name=u"Nota de Egreso")
+    fechaegreso = models.DateField(verbose_name=u"Fecha de Egreso")
+
+    class Meta:
+        verbose_name_plural = u"Alumnos egresados"
+        unique_together = ('inscripcion',)
+
+    def __str__(self):
+        return u'%s' % self.inscripcion
+
+    def extra_delete(self):
+        if self.inscripcion.graduado_set.exists():
+            return [False, False]
+        return [True, False]
+
+    @staticmethod
+    def flexbox_query(q, filtro=None, exclude=None, cantidad=None):
+        return eval((
+                                "Egresado.objects.filter(Q(inscripcion__persona__nombre1__contains='%s') | Q(inscripcion__persona__nombre2__contains='%s') | Q(inscripcion__persona__apellido1__contains='%s') | Q(inscripcion__persona__apellido2__contains='%s') | Q(inscripcion__persona__cedula__contains='%s') | Q(id=id_search('%s')))" % (
+                            q, q, q, q, q, q)) + (".filter(%s)" % filtro if filtro else "") + (
+                        ".exclude(%s)" % exclude if exclude else "") + (".distinct()") + (
+                        "[:%s]" % cantidad if cantidad else ""))
+
+    def flexbox_repr(self):
+        return (
+            self.inscripcion.persona.cedula if self.inscripcion.persona.cedula else self.inscripcion.persona.pasaporte) + " - " + self.inscripcion.persona.nombre_completo_inverso() + " - " + self.inscripcion.carrera.nombre + ' - ' + str(
+            self.id)
+
+APROBADO_ASISTENCIA = (
+    (1, u'APROBADO'),
+    (2, u'ASISTENCIA'),
+    (3, u'APROBADO Y ASISTENCIA'),
+    (4, u'PARTICIPADO'),
+    (5, u'INSTRUCTOR/A'),
+    (6, u'FACILITADOR/A'),
+    (7, u'TUTOR/A'),
+    (8, u'AUDITOR/A'),
+)
+
+TIPO_PROGRAMA_CERTIFICADO = (
+    (1, u'DIPLOMADO'),
+    (2, u'CURSO'),
+    (3, u'TALLER'),
+    (4, u'SEMINARIO'),
+    (5, u'PROGRAMA'),
+    (6, u'WEBINAR'),
+    (7, u'CONGRESO'),
+    (8, u'CONFERENCIA'),
+    (9, u'JORNADAS')
+)
+
+MODALIDADES_PROGRAMA_CERTIFICADO = (
+    (1, u'PRESENCIAL'),
+    (2, u'VIRTUAL'),
+    (3, u'SEMIPRESENCIAL'),
+    (4, u'ONLINE'),
+    (5, u'A TRAVÉS DE LA PLATAFORMA ZOOM')
+)
+
+TIPOS_PERSONA_PROGRAMAS = (
+    (1, u'PARTICIPANTES'),
+    (2, u'INSTRUCTORES')
+)
+
+
+class ProgramasCertificados(ModeloBase):
+    nombre = models.CharField(max_length=300, verbose_name=u'Nombre')
+    tipo = models.IntegerField(choices=TIPO_PROGRAMA_CERTIFICADO, default=1, verbose_name=u'Tipo de evento académico')
+    tipopersona = models.IntegerField(choices=TIPOS_PERSONA_PROGRAMAS, default=1, verbose_name=u'Dirigido a')
+    horas = models.FloatField(default=0, blank=True, null=True, verbose_name=u'Duración (horas)')
+    inicio = models.DateField(blank=True, null=True, verbose_name=u'Fecha inicio')
+    fin = models.DateField(blank=True, null=True, verbose_name=u'Fecha fin')
+    modalidad = models.IntegerField(choices=MODALIDADES_PROGRAMA_CERTIFICADO, default=1, verbose_name=u'Modalidad')
+    facilitador = models.CharField(max_length=300, blank=True, null=True, verbose_name=u'Facilitador')
+    plantilla = models.CharField(max_length=300, blank=True, null=True, verbose_name=u'Plantilla')
+    debepagar = models.BooleanField(default=False, verbose_name=u'Debe validar financiero?')
+    aprobadofinanciero = models.BooleanField(default=False, verbose_name=u'Aprobado por financiero')
+    plantillacertificadoctt = models.ForeignKey('PlantillaCertificadosEnLinea', blank=True, null =True, on_delete=models.SET_NULL, verbose_name=u"Plantilla de certificado en línea")
+
+    def __str__(self):
+        return u'%s ' % (self.nombre)
+
+    def save(self, *args, **kwargs):
+        self.nombre = null_to_text(self.nombre)
+        super(ProgramasCertificados, self).save(*args, **kwargs)
+
+    def tiene_registrados(self):
+        return self.certificados_set.all().exists()
+
+
+class Certificados(ModeloBase):
+    programa = models.ForeignKey(ProgramasCertificados, verbose_name=u'Programa', on_delete=models.CASCADE)
+    persona = models.ForeignKey(Persona, verbose_name=u'Certificado', blank=True, null=True, on_delete=models.CASCADE)
+    codigoverificacion = models.CharField(max_length=300, default='', blank=True, null=True, verbose_name=u'Código de verificación')
+    fecharegistro = models.DateTimeField(blank=True, null=True, verbose_name=u'Fecha registro')
+    ciudad = models.CharField(max_length=300, default='', blank=True, null=True, verbose_name=u'Ciudad')
+    avalacademico = models.BooleanField(verbose_name=u'Aval académico')
+    aprobadoasistencia = models.IntegerField(choices=APROBADO_ASISTENCIA, default=1, verbose_name=u'Aproado/Asistencia')
+    aprobadofinanciero = models.BooleanField(default=False, verbose_name=u'Aprobado por financiero')
+    tema = models.CharField(max_length=500, default='', blank=True, null=True, verbose_name=u'Tema')
+    trato = models.CharField(max_length=100, default='', blank=True, null=True, verbose_name=u'Trato')
+    externo = models.BooleanField(default=False)
+    nombres = models.CharField(max_length=1000, default='', blank=True, null=True)
+    identificacion = models.CharField(max_length=50, default='', blank=True, null=True)
+    fechainicio = models.DateField(blank=True, null=True)
+    fechafin = models.DateField(blank=True, null=True)
+    horas = models.FloatField(default=0, blank=True, null=True, verbose_name=u'Duración (horas) por cada participante')
+
+    def __str__(self):
+        return u'%s | %s' % (self.programa, self.persona)
+
+    def save(self, *args, **kwargs):
+        self.codigoverificacion = null_to_text(self.codigoverificacion)
+        self.ciudad = null_to_text(self.ciudad)
+        self.nombres = null_to_text(self.nombres)
+        super(Certificados, self).save(*args, **kwargs)

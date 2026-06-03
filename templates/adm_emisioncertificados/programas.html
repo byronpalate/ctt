@@ -1,0 +1,54 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+    </script>
+{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row'>
+        <div class='col-6'>
+            <a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref="adm_emisioncertificados?action=addprograma"><i class="icon-plus"></i>  Adicionar programa</a>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-bordered table-striped filterable1'>
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 300px">Programa</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for programa in programas %}
+                    <tr>
+                        <td>
+                            {{ programa.nombre }}
+{#                      <br><span class="badge text-bg-info tr" data-bs-toggle="tooltip" data-bs-placement="top" title="Nivel academico actual">{{ becario.nivelmalla }}</span>#}
+                        </td>
+                        <td >
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li><a href='/adm_emisioncertificados?action=registrados'><i class='icon-list '></i> Registrados</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

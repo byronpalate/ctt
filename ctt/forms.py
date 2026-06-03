@@ -35,9 +35,11 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Turno, S
     TIPO_EMISION_FACTURA, TIPO_AMBIENTE_FACTURACION, \
     ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, \
     MateriaCursoEscuelaComplementaria, \
-    Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, Clase, \
+    Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, \
+    Clase, \
     TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente, Factura, EspacioFisico, ServicioCatalogo, TipoServicio, \
-    Proforma, PlantillaCertificadosEnLinea, CampoPlantillaCertificado
+    Proforma, PlantillaCertificadosEnLinea, CampoPlantillaCertificado, APROBADO_ASISTENCIA, TIPO_PROGRAMA_CERTIFICADO, \
+    TIPOS_PERSONA_PROGRAMAS, MODALIDADES_PROGRAMA_CERTIFICADO
 
 
 # Servicio,
@@ -3226,7 +3228,7 @@ class PlantillaCertificadosEnLineaForm(BaseForm):
 
 
 class ConfiguracionCertificadoProgramaForm(BaseForm):
-    plantillacertificadosga = forms.ModelChoiceField(
+    plantillacertificadoctt = forms.ModelChoiceField(
         label=u"Plantilla",
         queryset=PlantillaCertificadosEnLinea.objects.filter(activo=True).order_by('nombre'),
         required=True,
@@ -3237,3 +3239,65 @@ class ConfiguracionCertificadoProgramaForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
         self.fields['formwidth'].initial = 'lg'
 #Fin Generacion de certificados en linea
+
+class ImportarArchivoXLSForm(BaseForm):
+    archivo = forms.FileField(label=u'Seleccione archivo',help_text=u'Tamaño máximo permitido 4Mb, en formato xls,xlsx', widget=forms.FileInput(attrs={'accept': '.xls, .xlsx', 'data-max-file-size': 4194304}))
+
+    def extra_paramaters(self):
+        self.fields['formwidth'].initial = 'md'
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class ProgramaCertificadoForm(BaseForm):
+    nombre = forms.CharField(label=u'Programa/Evento', max_length=290, required=False)
+    tipo = forms.ChoiceField(label=u'Tipo de evento académico', choices=TIPO_PROGRAMA_CERTIFICADO, required=False, widget=forms.Select())
+    tipopersona = forms.ChoiceField(label=u'Dirigido a', choices=TIPOS_PERSONA_PROGRAMAS, required=False, widget=forms.Select())
+    horas = forms.FloatField(label=u'Duración (horas)', initial='0.0', required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
+    inicio = forms.DateField(label=u'Fecha inicio', required=False, input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    fin = forms.DateField(label=u'Fecha fin', required=False, input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    modalidad = forms.ChoiceField(label=u'Modalidad', choices=MODALIDADES_PROGRAMA_CERTIFICADO, required=False, widget=forms.Select())
+    facilitador = forms.CharField(label=u'Nombre del Facilitador', required=False, max_length=290)
+    plantilla = forms.CharField(label=u'Plantilla', required=False)
+    debepagar = forms.BooleanField(label=u'Debe validar financiero?', required=False)
+    aprobadofinanciero = forms.BooleanField(label=u'Válidado por financiero', required=False)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class CertificadoForm(BaseForm):
+    trato = forms.CharField(label=u'Trato', required=False, max_length=100)
+    persona = forms.IntegerField(initial='', required=False, label=u'Participante', widget=forms.TextInput(attrs={'select2search': 'true', 'class': 'select2advance'}))
+    externo = forms.BooleanField(label=u'Es externo?', required=False)
+    identificacion = forms.CharField(label=u'Cédula de identidad', required=False, widget=forms.TextInput())
+    nombres = forms.CharField(max_length=999, required=False, label=u'Nombres como aparecerán en el certificado', widget=forms.TextInput())
+    codigo = forms.CharField(label=u'Código', required=False, max_length=250, widget=forms.TextInput(attrs={'placeholder': 'SI NO SE INGRESA SE GENERA AUTOMÁTICAMENTE' }))
+    ciudad = forms.ChoiceField(choices=((u'Ambato', 'AMBATO'), (u'Quito', 'QUITO'), (u'Riobamba', 'RIOBAMBA'), ), required=False, label=u'Ciudad')
+    aval = forms.BooleanField(label=u'Aval académico', required=False)
+    aprobadoasistencia = forms.ChoiceField(label=u'Aprobado/Asistencia', choices=APROBADO_ASISTENCIA, required=False, widget=forms.Select())
+    tema = forms.CharField(label=u'Tema', required=False, max_length=500, widget=forms.TextInput())
+    fechainicio = forms.DateField(label=u'Fecha inicio (solo en caso que difiera a la del proyecto)', required=False, input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    fechafin = forms.DateField(label=u'Fecha fin (solo en caso que difiera a la del proyecto)', required=False, input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    horas = forms.FloatField(label=u'Duración (horas) (solo en caso que difiera a la del proyecto)', required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class CargaMasivaCertificadosForm(BaseForm):
+    ciudad = forms.ChoiceField(choices=((u'Ambato', 'AMBATO'), (u'Quito', 'QUITO'),), required=False, label=u'Ciudad')
+    aval = forms.BooleanField(label=u'Aval académico', required=False)
+    aprobadoasistencia = forms.ChoiceField(label=u'Aprobado/Asistencia', choices=APROBADO_ASISTENCIA, required=False, widget=forms.Select())
+    archivo = ExtFileField(label=u'Seleccione archivo', help_text=u'Tamaño máximo permitido 4Mb, en formato xls,xlsx', ext_whitelist=(".xls",".xlsx"), max_upload_size=4194304)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class ConfiguracionCertificadoProgramaForm(BaseForm):
+    plantillacertificadosctt = forms.ModelChoiceField(
+        label=u"Plantilla",
+        queryset=PlantillaCertificadosEnLinea.objects.filter(activo=True).order_by('nombre'),
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formwidth'].initial = 'lg'
