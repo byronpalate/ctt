@@ -14,7 +14,7 @@ from ctt.forms import PeriodoForm, CronogramaMatriculacionForm
 
 from ctt.funciones import MiPaginador, log, bad_json, ok_json, url_back
 from ctt.models import Periodo, Matricula, MateriaAsignada, \
-    ModeloEvaluativo
+    ModeloEvaluativo, ProcesoEvaluativoAcreditacion
 
 
 @login_required(login_url='/login')

@@ -555,15 +555,15 @@ def bad_json(mensaje=None, error=None, extradata=None, ex=None, form=None):
         elif error == 2:
             data.update({"icono": "warning", "titulo": "Advertencia", "mensaje": "Error al eliminar los datos.","excepcion":'No envia excepción' if ex == None else ex.args[0]})
         elif error == 3:
-            data.update({"errors": None if form == None else form.errors, "icono": "warning", "titulo": "Advertencia", "mensaje": "Error al obtener los datos.","excepcion":'No envia excepción' if ex == None else ex.args[0]})
+            data.update({"errors": None if form == None else _set_err_msg_bad_json(form), "icono": "warning", "titulo": "Advertencia", "mensaje": "Error al obtener los datos.","excepcion":'No envia excepción' if ex == None else ex.args[0]})
         elif error == 4:
             data.update({"icono": "info", "titulo": "Advertencia", "mensaje": "No tiene permisos para realizar esta acción."})
         elif error == 5:
             data.update({"icono": "warning", "titulo": "Advertencia", "mensaje": "Error al generar la información."})
         elif error == 6:
-            data.update({"errors": None if form == None else form.errors,"icono": "warning", "titulo": "Advertencia", "mensaje": "Los datos no son validos, revise la información.","excepcion": ex })
+            data.update({"errors": None if form == None else _set_err_msg_bad_json(form),"icono": "warning", "titulo": "Advertencia", "mensaje": "Los datos no son validos, revise la información.","excepcion": ex })
         elif error == 7:
-            data.update({"icono": "info", "titulo": "Advertencia", "mensaje": "Registro duplicado."})
+            data.update({"errors": None if form == None else _set_err_msg_bad_json(form),"icono": "info", "titulo": "Advertencia", "mensaje": "Registro duplicado.","excepcion":'No envia excepción' if ex == None else ex.args[0]})
         elif error == 8:
             data.update({"icono": "info", "titulo": "Advertencia", "mensaje": "No se puede eliminar existen registros relacionados."})
         elif error == 9:
@@ -574,6 +574,13 @@ def bad_json(mensaje=None, error=None, extradata=None, ex=None, form=None):
         data.update(extradata)
     return JsonResponse(data)
 
+def _set_err_msg_bad_json(form = None):
+    errores_legibles = {}
+    if form:
+        for campo, mensajes in form.errors.items():
+            label = form.fields[campo].label if campo in form.fields else campo
+            errores_legibles[label] = ', '.join(mensajes)
+    return errores_legibles
 
 def ok_json(data=None, simple=None, safe=True):
     if data:

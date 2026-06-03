@@ -1,17 +1,246 @@
 {% extends "basebs.html" %}
+{% load humanize %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            busqueda = function(tipo){
+                var term = '';
+               term = $("#searchinput").val().trim().toUpperCase();
+                if (term.length>0){
+                    location.href = "/adm_periodos?s="+term;
+                } else {
+                    location.href = "/adm_periodos";
+                }
+            };
+
+            $("#search").click(function() {
+                busqueda(1);
+            });
+
+            $('.busqueda').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    if ( $(this).hasClass('searchinput')){
+                        busqueda(1);
+                    } else {
+                        busqueda(2);
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
 {% block headcanvas %}
     <div class="row mb-2">
         <div class="col-12">
-            <h4>{{ title|default:"" }}</h4>
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class='col-2'>
+            {% if perms.sga.puede_modificar_periodo %}
+                <a href="javascript:;" nhref="/adm_periodos?action=add" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            {% endif %}
+        </div>
+        <div class='col-2'>
+{#            {% if perms.sga.puede_modificar_periodo %}#}
+{#                <a href="/adm_periodos?action=periodosolicitud" class='btn btn-sm btn-info'><i class="icon-calendar"></i> Período Solicitud</a>#}
+{#            {% endif %}#}
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm busqueda" id="busqueda" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
+                {% if search or ids %}
+                    <a href="/adm_periodos" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
+                {% endif %}
+            </div>
         </div>
     </div>
 {% endblock %}
 {% block canvas %}
-    <div class="row">
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th style="width: 80px; text-align: center">Inicio</th>
+                    <th style="width: 80px; text-align: center">Fin</th>
+                    <th style="width: 80px; text-align: center">Inicio Agregación</th>
+                    <th style="width: 80px; text-align: center">Fin Agregación</th>
+                    <th style="width: 150px">Tipo</th>
+                    <th style="width: 80px; text-align: center">Activo para Solicitudes</th>
+                    <th style="width: 80px; text-align: center">Inicio Solicitudes</th>
+                    <th style="width: 80px; text-align: center">Fin Solicitudes</th>
+                    <th style="width: 80px; text-align: center">Valida Asistencia</th>
+                    <th style="width: 80px; text-align: center">Habilitado Pre.Matrícula</th>
+                    <th style="width: 80px; text-align: center">Habilitado Matrícula</th>
+                    <th style="width: 50px; text-align: center">Visualiza Docentes</th>
+                    <th style="width: 50px; text-align: center">Internado</th>
+                    <th style="width: 50px; text-align: center">Puede modificar<br>Criterios </th>
+                    <th style="width: 50px; text-align: center">Cerrado</th>
+                    <th style="width: 60px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for periodo in periodos %}
+                    <tr>
+                        <td>{{ periodo.nombre}}</td>
+                        <td style="text-align: center">{{ periodo.inicio|date:"Y-m-d"}}</td>
+                        <td style="text-align: center">{{ periodo.fin|date:"Y-m-d"}}</td>
+                        <td style="text-align: center">{{ periodo.inicio_agregacion|date:"Y-m-d"}}</td>
+                        <td style="text-align: center">{{ periodo.limite_agregacion|date:"Y-m-d"}}</td>
+                        <td >{{ periodo.tipo}}</td>
+                        <td style="text-align: center">
+                            {% if periodo.parasolicitudes %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Solicitudes activa">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Solicitudes activa">No</span>
+                            {% endif %}
+                        </td>
+                        <td >{{ periodo.inicio_solicitudes|date:"Y-m-d"}}</td>
+                        <td >{{ periodo.limite_solicitudes|date:"Y-m-d"}}</td>
+                        <td style="text-align: center">
+                            {% if periodo.valida_asistencia %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida asistencia">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Valida asistencia">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if periodo.prematriculacionactiva %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Prematriculación activa">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Prematriculación activa">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if periodo.matriculacionactiva %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Matriculación activa">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Matriculación activa">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if periodo.visualiza %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Puede ver el docente">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Puede ver el docente">No</span>
+                            {% endif %}
+                        </td> <td style="text-align: center">
+                            {% if periodo.internado %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Internado">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Internado">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if periodo.esta_aprobadoevaluacion %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Puede modificar criterios de evaluación">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Puede modificar criterios de evaluación">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if periodo.cerrado %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cerrado">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cerrado">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    {% if perms.sga.puede_modificar_periodo %}
+                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/adm_periodos?action=edit&id={{ periodo.id }}"><i class="icon-edit"></i> Editar</a></li>
+                                        {% if not PERM_DIRECTOR_SIS %}
+                                            {% if not periodo.esta_aprobadoevaluacion %}
+                                                <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=aprueboevaluacion&id={{ periodo.id }}"><i class="icon-unlock"></i> Desbloquear modificación Criterios</a></li>
+                                            {% else %}
+                                            <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=aprueboevaluacion&id={{ periodo.id }}"><i class="icon-lock"></i> Bloquear modificación Criterios</a></li>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+
+                                    {% if not periodo.cerrado %}
+                                        <li class="smaller"><a href="/adm_periodos?action=croprematriculacion&id={{ periodo.id }}" class="dropdown-item"><i class="icon-time"></i> Cronograma prematr&iacute;culas</a></li>
+                                        {% if perms.sga.puede_modificar_periodoprematriculacion %}
+                                            {% if periodo.prematriculacionactiva %}
+                                                <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=deshabprematricula&id={{ periodo.id }}"><i class="icon-lock"></i> Deshabilitar prematr&iacute;culas</a></li>
+                                            {% else %}
+                                                <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=habprematricula&id={{ periodo.id }}"><i class="icon-unlock"></i> Habilitar prematr&iacute;culas</a></li>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if perms.sga.puede_modificar_periodomatriculacion %}
+                                            <li class="smaller"><a href="/adm_periodos?action=cromatriculacion&id={{ periodo.id }}" class="dropdown-item"><i class="icon-time"></i> Cronograma matr&iacute;culas</a></li>
+                                            {% if periodo.matriculacionactiva %}
+                                                <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=deshabmatricula&id={{ periodo.id }}"><i class="icon-lock"></i> Deshabilitar matr&iacute;culas</a></li>
+                                            {% else %}
+                                                <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=habmatricula&id={{ periodo.id }}"><i class="icon-unlock"></i> Habilitar matr&iacute;culas</a></li>
+                                            {% endif %}
+                                        {% endif %}
+                                        <li class="smaller"><a href="/adm_periodos?action=matriculasmora&id={{ periodo.id }}" class="btn-form dropdown-item"><i class="icon-money"></i> Matr&iacute;culas en mora</a></li>
+                                        <li class="smaller"><a href="javascript:;" nhref="/adm_periodos?action=editperiodosolicitudperiodo&id={{ periodo.id }}" class="formmodal dropdown-item"><i class="icon-calendar"></i> Período Solicitud</a></li>
+                                    {% endif %}
+                                {% if perms.sga.puede_modificar_periodo %}
+                                    {% if not periodo.cerrado %}
+                                        <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=cerrarperiodo&id={{ periodo.id }}"><i class="icon-lock"></i> Cerrar período</a></li>
+                                    {% else %}
+                                        <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=abrirperiodo&id={{ periodo.id }}"><i class="icon-unlock"></i> Abrir período</a></li>
+                                    {% endif %}
+                                {% endif %}
+                                    {% if not periodo.cerrado %}
+                                        {% if periodo.puede_eliminarse and perms.sga.puede_modificar_periodo %}
+                                            <li class="dropdown-divider"></li>
+                                            <li class="smaller"><a href="javascript:;" class="eliminacionmodal dropdown-item" nhref="/adm_periodos?action=delperiodo&id={{ periodo.id }}"><i class="icon-remove"></i> Eliminar</a></li>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if periodo.visualiza %}
+                                        <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=desverperiodo&id={{ periodo.id }}"><i class="icon-lock"></i> Deshabilitar ver doncente</a></li>
+                                    {% else %}
+                                        <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=habverperiodo&id={{ periodo.id }}"><i class="icon-unlock"></i> Habilitar ver doncente</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
         <div class="col-12">
-            <div class="alert alert-warning">
-                Plantilla pendiente: <b>adm_periodos/view.html</b>
-            </div>
+            {% if paging.num_pages > 20 %}
+                <div>
+                    <ul class='pagination'>
+                        {% if paging.primera_pagina %}
+                            <li class="page-item"><a href="/adm_periodos?{% if search %}s={{ search }}&{% endif %}page=1" class="page-link">1</a></li>
+                            <li class="page-item"><a href="/adm_periodos?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}" class="page-link">...</a></li>
+                        {% endif %}
+                        {% for pagenumber in paging.paginas %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_periodos?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                        {% if paging.ultima_pagina %}
+                            <li class="page-item"><a href="/adm_periodos?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}" class="page-link">...</a></li>
+                            <li class="page-item"><a href="/adm_periodos?{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}" class="page-link">{{ paging.num_pages }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% else %}
+                <div>
+                    <ul class='pagination'>
+                        {% for pagenumber in paging.page_range %}
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/adm_periodos?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

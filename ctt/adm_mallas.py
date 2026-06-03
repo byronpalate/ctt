@@ -15,6 +15,7 @@ from ctt.forms import MallaForm, AsignaturaMallaForm,  \
 from ctt.funciones import log, generar_nombre, ok_json, bad_json, url_back
 from ctt.models import Malla, NivelMalla, EjeFormativo, AsignaturaMalla, Asignatura, AsignaturaMallaPredecesora, Periodo, EvidenciaMalla, InformacionSedeMalla, CompetenciaEspecifica, CompetenciaGenerica, \
     SilaboAsignaturaMalla
+from settings import PERSONA_MODIFICA_MALLA_ID
 
 
 @login_required(login_url='/login')
@@ -28,6 +29,10 @@ def view(request):
     persona = request.session['persona']
     periodo = Periodo.objects.all().order_by('-fin')[0]
     miscarreras = persona.lista_carreras_coordinacion(data['coordinacionseleccionada'])
+    puedeactivarcompetencia = persona.tiene_permiso('sga.puede_activar_desactivar_competencias')
+    #PERSONA_MODIFICA_MALLA_ID ---> EN ESTA VARIABLE DEL SETTINGS ESTAN LAS PERSONAS QUE PUEDEN MODIFICAR CAMPOS DENTRO DE LA MALLA
+    #NO AGREGAR A MAS PEROSNAS A MENOS DE QUE SEA NECESARIO Y CONSULTARLO CON BYRON O EDISON
+    data['modificamalla']= puede_modificar_admin  = True if persona.id in PERSONA_MODIFICA_MALLA_ID else False
 
     if request.method == 'POST':
         action = request.POST['action']

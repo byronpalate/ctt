@@ -3026,8 +3026,14 @@ class Periodo(ModeloBase):
         return self.nombre + ' - ' + str(self.id)
 
     def esta_aprobadoevaluacion(self):
-        proceso = ProcesoEvaluativoAcreditacion.objects.filter(periodo=self)[0]
-        return proceso.aprovadoevaluacion
+        if ProcesoEvaluativoAcreditacion.objects.filter(periodo=self).exists():
+            proceso = ProcesoEvaluativoAcreditacion.objects.filter(periodo=self).first()
+            if proceso.aprovadoevaluacion:
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def fecha_agregaciones(self):
         return self.inicio_agregacion <= datetime.now().date() <= self.limite_agregacion
@@ -18326,3 +18332,149 @@ class CampoPlantillaCertificado(ModeloBase):
     def __str__(self):
         return u'%s - %s' % (self.plantilla, self.etiqueta)
 
+# Proceso evaluativo acreditacion, agregado para fix de Periodos lectivos
+class ProcesoEvaluativoAcreditacion(ModeloBase):
+    periodo = models.ForeignKey(Periodo, verbose_name=u'Periodo', on_delete=models.CASCADE)
+    instrumentoheteroinicio = models.DateField(verbose_name=u'Fecha inicio')
+    instrumentoheterofin = models.DateField(verbose_name=u'Fecha fin')
+    instrumentoheteroactivo = models.BooleanField(default=False, verbose_name=u'Activo')
+    instrumentoautoinicio = models.DateField(verbose_name=u'Fecha inicio')
+    instrumentoautofin = models.DateField(verbose_name=u'Fecha fin')
+    instrumentoautoactivo = models.BooleanField(default=False, verbose_name=u'Activo')
+    instrumentodirectivoinicio = models.DateField(verbose_name=u'Fecha inicio')
+    instrumentodirectivofin = models.DateField(verbose_name=u'Fecha fin')
+    instrumentodirectivoactivo = models.BooleanField(default=False, verbose_name=u'Activo')
+    instrumentoparinicio = models.DateField(verbose_name=u'Fecha inicio')
+    instrumentoparfin = models.DateField(verbose_name=u'Fecha fin')
+    instrumentoparactivo = models.BooleanField(default=False, verbose_name=u'Activo')
+    mostrarresultados = models.BooleanField(default=False, verbose_name=u'Mostrar resultados')
+    cerrado = models.BooleanField(default=False, verbose_name=u'Mostrar resultados')
+    aprovadoevaluacion = models.BooleanField(default=False, verbose_name=u'Esta aprobado para evaluacion')
+    adicionacriterios = models.BooleanField(default=True, verbose_name=u'Esta aprobado para adicionar criterios',)
+
+    def __str__(self):
+        return u'Proceso Evaluativo Acreditación: %s' % self.periodo
+
+    class Meta:
+        verbose_name_plural = u"Evaluaciones Integrales - Procesos"
+        ordering = ['periodo']
+        unique_together = ('periodo',)
+
+    @staticmethod
+    def flexbox_query(q, filtro=None, exclude=None, cantidad=None):
+        return eval(("ProcesoEvaluativoAcreditacion.objects.filter(Q(periodo__nombre__contains='%s') | Q(id=id_search('%s')))" % (q, q)) + (".filter(%s)" % filtro if filtro else "") + (".exclude(%s)" % exclude if exclude else "") + (".distinct()") + ("[:%s]" % cantidad if cantidad else ""))
+
+    def flexbox_repr(self):
+        return self.periodo.nombre + ' - ' + str(self.id)
+
+    def activo_estudiantes(self):
+        hoy = datetime.now().date()
+        return self.instrumentoheteroinicio <= hoy <= self.instrumentoheterofin and self.instrumentoheteroactivo
+
+    def activo_auto(self):
+        hoy = datetime.now().date()
+        return self.instrumentoautoinicio <= hoy <= self.instrumentoautofin and self.instrumentoautoactivo
+
+    def activo_pares(self):
+        hoy = datetime.now().date()
+        return self.instrumentoparinicio <= hoy <= self.instrumentoparfin and self.instrumentoparactivo
+
+    def activo_directivos(self):
+        hoy = datetime.now().date()
+        return self.instrumentodirectivoinicio <= hoy <= self.instrumentodirectivofin and self.instrumentodirectivoactivo
+
+    def profesor_seleccionado_directivo(self, profesor):
+        return self.detalleinstrumentoevaluaciondirectivoacreditacion_set.filter(evaluado=profesor).exists()
+
+    def profesor_seleccionado_par(self, profesor, coordinacion, sede, carrera, modalidad):
+        return self.detalleinstrumentoevaluacionparacreditacion_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad).exists()
+
+    def evaluadores_seleccionados_directivo(self, profesor, coordinacion, sede, carrera, modalidad):
+        if self.detalleinstrumentoevaluaciondirectivoacreditacion_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad).exists():
+            return self.detalleinstrumentoevaluaciondirectivoacreditacion_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad)
+        return None
+
+    def evaluadores_seleccionados_par(self, profesor, coordinacion, sede, carrera, modalidad):
+        if self.detalleinstrumentoevaluacionparacreditacion_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad).exists():
+            return self.detalleinstrumentoevaluacionparacreditacion_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad)
+        return None
+
+    def evaluado_por_directivo(self, profesor, evaluador, coordinacion, sede, carrera, modalidad):
+        return self.respuestaevaluacionacreditacion_set.filter(tipoinstrumento=4, profesor=profesor, evaluador=evaluador, coordinacion=coordinacion, sede=sede, modalidad=modalidad, carrera=carrera).exists()
+
+    def dato_evaluado_por_directivo(self, profesor, evaluador, coordinacion, sede, carrera, modalidad):
+        coor = cor = Coordinacion.objects.filter(carrera=carrera, sede=sede).first()
+        if self.respuestaevaluacionacreditacion_set.filter(tipoinstrumento=4, profesor=profesor, evaluador=evaluador, coordinacion=coor, sede=sede, modalidad=modalidad, carrera=carrera).exists():
+            return self.respuestaevaluacionacreditacion_set.filter(tipoinstrumento=4, profesor=profesor, evaluador=evaluador, coordinacion=coor, sede=sede, modalidad=modalidad, carrera=carrera)[0]
+        return None
+
+    def profesor_evaluado_par(self, profesor, coordinacion):
+        return self.respuestaevaluacionacreditacion_set.filter(tipoinstrumento=3, profesor=profesor, coordinacion=coordinacion).exists()
+
+    def evaluado_por_par(self, profesor, evaluador, coordinacion, sede, carrera, modalidad):
+        return self.respuestaevaluacionacreditacion_set.filter(tipoinstrumento=3, profesor=profesor, evaluador=evaluador, coordinacion=coordinacion, sede=sede, modalidad=modalidad, carrera=carrera).exists()
+
+    def dato_evaluado_por_par(self, profesor, evaluador, coordinacion, sede, carrera, modalidad):
+        coor = Coordinacion.objects.filter(carrera=carrera, sede=sede).first()
+        if self.respuestaevaluacionacreditacion_set.filter(tipoinstrumento=3, profesor=profesor, evaluador=evaluador, coordinacion=coor, sede=sede, modalidad=modalidad, carrera=carrera).exists():
+            return self.respuestaevaluacionacreditacion_set.filter(tipoinstrumento=3, profesor=profesor, evaluador=evaluador, coordinacion=coor, sede=sede, modalidad=modalidad, carrera=carrera)[0]
+        return None
+
+    def tiene_evaluaciones_por_directivo(self, profesor, coordinacion):
+        return self.respuestaevaluacionacreditacion_set.filter(tipoinstrumento=4, profesor=profesor, coordinacion=coordinacion).exists()
+
+    def tiene_evaluaciones_por_par(self, profesor, coordinacion):
+        return self.respuestaevaluacionacreditacion_set.filter(tipoinstrumento=3, profesor=profesor, coordinacion=coordinacion).exists()
+
+    def tiene_evaluaciones(self):
+        return self.respuestaevaluacionacreditacion_set.exists()
+
+    def modificable(self):
+        return not self.activo_estudiantes() and not self.activo_auto() and not self.activo_directivos() and not self.activo_pares() and not self.tiene_evaluaciones()
+
+    def hetero_total(self):
+        return ProfesorMateria.objects.filter(tipoprofesor__id=TIPO_DOCENTE_TEORIA, materia__nivel__periodo=self.periodo).distinct().count()
+
+    def hetero_realizadas(self):
+        return RespuestaEvaluacionAcreditacion.objects.filter(proceso=self, tipoinstrumento=1).count()
+
+    def auto_total(self):
+        return Profesor.objects.filter(profesormateria__materia__nivel__periodo=self.periodo).distinct().count()
+
+    def auto_realizadas(self):
+        return RespuestaEvaluacionAcreditacion.objects.filter(proceso=self, tipoinstrumento=2).count()
+
+    def par_total(self):
+        return DetalleInstrumentoEvaluacionParAcreditacion.objects.filter(proceso=self).distinct().count()
+
+    def par_realizadas(self):
+        return RespuestaEvaluacionAcreditacion.objects.filter(proceso=self, tipoinstrumento=3).count()
+
+    def dir_total(self):
+        return DetalleInstrumentoEvaluacionDirectivoAcreditacion.objects.filter(proceso=self).distinct().count()
+
+    def dir_realizadas(self):
+        return RespuestaEvaluacionAcreditacion.objects.filter(proceso=self, tipoinstrumento=4).count()
+
+    def finalizo(self):
+        return datetime.now().date() > self.periodo.fin
+
+    def activos_seleccionados_par(self, profesor, coordinacion, sede, carrera, modalidad):
+        if self.detalleinstrumentoevaluacionparactivo_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad).exists():
+            return self.detalleinstrumentoevaluacionparactivo_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad)[0]
+        return None
+
+    def activos_seleccionados_directivo(self, profesor, coordinacion, sede, carrera, modalidad):
+        if self.detalleinstrumentoevaluaciondirectivoactivo_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad).exists():
+            return self.detalleinstrumentoevaluaciondirectivoactivo_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad)[0]
+        return None
+
+    def activos_seleccionados_auto(self, profesor, coordinacion, sede, carrera, modalidad):
+        if self.detalleinstrumentoevaluacionautoactivo_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad).exists():
+            return self.detalleinstrumentoevaluacionautoactivo_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad)[0]
+        return None
+
+    def activos_seleccionados_hetero(self, profesor, coordinacion, sede, carrera, modalidad):
+        if self.detalleinstrumentoevaluacionheteroactivo_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad).exists():
+            return self.detalleinstrumentoevaluacionheteroactivo_set.filter(evaluado=profesor, coordinacion=coordinacion, sede=sede, carrera=carrera, modalidad=modalidad)[0]
+        return None

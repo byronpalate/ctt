@@ -327,7 +327,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         $("#correocuenta").html(data.email).attr({'nombrecuenta': data.user});
                     } else {
                         $("#tabla").hide();
-                        $("#errorb").html('No existen datos para esta consulta').show();
+                        NotificacionAlerta('warning','error',data.mensaje)
                     }
                 },
                 error: function(){

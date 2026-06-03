@@ -37,7 +37,7 @@
             {% if perms.ctt.puede_modificar_carreras %}
                 <a href="javascript:;" nhref="/adm_carreras?action=add" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
             {% endif %}
-{#            <a href="/adm_carreras?action=titulosobtenidos" class='btn btn-sm btn-success'><i class="icon-list"></i> Títulos</a>#}
+            <a href="/adm_carreras?action=titulosobtenidos" class='btn btn-sm btn-success'><i class="icon-list"></i> Títulos</a>
         </div>
         <div class='col-12 col-md-3 mb-2'>
             <div class="input-group">
@@ -103,7 +103,7 @@
                                         {% endif %}
                                     {% endif %}
                                     <li class="smaller"><a href="/adm_carreras?action=competencias&id={{ carrera.id }}" class="dropdown-item"><i class="icon-list"></i> Competencias específicas</a></li>
-{#                                    <li class="smaller"><a href="/adm_carreras?action=titulos&id={{ carrera.id }}" class="dropdown-item"><i class="icon-list"></i> Títulos obtenidos</a></li>#}
+                                    <li class="smaller"><a href="/adm_carreras?action=titulos&id={{ carrera.id }}" class="dropdown-item"><i class="icon-list"></i> Títulos obtenidos</a></li>
                                     {% if perms.ctt.puede_modificar_carreras %}
                                         {% if carrera.puede_eliminarse %}
                                             <li class="dropdown-divider"></li>
