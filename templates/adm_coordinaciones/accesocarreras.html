@@ -16,7 +16,7 @@
                 <br>Modalidad: {{ modalidad }}</h4>
         </div>
     </div>
-    {% if perms.ctt.puede_modificar_coordinaciones %}
+    {% if perms.ctt.puede_modificar_datos_admin %}
         <div class='row mb-2'>
             <div class='col-6'>
                 <a href="javascript:;" nhref="/adm_coordinaciones?action=addaccesopersona&id={{ carrera.id }}&idc={{ coordinacion.id }}&idm={{ modalidad.id }}" class="btn btn-sm btn-success formmodal"><i class="icon-plus"></i> Adicionar</a>
@@ -39,7 +39,7 @@
                     <tr>
                         <td>{{ responsable.persona }}</td>
                         <td style="text-align: center">
-                            {% if perms.ctt.puede_modificar_coordinaciones %}
+                            {% if perms.ctt.puede_modificar_datos_admin %}
                                 <a class="btn btn-danger btn-ssm tu eliminacionmodal" href="javascript:;" nhref="/adm_coordinaciones?action=delaccesopersona&id={{ responsable.id }}&idc={{ carrera.id }}&idco={{ coordinacion.id }}&idm={{ modalidad.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
                             {% endif %}
                         </td>

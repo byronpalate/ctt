@@ -96,8 +96,7 @@ def view(request):
                             responsable.delete()
                         if form.cleaned_data['responsable']:
                             responsable = DirectorCoordinacion(coordinacion=coordinacion,
-                                                                  persona_id=int(form.cleaned_data['responsable']),
-                                                                  firmadignidad=form.cleaned_data['firmadignidad'])
+                                                               persona_id=int(form.cleaned_data['responsable']))
                             responsable.save(request)
                         log(u'Modifico director coordinacion: %s' % coordinacion, request, "edit")
                         return ok_json()
@@ -112,16 +111,6 @@ def view(request):
                     secretaria = SecretariaCoordinacion.objects.get(pk=request.POST['id'])
                     log(u'Elimino secretaria de coordinacion: %s' % secretaria, request, "del")
                     secretaria.delete()
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=2, ex=ex)
-
-            if action == 'deltecnico':
-                try:
-                    tecnico = TecnicoCoordinacion.objects.get(pk=request.POST['id'])
-                    log(u'Elimino tecnico de coordinacion: %s' % tecnico, request, "del")
-                    tecnico.delete()
                     return ok_json()
                 except Exception as ex:
                     transaction.set_rollback(True)
@@ -148,7 +137,6 @@ def view(request):
                         CoordinadorCarrera.objects.filter(coordinacion=coordinacion, carrera=carrera, modalidad=modalidad).delete()
                         if form.cleaned_data['responsable']:
                             responsable = CoordinadorCarrera(persona_id=form.cleaned_data['responsable'],
-                                                             firmadignidad=form.cleaned_data['firmadignidad'],
                                                              coordinacion=coordinacion,
                                                              modalidad=modalidad,
                                                              carrera=carrera)
@@ -225,26 +213,6 @@ def view(request):
                                                             carrera=form.cleaned_data['carrera'],
                                                             modalidad=form.cleaned_data['modalidad'],
                                                             persona_id=form.cleaned_data['responsable'])
-                        secretaria.save(request)
-                        log(u'Adiciono secretaria de coordinacion: %s' % secretaria, request, "add")
-                        return ok_json()
-                    else:
-                        return bad_json(error=6)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'addtecnico':
-                try:
-                    coordinacion = Coordinacion.objects.get(pk=request.POST['id'])
-                    form = SecretariaCoordinacionForm(request.POST)
-                    if form.is_valid():
-                        if TecnicoCoordinacion.objects.filter(coordinacion=coordinacion, carrera=form.cleaned_data['carrera'], modalidad=form.cleaned_data['modalidad'], persona_id=form.cleaned_data['responsable']).exists():
-                            return bad_json(mensaje=u'Ya existe un regisro de esta persona.')
-                        secretaria = TecnicoCoordinacion(coordinacion=coordinacion,
-                                                         carrera=form.cleaned_data['carrera'],
-                                                         modalidad=form.cleaned_data['modalidad'],
-                                                         persona_id=form.cleaned_data['responsable'])
                         secretaria.save(request)
                         log(u'Adiciono secretaria de coordinacion: %s' % secretaria, request, "add")
                         return ok_json()
@@ -383,15 +351,6 @@ def view(request):
                 except Exception as ex:
                     pass
 
-            if action == 'personaltecnico':
-                try:
-                    data['title'] = u'Personal secretaria docente de la coordinación'
-                    data['coordinacion'] = coordinacion = Coordinacion.objects.get(pk=request.GET['id'])
-                    data['secretarias'] = coordinacion.mis_tecnicos()
-                    return render(request, "adm_coordinaciones/personaltecnico.html", data)
-                except Exception as ex:
-                    pass
-
             if action == 'addaccesopersona':
                 try:
                     data['title'] = u'Adicionar personal de carrera'
@@ -442,14 +401,6 @@ def view(request):
                 except Exception as ex:
                     pass
 
-            if action == 'deltecnico':
-                try:
-                    data['title'] = u'Eliminar personal de secretaria'
-                    data['tecnico'] = TecnicoCoordinacion.objects.get(pk=request.GET['id'])
-                    return render(request, "adm_coordinaciones/deltecnico.html", data)
-                except Exception as ex:
-                    pass
-
             if action == 'addsecretaria':
                 try:
                     data['title'] = u'Adicionar secretaria de coordinación'
@@ -458,17 +409,6 @@ def view(request):
                     form.adicionar(coordinacion)
                     data['form'] = form
                     return render(request, "adm_coordinaciones/addsecretaria.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'addtecnico':
-                try:
-                    data['title'] = u'Adicionar tecnico de coordinación'
-                    data['coordinacion'] = coordinacion = Coordinacion.objects.get(pk=request.GET['id'])
-                    form = SecretariaCoordinacionForm()
-                    form.adicionar(coordinacion)
-                    data['form'] = form
-                    return render(request, "adm_coordinaciones/addtecnico.html", data)
                 except Exception as ex:
                     pass
 

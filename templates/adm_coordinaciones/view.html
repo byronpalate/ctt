@@ -33,7 +33,7 @@
     </div>
     <div class="row">
         <div class='col-12 col-md-6 mb-2'>
-            {% if perms.ctt.puede_modificar_coordinaciones %}
+            {% if perms.ctt.puede_modificar_datos_admin %}
                 <a href="javascript:;" nhref="/adm_coordinaciones?action=add" class='btn btn-sm btn-success formmodal'><i class="icon-plus tu"></i> Adicionar</a>
             {% endif %}
         </div>
@@ -66,7 +66,7 @@
                    <th style="width: 30px; text-align: center;">
                         <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" badge-height="90" style="white-space: nowrap;">Matrículas período</span></div>
                     </th>
-                    <th style="width: 500px">Responsable y Firma Dignidad</th>
+                    <th style="width: 500px">Responsable</th>
                      <th style="width: 30px; text-align: center;">
                         <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" badge-height="90" style="white-space: nowrap;">Estado</span></div>
                     </th>
@@ -114,14 +114,14 @@
                             <div class="btn-group dropdown">
                                 <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
                                 <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
-                                    {% if perms.ctt.puede_modificar_coordinaciones %}
+                                    {% if perms.ctt.puede_modificar_datos_admin %}
                                         <li class="smaller"><a href="javascript:;" nhref="/adm_coordinaciones?action=editar&id={{ coordinacion.id }}" class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
                                         <li class="smaller"><a href="javascript:;" nhref="/adm_coordinaciones?action=editresponsablecoordinacion&id={{ coordinacion.id }}" class="formmodal dropdown-item"><i class="icon-user"></i> Responsable</a></li>
                                         <li class="smaller"><a href="javascript:;" nhref="/adm_coordinaciones?action=editresponsabledirector&id={{ coordinacion.id }}" class="formmodal dropdown-item"><i class="icon-user"></i> Director</a></li>
                                     {% endif %}
                                     <li class="smaller"><a href="/adm_coordinaciones?action=carreras&id={{ coordinacion.id }}" class="dropdown-item"><i class="icon-list"></i> Carreras</a></li>
                                     <li class="smaller"><a href="/adm_coordinaciones?action=personalsecretaria&id={{ coordinacion.id }}" class="dropdown-item"><i class="icon-list"></i> Personal secretaria</a></li>
-                                    {% if perms.ctt.puede_modificar_coordinaciones %}
+                                    {% if perms.ctt.puede_modificar_datos_admin %}
                                         {% if coordinacion.puede_eliminarse %}
                                             <li class="dropdown-divider"></li>
                                             <li class="smaller"><a href="javascript:;" nhref="/adm_coordinaciones?action=delcoordinacion&id={{ coordinacion.id }}" class="eliminacionmodal dropdown-item"><i class="icon-remove"></i> Eliminar</a></li>

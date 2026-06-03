@@ -17,7 +17,28 @@ from ctt.commonviews import adduserdata
 from ctt.forms import AdministrativosForm, GrupoUsuarioForm, NuevaInscripcionForm, SedeAdministrativoForm
 from ctt.funciones import MiPaginador, log, generar_usuario, resetear_clave, url_back, bad_json, ok_json, generar_email, \
     remover_tildes, validarcedula
-from ctt.models import Persona, Profesor, Administrativo, Inscripcion, Carrera, Periodo, Nacionalidad, Coordinacion
+from ctt.models import Persona, Profesor, Administrativo, Inscripcion, Carrera, Periodo, Nacionalidad, Coordinacion, \
+    TiempoDedicacionDocente, NivelEscalafonDocente
+
+
+def configuracion_docente_por_defecto():
+    dedicacion = TiempoDedicacionDocente.objects.filter(pk=TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID).first()
+    if not dedicacion:
+        dedicacion = TiempoDedicacionDocente.objects.filter(nombre__icontains='TIEMPO COMPLETO').first()
+    if not dedicacion:
+        dedicacion = TiempoDedicacionDocente(id=TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID,
+                                             nombre=u'TIEMPO COMPLETO',
+                                             horas=40,
+                                             activo=True)
+        dedicacion.save()
+    nivel_escalafon = NivelEscalafonDocente.objects.filter(pk=ESCALAFON_TITULAR_PRINCIPAL_ID).first()
+    if not nivel_escalafon:
+        nivel_escalafon = NivelEscalafonDocente.objects.filter(nombre__icontains='TITULAR PRINCIPAL').first()
+    if not nivel_escalafon:
+        nivel_escalafon = NivelEscalafonDocente(id=ESCALAFON_TITULAR_PRINCIPAL_ID,
+                                                nombre=u'TITULAR PRINCIPAL')
+        nivel_escalafon.save()
+    return dedicacion, nivel_escalafon, None
 
 
 @login_required(login_url='/login')
@@ -177,12 +198,15 @@ def view(request):
                 administrativo = Administrativo.objects.get(pk=request.POST['id'])
                 if administrativo.persona.profesor_set.exists():
                     return bad_json(mensaje=u"El usuario ya tiene un perfil como profesor.")
+                dedicacion, nivel_escalafon, mensaje = configuracion_docente_por_defecto()
+                if mensaje:
+                    return bad_json(mensaje=mensaje)
                 profesor = Profesor(persona=administrativo.persona,
-                                    activo=True,
-                                    coordinacion=request.session['coordinacionseleccionada'],
-                                    fechainiciodocente=datetime.now().date(),
-                                    dedicacion_id=TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID,
-                                    nivelescalafon_id=ESCALAFON_TITULAR_PRINCIPAL_ID)
+                                     activo=True,
+                                     coordinacion=request.session['coordinacionseleccionada'],
+                                     fechainiciodocente=datetime.now().date(),
+                                     dedicacion=dedicacion,
+                                     nivelescalafon=nivel_escalafon)
                 profesor.save(request)
                 grupo = Group.objects.get(pk=PROFESORES_GROUP_ID)
                 grupo.user_set.add(administrativo.persona.usuario)

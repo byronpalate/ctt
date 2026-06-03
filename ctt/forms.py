@@ -1156,6 +1156,33 @@ class FormaPagoForm(BaseForm):
         deshabilitar_campo(self, 'totaldescuento')
 
 
+class FormaPagoDescuentoForm(BaseForm):
+    todas = forms.BooleanField(label=u'Todas las formas de pago', required=False,
+                               widget=forms.CheckboxInput(attrs={'formwidth': 200}))
+    formadepago = forms.ModelChoiceField(label=u'Forma de Pago',
+                                         queryset=FormaDePago.objects.all().exclude(id=FORMA_PAGO_CTAXCRUZAR),
+                                         required=False,
+                                         widget=forms.Select(attrs={'class': 'form-select form-select-sm'}))
+    fechainicio = forms.DateField(label=u'Desde', initial=datetime.now().date(), input_formats=['%d-%m-%Y'],
+                                  widget=DateTimeInput(format='%d-%m-%Y',
+                                                       attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    fechafin = forms.DateField(label=u'Hasta', initial=datetime.now().date(), input_formats=['%d-%m-%Y'],
+                               widget=DateTimeInput(format='%d-%m-%Y',
+                                                    attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    porcentaje = forms.IntegerField(label=u'Porcentaje', initial=0, min_value=0, max_value=100,
+                                    widget=forms.TextInput(attrs={'class': 'imp-numbermed-right'}))
+
+    def clean(self):
+        cleaned_data = super(FormaPagoDescuentoForm, self).clean()
+        if not cleaned_data.get('todas') and not cleaned_data.get('formadepago'):
+            self.add_error('formadepago', u'Seleccione una forma de pago.')
+        return cleaned_data
+
+    def extra_paramaters(self):
+        self.fields['formwidth'].initial = 'md'
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
 class EliminarRubroForm(BaseForm):
     motivo = forms.CharField(label=u'Motivo', widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'}))
 
@@ -1846,7 +1873,6 @@ class ResponsableCarreraForm(BaseForm):
         responsable = coordinacion.responsable_carrera(carrera, modalidad)
         if responsable:
             self.fields['responsable'].widget.attrs['descripcion'] = responsable.persona.flexbox_repr()
-            self.fields['firmadignidad'].widget.attrs['descripcion'] = responsable.firmadignidad
             self.fields['responsable'].widget.attrs['va'] = responsable.persona.id
 
 
@@ -1860,7 +1886,6 @@ class ResponsableCoordinacionForm(BaseForm):
         responsable = coordinacion.responsable()
         if responsable:
             self.fields['responsable'].widget.attrs['descripcion'] = responsable.persona.flexbox_repr()
-            self.fields['firmadignidad'].widget.attrs['descripcion'] = responsable.firmadignidad
             self.fields['responsable'].widget.attrs['va'] = responsable.persona.id
 
 

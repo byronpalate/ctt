@@ -10,7 +10,7 @@ from django.template import RequestContext
 from decorators import secure_module, last_access
 from settings import TIPO_IVA_15_ID
 from ctt.commonviews import adduserdata
-from ctt.forms import TipoCostoCursoForm, TipoEspecieForm, ClonarPreciosPeriodoForm
+from ctt.forms import TipoCostoCursoForm, TipoEspecieForm, ClonarPreciosPeriodoForm, FormaPagoDescuentoForm
 from ctt.funciones import log, bad_json, ok_json, url_back, convertir_fecha, generar_nombre
 from ctt.models import Sede, PreciosPeriodo, null_to_numeric, PreciosPeriodoModulosInscripcion, TipoCostoCursoPeriodo, \
     TipoCostoCurso, CostodiferenciadoCursoPeriodo, TipoEspecieValorada, \
@@ -842,7 +842,7 @@ def view(request):
                     if form.cleaned_data['todas']:
                         pr = PreciosPeriodo.objects.get(pk=request.POST['pid'])
                         for fp in FormaDePago.objects.filter(id__in=[1,3,4,5]).order_by("id"):
-                            if not pr.descuentoformapago_set.filter(formadepago_id=fp).exists():
+                            if not pr.descuentoformapago_set.filter(formadepago=fp).exists():
                                 descuento = DescuentoFormaPago(precioperiodo=pr,
                                                                formadepago=fp,
                                                                fechainicio=form.cleaned_data['fechainicio'],
@@ -851,7 +851,7 @@ def view(request):
                                 descuento.save()
                     else:
                         pr = PreciosPeriodo.objects.get(pk=request.POST['pid'])
-                        if not pr.descuentoformapago_set.filter(formadepago_id=form.cleaned_data['formadepago']).exists():
+                        if not pr.descuentoformapago_set.filter(formadepago=form.cleaned_data['formadepago']).exists():
                             descuento = DescuentoFormaPago(precioperiodo=pr,
                                                            formadepago=form.cleaned_data['formadepago'],
                                                            fechainicio=form.cleaned_data['fechainicio'],

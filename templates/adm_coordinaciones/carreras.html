@@ -12,7 +12,7 @@
     <div class='row mb-2'>
             <h4>{{ title }}<br>Coordinación: {{ coordinacion }}</h4>
     </div>
-    {% if perms.ctt.puede_modificar_coordinaciones %}
+    {% if perms.ctt.puede_modificar_datos_admin %}
         <div class='row mb-2'>
             <div class='col-6'>
                 <a href="javascript:;" nhref="/adm_coordinaciones?action=addcarrera&id={{ coordinacion.id }}" class="btn btn-sm btn-success formmodal"><i class="icon-plus"></i> Adicionar</a>
@@ -33,7 +33,6 @@
                     <th style="width: 60px; text-align: center">Matriculas período</th>
                     <th style="width: 130px"></th>
                     <th style="width: 300px">Responsable</th>
-                    <th style="width: 120px">Firma Dignidad</th>
                     <th style="width: 70px"></th>
                 </tr>
                 </thead>
@@ -51,9 +50,8 @@
                                     <a href="/adm_coordinaciones?action=accesocarreras&id={{ carrera.id }}&idc={{ coordinacion.id }}&idm={{ modalidad.id }}" class="btn btn-ssm btn-success"><i class="icon-th-list"></i> {{ cantidad_personas }} - Personal</a>
                                 </td>
                                 <td>{{ responsable|default_if_none:"" }}</td>
-                                <td>{{ responsable.firmadignidad|default_if_none:"" }}</td>
                                 <td style="text-align: center">
-                                    {% if perms.ctt.puede_modificar_coordinaciones %}
+                                    {% if perms.ctt.puede_modificar_datos_admin %}
                                         <a class="btn btn-info btn-ssm tu formmodal" href="javascript:;" nhref="/adm_coordinaciones?action=editresponsablecarrera&id={{ carrera.id }}&idc={{ coordinacion.id }}&idm={{ modalidad.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Responsable"><i class="icon-user"></i></a>
                                         {% if puede_eliminar_carrera %}
                                             <a class="btn btn-danger btn-ssm tu eliminacionmodal" href="javascript:;" nhref="/adm_coordinaciones?action=delcarrera&id={{ carrera.id }}&idc={{ coordinacion.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
