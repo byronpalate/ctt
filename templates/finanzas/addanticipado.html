@@ -13,11 +13,12 @@
     </script>
 {% endblock %}
 {% block titulo %}{{ title }}{% endblock %}
-{% block atras %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
-{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block atras %}/finanzas?action=rubros&id={{ inscripcion.persona.id }}{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.persona.id }}{% endblock %}
 {% block formaction %}/finanzas{% endblock %}
 {% block formextra %}
     <input type='hidden' name='action' value='addanticipado'/>
     <input type='hidden' name='id' value='{{ inscripcion.id }}'/>
 {% endblock %}
-{% block formback %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formback %}/finanzas?action=rubros&id={{ inscripcion.persona.id }}{% endblock %}
+

@@ -522,7 +522,7 @@
                         <th colspan="12">
                             INGRESO DE COMPROBANTES
                             {% if puede_pagar %}
-                                <a href="javascript:;" nhref="/finanzas?action=adddeposito&iid={{ personarubro.id }}" class="btn btn-success btn-ssm formmodal">
+                                <a href="javascript:;" nhref="/finanzas?action=adddeposito&pid={{ personarubro.id }}" class="btn btn-success btn-ssm formmodal">
                                     <i class="icon-arrow-up"></i> Subir
                                 </a>
                             {% endif %}
@@ -594,7 +594,7 @@
 
                             {% if perms.sga.puede_modificar_rubros %}
                                 <td style="text-align:center;">
-                                    <a href="javascript:;" nhref="/finanzas?action=editdeposito&id={{ di.id }}&iid={{ personarubro.id }}" class="btn btn-ssm btn-info formmodal" title="Editar">
+                                    <a href="javascript:;" nhref="/finanzas?action=editdeposito&id={{ di.id }}&pid={{ personarubro.id }}" class="btn btn-ssm btn-info formmodal" title="Editar">
                                         <i class="icon-edit"></i>
                                     </a>
                                 </td>

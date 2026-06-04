@@ -2122,6 +2122,8 @@ class Persona(ModeloBase):
 
     def lista_carreras_coordinacion(self, coordinacion):
         lista = []
+        if not coordinacion:
+            return Carrera.objects.none()
         if self.cargoinstitucion_set.exists():
             return coordinacion.carrera.all()
         if self.responsablecoordinacion_set.filter(coordinacion=coordinacion).exists():
@@ -2838,6 +2840,21 @@ class FotoPersona(ModeloBase):
 
     def download_foto(self):
         return self.foto.url
+
+
+class CVPersona(ModeloBase):
+    persona = models.ForeignKey(Persona, verbose_name=u'Persona', on_delete=models.CASCADE)
+    cv = models.FileField(upload_to='cv/%Y/%m/%d', verbose_name=u'CV')
+
+    def __str__(self):
+        return u'%s' % self.persona
+
+    class Meta:
+        verbose_name_plural = u"CV"
+        unique_together = ('persona',)
+
+    def download_cv(self):
+        return self.cv.url
 
 
 
@@ -5649,12 +5666,18 @@ class Inscripcion(ModeloBase):
         return self.matriculainternadorotativo_set.filter(cerrada=False).exists()
 
     def matriculado_periodo(self, periodo):
+        if not periodo:
+            return False
         return self.matricula_set.filter(nivel__periodo_id=periodo.id).exists()
 
     def tiene_matricula_internado_rotatito(self, periodo):
+        if not periodo:
+            return False
         return self.matriculainternadorotativo_set.filter(internado__periodo_inicio_internado_id=periodo.id).exists()
 
     def becado_periodo(self, periodo):
+        if not periodo:
+            return False
         return self.matricula_set.filter(nivel__periodo=periodo, becado=True).exists()
 
     def matricula(self):
@@ -5688,6 +5711,8 @@ class Inscripcion(ModeloBase):
         return None
 
     def matricula_periodo(self, periodo):
+        if not periodo:
+            return None
         if self.matriculado_periodo(periodo):
             return self.matricula_set.filter(nivel__periodo_id=periodo.id)[0]
         return None
@@ -10115,6 +10140,19 @@ class Cliente(ModeloBase):
     emailcontacto = models.CharField(max_length=300, blank=True, null=True, verbose_name=u'emailcontacto')
     activo = models.BooleanField(default=True, verbose_name=u"Activo")
 
+    def clientefacturacion(self, request):
+        identificacion = self.persona.identificacion()
+        if ClienteFactura.objects.filter(identificacion=identificacion).exists():
+            return ClienteFactura.objects.filter(identificacion=identificacion)[0]
+        clientefactura = ClienteFactura(identificacion=identificacion,
+                                        tipo=self.persona.tipo_identificacion_comprobante(),
+                                        nombre=self.persona.nombre_completo(),
+                                        direccion=self.persona.mi_direccion(),
+                                        telefono=self.persona.mi_telefono(),
+                                        email=self.persona.mi_email())
+        clientefactura.save(request)
+        return clientefactura
+
     def correo_de_envio(self):
         lista = []
         lista.append(self.emailcontacto)
@@ -11336,9 +11374,13 @@ class SesionCaja(ModeloBase):
         return null_to_numeric(Pago.objects.filter(pagocheque__isnull=False, sesion=self, valido=True).distinct().aggregate(valor=Sum('valor'))['valor'], 2)
 
     def cantidad_tarjetas_sesion(self):
+        if 'DatoTarjeta' not in globals():
+            return 0
         return DatoTarjeta.objects.filter(pagotarjeta__pagos__sesion=self, pagotarjeta__pagos__valido=True).distinct().count()
 
     def total_tarjeta_sesion(self):
+        if 'PagoTarjeta' not in globals():
+            return 0
         return null_to_numeric(Pago.objects.filter(pagotarjeta__isnull=False, sesion=self, valido=True).distinct().aggregate(valor=Sum('valor'))['valor'], 2)
 
     def cantidad_depositos_sesion(self):
@@ -11354,9 +11396,13 @@ class SesionCaja(ModeloBase):
         return null_to_numeric(Pago.objects.filter(pagotransferenciadeposito__datotransferenciadeposito__deposito=False, sesion=self, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
 
     def cantidad_notasdecredito_sesion(self):
+        if 'PagoNotaCredito' not in globals():
+            return 0
         return PagoNotaCredito.objects.filter(pagos__sesion=self, pagos__valido=True).distinct().count()
 
     def total_notadecredito_sesion(self):
+        if 'PagoNotaCredito' not in globals():
+            return 0
         return null_to_numeric(Pago.objects.filter(sesion=self, pagonotacredito__isnull=False, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
 
     def total_vales_ingresos(self):
@@ -11472,12 +11518,12 @@ class CierreSesionCaja(ModeloBase):
         self.deposito = null_to_numeric(Pago.objects.filter(pagotransferenciadeposito__datotransferenciadeposito__deposito=True, sesion=self.sesion, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
         self.transferencia = null_to_numeric(Pago.objects.filter(pagotransferenciadeposito__datotransferenciadeposito__deposito=False, sesion=self.sesion, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
         self.cheques = null_to_numeric(Pago.objects.filter(pagocheque__isnull=False, sesion=self.sesion, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
-        self.tarjetas = null_to_numeric(Pago.objects.filter(pagotarjeta__isnull=False, sesion=self.sesion, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
+        self.tarjetas = null_to_numeric(Pago.objects.filter(pagotarjeta__isnull=False, sesion=self.sesion, valido=True).aggregate(valor=Sum('valor'))['valor'], 2) if 'PagoTarjeta' in globals() else 0
         self.valorcajaentregado = null_to_numeric(ValeCaja.objects.filter(sesion=self.sesion, tipooperacion=1).distinct().aggregate(valor=Sum('valor'))['valor'], 2)
         self.valorcajadevuelto = null_to_numeric(ValeCaja.objects.filter(sesion=self.sesion, tipooperacion=2).distinct().aggregate(valor=Sum('valor'))['valor'], 2)
         self.recibocaja = null_to_numeric(Pago.objects.filter(pagorecibocajainstitucion__isnull=False, sesion=self.sesion, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
         self.recibocajainstitucion = null_to_numeric(ReciboCajaInstitucion.objects.filter(sesioncaja=self.sesion).aggregate(valor=Sum('valorinicial'))['valor'], 2)
-        self.notacreditointerna = null_to_numeric(Pago.objects.filter(pagonotacredito__isnull=False, sesion=self.sesion, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
+        self.notacreditointerna = null_to_numeric(Pago.objects.filter(pagonotacredito__isnull=False, sesion=self.sesion, valido=True).aggregate(valor=Sum('valor'))['valor'], 2) if 'PagoNotaCredito' in globals() else 0
         self.save()
 
     def save(self, *args, **kwargs):
@@ -11700,13 +11746,13 @@ class DepositoPersona(ModeloBase):
             raise ValidationError(u"El cliente no pertenece a la persona seleccionada.")
 
     def liquidar(self):
-        liquidado = DepositoPersonaLiquidado(deposito=self, fecha=timezone.now().date(), valor=self.saldo)
+        liquidado = DepositoPersonaLiquidado(depositopersona=self, fecha=timezone.now().date(), valor=self.saldo)
         liquidado.save()
         self.save()
 
     def esta_liquidado(self):
 
-        return self.liquidaciones.exists()
+        return self.depositopersonaliquidado_set.exists()
 
     def esta_registrado(self):
         return DatoTransferenciaDeposito.objects.filter(deposito=self.deposito, cuentabanco=self.cuentabanco, fechabanco=self.fecha, referencia=self.referencia).exists()
@@ -11782,33 +11828,41 @@ class Pago(ModeloBase):
     def totaldescuento(self):
         return self.descuento
 
+    def tiene_relacion_pago(self, relacion):
+        manager = getattr(self, relacion, None)
+        return manager.exists() if manager else False
+
+    def primera_relacion_pago(self, relacion):
+        manager = getattr(self, relacion, None)
+        return manager.all()[0] if manager and manager.exists() else None
+
     def tipo(self):
-        if self.pagotarjeta_set.exists():
+        if self.tiene_relacion_pago('pagotarjeta_set'):
             return "TARJETA"
-        elif self.pagocheque_set.exists():
+        elif self.tiene_relacion_pago('pagocheque_set'):
             return "CHEQUE"
-        elif self.pagotransferenciadeposito_set.exists():
+        elif self.tiene_relacion_pago('pagotransferenciadeposito_set'):
             if self.es_deposito():
                 return "DEPOSITO"
             return "TRANSFERENCIA"
-        elif self.pagonotacredito_set.exists():
+        elif self.tiene_relacion_pago('pagonotacredito_set'):
             return "NOTA DE CREDITO"
-        elif self.pagorecibocajainstitucion_set.exists():
+        elif self.tiene_relacion_pago('pagorecibocajainstitucion_set'):
             return "RECIBO CAJA INSTITUCION"
         return "EFECTIVO"
 
     def tipo_exp(self):
-        if self.pagotarjeta_set.exists():
+        if self.tiene_relacion_pago('pagotarjeta_set'):
             return "TAR"
-        elif self.pagocheque_set.exists():
+        elif self.tiene_relacion_pago('pagocheque_set'):
             return "CHE"
-        elif self.pagotransferenciadeposito_set.exists():
+        elif self.tiene_relacion_pago('pagotransferenciadeposito_set'):
             if self.es_deposito():
                 return "DEP"
             return "TRA"
-        elif self.pagonotacredito_set.exists():
+        elif self.tiene_relacion_pago('pagonotacredito_set'):
             return "NOT"
-        elif self.pagorecibocajainstitucion_set.exists():
+        elif self.tiene_relacion_pago('pagorecibocajainstitucion_set'):
             return "REC"
         return "EFE"
 
@@ -11816,21 +11870,21 @@ class Pago(ModeloBase):
         return self.tipo() + " $" + str(self.relacionado().valor)
 
     def relacionado(self):
-        if self.pagotarjeta_set.exists():
-            return self.pagotarjeta_set.all()[0]
-        elif self.pagocheque_set.exists():
-            return self.pagocheque_set.all()[0]
-        elif self.pagotransferenciadeposito_set.exists():
-            return self.pagotransferenciadeposito_set.all()[0]
-        elif self.pagonotacredito_set.exists():
-            return self.pagonotacredito_set.all()[0]
-        elif self.pagorecibocajainstitucion_set.exists():
-            return self.pagorecibocajainstitucion_set.all()[0]
+        if self.tiene_relacion_pago('pagotarjeta_set'):
+            return self.primera_relacion_pago('pagotarjeta_set')
+        elif self.tiene_relacion_pago('pagocheque_set'):
+            return self.primera_relacion_pago('pagocheque_set')
+        elif self.tiene_relacion_pago('pagotransferenciadeposito_set'):
+            return self.primera_relacion_pago('pagotransferenciadeposito_set')
+        elif self.tiene_relacion_pago('pagonotacredito_set'):
+            return self.primera_relacion_pago('pagonotacredito_set')
+        elif self.tiene_relacion_pago('pagorecibocajainstitucion_set'):
+            return self.primera_relacion_pago('pagorecibocajainstitucion_set')
         return None
 
     def es_notadecredito(self):
-        if self.pagonotacredito_set.exists():
-            return self.pagonotacredito_set.all()[0]
+        if self.tiene_relacion_pago('pagonotacredito_set'):
+            return self.primera_relacion_pago('pagonotacredito_set')
 
     def es_chequevista(self):
         if self.pagocheque_set.exists():
@@ -11839,15 +11893,15 @@ class Pago(ModeloBase):
         return False
 
     def es_tarjeta(self):
-        return self.pagotarjeta_set.exists()
+        return self.tiene_relacion_pago('pagotarjeta_set')
 
     def dato_tarjeta(self):
-        if self.es_tarjeta():
+        if self.es_tarjeta() and 'DatoTarjeta' in globals():
             return DatoTarjeta.objects.filter(pagotarjeta__pagos=self)[0]
         return None
 
     def es_notacredito(self):
-        return self.pagonotacredito_set.exists()
+        return self.tiene_relacion_pago('pagonotacredito_set')
 
     def dato_notacredito(self):
         if self.es_notacredito():
@@ -13110,6 +13164,22 @@ class ReciboCajaInstitucion(ModeloBase):
         if self.cliente_id and not self.persona_id:
             self.persona_id = self.cliente.persona_id
 
+    def valor_restante(self):
+        usado = null_to_numeric(
+            PagoReciboCajaInstitucion.objects.filter(
+                recibocaja=self,
+                valido=True,
+                pagos__valido=True
+            ).distinct().aggregate(valor=Sum('valor'))['valor'], 2
+        )
+        liquidado = null_to_numeric(
+            ReciboCajaLiquidado.objects.filter(recibocaja=self).aggregate(valor=Sum('valor'))['valor'], 2
+        )
+        return null_to_numeric(self.valorinicial - usado - liquidado, 2)
+
+    def actualiza_valor(self):
+        self.save()
+
     def save(self, *args, **kwargs):
         self.normalizar_persona()
         self.motivo = null_to_text(self.motivo)
@@ -13140,13 +13210,25 @@ class NotaCredito(ModeloBase):
         if self.cliente_id and not self.persona_id:
             self.persona_id = self.cliente.persona_id
 
+    def valor_restante(self):
+        liquidado = null_to_numeric(
+            NotaCreditoaLiquidado.objects.filter(notacredito=self).aggregate(valor=Sum('valor'))['valor'], 2
+        )
+        return null_to_numeric(self.valorinicial - liquidado, 2)
+
+    def actualiza_valor(self):
+        self.save()
+
     def save(self, *args, **kwargs):
         self.normalizar_persona()
         self.numero = null_to_text(self.numero)
         self.motivo = null_to_text(self.motivo)
         self.motivootros = null_to_text(self.motivootros)
+        self.valorinicial = null_to_numeric(self.valorinicial, 2)
         if self.id:
             self.saldo = self.valor_restante()
+        else:
+            self.saldo = self.valorinicial
         super(NotaCredito, self).save(*args, **kwargs)
 
 
@@ -13498,14 +13580,16 @@ class Factura(ModeloBase):
                 padrerelacionado = relacionado.padre()
                 padrerelacionado.actualiza_valor()
             pago.rubro.save()
-        for pagoexedente in self.facturapagoexedente_set.all():
-            recibocaja = pagoexedente.recibocajainstitucion
-            liquidado = ReciboCajaLiquidado(recibocaja=recibocaja,
-                                            fecha=datetime.now().date(),
-                                            motivo='ANULACION DE FACTURA',
-                                            valor=recibocaja.saldo)
-            liquidado.save()
-            recibocaja.save()
+        pagoexedente_manager = getattr(self, 'facturapagoexedente_set', None)
+        if pagoexedente_manager:
+            for pagoexedente in pagoexedente_manager.all():
+                recibocaja = pagoexedente.recibocajainstitucion
+                liquidado = ReciboCajaLiquidado(recibocaja=recibocaja,
+                                                fecha=datetime.now().date(),
+                                                motivo='ANULACION DE FACTURA',
+                                                valor=recibocaja.saldo)
+                liquidado.save()
+                recibocaja.save()
         self.valida = False
         self.save()
 
@@ -13522,9 +13606,13 @@ class Factura(ModeloBase):
         return 0
 
     def total_tarjetacredito(self):
+        if 'PagoTarjeta' not in globals():
+            return 0
         return null_to_numeric(self.pagos.filter(pagotarjeta__isnull=False).distinct().aggregate(valor=Sum('valor'))['valor'], 2)
 
     def detalle_pago_trajetacredito(self):
+        if 'PagoTarjeta' not in globals():
+            return Pago.objects.none()
         return PagoTarjeta.objects.filter(pagos__factura=self).distinct()
 
     def total_transferenciadeposito(self):
@@ -13709,14 +13797,16 @@ class ReciboPago(ModeloBase):
         for factura in facturas:
             factura.cancelada = factura.verifica_credito()
             factura.save()
-        for pagoexedente in self.recibopagoexedente_set.all():
-            recibocaja = pagoexedente.recibocajainstitucion
-            liquidado = ReciboCajaLiquidado(recibocaja=recibocaja,
-                                            fecha=datetime.now().date(),
-                                            motivo='ANULACION DE FACTURA',
-                                            valor=recibocaja.saldo)
-            liquidado.save()
-            recibocaja.save()
+        pagoexedente_manager = getattr(self, 'recibopagoexedente_set', None)
+        if pagoexedente_manager:
+            for pagoexedente in pagoexedente_manager.all():
+                recibocaja = pagoexedente.recibocajainstitucion
+                liquidado = ReciboCajaLiquidado(recibocaja=recibocaja,
+                                                fecha=datetime.now().date(),
+                                                motivo='ANULACION DE FACTURA',
+                                                valor=recibocaja.saldo)
+                liquidado.save()
+                recibocaja.save()
         self.valido = False
         self.save()
 

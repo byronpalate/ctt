@@ -1,8 +1,9 @@
 {% extends "ajaxconfirmaciondinamicbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/finanzas{% endblock %}
-{% block formdestination %}/finanzas?id={{ inscripcion.id }}{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.persona.id }}{% endblock %}
 {% block formactionvalue %}protestopagoconcheque{% endblock %}
 {% block formobjectid %}{{ inscripcion.id }}{% endblock %}
 {% block mensaje %}Esta seguro(a) que desea quitar la restricción de cancelar con cheque{% endblock %}
+
 

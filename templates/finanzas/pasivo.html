@@ -1,6 +1,6 @@
 {% extends "ajaxconfirmaciondinamicbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
-{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.persona.id }}{% endblock %}
 {% block formaction %}/finanzas{% endblock %}
 {% block formactionvalue %}pasivo{% endblock %}
 {% block formobjectid %}{{ rubro.id }}{% endblock %}

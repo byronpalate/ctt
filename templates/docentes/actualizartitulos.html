@@ -1,7 +1,7 @@
 {% extends "formbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/docentes{% endblock %}
-{% block formdestination %}/docentes{% endblock %}
+{% block formdestination %}/docentes?action=titulacion&id={{ profesor.id }}{% endblock %}
 {% block formextra %}
     <input type='hidden' name='action' value='{{ request.GET.action|default:"" }}'/>
     {% for k, v in request.GET.items %}
@@ -10,4 +10,4 @@
         {% endif %}
     {% endfor %}
 {% endblock %}
-{% block formback %}/docentes{% endblock %}
+{% block formback %}/docentes?action=titulacion&id={{ profesor.id }}{% endblock %}

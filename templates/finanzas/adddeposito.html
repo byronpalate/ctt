@@ -30,9 +30,10 @@
 {% block titulo %}{{ title }}{% endblock %}
 {% block atras%}/finanzas{% endblock %}
 {% block formaction %}/finanzas{% endblock %}
-{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ persona_deposito.id }}{% endblock %}
 {% block formextra %}
     <input type='hidden' name='action' value='adddeposito'/>
-    <input type='hidden' name='inscripcion' value='{{ inscripcion.id }}'/>
+    <input type='hidden' name='persona' value='{{ persona_deposito.id }}'/>
+    <input type='hidden' name='inscripcion' value='{% if inscripcion %}{{ inscripcion.id }}{% endif %}'/>
 {% endblock %}
 {% block formback %}/finanzas{% endblock %}

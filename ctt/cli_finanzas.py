@@ -21,10 +21,26 @@ from settings import PAYMENT_ENTITYID, PAYMENT_URL, PERMITE_PAGO_ONLINE, \
     LUGAR_RECAUDACION_TARJETA_ID, PAGO_MINIMO_DIFERIDO_TARJETA, SCRIPT_URL, PAGO_MINIMO_TARJETA, \
     PROVEEDOR_PAGOONLINE_PAYPHONE, FORMA_PAGO_TARJETA
 from ctt.commonviews import adduserdata, obtener_reporte
+from ctt.forms import DepositoClienteForm
 from ctt.funciones import generar_nombre, log, ok_json, bad_json, url_back, remover_caracteres_especiales, \
     remover_tildes
 from ctt.models import Rubro, mi_institucion, Banco, \
-    LugarRecaudacion, null_to_numeric, Pago, Factura, ReciboPago
+    LugarRecaudacion, null_to_numeric, Pago, Factura, ReciboPago, DepositoPersona, \
+    ProcesadorPagoTarjeta, TipoEmisorTarjeta, TipoTarjeta, TipoTarjetaBanco
+
+
+PAGO_ONLINE_CLIENTE_DISPONIBLE = False
+ACCIONES_PAGO_ONLINE = {
+    'act_valor_autorizacion',
+    'act_valor_autorizacion_payphone',
+    'permitediferir',
+}
+ACCIONES_PAGO_ONLINE_GET = {
+    'pagar',
+    'resultado',
+    'resultadopayphone',
+    'resultadodeuna',
+}
 
 
 def paymentrequest(request, extradata, autorizaciondatafast):
@@ -150,10 +166,12 @@ def view(request):
     if request.method == 'POST':
         if 'action' in request.POST:
             action = request.POST['action']
+            if action in ACCIONES_PAGO_ONLINE and not PAGO_ONLINE_CLIENTE_DISPONIBLE:
+                return bad_json(mensaje=u'Pago en línea no disponible para clientes. Faltan los modelos de autorización en el módulo.')
 
             if action == 'adddeposito':
                 try:
-                    form = DepositoclienteForm(request.POST, request.FILES)
+                    form = DepositoClienteForm(request.POST, request.FILES)
                     if form.is_valid():
                         persona = request.session['persona']
                         if 'archivo' not in request.FILES:
@@ -162,34 +180,26 @@ def view(request):
                         newfile._name = generar_nombre("deposito_", newfile._name)
                         if form.cleaned_data['ventanilla'] == False and form.cleaned_data['movilweb'] == False:
                             return bad_json(mensaje=u'Debes seleccionar al menos una opción (Ventanilla o Móvil/Web).')
-                        if Depositocliente.objects.filter(cuentabanco=form.cleaned_data['cuentabanco'], fecha=form.cleaned_data['fecha'], referencia=form.cleaned_data['referencia'], ventanilla=True if form.cleaned_data['ventanilla'] else False).exists():
+                        if DepositoPersona.objects.filter(persona=cliente.persona,
+                                                           cuentabanco=form.cleaned_data['cuentabanco'],
+                                                           fecha=form.cleaned_data['fecha'],
+                                                           referencia=form.cleaned_data['referencia'],
+                                                           deposito=True if form.cleaned_data['ventanilla'] else False).exists():
                             return bad_json(mensaje=u'Ya existe ese número de referencia ingresado')
-                        deposito = Depositocliente(cliente=cliente,
-                                                       fecha=form.cleaned_data['fecha'],
-                                                       ventanilla=True if form.cleaned_data['ventanilla'] else False,
-                                                       movilweb=True if form.cleaned_data['movilweb'] else False,
-                                                       deposito=True if form.cleaned_data['ventanilla'] else False,
-                                                       referencia=form.cleaned_data['referencia'],
-                                                       cuentabanco=form.cleaned_data['cuentabanco'],
-                                                       valor=form.cleaned_data['valor'],
-                                                       motivo=form.cleaned_data['motivo'],
-                                                       archivo=newfile,
-                                                       procesado=False,
-                                                       estadoprocesado=3)
+                        deposito = DepositoPersona(persona=cliente.persona,
+                                                   cliente=cliente,
+                                                   fecha=form.cleaned_data['fecha'],
+                                                   ventanilla=True if form.cleaned_data['ventanilla'] else False,
+                                                   movilweb=True if form.cleaned_data['movilweb'] else False,
+                                                   deposito=True if form.cleaned_data['ventanilla'] else False,
+                                                   referencia=form.cleaned_data['referencia'],
+                                                   cuentabanco=form.cleaned_data['cuentabanco'],
+                                                   valor=form.cleaned_data['valor'],
+                                                   motivo=form.cleaned_data['motivo'],
+                                                   archivo=newfile,
+                                                   procesado=False,
+                                                   estadoprocesado=3)
                         deposito.save(request)
-                        from ctt.ocr.deposito_ocr import procesar_deposito_imagen
-                        try:
-
-                            # después de deposito.save(request)
-                            print(">>> Llamando OCR…", flush=True)
-                            deposito, dbg = procesar_deposito_imagen(deposito, return_debug=True)
-                            print(">>> OCR DEBUG JSON >>>", flush=True)
-                            print(json.dumps(dbg, ensure_ascii=False, indent=2), flush=True)
-                            print(">>> FIN OCR DEBUG <<<", flush=True)
-                        except Exception as e:
-                            transaction.set_rollback(True)
-                            return bad_json(mensaje=f"OCR error: {e}")
-
                         log(u'Adiciono deposito de cliente: %s' % deposito, request, "add")
                         return ok_json()
 
@@ -202,7 +212,7 @@ def view(request):
             if action == 'observaciones':
                 try:
                     data = {}
-                    data['deposito'] = deposito = Depositocliente.objects.get(pk=int(request.POST['id']))
+                    data['deposito'] = deposito = DepositoPersona.objects.get(pk=int(request.POST['id']), cliente=cliente)
                     template = get_template("cli_finanzas/observaciones.html")
                     json_content = template.render(data)
                     return ok_json({'html': json_content})
@@ -212,7 +222,7 @@ def view(request):
 
             if action == 'del':
                 try:
-                    deposito = Depositocliente.objects.get(pk=request.POST['id'])
+                    deposito = DepositoPersona.objects.get(pk=request.POST['id'], cliente=cliente)
                     if deposito.procesado or deposito.pago_set.exists():
                         return bad_json(mensaje=u'No puede eliminar el registro ya fue procesado.')
                     log(u"Elimino deposito: %s" % deposito, request, "del")
@@ -415,13 +425,15 @@ def view(request):
     else:
         if 'action' in request.GET:
             action = request.GET['action']
+            if action in ACCIONES_PAGO_ONLINE_GET and not PAGO_ONLINE_CLIENTE_DISPONIBLE:
+                return HttpResponseRedirect('/cli_finanzas')
 
             if action == 'pagos':
                 try:
                     data['title'] = u'Pagos del rubro'
                     data['rubro'] = rubro = Rubro.objects.get(pk=request.GET['id'])
                     data['pagos'] = rubro.pago_set.all().order_by('fecha')
-                    data['factura'] = rubro.pago_set.all()[0].factura()
+                    data['factura'] = rubro.pago_set.first().factura() if rubro.pago_set.exists() else None
                     data['pagos'] = Pago.objects.filter(rubro=rubro)
                     return render(request, "cli_finanzas/pagos.html", data)
                 except Exception as ex:
@@ -430,7 +442,7 @@ def view(request):
             if action == 'adddeposito':
                 try:
                     data['title'] = u'Subir comprobante de pago'
-                    form = DepositoclienteForm()
+                    form = DepositoClienteForm()
                     data['form'] = form
                     return render(request, "cli_finanzas/adddeposito.html", data)
                 except Exception as ex:
@@ -439,7 +451,7 @@ def view(request):
             if action == 'del':
                 try:
                     data['title'] = u'Eliminar deposito o transferencia'
-                    data['deposito'] = Depositocliente.objects.get(pk=request.GET['id'])
+                    data['deposito'] = DepositoPersona.objects.get(pk=request.GET['id'], cliente=cliente)
                     return render(request, "cli_finanzas/del.html", data)
                 except Exception as ex:
                     pass
@@ -466,28 +478,7 @@ def view(request):
                     data['facturatelefono'] = remover_tildes(clientefacturacion.telefono)
                     data['facturaemail'] = clientefacturacion.email
                     data['totalapagar'] = total = sum([x.saldo for x in rubros])
-                    matricula = cliente.ultima_matricula_sinextendido()
                     rubros_descuento_por_fp = {}
-                    if matricula:
-                        precioperiodo = cliente.carrera.precio_periodo(cliente.mi_nivel().nivel.id, matricula.nivel.periodo, cliente.sede, cliente.modalidad)
-                        descuento_fp = precioperiodo.detalle_descuento(FORMA_PAGO_TARJETA)
-                        if descuento_fp:
-                            total_descuento = 0
-                            rubros_list = []
-                            for rubro in Rubro.objects.filter(id__in=ids, validoprontopago=True):
-                                descuentopp = null_to_numeric(rubro.valor * (descuento_fp.porcentaje / 100), 2)
-                                total_descuento += descuentopp
-                                rubros_list.append({'rubro_id': rubro.id,
-                                                    'valor_original': rubro.valor,
-                                                    'descuentopp': descuentopp,
-                                                    'valor_con_descuento': rubro.valor - descuentopp})
-                            if total_descuento > 0:
-                                rubros_descuento_por_fp[FORMA_PAGO_TARJETA] = {'total_descuento': total_descuento,
-                                                                               'fechainicio': descuento_fp.fechainicio.strftime('%Y-%m-%d'),
-                                                                               'fechafin': descuento_fp.fechafin.strftime('%Y-%m-%d'),
-                                                                               'porcentaje': descuento_fp.porcentaje,
-                                                                               'nombre': 'TARJETA',
-                                                                               'rubros': rubros_list}
                     data['rubros_descuento_por_fp'] = rubros_descuento_por_fp
                     data['url_app_datafast'] = URL_APP_DATAFAST
                     data['script_url'] = SCRIPT_URL
@@ -597,12 +588,12 @@ def view(request):
             return url_back(request, ex=ex if 'ex' in locals() else None)
         else:
             try:
-                data['title'] = u'Listado de rubros que adeuda el alumno'
-                if LUGAR_RECAUDACION_TARJETA_ID > 0:
+                data['title'] = u'Listado de rubros que adeuda el cliente'
+                if PERMITE_PAGO_ONLINE and PAGO_ONLINE_CLIENTE_DISPONIBLE and LUGAR_RECAUDACION_TARJETA_ID > 0:
                     lr = LugarRecaudacion.objects.get(id=LUGAR_RECAUDACION_TARJETA_ID)
                     if not lr.activo:
                         return HttpResponseRedirect('/')
-                else:
+                elif PERMITE_PAGO_ONLINE and PAGO_ONLINE_CLIENTE_DISPONIBLE:
                     return HttpResponseRedirect('/')
                 cliente.chequea_mora()
                 rubrosnocancelados = cliente.rubro_set.filter(cancelado=False).order_by('cancelado', 'fechavence')
@@ -615,7 +606,8 @@ def view(request):
                 data['total_adeudado'] = cliente.total_adeudado()
                 data['reporte_0'] = obtener_reporte('listado_deuda_xcliente')
                 data['ruc_institucion'] = mi_institucion().ruc
-                data['permite_pago_online'] = PERMITE_PAGO_ONLINE
+                data['permite_pago_online'] = PERMITE_PAGO_ONLINE and PAGO_ONLINE_CLIENTE_DISPONIBLE
+                data['depositos'] = cliente.depositopersona_set.all().order_by('-fecha', '-id')
                 data['reciboscaja'] = cliente.recibocajainstitucion_set.all()
                 data['notascredito'] = cliente.notacredito_set.all()
                 return render(request, "cli_finanzas/view.html", data)

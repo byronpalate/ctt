@@ -1,7 +1,7 @@
 {% extends "ajaxconfirmaciondinamicbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/finanzas{% endblock %}
-{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.persona.id }}{% endblock %}
 {% block formactionvalue %}generarrubroinscripcion{% endblock %}
 {% block formobjectid %}{{ inscripcion.id }}{% endblock %}
 {% block mensaje %}Esta seguro(a) que desea generar un rubro de inscripción para este estudiante{% endblock %}

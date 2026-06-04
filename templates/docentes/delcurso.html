@@ -1,11 +1,11 @@
 {% extends "ajaxdeletedinamicbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
-{% block formdestination %}/docentes{% endblock %}
+{% block formdestination %}/docentes?action=titulacion&id={{ profesor.id }}{% endblock %}
 {% block formaction %}/docentes{% endblock %}
 {% block formactionvalue %}{{ request.GET.action|default:"delete" }}{% endblock %}
-{% block formobjectid %}{{ request.GET.id|default:request.GET.idi|default:request.GET.pk|default:"0" }}{% endblock %}
-{% block formobjectname %}el registro{% endblock %}
-{% block formobjectrepr %}{{ request.GET.id|default:request.GET.idi|default:"" }}{% endblock %}
+{% block formobjectid %}{{ request.GET.id|default:"0" }}{% endblock %}
+{% block formobjectname %}el curso{% endblock %}
+{% block formobjectrepr %}{{ curso }}{% endblock %}
 {% block fieldsextra %}
     {% for k, v in request.GET.items %}
         {% if k != 'action' and k != 'id' %}

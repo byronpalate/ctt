@@ -40,14 +40,14 @@
                 <tbody>
                 {% for deposito in depositos %}
                     <tr>
-                        <td><a href='/finanzas?action=rubros&id={{ deposito.inscripcion.id }}'>{{ deposito.inscripcion.persona }}</a></td>
+                        <td><a href='/finanzas?action=rubros&id={{ deposito.persona.id }}'>{{ deposito.persona }}</a></td>
                         <td>{% if deposito.archivo %}<a href='{{ deposito.archivo.url }}' class="fancybox" rel="group">{{ deposito.referencia }}</a>{% else %}{{ deposito.referencia }}{% endif %}</td>
                         <td>{{ deposito.motivo }}<br>{{ deposito.cuentabanco }}</td>
                         <td>{% if deposito.deposito %}DEPOSITO{% else %}TRANSFERENCIA{% endif %}</td>
                         <td style="text-align: right;">$ {{ deposito.valor|floatformat:2 }}</td>
                         <td style="text-align: right;">$ {{ deposito.saldo|floatformat:2 }}</td>
                         <td style="text-align: center">
-                           <a class="btn btn-sm btn-success" href="/finanzas?action=rubros&id={{ deposito.inscripcion.id }}"><i class="icon-list"></i> Rubros</a>
+                           <a class="btn btn-sm btn-success" href="/finanzas?action=rubros&id={{ deposito.persona.id }}"><i class="icon-list"></i> Rubros</a>
                         </td>
                     </tr>
                     {% empty %}

@@ -162,12 +162,17 @@
                                             <li class="smaller"><a href="javascript:;" nhref="/docentes?action=edit&id={{ profesor.id }}" class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
                                         {% endif %}
                                         {% if perms.ctt.puede_modificar_profesores %}
-{#                                            {% if profesor.persona.cv %}#}
-{#                                                <li class="smaller"><a href='{{ profesor.persona.cv.download_cv }}' target="_blank" class="dropdown-item"><i class="icon-download"></i> Bajar CV</a></li>#}
-{#                                                <li class="smaller"><a href="javascript:;" nhref="/docentes?action=borrarcv&id={{ profesor.id }}" class="eliminacionmodal dropdown-item"><i class="icon-remove"></i> Eliminar CV</a></li>#}
-{#                                            {% else %}#}
-                                                <li class="smaller"><a href="javascript:;" nhref="/docentes?action=cargarcv&id={{ profesor.id }}" class="formmodal dropdown-item"><i class="icon-plus"></i> Cargar CV</a></li>
-{#                                            {% endif %}#}
+                                            {% if docentes_registran_cv %}
+                                                {% with cv=profesor.persona.cv %}
+                                                    {% if cv %}
+                                                        <li class="smaller"><a href='{{ cv.download_cv }}' target="_blank" class="dropdown-item"><i class="icon-download"></i> Bajar CV</a></li>
+                                                        <li class="smaller"><a href="javascript:;" nhref="/docentes?action=cargarcv&id={{ profesor.id }}" class="formmodal dropdown-item"><i class="icon-upload"></i> Reemplazar CV</a></li>
+                                                        <li class="smaller"><a href="javascript:;" nhref="/docentes?action=borrarcv&id={{ profesor.id }}" class="confirmacionmodal dropdown-item"><i class="icon-remove"></i> Eliminar CV</a></li>
+                                                    {% else %}
+                                                        <li class="smaller"><a href="javascript:;" nhref="/docentes?action=cargarcv&id={{ profesor.id }}" class="formmodal dropdown-item"><i class="icon-plus"></i> Cargar CV</a></li>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endif %}
                                             {% if not profesor.persona.es_administrador %}
                                                 <li class="dropdown smaller dropstart">
                                                     <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Acceso al sistema</a>

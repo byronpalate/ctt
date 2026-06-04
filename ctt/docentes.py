@@ -13,16 +13,39 @@ from decorators import secure_module, last_access
 from settings import PROFESORES_GROUP_ID, EMAIL_DOMAIN, PAIS_ECUADOR_ID,PERM_ENTRAR_COMO_USUARIO, \
     ALUMNOS_GROUP_ID, ADMINISTRATIVOS_GROUP_ID, DOCENTES_REGISTRAN_ESTUDIOS, \
     DOCENTES_REGISTRAN_CURSOS, DOCENTES_REGISTRAN_PUBLICACIONES, DOCENTES_REGISTRAN_CV, \
-    EMAIL_DOMAIN_ESTUDIANTES, NACIONALIDAD_INDIGENA_ID, CODIGO_IES, EMAIL_INSTITUCIONAL_AUTOMATICO_DOCENTES
+    EMAIL_DOMAIN_ESTUDIANTES, NACIONALIDAD_INDIGENA_ID, CODIGO_IES, EMAIL_INSTITUCIONAL_AUTOMATICO_DOCENTES, \
+    TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID, ESCALAFON_TITULAR_PRINCIPAL_ID
 from ctt.commonviews import adduserdata, obtener_reporte
-from ctt.forms import ProfesorForm, EstudioEducacionSuperiorForm, NuevaInscripcionForm
+from ctt.forms import ProfesorForm, EstudioEducacionSuperiorForm, NuevaInscripcionForm, CursoPersonaForm, \
+    ArchivoEvidenciaEstudiosForm, CargarCVForm
 
 from ctt.funciones import MiPaginador, generar_nombre, log, generar_usuario, url_back, resetear_clave, generar_email, \
     remover_tildes, consultar_titulos
 from ctt.funciones import bad_json, ok_json
 from ctt.models import Profesor, Persona, Clase, \
     Administrativo, Materia, Turno, EstudioPersona, CursoPersona, Inscripcion,\
-    Carrera, Periodo, InscripcionMalla
+    Carrera, Periodo, InscripcionMalla, ProfesorDistributivoHoras, TiempoDedicacionDocente, NivelEscalafonDocente, \
+    CVPersona
+
+
+def configuracion_docente_por_defecto():
+    dedicacion = TiempoDedicacionDocente.objects.filter(pk=TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID).first()
+    if not dedicacion:
+        dedicacion = TiempoDedicacionDocente.objects.filter(nombre__icontains='TIEMPO COMPLETO').first()
+    if not dedicacion:
+        dedicacion = TiempoDedicacionDocente(id=TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID,
+                                             nombre=u'TIEMPO COMPLETO',
+                                             horas=40,
+                                             activo=True)
+        dedicacion.save()
+    nivel_escalafon = NivelEscalafonDocente.objects.filter(pk=ESCALAFON_TITULAR_PRINCIPAL_ID).first()
+    if not nivel_escalafon:
+        nivel_escalafon = NivelEscalafonDocente.objects.filter(nombre__icontains='TITULAR PRINCIPAL').first()
+    if not nivel_escalafon:
+        nivel_escalafon = NivelEscalafonDocente(id=ESCALAFON_TITULAR_PRINCIPAL_ID,
+                                                nombre=u'TITULAR PRINCIPAL')
+        nivel_escalafon.save()
+    return dedicacion, nivel_escalafon
 
 
 @login_required(login_url='/login')
@@ -94,23 +117,18 @@ def view(request):
                     else:
                         personaprofesor.emailinst = form.cleaned_data['emailinst']
                     personaprofesor.save(request)
+                    dedicacion_defecto, nivel_escalafon_defecto = configuracion_docente_por_defecto()
                     profesor = Profesor(persona=personaprofesor,
                                         activo=True,
                                         fechainiciodocente=form.cleaned_data['fechainiciodocente'],
-                                        dedicacion=form.cleaned_data['dedicacion'],
-                                        nivelescalafon=form.cleaned_data['nivelescalafon'],
+                                        dedicacion=form.cleaned_data['dedicacion'] or dedicacion_defecto,
+                                        nivelescalafon=form.cleaned_data['nivelescalafon'] or nivel_escalafon_defecto,
                                         coordinacion=data['coordinacionseleccionada'])
-                    profesor.save(request)
-                    cedula = persona.cedula_doc()
-                    if request.FILES["documentoidentificacion"]:
+                    if request.FILES.get("documentoidentificacion"):
                         newfile = request.FILES["documentoidentificacion"]
                         newfile._name = generar_nombre("documentoidentificacion", newfile._name)
-                        if cedula:
-                            cedula.cedula = newfile
-                            cedula.save(request)
-                        else:
-                            cedula = CedulaPersona(persona=persona, cedula=newfile)
-                            cedula.save(request)
+                        profesor.documentoidentificacion = newfile
+                    profesor.save(request)
                     personaprofesor.crear_perfil(profesor=profesor)
                     personaprofesor.mi_ficha()
                     perfil = personaprofesor.mi_perfil()
@@ -174,20 +192,15 @@ def view(request):
                     perfil.raza = form.cleaned_data['etnia']
                     perfil.nacionalidadindigena = form.cleaned_data['nacionalidadindigena']
                     perfil.save(request)
+                    dedicacion_defecto, nivel_escalafon_defecto = configuracion_docente_por_defecto()
                     profesor.fechainiciodocente = form.cleaned_data['fechainiciodocente']
                     profesor.coordinacion = form.cleaned_data['coordinacion']
-                    profesor.nivelescalafon = form.cleaned_data['nivelescalafon']
-                    profesor.save(request)
-                    cedula = persona.cedula_doc()
-                    if request.FILES["documentoidentificacion"]:
+                    profesor.nivelescalafon = form.cleaned_data['nivelescalafon'] or nivel_escalafon_defecto
+                    if request.FILES.get("documentoidentificacion"):
                         newfile = request.FILES["documentoidentificacion"]
-                        newfile._name = generar_nombre("cedula_", newfile._name)
-                        if cedula:
-                            cedula.cedula = newfile
-                            cedula.save(request)
-                        else:
-                            cedula = CedulaPersona(persona=persona, cedula=newfile)
-                            cedula.save(request)
+                        newfile._name = generar_nombre("documentoidentificacion_", newfile._name)
+                        profesor.documentoidentificacion = newfile
+                    profesor.save(request)
                     log(u'Edito informacion del docente:%s - coordinacion: %s' % (profesor.persona, profesor.coordinacion), request, "edit")
                     return ok_json()
                 else:
@@ -215,11 +228,13 @@ def view(request):
                                              fechagraduacion=form.cleaned_data['fechagraduacion'],
                                              registro=form.cleaned_data['registro'],
                                              cursando=form.cleaned_data['cursando'],
-                                             aplicabeca=form.cleaned_data['aplicabeca'],
-                                             tipobeca=form.cleaned_data['tipobeca'],
-                                             montobeca=form.cleaned_data['montobeca'],
-                                             tipofinanciamientobeca=form.cleaned_data['tipofinanciamientobeca'],
-                                             cicloactual=form.cleaned_data['cicloactual'])
+                                              aplicabeca=form.cleaned_data['aplicabeca'],
+                                              tipobeca=form.cleaned_data['tipobeca'],
+                                              montobeca=form.cleaned_data['montobeca'],
+                                              cicloactual=form.cleaned_data['cicloactual'],
+                                              campoamplio=form.cleaned_data['campoamplio'],
+                                              campoespecifico=form.cleaned_data['campoespecifico'],
+                                              campodetallado=form.cleaned_data['campodetallado'])
                     estudio.save(request)
                     log(u'Adiciono estudio de:%s - %s' % (profesor.persona,estudio), request, "add")
                     return ok_json()
@@ -234,11 +249,12 @@ def view(request):
                 profesor = Profesor.objects.get(pk=request.POST['id'])
                 form = CursoPersonaForm(request.POST)
                 if form.is_valid():
+                    esinstitucion = form.cleaned_data['esinstitucion']
                     curso = CursoPersona(persona=profesor.persona,
                                          nombre=form.cleaned_data['nombre'],
-                                         institucion_id=form.cleaned_data['institucion'],
-                                         educacionsuperior=form.cleaned_data['esinstitucion'],
-                                         institucionformacion=form.cleaned_data['institucionformacion'],
+                                         institucion=form.cleaned_data['institucion'] if esinstitucion else None,
+                                         educacionsuperior=esinstitucion,
+                                         institucionformacion=form.cleaned_data['institucionformacion'] if not esinstitucion else '',
                                          tipocurso=form.cleaned_data['tipocurso'],
                                          fecha_inicio=form.cleaned_data['fecha_inicio'],
                                          apolloinstitucion=form.cleaned_data['apolloinstitucion'],
@@ -274,7 +290,9 @@ def view(request):
                     titulacion.aplicabeca = form.cleaned_data['aplicabeca']
                     titulacion.tipobeca = form.cleaned_data['tipobeca']
                     titulacion.montobeca = form.cleaned_data['montobeca']
-                    titulacion.tipofinanciamientobeca = form.cleaned_data['tipofinanciamientobeca']
+                    titulacion.campoamplio = form.cleaned_data['campoamplio']
+                    titulacion.campoespecifico = form.cleaned_data['campoespecifico']
+                    titulacion.campodetallado = form.cleaned_data['campodetallado']
                     titulacion.save(request)
                     log(u'Modifico estudio de: %s - %s' % (titulacion.persona, titulacion), request, "edit")
                     return ok_json()
@@ -291,7 +309,8 @@ def view(request):
                 if form.is_valid():
                     esinstitucion = form.cleaned_data['esinstitucion']
                     curso.nombre = form.cleaned_data['nombre']
-                    curso.institucion_id = form.cleaned_data['institucion'] if esinstitucion else None
+                    curso.educacionsuperior = esinstitucion
+                    curso.institucion = form.cleaned_data['institucion'] if esinstitucion else None
                     curso.institucionformacion=form.cleaned_data['institucionformacion'] if not esinstitucion else ''
                     curso.tipocurso = form.cleaned_data['tipocurso']
                     curso.fecha_inicio = form.cleaned_data['fecha_inicio']
@@ -338,14 +357,13 @@ def view(request):
                     newfile._name = generar_nombre("cv_", newfile._name)
                     if cv:
                         cv.cv = newfile
-                        cv.save(request)
                     else:
-                        cv = CVPersona(persona=personaprofesor,
-                                       cv=newfile)
-                        cv.save(request)
+                        cv = CVPersona(persona=personaprofesor, cv=newfile)
+                    cv.save(request)
+                    log(u'Cargó CV de: %s' % personaprofesor, request, "add")
                     return ok_json()
                 else:
-                    return bad_json(error=6)
+                    return bad_json(error=6, form=form)
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
@@ -365,6 +383,7 @@ def view(request):
                 profesor = Profesor.objects.get(pk=request.POST['id'])
                 personaprofesor = profesor.persona
                 personaprofesor.borrar_cv()
+                log(u'Eliminó CV de: %s' % personaprofesor, request, "del")
                 return ok_json()
             except Exception as ex:
                 transaction.set_rollback(True)
@@ -513,6 +532,20 @@ def view(request):
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
+        if action == 'verificarprincipal':
+            try:
+                estudio = EstudioPersona.objects.get(pk=request.POST['id'])
+                valor = request.POST['valor'] == 'true'
+                if valor:
+                    EstudioPersona.objects.filter(persona=estudio.persona).exclude(pk=estudio.pk).update(principal=False)
+                estudio.principal = valor
+                estudio.save(request)
+                log(u"Marco estudio principal de : %s - %s" % (estudio.persona, estudio), request, "edit")
+                return ok_json()
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
+
         if action == 'verificarcurso':
             try:
                 estudio = CursoPersona.objects.get(pk=request.POST['id'])
@@ -526,11 +559,7 @@ def view(request):
 
         if action == 'verificarpublicacion':
             try:
-                publicacion = Publicaciones.objects.get(pk=request.POST['id'])
-                publicacion.verificado = (request.POST['valor'] == 'true')
-                publicacion.save(request)
-                log(u"Verifico datos de publicacion de: %s - %s" % (publicacion.persona,publicacion), request, "edit")
-                return ok_json()
+                return bad_json(mensaje=u"El módulo de publicaciones no está habilitado en este proyecto.")
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
@@ -571,96 +600,28 @@ def view(request):
 
         if action == 'addarchivopublicacion':
             try:
-                form = ArchivoEvidenciaEstudiosForm(request.POST, request.FILES)
-                if form.is_valid():
-                    newfile = request.FILES['archivo']
-                    newfile._name = generar_nombre("cursopersona", newfile._name)
-                    publicacion = Publicaciones.objects.get(pk=request.POST['id'])
-                    publicacion.archivo = newfile
-                    publicacion.save(request)
-                    log(u'Adiciono archivo: %s' % publicacion, request, "add")
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
+                return bad_json(mensaje=u"El módulo de publicaciones no está habilitado en este proyecto.")
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
         if action == 'addpublicacion':
             try:
-                profesor = Profesor.objects.get(pk=request.POST['id'])
-                form = PublicacionesPersonaForm(request.POST)
-                if form.is_valid():
-                    titulo = form.cleaned_data['titulo']
-                    for p in Publicaciones.objects.all():
-                        if p.titulo == titulo:
-                            return bad_json(error=7, mensaje='La publicación ya fue registrada por: ' + str(p.autor))
-                    publicacion = Publicaciones(autor=profesor,
-                                                titulo=form.cleaned_data['titulo'],
-                                                codigoies=CODIGO_IES,
-                                                tipopublicacion_id=9,
-                                                tipoarticulo=form.cleaned_data['tipoarticulo'],
-                                                codigodoi=form.cleaned_data['codigodoi'],
-                                                basedatosindexada=form.cleaned_data['bdindexada'],
-                                                catalogo_id=form.cleaned_data['revista'],
-                                                issn=form.cleaned_data['issn'],
-                                                numerorevista=form.cleaned_data['numerorevista'],
-                                                cuatril=form.cleaned_data['cuatril'],
-                                                sjr=form.cleaned_data['sjr'],
-                                                fechapublicacion=form.cleaned_data['fecha'],
-                                                carrera=form.cleaned_data['carrera'],
-                                                centroinvestigacion=form.cleaned_data['centro'],
-                                                estado=form.cleaned_data['estado'],
-                                                linkpublicacion=form.cleaned_data['linkpublicacion'],
-                                                linkrevista=form.cleaned_data['linkrevista'],
-                                                filiacion=form.cleaned_data['filiacion'],
-                                                volumenrevista=form.cleaned_data['volumenrevista'])
-                    publicacion.save(request)
-                    log(u'Adiciono curso: %s' % publicacion, request, "add")
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
+                return bad_json(mensaje=u"El módulo de publicaciones no está habilitado en este proyecto.")
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
         if action == 'editpublicacion':
             try:
-                publicacion = PublicacionPersona.objects.get(pk=request.POST['id'])
-                form = PublicacionesPersonaForm(request.POST)
-                if form.is_valid():
-                    publicacion.titulo = form.cleaned_data['titulo']
-                    publicacion.tipoarticulo = form.cleaned_data['tipoarticulo']
-                    publicacion.codigodoi = form.cleaned_data['codigodoi']
-                    publicacion.basedatosindexada = form.cleaned_data['bdindexada']
-                    publicacion.catalogo_id = form.cleaned_data['revista'] if form.cleaned_data['revista'] > 0 else None
-                    publicacion.issn = form.cleaned_data['issn']
-                    publicacion.numerorevista = form.cleaned_data['numerorevista']
-                    publicacion.cuatril = form.cleaned_data['cuatril']
-                    publicacion.sjr = form.cleaned_data['sjr']
-                    publicacion.fechapublicacion = form.cleaned_data['fecha']
-                    publicacion.centroinvestigacion = form.cleaned_data['centro']
-                    publicacion.estado = form.cleaned_data['estado']
-                    publicacion.carrera = form.cleaned_data['carrera']
-                    publicacion.linkpublicacion = form.cleaned_data['linkpublicacion']
-                    publicacion.linkrevista = form.cleaned_data['linkrevista']
-                    publicacion.filiacion = form.cleaned_data['filiacion']
-                    publicacion.volumenrevista = form.cleaned_data['volumenrevista']
-                    publicacion.save(request)
-                    log(u'modifico curso: %s' % publicacion, request, "edit")
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
+                return bad_json(mensaje=u"El módulo de publicaciones no está habilitado en este proyecto.")
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
         if action == 'delpublicacion':
             try:
-                publicacion = Publicaciones.objects.get(pk=request.POST['id'])
-                log(u'Elimino publicacion: %s' % publicacion, request, "del")
-                publicacion.delete()
-                return ok_json()
+                return bad_json(mensaje=u"El módulo de publicaciones no está habilitado en este proyecto.")
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=2, ex=ex)
@@ -707,13 +668,13 @@ def view(request):
                     data['profesor'] = profesor = Profesor.objects.get(pk=request.GET['id'])
                     data['titulos'] = profesor.persona.estudiopersona_set.all()
                     data['cursos'] = profesor.persona.cursopersona_set.all()
-                    data['distributivos'] = ProfesorDistributivoHoras.objects.filter(profesor=profesor,periodo__extendido=False).order_by('-periodo__inicio')[0:6]
-                    data['publicaciones'] = profesor.publicaciones_set.filter(tipopublicacion_id=9).order_by('-fechapublicacion')
+                    data['distributivos'] = ProfesorDistributivoHoras.objects.filter(profesor=profesor).order_by('-periodo__inicio')[0:6]
+                    data['publicaciones'] = []
                     data['docentes_registran_estudios'] = DOCENTES_REGISTRAN_ESTUDIOS
                     data['docentes_registran_cursos'] = DOCENTES_REGISTRAN_CURSOS
-                    data['docentes_registran_publicaciones'] = DOCENTES_REGISTRAN_PUBLICACIONES
+                    data['docentes_registran_publicaciones'] = False
                     data['docentes_registran_cv'] = DOCENTES_REGISTRAN_CV
-                    data['puede_modificar_distributivo'] = True if (Group.objects.get(pk=26) in persona.grupos()) else False
+                    data['puede_modificar_distributivo'] = Group.objects.filter(pk=26, user=persona.usuario).exists()
                     return render(request, "docentes/titulacion.html", data)
                 except Exception as ex:
                     pass
@@ -758,7 +719,9 @@ def view(request):
                                                                  'aplicabeca': titulacion.aplicabeca,
                                                                  'montobeca': titulacion.montobeca,
                                                                  'tipobeca': titulacion.tipobeca,
-                                                                 'tipofinanciamientobeca': titulacion.tipofinanciamientobeca,
+                                                                 'campoamplio': titulacion.campoamplio,
+                                                                 'campoespecifico': titulacion.campoespecifico,
+                                                                 'campodetallado': titulacion.campodetallado,
                                                                  'registro': titulacion.registro})
                     form.editar(titulacion)
                     data['form'] = form
@@ -869,6 +832,7 @@ def view(request):
 
             if action == 'cargarcv':
                 try:
+                    data['title'] = u'Cargar CV'
                     data['profesor'] = Profesor.objects.get(pk=request.GET['id'])
                     data['form'] = CargarCVForm()
                     return render(request, "docentes/cargarcv.html", data)
@@ -877,7 +841,7 @@ def view(request):
 
             if action == 'borrarcv':
                 try:
-                    data['title'] = u'Borrar CV'
+                    data['title'] = u'Eliminar CV'
                     data['profesor'] = Profesor.objects.get(pk=request.GET['id'])
                     return render(request, "docentes/borrarcv.html", data)
                 except Exception as ex:
@@ -956,10 +920,7 @@ def view(request):
 
             if action == 'addpublicacion':
                 try:
-                    data['title'] = u'Adicionar publicación'
-                    data['profesor'] = profesor = Profesor.objects.get(pk=request.GET['id'])
-                    data['form'] = PublicacionesPersonaForm()
-                    return render(request, "docentes/addpublicacion.html", data)
+                    return url_back(request, ex=u"El módulo de publicaciones no está habilitado en este proyecto.")
                 except Exception as ex:
                     pass
 
@@ -975,11 +936,7 @@ def view(request):
 
             if action == 'addarchivopublicacion':
                 try:
-                    data['title'] = u'Adicionar archivo'
-                    data['publicacion'] = publicacion = Publicaciones.objects.get(pk=request.GET['id'])
-                    data['profesor'] = publicacion.autor.profesor()
-                    data['form'] = ArchivoEvidenciaEstudiosForm()
-                    return render(request, "docentes/addarchivopublicacion.html", data)
+                    return url_back(request, ex=u"El módulo de publicaciones no está habilitado en este proyecto.")
                 except Exception as ex:
                     pass
 
@@ -995,38 +952,13 @@ def view(request):
 
             if action == 'editpublicacion':
                 try:
-                    data['title'] = u'Editar publicación'
-                    data['publicacion'] = publicacion = PublicacionPersona.objects.get(pk=request.GET['id'])
-                    data['profesor'] = publicacion.persona.profesor()
-                    form = PublicacionesPersonaForm(initial={"titulo": publicacion.titulo,
-                                                             "tipoarticulo": publicacion.tipoarticulo,
-                                                             "codigodoi": publicacion.codigodoi,
-                                                             "bdindexada": publicacion.basedatosindexada,
-                                                             "revista": publicacion.catalogo.id if publicacion.catalogo else 0,
-                                                             "issn": publicacion.issn,
-                                                             "numerorevista": publicacion.numerorevista,
-                                                             "cuatril": publicacion.cuatril,
-                                                             "sjr": publicacion.sjr,
-                                                             "fecha": publicacion.fechapublicacion,
-                                                             "centro": publicacion.centroinvestigacion,
-                                                             "carrera": publicacion.carrera,
-                                                             "estado": publicacion.estado,
-                                                             "linkpublicacion": publicacion.linkpublicacion,
-                                                             "linkrevista": publicacion.linkrevista,
-                                                             "volumenrevista": publicacion.volumenrevista,
-                                                             "filiacion": publicacion.filiacion})
-                    form.editar(publicacion)
-                    data['form'] = form
-                    return render(request, "docentes/editpublicacion.html", data)
+                    return url_back(request, ex=u"El módulo de publicaciones no está habilitado en este proyecto.")
                 except Exception as ex:
                     pass
 
             if action == 'delpublicacion':
                 try:
-                    data['title'] = u'Eliminar publicación'
-                    data['publicacion'] = publicacion = Publicaciones.objects.get(pk=request.GET['id'])
-                    data['profesor'] = publicacion.autor.profesor()
-                    return render(request, "docentes/delpublicacion.html", data)
+                    return url_back(request, ex=u"El módulo de publicaciones no está habilitado en este proyecto.")
                 except Exception as ex:
                     pass
 
@@ -1088,6 +1020,7 @@ def view(request):
                 data['reporte_0'] = obtener_reporte('listado_clases_abiertas')
                 data['reporte_1'] = obtener_reporte('ficha_docente')
                 data['reporte_2'] = obtener_reporte('resultado_evaluacion')
+                data['docentes_registran_cv'] = DOCENTES_REGISTRAN_CV
                 if persona.id in PERM_ENTRAR_COMO_USUARIO:
                     data['entrar_como_usuario'] = True
                 return render(request, "docentes/view.html", data)

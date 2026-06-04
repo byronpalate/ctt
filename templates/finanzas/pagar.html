@@ -384,7 +384,7 @@
                     data: {'action': 'pagaryfacturar', 'data': JSON.stringify(data), 'csrfmiddlewaretoken': csrftoken},
                     success: function(data) {
                         if (data.result === 'ok') {
-                            location.href = '/finanzas?action=rubros&id={{ inscripcion.id }}';
+                            location.href = '/finanzas?action=rubros&id={{ inscripcion.persona.id }}';
                         } else {
                             hideWaiting();
                             smoke.alert("Error procesando el pago: "+data.error);
@@ -448,11 +448,7 @@
                 } else if (excedenteTotal.cmp(0) === 1 && pagonotdadebito){
                     smoke.alert("No puede existir excedente cuando se usan notas de crédito.");
                 } else if (excedenteTotal.cmp(0) === 1){
-                    $("#bodyexcedente").html(
-                        "Existe un valor excedente de $ " + excedenteTotal.toFixed(2) +
-                        ". Si está seguro(a) que los valores están correctos, continúe con la opción PAGAR."
-                    );
-                    $("#excedentepanel").modal('show');
+                    smoke.alert("No puede ingresar un valor mayor a la deuda. Ajuste el pago al valor exacto.");
                 } else if (tieneiva == 'si') {
                     if (parseInt(deudainicial) !== parseInt(valorapagar)) {
                         smoke.alert("Este rubro no se puede cancelar en abonos, debe ser el valor total.");
@@ -1207,7 +1203,7 @@
         }
     </style>
 {% endblock %}
-{% block atras %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block atras %}/finanzas?action=rubros&id={{ inscripcion.persona.id }}{% endblock %}
 {% block headcanvas %}
     <div class="row mb-2">
         <div class="col-12">
@@ -1447,3 +1443,4 @@
     </div>
 
 {% endblock %}
+

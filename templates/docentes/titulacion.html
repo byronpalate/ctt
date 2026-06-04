@@ -36,7 +36,7 @@
                 bloqueointerface();
                 $.ajax({
                     type: "POST",
-                    url: "/adm_talentohumano",
+                    url: "/docentes",
                     data: {'action': 'verificarprincipal', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
                     success: function(data) {
                         desbloqueointerface();
@@ -86,32 +86,34 @@
                 });
             });
 
-            $(".verificarpublicacion").click(function () {
-                var elemento = $(this);
-                var id = elemento.attr('ida');
-                var valor = elemento.is(":checked");
-                bloqueointerface();
-                $.ajax({
-                    type: "POST",
-                    url: "/docentes",
-                    data: {'action': 'verificarpublicacion', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
-                    success: function(data) {
-                        if (data.result === 'ok') {
-                            location.href = document.URL;
-                        } else {
+            {% if docentes_registran_publicaciones %}
+                $(".verificarpublicacion").click(function () {
+                    var elemento = $(this);
+                    var id = elemento.attr('ida');
+                    var valor = elemento.is(":checked");
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/docentes",
+                        data: {'action': 'verificarpublicacion', 'id': id, 'valor': valor, 'csrfmiddlewaretoken': csrftoken},
+                        success: function(data) {
+                            if (data.result === 'ok') {
+                                location.href = document.URL;
+                            } else {
+                                desbloqueointerface();
+                                elemento.prop('checked', !valor);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function() {
                             desbloqueointerface();
                             elemento.prop('checked', !valor);
-                            NotificacionAlerta(data.icono, data.titulo, data.mensaje);
-                        }
-                    },
-                    error: function() {
-                        desbloqueointerface();
-                        elemento.prop('checked', !valor);
-                        NotificacionError('!!!', 'Error de conexión');
-                    },
-                    dataType: "json"
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
                 });
-            });
+            {% endif %}
 
 
         });
@@ -300,11 +302,11 @@
             </table>
         </div>
     </div>
-    <div class="row">
-        {% if docentes_registran_estudios %}
-            <div class='row'>
-                <div class='col-12'>
-                    {% if docentes_registran_publicaciones %}
+    {% if docentes_registran_publicaciones %}
+        <div class="row">
+            {% if docentes_registran_estudios %}
+                <div class='row'>
+                    <div class='col-12'>
                         {% if perms.ctt.puede_modificar_profesores %}
                             <div class='row'>
                                 <div class='col-12'>
@@ -313,64 +315,58 @@
                             </div>
                             <br>
                         {% endif %}
-                    {% endif %}
+                    </div>
                 </div>
-            </div>
-        {% endif %}
-    </div>
-    <div class='row'>
-        <div class='col-12'>
-            <table class='table table-bordered table-striped'>
-                <thead class="table-light">
-                <tr>
-                    <th style="width: 500px;">Nombre</th>
-                    <th style="width: 80px;">Revista</th>
-                    <th style="width: 80px;text-align: center;">Fecha </th>
-                    <th style="width: 100px;">Url</th>
-                    <th style="width: 80px;">ISBN</th>
-                    {% if docentes_registran_publicaciones %}
-                        <th style="width: 30px; text-align: center">Verf.</th>
-                    {% endif %}
-                    <th style="width: 80px; text-align: center">Archivo</th>
-                    <th style="width: 80px;"></th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for publicacion in publicaciones %}
+            {% endif %}
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <table class='table table-bordered table-striped'>
+                    <thead class="table-light">
                     <tr>
-                        <td>{{ publicacion.titulo }}</td>
-                        <td>{{ publicacion.basedatosindexada }} </td>
-                        <td style="text-align: center;">{{ publicacion.fechapublicacion|date:"Y-m-d"}} </td>
-                        <td><a href="{{ publicacion.linkpublicacion }}" target="_blank">{{ publicacion.linkpublicacion }}</a></td>
-                        <td>{{ publicacion.isbn|default_if_none:publicacion.issn }} </td>
-                        {% if docentes_registran_publicaciones %}
+                        <th style="width: 500px;">Nombre</th>
+                        <th style="width: 80px;">Revista</th>
+                        <th style="width: 80px;text-align: center;">Fecha </th>
+                        <th style="width: 100px;">Url</th>
+                        <th style="width: 80px;">ISBN</th>
+                        <th style="width: 30px; text-align: center">Verf.</th>
+                        <th style="width: 80px; text-align: center">Archivo</th>
+                        <th style="width: 80px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for publicacion in publicaciones %}
+                        <tr>
+                            <td>{{ publicacion.titulo }}</td>
+                            <td>{{ publicacion.basedatosindexada }} </td>
+                            <td style="text-align: center;">{{ publicacion.fechapublicacion|date:"Y-m-d"}} </td>
+                            <td><a href="{{ publicacion.linkpublicacion }}" target="_blank">{{ publicacion.linkpublicacion }}</a></td>
+                            <td>{{ publicacion.isbn|default_if_none:publicacion.issn }} </td>
                             <td style="text-align: center">
                                 <input type="checkbox" {% if publicacion.verificado %}checked{% endif %} class="verificarpublicacion sizecheckmd" ida="{{ publicacion.id }}">
                             </td>
-                        {% endif %}
-                        <td style="text-align: center">
-                            {% if not publicacion.verificado %}
-                                <a href="javascript:;" nhref='/docentes?action=addarchivopublicacion&id={{ publicacion.id }}' class='btn btn-success btn-ssm formmodal'><i class="icon-arrow-up"></i> </a>
-                            {% endif %}
-                            {% if publicacion.archivo %}
-                                <a id="{{ publicacion.id }}" href="{% if publicacion.archivo %}{{ publicacion.archivo.url }}{% endif %}" class='btn btn-info btn-ssm'><i class="icon-arrow-down"></i> </a>
-                            {% endif %}
-                        </td>
-                        <td style="text-align: center">
-                            {% if docentes_registran_publicaciones %}
+                            <td style="text-align: center">
+                                {% if not publicacion.verificado %}
+                                    <a href="javascript:;" nhref='/docentes?action=addarchivopublicacion&id={{ publicacion.id }}' class='btn btn-success btn-ssm formmodal'><i class="icon-arrow-up"></i> </a>
+                                {% endif %}
+                                {% if publicacion.archivo %}
+                                    <a id="{{ publicacion.id }}" href="{% if publicacion.archivo %}{{ publicacion.archivo.url }}{% endif %}" class='btn btn-info btn-ssm'><i class="icon-arrow-down"></i> </a>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center">
                                 {% if not publicacion.verificado and  perms.ctt.puede_modificar_profesores %}
                                     <a href="javascript:;" nhref='/docentes?action=delpublicacion&id={{ publicacion.id }}' class='btn btn-ssm btn-danger tu eliminacionmodal' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
                                 {% endif %}
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="20">NO EXISTEN DATOS</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="20">NO EXISTEN DATOS</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
+    {% endif %}
 {% endblock %}

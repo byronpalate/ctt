@@ -81,7 +81,7 @@
             bloqueointerface();
             $.ajax({
                 type: "POST",
-                url: "/alu_finanzas",
+                url: "/cli_finanzas",
                 data: {'action': 'permitediferir', 'id': id, 'idt': idt, 'idtb': idtb, 'csrfmiddlewaretoken': csrftoken},
                 success: function(data) {
                     desbloqueointerface();

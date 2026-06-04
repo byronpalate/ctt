@@ -20,12 +20,15 @@ from settings import FORMA_PAGO_EFECTIVO, FORMA_PAGO_TARJETA, FORMA_PAGO_CHEQUE,
     PAGO_TARJETA_NACIONAL_ID, OTROS_BANCOS_EXTERNOS_ID, TIPO_TARJETA_CREDITO_ID, TIPO_TARJETA_DEBITO_ID, \
     DIFERIDO_TARJETA_CORRIENTE_ID, PERSONA_ADMINS_ACADEMICO_ID
 from ctt.commonviews import adduserdata, obtener_reporte
-from ctt.forms import RubroForm, FormaPagoForm, EliminarRubroForm, MoverPagoRubroForm
+from ctt.forms import RubroForm, FormaPagoForm, EliminarRubroForm, MoverPagoRubroForm, \
+    DepositoInscripcionForm, DepositoInscripcionMotivoForm, NotaCreditoForm, RecaudacionAnticipadaForm, \
+    CambiarEstadoDepositoInscripcionForm
 from ctt.funciones import MiPaginador, log, convertir_fecha, ok_json, bad_json, empty_json, url_back, generar_nombre
 from ctt.models import Inscripcion, Rubro, Pago, Banco, TipoOtroRubro, RubroOtro, Persona, ClienteFactura, \
     PagoCheque, RubroEspecieValorada, PagoTransferenciaDeposito, TipoEspecieValorada, InscripcionFlags, RubroLiquidado, ValeCaja, \
     TipoCheque, TipoEmisorTarjeta, IvaAplicado, null_to_numeric, DatoCheque, DatoTransferenciaDeposito, Periodo, \
-    RubroAnticipado, TipoTarjetaBanco, RubroCuota, FormaDePago, RubroNotaDebito, DescuentoRecargoRubro
+    RubroAnticipado, TipoTarjetaBanco, RubroCuota, FormaDePago, RubroNotaDebito, DescuentoRecargoRubro, \
+    DepositoPersona, ReciboCajaInstitucion, NotaCredito, Factura, ReciboPago, PagoReciboCajaInstitucion
 
 from ctt.printdoc import imprimir_contenido
 
@@ -55,6 +58,9 @@ def pagaryfacturar(request, transaction, sesion_caja):
         lista_rubros_anticipados = []
         data = json.loads(request.POST['data'])
         pagos = data['pagos']
+        formas_no_soportadas = [FORMA_PAGO_TARJETA, FORMA_PAGO_NOTA_CREDITO]
+        if any(int(pago['formadepago']) in formas_no_soportadas for pago in pagos):
+            return {'result': 'bad', "error": u"La forma de pago seleccionada no está disponible porque el modelo contable no existe."}
         hoy = datetime.now().date()
         # FACTURA
         factura = None
@@ -123,7 +129,7 @@ def pagaryfacturar(request, transaction, sesion_caja):
         listatipospago = []
         pagopararecibo = None
         tipopagopararecibo = 0
-        depositoinscripcion = None
+        depositopersona = None
         excedente_total = 0.0
         for pago in pagos:
             tp = None
@@ -178,8 +184,8 @@ def pagaryfacturar(request, transaction, sesion_caja):
                     tp = PagoTransferenciaDeposito(datotransferenciadeposito=datotransferenciadeposito)
                     tp.save(request)
                 padre = tp.padre()
-                if DepositoInscripcion.objects.filter(cuentabanco=padre.cuentabanco, fecha=padre.fechabanco, referencia=padre.referencia, deposito=True, procesado=False).exists():
-                    depositoinscripcion = DepositoInscripcion.objects.filter(cuentabanco=padre.cuentabanco, fecha=padre.fechabanco, referencia=padre.referencia, deposito=True, procesado=False)[0]
+                if DepositoPersona.objects.filter(persona=inscripcion.persona, cuentabanco=padre.cuentabanco, fecha=padre.fechabanco, referencia=padre.referencia, deposito=True, procesado=False).exists():
+                    depositopersona = DepositoPersona.objects.filter(persona=inscripcion.persona, cuentabanco=padre.cuentabanco, fecha=padre.fechabanco, referencia=padre.referencia, deposito=True, procesado=False)[0]
                 if not pagopararecibo:
                     pagopararecibo = tp
                     tipopagopararecibo = 2
@@ -208,8 +214,8 @@ def pagaryfacturar(request, transaction, sesion_caja):
                     tp = PagoTransferenciaDeposito(datotransferenciadeposito=datotransferenciadeposito)
                     tp.save(request)
                 padre = tp.padre()
-                if DepositoInscripcion.objects.filter(cuentabanco=padre.cuentabanco, fecha=padre.fechabanco, referencia=padre.referencia, deposito=False, procesado=False).exists():
-                    depositoinscripcion = DepositoInscripcion.objects.filter(cuentabanco=padre.cuentabanco, fecha=padre.fechabanco, referencia=padre.referencia, deposito=False, procesado=False)[0]
+                if DepositoPersona.objects.filter(persona=inscripcion.persona, cuentabanco=padre.cuentabanco, fecha=padre.fechabanco, referencia=padre.referencia, deposito=False, procesado=False).exists():
+                    depositopersona = DepositoPersona.objects.filter(persona=inscripcion.persona, cuentabanco=padre.cuentabanco, fecha=padre.fechabanco, referencia=padre.referencia, deposito=False, procesado=False)[0]
                 if not pagopararecibo:
                     pagopararecibo = tp
                     tipopagopararecibo = 3
@@ -217,46 +223,8 @@ def pagaryfacturar(request, transaction, sesion_caja):
                     listatipospago.append(tp)
                 datotransferenciadeposito.actualiza_valor()
             elif pago['formadepago'] == FORMA_PAGO_TARJETA:
-                descuentofp = pp.detalle_descuento(FORMA_PAGO_TARJETA) if matricula else None
-                if DatoTarjeta.objects.filter(referencia=pago['referencia'], lote=pago['lote'], autorizacion=pago['autorizaciontar']).exists():
-                    datotarjeta = DatoTarjeta.objects.filter(referencia=pago['referencia'], lote=pago['lote'], autorizacion=pago['autorizaciontar'])[0]
-                else:
-                    tipoemisortarjeta = None
-                    if pago['tipoemisortarjeta']:
-                        tipoemisortarjeta = TipoEmisorTarjeta.objects.get(pk=pago['tipoemisortarjeta'])
-                    diferido = None
-                    if pago['diferido']:
-                        diferido = DiferidoTarjeta.objects.filter(banco=pago['bancotarjeta'],
-                                                                  tipoemisortarjeta=tipoemisortarjeta,
-                                                                  tipotarjetabanco=pago['tarjeta'],
-                                                                  valordatafast=pago['diferido'])[0]
-                    datotarjeta = DatoTarjeta(banco=Banco.objects.get(pk=pago['bancotarjeta']),
-                                              tipo_id=pago['tipotarjeta'],
-                                              tipotarjeta_id=pago['tarjeta'],
-                                              tipoemisortarjeta=tipoemisortarjeta,
-                                              diferido=diferido,
-                                              poseedor=pago['poseedor'],
-                                              procesadorpago_id=pago['procesadorpago'],
-                                              referencia=pago['referencia'],
-                                              lote=pago['lote'],
-                                              autorizacion=pago['autorizaciontar'],
-                                              fecha=datetime.now().date())
-                    datotarjeta.save(request)
-                if datotarjeta.pagotarjeta_set.filter(pagos__valido=True).exists():
-                    if sesion_caja.fecha != datotarjeta.fecha:
-                        transaction.savepoint_rollback(puntosalva)
-                        return {'result': 'bad', "error": u"Tarjeta procesada en otra fecha."}
-                if PagoTarjeta.objects.filter(datotarjeta=datotarjeta).exists():
-                    tp = PagoTarjeta.objects.filter(datotarjeta=datotarjeta)[0]
-                else:
-                    tp = PagoTarjeta(datotarjeta=datotarjeta)
-                    tp.save(request)
-                if not pagopararecibo:
-                    pagopararecibo = tp
-                    tipopagopararecibo = 4
-                if tp not in listatipospago:
-                    listatipospago.append(tp)
-                datotarjeta.actualiza_valor()
+                transaction.savepoint_rollback(puntosalva)
+                return {'result': 'bad', "error": u"Pago con tarjeta no disponible: no existe el modelo de pago con tarjeta."}
             elif pago['formadepago'] == FORMA_PAGO_RECIBOCAJAINSTITUCION:
                 descuentofp = pp.detalle_descuento(FORMA_PAGO_RECIBOCAJAINSTITUCION) if matricula else None
                 if ReciboCajaInstitucion.objects.get(pk=pago['recibocaja']).saldo >= float(pago['valor']):
@@ -275,22 +243,8 @@ def pagaryfacturar(request, transaction, sesion_caja):
                     transaction.savepoint_rollback(puntosalva)
                     return {'result': 'bad', "error": u"Recibo de caja no tiene saldo suficiente."}
             elif pago['formadepago'] == FORMA_PAGO_NOTA_CREDITO:
-                descuentofp = pp.detalle_descuento(FORMA_PAGO_NOTA_CREDITO) if matricula else None
-                if NotaCredito.objects.get(pk=pago['notacredito']).saldo >= float(pago['valor']):
-                    tp = PagoNotaCredito(notacredito_id=pago['notacredito'],
-                                         valor=float(pago['valor']),
-                                         fecha=datetime.now().date())
-                    tp.save(request)
-                    if not pagopararecibo:
-                        pagopararecibo = tp
-                        tipopagopararecibo = 6
-                    nc = tp.notacredito
-                    nc.actualiza_valor()
-                    if tp not in listatipospago:
-                        listatipospago.append(tp)
-                else:
-                    transaction.savepoint_rollback(puntosalva)
-                    return {'result': 'bad', "error": u"Nota de crédito no tiene saldo suficiente."}
+                transaction.savepoint_rollback(puntosalva)
+                return {'result': 'bad', "error": u"Pago con nota de crédito no disponible: no existe el modelo de aplicación de nota de crédito."}
             valor_inicial = float(pago['valor'])
             valor_restante = valor_inicial
             pago2 = None
@@ -342,11 +296,11 @@ def pagaryfacturar(request, transaction, sesion_caja):
                         solicitud.save(request)
                     if tp:
                         tp.pagos.add(pago2)
-                    if (pago2.es_deposito() or pago2.es_transferencia()) and depositoinscripcion:
-                        pago2.depositoinscripcion = depositoinscripcion
+                    if (pago2.es_deposito() or pago2.es_transferencia()) and depositopersona:
+                        pago2.depositopersona = depositopersona
                         pago2.save(request)
-                        depositoinscripcion.save(request)
-                        if depositoinscripcion.saldo < 0:
+                        depositopersona.save(request)
+                        if depositopersona.saldo < 0:
                             transaction.savepoint_rollback(puntosalva)
                             return {'result': 'bad', "error": u"El depósito no tiene el saldo solicitado."}
                     if facturar == 'si':
@@ -405,48 +359,8 @@ def pagaryfacturar(request, transaction, sesion_caja):
 
         # === SI HAY EXCEDENTE (sumado de todas las formas de pago), crear UN SOLO RC ===
         if excedente_total > 0:
-            pagoexedente = Pago(
-                fecha=datetime.now().date(),
-                iva=0,
-                valor=excedente_total,
-                efectivo=True if tipopagopararecibo == 0 else False,
-                sesion=sesion_caja
-            )
-            pagoexedente.save(request)
-
-            # Vincular al tipo de pago 'portador' si aplica (cheque/dep./transf./tarjeta)
-            if pagopararecibo and tipopagopararecibo != 0:
-                pagopararecibo.pagos.add(pagoexedente)
-                pagopararecibo.actualiza_valor()
-                padre = pagopararecibo.padre()
-                padre.actualiza_valor()
-
-            rc = ReciboCajaInstitucion(
-                inscripcion=inscripcion,
-                pago=pagoexedente,
-                motivo='PAGO ANTICIPADO DE VALORES',
-                sesioncaja=sesion_caja,
-                fecha=datetime.now().date(),
-                hora=datetime.now().time(),
-                valorinicial=excedente_total,
-                saldo=excedente_total
-            )
-            rc.save(request)
-
-            if factura:
-                facturaexedente = FacturaPagoExedente(
-                    factura=factura,
-                    recibocajainstitucion=rc,
-                    pago=pagoexedente
-                )
-                facturaexedente.save(request)
-            else:
-                recibopagoexedente = ReciboPagoExedente(
-                    pago=pagoexedente,
-                    recibocajainstitucion=rc,
-                    recibopago=recibopago
-                )
-                recibopagoexedente.save(request)
+            transaction.savepoint_rollback(puntosalva)
+            return {'result': 'bad', "error": u"No puede registrar excedente: no existen los modelos de vínculo de excedentes."}
         if factura:
             if factura.sesion.caja.puntodeventa.facturaelectronica:
                 factura.electronica = True
@@ -457,7 +371,7 @@ def pagaryfacturar(request, transaction, sesion_caja):
             if recibopago.sesion.caja.puntodeventa.imprimirrecibo:
                 imprimir_contenido(request, 'recibo', recibopago.id)
         # ACTUALIZA PRE-NOTIFICACION DE PAGOS
-        for deposito in inscripcion.depositoinscripcion_set.filter(procesado=False):
+        for deposito in inscripcion.depositopersona_set.filter(procesado=False):
             deposito.save(request)
         inscripcion.resetea_autorizaciones()
         for rubro in lista_rubros_anticipados:
@@ -856,7 +770,7 @@ def view(request):
 
         if action == 'procesado':
             try:
-                deposito = DepositoInscripcion.objects.get(pk=request.POST['id'])
+                deposito = DepositoPersona.objects.get(pk=request.POST['id'])
                 deposito.estadoprocesado = int(request.POST['estadoprocesado'])
                 deposito.save()
                 log(u'Cambio estado de procesado: %s' % deposito.motivo, request, "edit")
@@ -866,7 +780,7 @@ def view(request):
 
         if action == 'valido':
             try:
-                deposito = DepositoInscripcion.objects.get(pk=request.POST['id'])
+                deposito = DepositoPersona.objects.get(pk=request.POST['id'])
                 deposito.valido = True
                 deposito.save()
                 log(u'Valido documento deposito: %s' % deposito.motivo, request, "edit")
@@ -876,7 +790,7 @@ def view(request):
 
         if action == 'invalido':
             try:
-                deposito = DepositoInscripcion.objects.get(pk=request.POST['id'])
+                deposito = DepositoPersona.objects.get(pk=request.POST['id'])
                 deposito.valido = False
                 deposito.save()
                 log(u'Invalido documento deposito: %s' % deposito.motivo, request, "edit")
@@ -916,7 +830,7 @@ def view(request):
             try:
                 form = DepositoInscripcionMotivoForm(request.POST)
                 if form.is_valid():
-                    deposito = DepositoInscripcion.objects.get(pk=request.POST['id'])
+                    deposito = DepositoPersona.objects.get(pk=request.POST['id'])
                     deposito.motivo = form.cleaned_data['motivo']
                     deposito.save(request)
                     log(u'Modifico rubro: %s de %s' % (persona, deposito), request, "edit")
@@ -931,23 +845,35 @@ def view(request):
             try:
                 form = DepositoInscripcionForm(request.POST, request.FILES)
                 if form.is_valid():
-                    inscripcion = Inscripcion.objects.get(pk=request.POST['inscripcion'])
+                    inscripcion = Inscripcion.objects.get(pk=request.POST['inscripcion']) if request.POST.get('inscripcion') else None
+                    persona_deposito = inscripcion.persona if inscripcion else Persona.objects.get(pk=request.POST['persona'])
+                    if 'archivo' not in request.FILES:
+                        return bad_json(mensaje=u"Debe subir el documento en formato PNG o JPG.")
                     newfile = request.FILES['archivo']
                     newfile._name = generar_nombre("deposito_", newfile._name)
-                    if DepositoInscripcion.objects.filter(cuentabanco=form.cleaned_data['cuentabanco'], fecha=form.cleaned_data['fecha'], referencia=form.cleaned_data['referencia'], ventanilla=True if form.cleaned_data['ventanilla'] else False).exists():
+                    if form.cleaned_data['ventanilla'] == False and form.cleaned_data['movilweb'] == False:
+                        return bad_json(mensaje=u'Debes seleccionar al menos una opción (Ventanilla o Móvil/Web).')
+                    if DepositoPersona.objects.filter(persona=persona_deposito,
+                                                       cuentabanco=form.cleaned_data['cuentabanco'],
+                                                       fecha=form.cleaned_data['fecha'],
+                                                       referencia=form.cleaned_data['referencia'],
+                                                       deposito=True if form.cleaned_data['ventanilla'] else False).exists():
                         return bad_json(mensaje=u'Ya existe ese número de referencia ingresado')
-                    deposito = DepositoInscripcion(inscripcion=inscripcion,
-                                                   fecha=form.cleaned_data['fecha'],
-                                                   ventanilla=True if form.cleaned_data['ventanilla'] else False,
-                                                   movilweb=True if form.cleaned_data['movilweb'] else False,
-                                                   referencia=form.cleaned_data['referencia'],
-                                                   cuentabanco=form.cleaned_data['cuentabanco'],
-                                                   valor=form.cleaned_data['valor'],
-                                                   motivo=form.cleaned_data['motivo'],
-                                                   archivo=newfile,
-                                                   procesado=False)
+                    deposito = DepositoPersona(persona=persona_deposito,
+                                               inscripcion=inscripcion,
+                                               fecha=form.cleaned_data['fecha'],
+                                               ventanilla=True if form.cleaned_data['ventanilla'] else False,
+                                               movilweb=True if form.cleaned_data['movilweb'] else False,
+                                               deposito=True if form.cleaned_data['ventanilla'] else False,
+                                               referencia=form.cleaned_data['referencia'],
+                                               cuentabanco=form.cleaned_data['cuentabanco'],
+                                               valor=form.cleaned_data['valor'],
+                                               motivo=form.cleaned_data['motivo'],
+                                               archivo=newfile,
+                                               procesado=False,
+                                               estadoprocesado=3)
                     deposito.save(request)
-                    log(u'Adiciono deposito de inscripcion: %s' % deposito, request, "add")
+                    log(u'Adiciono deposito de persona: %s' % deposito, request, "add")
                     return ok_json()
                 else:
                     return bad_json(error=6)
@@ -1235,7 +1161,12 @@ def view(request):
             if action == 'adddeposito':
                 try:
                     data['title'] = u'Nuevo comprobante de pago'
-                    data['inscripcion'] = inscripcion = Inscripcion.objects.get(pk=request.GET['iid'])
+                    if request.GET.get('pid'):
+                        data['persona_deposito'] = Persona.objects.get(pk=request.GET['pid'])
+                        data['inscripcion'] = None
+                    else:
+                        data['inscripcion'] = inscripcion = Inscripcion.objects.get(pk=request.GET['iid'])
+                        data['persona_deposito'] = inscripcion.persona
                     data['form'] = DepositoInscripcionForm()
                     return render(request, "finanzas/adddeposito.html", data)
                 except Exception as ex:
@@ -1244,8 +1175,8 @@ def view(request):
             if action == 'editdeposito':
                 try:
                     data['title'] = u'Editar Motivo Depósito'
-                    data['deposito'] = deposito = DepositoInscripcion.objects.get(pk=request.GET['id'])
-                    data['inscripcion'] = inscripcion = Inscripcion.objects.get(pk=request.GET['iid'])
+                    data['deposito'] = deposito = DepositoPersona.objects.get(pk=request.GET['id'])
+                    data['persona_deposito'] = deposito.persona
                     data['form'] = DepositoInscripcionMotivoForm(initial={'motivo': deposito.motivo})
                     return render(request, "finanzas/editdeposito.html", data)
                 except Exception as ex:
@@ -1375,7 +1306,7 @@ def view(request):
                     data['diferido_tarjeta_corriente_id'] = DIFERIDO_TARJETA_CORRIENTE_ID
                     data['tiene_nota_debito'] = rubros.filter(rubronotadebito__isnull=False).exists()
                     data['tiene_iva'] = rubros.filter(iva_id__gt=1).exists()
-                    data['depositos'] = inscripcion.depositoinscripcion_set.filter(autorizado=True, saldo__gt=0)
+                    data['depositos'] = DepositoPersona.objects.filter(persona=inscripcion.persona, autorizado=True, saldo__gt=0)
                     data['facturacion_electronica'] = caja.puntodeventa.facturaelectronica
                     return render(request, "finanzas/pagar.html", data)
                 except Exception as ex:
@@ -1431,7 +1362,7 @@ def view(request):
             if action == 'depositosnuevos':
                 try:
                     data['title'] = u"Depositos ingresados"
-                    data['depositos'] = DepositoInscripcion.objects.filter(procesado=False, autorizado=True, saldo__gt=0)
+                    data['depositos'] = DepositoPersona.objects.filter(procesado=False, autorizado=True, saldo__gt=0)
                     return render(request, "finanzas/depositosnuevos.html", data)
                 except Exception as ex:
                     pass
@@ -1471,8 +1402,8 @@ def view(request):
             if action == 'valido':
                 try:
                     data['title'] = u'Validar documento'
-                    data['deposito'] = DepositoInscripcion.objects.get(pk=request.GET['id'])
-                    data['inscripcion'] = Inscripcion.objects.get(pk=request.GET['iid'])
+                    data['deposito'] = DepositoPersona.objects.get(pk=request.GET['id'])
+                    data['persona_deposito'] = data['deposito'].persona
                     return render(request, "finanzas/valido.html", data)
                 except Exception as ex:
                     pass
@@ -1480,8 +1411,8 @@ def view(request):
             if action == 'invalido':
                 try:
                     data['title'] = u'Invalidar documento'
-                    data['deposito'] = DepositoInscripcion.objects.get(pk=request.GET['id'])
-                    data['inscripcion'] = Inscripcion.objects.get(pk=request.GET['iid'])
+                    data['deposito'] = DepositoPersona.objects.get(pk=request.GET['id'])
+                    data['persona_deposito'] = data['deposito'].persona
                     return render(request, "finanzas/invalido.html", data)
                 except Exception as ex:
                     pass
@@ -1489,8 +1420,8 @@ def view(request):
             if action == 'procesado':
                 try:
                     data['title'] = u'Procesado'
-                    data['deposito'] = depositoinscripcion = DepositoInscripcion.objects.get(pk=request.GET['id'])
-                    data['inscripcion'] = Inscripcion.objects.get(pk=request.GET['iid'])
+                    data['deposito'] = depositoinscripcion = DepositoPersona.objects.get(pk=request.GET['id'])
+                    data['persona_deposito'] = depositoinscripcion.persona
                     data['form'] = CambiarEstadoDepositoInscripcionForm(initial={'estadoprocesado': depositoinscripcion.estadoprocesado})
                     return render(request, "finanzas/procesado.html", data)
                 except Exception as ex:
@@ -1584,7 +1515,7 @@ def view(request):
                     data['total_recibocaja_sesion'] = sesion_caja.total_recibocaja_sesion()
                     data['total_otros_ingresos'] = null_to_numeric(ValeCaja.objects.filter(sesion=sesion_caja, tipooperacion=2).distinct().aggregate(valor=Sum('valor'))['valor'], 2)
                     data['total_otros_egresos'] = null_to_numeric(ValeCaja.objects.filter(sesion=sesion_caja, tipooperacion=1).distinct().aggregate( valor=Sum('valor'))['valor'], 2)
-                    data['depositos_pendientes_procesar'] = DepositoInscripcion.objects.filter(procesado=False, autorizado=True, saldo__gt=0).count()
+                    data['depositos_pendientes_procesar'] = DepositoPersona.objects.filter(procesado=False, autorizado=True, saldo__gt=0).count()
                     data['total_sesion'] = sesion_caja.total_sesion()
                 data['pago_efectivo_id'] = FORMA_PAGO_EFECTIVO
                 data['pago_tarjeta_id'] = FORMA_PAGO_TARJETA
@@ -1598,3 +1529,4 @@ def view(request):
                 return render(request, "finanzas/view.html", data)
             except Exception as ex:
                 return HttpResponseRedirect('/')
+

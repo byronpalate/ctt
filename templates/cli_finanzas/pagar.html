@@ -389,7 +389,7 @@
                 if(toMinute===0 && toSecond===0)
                 {
                     bloqueointerface();
-                    location.href = "/alu_finanzas";
+                    location.href = "/cli_finanzas";
                 }
                 mitiempom=toMinute;
                 mitiempo2 = mitiempom + ":" + mitiempos;
@@ -446,7 +446,7 @@
                 bloqueointerface();
                 $.ajax({
                     type: "POST",
-                    url: "/alu_finanzas",
+                    url: "/cli_finanzas",
                     data: {
                         'action': 'act_valor_autorizacion',
                         'email': email,
@@ -541,7 +541,7 @@
                 bloqueointerface();
                 $.ajax({
                     type: "POST",
-                    url: "/alu_finanzas",
+                    url: "/cli_finanzas",
                     data: {'action': 'act_valor_autorizacion_payphone',
                         'email': email,
                         'telefono': telefono,
@@ -621,7 +621,7 @@
                 bloqueointerface();
                 $.ajax({
                     type: "POST",
-                    url: "/alu_finanzas",
+                    url: "/cli_finanzas",
                     data: {
                         'action': 'act_valor_autorizacion_deuna',
                         'email': email,
@@ -698,10 +698,10 @@
                             var tries = 0;
                             var maxTries = 90; // ~4.5 minutos (90 * 3s)
                             var pollTimer = setInterval(function () {
-                                $.get('/alu_finanzas', pollParams, function (r) {
+                                $.get('/cli_finanzas', pollParams, function (r) {
                                     if (r.result === 'ok' && r.pagado) {
                                         clearInterval(pollTimer);
-                                        window.location.href = '/alu_finanzas'; // 👈 redirección final
+                                        window.location.href = '/cli_finanzas'; // 👈 redirección final
                                     }
                                 }).fail(function () {
                                     // si falla el GET, no interrumpas, volverá a intentar
@@ -740,7 +740,7 @@
 
     </script>
 {% endblock %}
-{% block atras %}/alu_finanzas{% endblock %}
+{% block atras %}/cli_finanzas{% endblock %}
 {% block headcanvas %}
     <div class='row' id="previo_pago">
         <div class='row'>
@@ -918,7 +918,7 @@
         <div class='col-3'>
         </div>
         <div class="col-6" id="formpago" style="border: 0">
-            <form action="{{ url_app_datafast }}/alu_finanzas?action=resultado" style="border: 0" class="paymentWidgets" id="paymentWidgets" data-brands="VISA MASTER AMEX DINERS DISCOVER">
+            <form action="{{ url_app_datafast }}/cli_finanzas?action=resultado" style="border: 0" class="paymentWidgets" id="paymentWidgets" data-brands="VISA MASTER AMEX DINERS DISCOVER">
                 <div class="alert alert-warning">
                     CARGANDO FORMULARIO DE PAGO.
                 </div>

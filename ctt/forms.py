@@ -10,7 +10,7 @@ from django.forms.widgets import DateTimeInput
 from django.utils.safestring import mark_safe
 from decimal import Decimal
 
-from settings import FORMA_PAGO_RECIBOCAJAINSTITUCION, FORMA_PAGO_NOTA_CREDITO, MAXIMO_MATERIA_ONLINE, \
+from settings import FORMA_PAGO_RECIBOCAJAINSTITUCION, FORMA_PAGO_NOTA_CREDITO, FORMA_PAGO_TARJETA, MAXIMO_MATERIA_ONLINE, \
     NIVEL_MALLA_UNO, CANTIDAD_MATRICULAS_MAXIMAS, EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES, EMAIL_INSTITUCIONAL_AUTOMATICO_DOCENTES,\
     FORMA_PAGO_CTAXCRUZAR, CAJAS_DEPOSITOS
 
@@ -20,21 +20,21 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Turno, S
     PersonaEstadoCivil, TiposMalla, Asignatura, TipoDuraccionMalla, TituloObtenido, TituloObtenidoCarrera, NivelMalla, \
     EjeFormativo, \
     AreaConocimiento, TipoMateria, AsignaturaMalla, Coordinacion, PerfilUsuario, Sede, \
-    TiempoDedicacionDocente, \
+    TiempoDedicacionDocente, NivelEscalafonDocente, \
     DetalleNivelTitulacion, NivelTitulacion, TipoAlias, CampoAmplioConocimiento, CampoDetalladoConocimiento, \
     CampoEspecificoConocimiento, \
     TiposBeca, TiposFinanciamientoBeca, Discapacidad, TiposIdentificacion, Inscripcion, FormaDePago, Banco, TipoCheque, \
     TipoEmisorTarjeta, \
     TipoTarjeta, ProcesadorPagoTarjeta, TipoTarjetaBanco, DiferidoTarjeta, CuentaBanco, TipoTransferencia, \
-    ReciboCajaInstitucion, \
+    ReciboCajaInstitucion, ESTADOS_DEPOSITO_INSCRIPCION, \
     NotaCredito, TipoPeriodo, CompetenciaGenerica, CompetenciaEspecifica, TallerPlanificacionMateria, \
     FasesActividadesArticulacion, \
     ContenidosTallerPlanificacionMateria, ClasesTallerPlanificacionMateria, TipoEstudianteCurso, LocacionesCurso, \
     LugarRecaudacion, \
-    PuntoVenta, TIPOS_VALE_CAJA, TipoTecnologicoUniversidad, Cargo, TipoAula, TIPO_REQUEST_CHOICES, \
+    PuntoVenta, TIPOS_VALE_CAJA, TipoTecnologicoUniversidad, TecnologicoUniversidad, Cargo, TipoAula, TIPO_REQUEST_CHOICES, \
     TIPO_EMISION_FACTURA, TIPO_AMBIENTE_FACTURACION, \
     ModeloImpresion, TipoCuentaBanco, TipoColegio, ModeloEvaluativo, ParaleloMateria, TipoCostoCurso, TIPOS_PAGO_NIVEL, \
-    MateriaCursoEscuelaComplementaria, \
+    MateriaCursoEscuelaComplementaria, TipoCurso, \
     Aula, CursoEscuelaComplementaria, Locacion, OPCIONES_DESCUENTO_CURSOS, TIPOS_APROBACION_PROTOCOLO, TipoProfesor, \
     Clase, \
     TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente, Factura, EspacioFisico, ServicioCatalogo, TipoServicio, \
@@ -696,6 +696,7 @@ class ProfesorForm(BaseForm):
     fechainiciodocente = forms.DateField(label=u'Fecha inicio actividades como docente', initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     coordinacion = forms.ModelChoiceField(label=u"Coordinación", queryset=Coordinacion.objects.all(), required=False, widget=forms.Select())
     dedicacion = forms.ModelChoiceField(label=u'Tiempo de Dedicación', queryset=TiempoDedicacionDocente.objects.all(), required=False, widget=forms.Select())
+    nivelescalafon = forms.ModelChoiceField(label=u'Nivel escalafón', queryset=NivelEscalafonDocente.objects.all(), required=False, widget=forms.Select())
     nacionalidad = forms.ModelChoiceField(label=u"Nacionalidad", queryset=Nacionalidad.objects.all(), required=False, widget=forms.Select())
     paisnac = forms.ModelChoiceField(label=u"País de Nacimiento", queryset=Pais.objects.all(), required=False, widget=forms.Select())
     provincianac = forms.ModelChoiceField(label=u"Provincia de nacimiento", queryset=Provincia.objects, required=False, widget=forms.Select())
@@ -735,10 +736,57 @@ class ProfesorForm(BaseForm):
     def editar(self, profesor):
         # deshabilitar_campo(self, 'dedicacion')
         del self.fields['dedicacion']
+        self.fields['documentoidentificacion'].required = False
         self.fields['canton'].queryset = Canton.objects.filter(provincia=profesor.persona.provincia)
         self.fields['parroquia'].queryset = Parroquia.objects.filter(canton=profesor.persona.canton)
         self.fields['cantonnac'].queryset = Canton.objects.filter(provincia=profesor.persona.provincianac)
         self.fields['parroquianac'].queryset = Parroquia.objects.filter(canton=profesor.persona.cantonnac)
+
+
+class CursoPersonaForm(BaseForm):
+    nombre = forms.CharField(label=u'Nombre del curso', max_length=200, widget=forms.TextInput())
+    tipocurso = forms.ModelChoiceField(label=u'Tipo de curso', queryset=TipoCurso.objects.all(), widget=forms.Select())
+    esinstitucion = forms.BooleanField(label=u'Institución de educación superior', required=False, initial=True)
+    institucion = forms.ModelChoiceField(label=u'Institución', queryset=TecnologicoUniversidad.objects.all(), required=False, widget=forms.Select())
+    institucionformacion = forms.CharField(label=u'Institución formación', max_length=200, required=False, widget=forms.TextInput())
+    apolloinstitucion = forms.BooleanField(label=u'Apoyo de la institución', required=False)
+    fecha_inicio = forms.DateField(label=u'Fecha inicio', initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    fecha_fin = forms.DateField(label=u'Fecha fin', initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    horas = forms.FloatField(label=u'Horas', initial=0, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center'}))
+
+    def clean(self):
+        cleaned_data = super(CursoPersonaForm, self).clean()
+        esinstitucion = cleaned_data.get('esinstitucion')
+        if esinstitucion and not cleaned_data.get('institucion'):
+            self.add_error('institucion', u'Seleccione una institución.')
+        if not esinstitucion and not cleaned_data.get('institucionformacion'):
+            self.add_error('institucionformacion', u'Ingrese la institución de formación.')
+        if esinstitucion:
+            cleaned_data['institucionformacion'] = ''
+        else:
+            cleaned_data['institucion'] = None
+            cleaned_data['apolloinstitucion'] = False
+        return cleaned_data
+
+    def editar(self, curso):
+        pass
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+class ArchivoEvidenciaEstudiosForm(BaseForm):
+    archivo = ExtFileField(label=u'Seleccione archivo', help_text=u'Tamaño máximo permitido 10Mb, en formato pdf, jpg o png', ext_whitelist=(".pdf", ".jpg", ".png"), max_upload_size=10485760)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+class CargarCVForm(BaseForm):
+    cv = ExtFileField(label=u'Curriculum vitae', help_text=u'Tamaño máximo permitido 10Mb, en formato pdf, doc o docx', ext_whitelist=(".pdf", ".doc", ".docx"), max_upload_size=10485760)
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
 
 
@@ -760,9 +808,9 @@ class EstudioEducacionSuperiorForm(BaseForm):
     fecharegistro = forms.DateField(label=u"Fecha de registro", initial=datetime.now().date(), required=False, input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     registro = forms.CharField(label=u'Registro SENESCYT', required=False, widget=forms.TextInput())
     aplicabeca = forms.BooleanField(label=u"Posee beca", required=False)
-    tipobeca = forms.ChoiceField(label=u'Tipo beca', required=False, choices=TiposBeca, widget=forms.Select())
+    tipobeca = forms.ChoiceField(label=u'Tipo beca', required=False, choices=TiposBeca.choices, widget=forms.Select())
     montobeca = forms.FloatField(label=u"Monto beca", initial="0.00", required=False, widget=forms.TextInput(attrs={'class': 'imp-moneda', 'decimales': '2'}))
-    tipofinanciamientobeca = forms.ChoiceField(label=u'Tipo finanaciamiento beca', required=False, choices=TiposFinanciamientoBeca, widget=forms.Select())
+    tipofinanciamientobeca = forms.ChoiceField(label=u'Tipo finanaciamiento beca', required=False, choices=TiposFinanciamientoBeca.choices, widget=forms.Select())
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
@@ -1142,13 +1190,11 @@ class FormaPagoForm(BaseForm):
     fecharet = forms.DateField(label=u"Fecha emision", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
 
     def adicionar(self, inscripcion):
-        formaspago = FormaDePago.objects.all().exclude(id=FORMA_PAGO_CTAXCRUZAR).order_by("id")
+        formaspago = FormaDePago.objects.all().exclude(
+            id__in=[FORMA_PAGO_CTAXCRUZAR, FORMA_PAGO_TARJETA, FORMA_PAGO_NOTA_CREDITO]
+        ).order_by("id")
         self.fields['diferido'].queryset = DiferidoTarjeta.objects.filter(id=0)
-        if inscripcion.tiene_nota_credito():
-            self.fields['notacredito'].queryset = inscripcion.notacredito_set.filter(saldo__gt=0)
-        else:
-            del self.fields['notacredito']
-            formaspago = formaspago.exclude(id=FORMA_PAGO_NOTA_CREDITO)
+        del self.fields['notacredito']
         if inscripcion.tiene_recibo_caja():
             self.fields['recibocaja'].queryset = ReciboCajaInstitucion.objects.filter(inscripcion=inscripcion, saldo__gt=0)
         else:
@@ -1546,7 +1592,7 @@ class SolicitudIngresoNotasForm(BaseForm):
 
 class ActualizarDatosFacturaForm(BaseForm):
     facturaidentificacion = forms.CharField(max_length=20, label=u'Factura-Identificación', widget=forms.TextInput())
-    facturatipoidentificacion = forms.ChoiceField(label=u'Factura-Tipo identificación', choices=TiposIdentificacion, widget=forms.Select())
+    facturatipoidentificacion = forms.ChoiceField(label=u'Factura-Tipo identificación', choices=TiposIdentificacion.choices, widget=forms.Select())
     facturanombre = forms.CharField(max_length=100, label=u'Factura-Nombre beneficiario', widget=forms.TextInput())
     facturadireccion = forms.CharField(max_length=100, label=u"Factura-Dirección", widget=forms.TextInput())
     facturatelefono = forms.CharField(max_length=50, label=u"Factura-Teléfono", widget=forms.TextInput())
@@ -1810,6 +1856,14 @@ class DepositoInscripcionForm(BaseForm):
         del self.fields['motivo']
 
 
+class DepositoClienteForm(DepositoInscripcionForm):
+    pass
+
+
+# Alias compatible con cli_finanzas.py, que venía usando este nombre.
+DepositoclienteForm = DepositoClienteForm
+
+
 class DepositoInscripcionMotivoForm(BaseForm):
     motivo = forms.CharField(label=u"Motivo", max_length=150, required=False)
 
@@ -1818,6 +1872,23 @@ class DepositoInscripcionMotivoForm(BaseForm):
 
     def editar(self):
         del self.fields['archivo']
+
+
+class RecaudacionAnticipadaForm(BaseForm):
+    periodo = forms.ModelChoiceField(label=u"Periodo", queryset=Periodo.objects.all(), widget=forms.Select())
+    iva = forms.ModelChoiceField(label=u"IVA", queryset=IvaAplicado.objects.filter(activo=True), widget=forms.Select())
+    valor = forms.FloatField(label=u"Valor", initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-moneda'}))
+    motivo = forms.CharField(label=u"Motivo", max_length=200, widget=forms.TextInput())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+class CambiarEstadoDepositoInscripcionForm(BaseForm):
+    estadoprocesado = forms.ChoiceField(label=u"Procesado", choices=ESTADOS_DEPOSITO_INSCRIPCION, widget=forms.Select())
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
 
 class ReasignarDepositosResponsableForm(BaseForm):

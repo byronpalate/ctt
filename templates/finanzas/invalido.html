@@ -1,8 +1,8 @@
 {% extends "ajaxconfirmaciondinamicbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
-{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ persona_deposito.id }}{% endblock %}
 {% block formaction %}/finanzas{% endblock %}
-{% block formactionvalue %}valido{% endblock %}
+{% block formactionvalue %}invalido{% endblock %}
 {% block formobjectid %}{{ deposito.id }}{% endblock %}
 {% block mensaje %}Esta seguro(a) que desea invalidar el documento del deposito{% endblock %}
 {% block fieldsextra %}

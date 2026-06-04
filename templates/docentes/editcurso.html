@@ -1,7 +1,7 @@
 {% extends "formbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/docentes{% endblock %}
-{% block formdestination %}/docentes{% endblock %}
+{% block formdestination %}/docentes?action=titulacion&id={{ profesor.id }}{% endblock %}
 {% block formextra %}
     <input type='hidden' name='action' value='{{ request.GET.action|default:"" }}'/>
     {% for k, v in request.GET.items %}
@@ -10,4 +10,24 @@
         {% endif %}
     {% endfor %}
 {% endblock %}
-{% block formback %}/docentes{% endblock %}
+{% block formback %}/docentes?action=titulacion&id={{ profesor.id }}{% endblock %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function () {
+            var actualizarInstitucionCurso = function () {
+                var esInstitucion = $("#id_esinstitucion").is(":checked");
+                $("#fieldset_institucion").toggle(esInstitucion);
+                $("#fieldset_institucionformacion").toggle(!esInstitucion);
+                $("#fieldset_apolloinstitucion").toggle(esInstitucion);
+                if (esInstitucion) {
+                    $("#id_institucionformacion").val("");
+                } else {
+                    $("#id_institucion").val("");
+                    $("#id_apolloinstitucion").prop("checked", false);
+                }
+            };
+            $("#id_esinstitucion").on("change", actualizarInstitucionCurso);
+            actualizarInstitucionCurso();
+        });
+    </script>
+{% endblock %}

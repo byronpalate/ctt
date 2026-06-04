@@ -90,7 +90,7 @@
                 }
                 if (puedepagar){
                     if (puedepagarpronto) {
-                        location.href = "/alu_finanzas?action=pagar&ids=" + ids;
+                        location.href = "/cli_finanzas?action=pagar&ids=" + ids;
                     }else{
                         smoke.alert("Debe seleccionar correctamente los rubro de cobro. Algunos rubros no se considera como PRONTO PAGO");
                     }
@@ -125,7 +125,7 @@
                 bloqueointerface();
                 $.ajax({
                     type: "POST",
-                    url: "/alu_finanzas",
+                    url: "/cli_finanzas",
                     data: {'action': 'observaciones', 'id': id, 'csrfmiddlewaretoken': csrftoken},
                     success: function(data){
                         desbloqueointerface();
@@ -156,7 +156,7 @@
     {% if reporte_0 %}
         <div class='row mb-2'>
             <div class='col-10'>
-                <a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0 }}&inscripcion={{ inscripcion.id }}" class='btn btn-sm reportedirecto btn-warning'><i class="icon-print"></i> Imprimir Pagos</a>
+                <a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0 }}&cliente={{ cliente.id }}" class="btn btn-sm reportedirecto btn-warning"><i class="icon-print"></i> Imprimir Pagos</a>
             </div>
             <div class="col-2">
                 <input type="radio" name="cancelados" class="mostrarpagados" value="0" checked> Deudas
@@ -237,7 +237,7 @@
                             <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelado">No</span>
                         {% endif %}
                     </td>
-                    <td style="text-align: center"><a class="btn btn-warning btn-ssm" href="/alu_finanzas?action=pagos&id={{ rubro.id }}"><i class="icon-list"></i> pagos</a></td>
+                    <td style="text-align: center"><a class="btn btn-warning btn-ssm" href="/cli_finanzas?action=pagos&id={{ rubro.id }}"><i class="icon-list"></i> pagos</a></td>
                     </tr>
                         {% empty %}
                         <tr>
@@ -274,7 +274,7 @@
     </div>
     <div class="row mb-2">
         <div class="col-12">
-            <a class=" btn btn-sm btn-success formmodal" href="javascript:;" nhref="/alu_finanzas?action=adddeposito"><i class="icon-plus tu"></i> Adicionar</a>
+            <a class=" btn btn-sm btn-success formmodal" href="javascript:;" nhref="/cli_finanzas?action=adddeposito"><i class="icon-plus tu"></i> Adicionar</a>
         </div>
     </div>
     <div class="row">
@@ -301,7 +301,7 @@
                         <td style="text-align: center;">{{ deposito.fecha|date:"Y-m-d" }}</td>
                         <td>{{ deposito.referencia }}</td>
                         <td>{% if deposito.ventanilla %}DEPOSITO{% endif %}{% if deposito.movilweb %}TRANSFERENCIA{% endif %}</td>
-                        <td>{{ deposito.inscripcion.persona.identificacion }}</td>
+                        <td>{{ deposito.persona.identificacion }}</td>
                         <td>{{ deposito.motivo }}</td>
                         <td>{{ deposito.cuentabanco }}</td>
                         <td style="text-align: center">
@@ -324,7 +324,7 @@
                         </td>
                         <td style="text-align: center;">
                             {% if deposito.estadoprocesado == 3 or deposito.estadoprocesado == 2 %}
-                                <a href="javascript:;" nhref="/alu_finanzas?action=del&id={{ deposito.id }}" class="btn btn-ssm eliminacionmodal btn-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                <a href="javascript:;" nhref="/cli_finanzas?action=del&id={{ deposito.id }}" class="btn btn-ssm eliminacionmodal btn-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
                             {% endif %}
                         </td>
                     </tr>
@@ -551,3 +551,5 @@
         </div>
     </div>
 {% endblock %}
+
+

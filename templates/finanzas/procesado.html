@@ -13,5 +13,5 @@
     <input type='hidden' name='action' value='procesado'/>
     <input type='hidden' name='id' value='{{ deposito.id }}'/>
 {% endblock %}
-{% block formdestination %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
-{% block formback %}/finanzas?action=rubros&id={{ inscripcion.id }}{% endblock %}
+{% block formdestination %}/finanzas?action=rubros&id={{ persona_deposito.id }}{% endblock %}
+{% block formback %}/finanzas?action=rubros&id={{ persona_deposito.id }}{% endblock %}
