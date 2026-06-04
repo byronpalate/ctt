@@ -4,6 +4,7 @@ from datetime import datetime
 
 from django import forms
 from django.contrib.auth.models import Group
+from django.db import connection
 from django.db.models import Q
 from django.forms.models import ModelChoiceField
 from django.forms.widgets import DateTimeInput
@@ -899,6 +900,21 @@ class InscripcionForm(BaseForm):
     examenubicacionidiomas = forms.BooleanField(label=u'Rinde examen ubicación inglés', required=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
     observaciones = forms.CharField(label=u'Observaciones', widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), required=False)
 
+    def clean(self):
+        cleaned_data = super(InscripcionForm, self).clean()
+        if cleaned_data.get('tienediscapacidad'):
+            if not cleaned_data.get('tipodiscapacidad'):
+                self.add_error('tipodiscapacidad', u'Seleccione el tipo de discapacidad.')
+            if not cleaned_data.get('porcientodiscapacidad'):
+                self.add_error('porcientodiscapacidad', u'Ingrese el porcentaje de discapacidad.')
+            if not cleaned_data.get('carnetdiscapacidad'):
+                self.add_error('carnetdiscapacidad', u'Ingrese el número de carnet de discapacidad.')
+        else:
+            cleaned_data['tipodiscapacidad'] = None
+            cleaned_data['porcientodiscapacidad'] = 0
+            cleaned_data['carnetdiscapacidad'] = ''
+        return cleaned_data
+
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
@@ -938,17 +954,18 @@ class InscripcionForm(BaseForm):
         deshabilitar_campo(self, 'modalidad')
         deshabilitar_campo(self, 'periodo')
         deshabilitar_campo(self, 'nivel')
-        del self.fields['homologar']
-        del self.fields['orientacion']
-        del self.fields['intercambio']
-        del self.fields['alumnoantiguo']
-        del self.fields['reconocimientointerno']
+        for campo in ('homologar', 'orientacion', 'intercambio', 'alumnoantiguo', 'reconocimientointerno'):
+            if campo in self.fields:
+                del self.fields[campo]
         self.fields['canton'].queryset = Canton.objects.filter(provincia=inscripcion.persona.provincia)
         self.fields['parroquia'].queryset = Parroquia.objects.filter(canton=inscripcion.persona.canton)
         self.fields['cantonnac'].queryset = Canton.objects.filter(provincia=inscripcion.persona.provincianac)
         self.fields['parroquianac'].queryset = Parroquia.objects.filter(canton=inscripcion.persona.cantonnac)
         self.fields['sesion'].queryset = Sesion.objects.filter(sede=inscripcion.sede)
-        if inscripcion.matriculado() or inscripcion.graduado() or inscripcion.egresado():
+        es_egresado = False
+        if 'ctt_egresado' in connection.introspection.table_names():
+            es_egresado = inscripcion.egresado()
+        if inscripcion.matriculado() or inscripcion.graduado() or es_egresado:
             deshabilitar_campo(self, 'sesion')
         # if inscripcion.documentos_entregados().eshomologacionexterna:
         #     deshabilitar_campo(self, 'eshomologacionexterna')
@@ -956,11 +973,14 @@ class InscripcionForm(BaseForm):
         minivel = inscripcion.mi_nivel().nivel.id
         mallaniveles = malla.nivelesregulares
         if minivel == 0:
-            del self.fields['fechainiciocarrera']
-            del self.fields['fechafincarrera']
+            if 'fechainiciocarrera' in self.fields:
+                del self.fields['fechainiciocarrera']
+            if 'fechafincarrera' in self.fields:
+                del self.fields['fechafincarrera']
         else:
             if inscripcion.matricula_set.filter(nivelmalla__id=NIVEL_MALLA_UNO) or inscripcion.tiene_homologaciones():
-                del self.fields['fechainiciocarrera']
+                if 'fechainiciocarrera' in self.fields:
+                    del self.fields['fechainiciocarrera']
 
 
 

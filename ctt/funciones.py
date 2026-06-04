@@ -579,7 +579,7 @@ def _set_err_msg_bad_json(form = None):
     if form:
         for campo, mensajes in form.errors.items():
             label = form.fields[campo].label if campo in form.fields else campo
-            errores_legibles[label] = ', '.join(mensajes)
+            errores_legibles[label] = [u'Este campo es obligatorio.' if mensaje == 'This field is required.' else mensaje for mensaje in mensajes]
     return errores_legibles
 
 def ok_json(data=None, simple=None, safe=True):

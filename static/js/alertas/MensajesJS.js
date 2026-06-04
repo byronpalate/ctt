@@ -25,9 +25,10 @@ function mostrarErroresFormulario(errors) {
 
     // Construir un listado de errores en HTML
     for (const [campo, mensajes] of Object.entries(errors)) {
-        mensajes.forEach(mensaje => {
-        erroresHTML += `<li><strong>${campo}:</strong> ${mensaje}</li>`;
-    });
+        const listaMensajes = Array.isArray(mensajes) ? mensajes : [mensajes];
+        listaMensajes.forEach(mensaje => {
+            erroresHTML += `<li><strong>${campo}:</strong> ${mensaje}</li>`;
+        });
     }
     // Mostrar los errores usando Swal.fire
     Swal.fire({

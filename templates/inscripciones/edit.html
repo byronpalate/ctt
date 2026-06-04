@@ -1,4 +1,115 @@
 {% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function () {
+            $("#id_etnia, #id_paisnac, #id_pais, #id_nacionalidad, #id_nombre1, #id_apellido1, #id_sexo, #id_nacimiento, #id_direccion").addClass("validate[required]");
+            $("#id_apellido2, #id_sangre, #id_sector, #id_direccion2, #id_telefono, #id_email").addClass("validate[required]");
+            $("#id_facturaidentificacion, #id_facturatipoidentificacion, #id_facturanombre, #id_facturadireccion, #id_facturatelefono, #id_facturaemail").addClass("validate[required]");
+            $("#id_emailinst").css({'text-transform': 'none'}).addClass("validate[custom[email],correoinstitucional[@{{ email_domain }}#@{{ email_domain_estudiante }}]]");
+            $("#id_email").css({'text-transform': 'none'}).addClass("validate[custom[email],correoprivado[@{{ email_domain }}#@{{ email_domain_estudiante }}]]");
+            $("#id_telefono").addClass("validate[movil]");
+            $("#id_telefono_conv").addClass("validate[fijo]");
+
+            verifica_paisnacimiento = function () {
+                var valor = $('#id_paisnac').val();
+                if (parseInt(valor) === {{ pais_ecuador_id }}) {
+                    $('#id_provincianac, #id_cantonnac, #id_parroquianac').removeAttr("disabled").addClass("validate[required]");
+                    $("#fieldset_provincianac, #fieldset_cantonnac, #fieldset_parroquianac").show();
+                } else {
+                    $('#id_provincianac, #id_cantonnac, #id_parroquianac').attr({"disabled": "disabled"}).removeClass("validate[required]");
+                    $("#fieldset_provincianac, #fieldset_cantonnac, #fieldset_parroquianac").hide();
+                }
+            };
+
+            verifica_paisresidencia = function () {
+                var valor = $('#id_pais').val();
+                if (parseInt(valor) === {{ pais_ecuador_id }}) {
+                    $('#id_provincia, #id_canton, #id_parroquia').removeAttr("disabled").addClass("validate[required]");
+                    $('#fieldset_provincia, #fieldset_canton, #fieldset_parroquia').show();
+                } else {
+                    $('#id_provincia, #id_canton, #id_parroquia').attr({"disabled": "disabled"}).removeClass("validate[required]");
+                    $('#fieldset_provincia, #fieldset_canton, #fieldset_parroquia').hide();
+                }
+            };
+
+            verificaetnia = function () {
+                var valor = $("#id_etnia").val();
+                if (parseInt(valor) === {{ nacionalidad_indigena_id }}) {
+                    $("#id_nacionalidadindigena").removeAttr("disabled").addClass("validate[required]");
+                    $("#fieldset_nacionalidadindigena").show();
+                } else {
+                    $("#id_nacionalidadindigena").attr({"disabled": "disabled"}).removeClass("validate[required]");
+                    $("#fieldset_nacionalidadindigena").hide();
+                }
+            };
+
+            discapacidad = function () {
+                if ($("#id_tienediscapacidad").is(':checked')) {
+                    $("#fieldset_tipodiscapacidad, #fieldset_porcientodiscapacidad, #fieldset_carnetdiscapacidad").show();
+                    $("#id_tipodiscapacidad, #id_porcientodiscapacidad, #id_carnetdiscapacidad").removeAttr("disabled").addClass("validate[required]");
+                    $("#id_porcientodiscapacidad").blur(function () {
+                        numerico($(this), 0, 100, 0);
+                    });
+                } else {
+                    $("#fieldset_tipodiscapacidad, #fieldset_porcientodiscapacidad, #fieldset_carnetdiscapacidad").hide();
+                    $("#id_tipodiscapacidad").val("").attr({"disabled": "disabled"}).removeClass("validate[required]");
+                    $("#id_porcientodiscapacidad").val("0").attr({"disabled": "disabled"}).removeClass("validate[required]");
+                    $("#id_carnetdiscapacidad").val("").attr({"disabled": "disabled"}).removeClass("validate[required]");
+                }
+            };
+
+            marcar_requeridos = function () {
+                $(".campo-obligatorio").remove();
+                $("#formulario3").find("input, select, textarea").each(function () {
+                    var elemento = $(this);
+                    var clases = elemento.attr("class") || "";
+                    var requerido = clases.indexOf("validate[required]") >= 0 && !elemento.is(":disabled");
+                    var nombre = elemento.attr("name") || "";
+                    var label = $("#fieldset_" + nombre).find("label").first();
+
+                    if (requerido) {
+                        elemento.attr("required", "required");
+                        if (label.length && !label.find(".campo-obligatorio").length) {
+                            label.append(' <span class="text-danger campo-obligatorio">*</span>');
+                        }
+                    } else {
+                        elemento.removeAttr("required");
+                    }
+                });
+            };
+
+            verifica_paisnacimiento();
+            verifica_paisresidencia();
+            verificaetnia();
+            discapacidad();
+            marcar_requeridos();
+
+            $('#id_paisnac').change(function () {
+                verifica_paisnacimiento();
+                marcar_requeridos();
+            });
+
+            $('#id_pais').change(function () {
+                verifica_paisresidencia();
+                marcar_requeridos();
+            });
+
+            $('#id_etnia').change(function () {
+                verificaetnia();
+                marcar_requeridos();
+            });
+
+            $("#id_tienediscapacidad").click(function () {
+                discapacidad();
+                marcar_requeridos();
+            });
+
+            $("#formulario3").on("change click keyup", "input, select, textarea", function () {
+                setTimeout(marcar_requeridos, 0);
+            });
+        });
+    </script>
+{% endblock %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/inscripciones{% endblock %}
 {% block formdestination %}/inscripciones{% endblock %}

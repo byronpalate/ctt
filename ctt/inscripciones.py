@@ -6,7 +6,7 @@ import xlrd
 import openpyxl
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
-from django.db import transaction
+from django.db import transaction, connection
 from django.db.models.query_utils import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -16,8 +16,13 @@ from dateutil.relativedelta import relativedelta
 
 from decorators import secure_module, last_access
 
-from settings import ALUMNOS_GROUP_ID, EMAIL_DOMAIN, CONTROL_UNICO_CREDENCIALES, EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES,\
-EMAIL_DOMAIN_ESTUDIANTES, NACIONALIDAD_INDIGENA_ID, PAIS_ECUADOR_ID,MODALIDAD_DISTANCIA
+from settings import ALUMNOS_GROUP_ID, EMAIL_DOMAIN, CONTROL_UNICO_CREDENCIALES, EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES, \
+    EMAIL_DOMAIN_ESTUDIANTES, NACIONALIDAD_INDIGENA_ID, PAIS_ECUADOR_ID, MODALIDAD_DISTANCIA, \
+    ADMINISTRATIVOS_GROUP_ID, PROFESORES_GROUP_ID, TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID, \
+    ESCALAFON_TITULAR_PRINCIPAL_ID, PERSONA_ADMINS_ACADEMICO_ID, MUESTRA_ESTADO_NIVELACION, \
+    EDITA_NOTAS_RECORD_ACADEMICO_HISTORICO, EDITA_NOTAS_RECORD_ACADEMICO_HISTORICO_INGLES, \
+    ARCHIVO_TIPO_PUBLICO, CARRERA_ENFERMERIA_ID, CARRERA_MEDICINA_ID, CARRERA_ODONTOLOGIA_ID, \
+    CUARTO_NIVEL_TITULACION_ID, TIPO_PERIODO_GRADO, TIPO_PERIODO_POSGRADO
 
 from ctt.commonviews import adduserdata, obtener_reporte
 from ctt.forms import InscripcionForm, RecordAcademicoForm, HistoricoRecordAcademicoForm, CargarFotoForm, \
@@ -31,7 +36,8 @@ from ctt.models import InscripcionMalla, EstudioPersona, Persona, Inscripcion, R
     FotoPersona, Archivo, NivelMalla, EjeFormativo, AsignaturaMalla, Periodo, \
     Carrera,  Asignatura, Nivel, Matricula, Clase, RetiroCarrera, \
     Modalidad, Sede, Administrativo, Profesor, Materia, Turno,  Rubro, Pago, Sesion, Malla, TipoTerminosAcuerdos, \
-    AceptacionTerminosAcuerdos, ArchivoDocumentoInscripcion
+    AceptacionTerminosAcuerdos, ArchivoDocumentoInscripcion, Aula, DocumentosDeInscripcion, \
+    RubroEspecieValorada, TipoDocumentoInscripcion, null_to_numeric
 
 from ctt.tasks import send_mail, send_html_mail
 
@@ -46,6 +52,7 @@ def view(request):
     adduserdata(request, data)
     persona = request.session['persona']
     coordinacionseleccionada = request.session['coordinacionseleccionada']
+    tabla_egresado = 'ctt_egresado' in connection.introspection.table_names()
 
     if request.method == 'POST':
         action = request.POST['action']
@@ -395,7 +402,7 @@ def view(request):
                     inscripcion.actualiza_matriculas(record.asignatura)
                     inscripcion.save(request)
                     inscripcion.actualizar_homologacion()
-                    if inscripcion.egresado():
+                    if tabla_egresado and inscripcion.egresado():
                         dato = inscripcion.datos_egresado()
                         dato.notaegreso = inscripcion.promedio_record()
                         dato.save()
@@ -480,7 +487,7 @@ def view(request):
                     inscripcion.actualiza_matriculas(form.cleaned_data['asignatura'])
                     inscripcion.save(request)
                     inscripcion.actualizar_homologacion()
-                    if inscripcion.egresado():
+                    if tabla_egresado and inscripcion.egresado():
                         dato = inscripcion.datos_egresado()
                         dato.notaegreso = inscripcion.promedio_record()
                         dato.save()
@@ -549,7 +556,7 @@ def view(request):
                     log(u'Adiciono record academico: %s - %s' % (record, record.inscripcion.persona), request, "add")
                 inscripcion.actualizar_creditos()
                 inscripcion.actualizar_nivel()
-                if inscripcion.egresado():
+                if tabla_egresado and inscripcion.egresado():
                     dato = inscripcion.datos_egresado()
                     dato.notaegreso = inscripcion.promedio_record()
                     dato.save()
@@ -590,7 +597,7 @@ def view(request):
                     historico.actualizar()
                     record.inscripcion.actualizar_nivel()
                     record.inscripcion.actualiza_matriculas(record.asignatura)
-                    if historico.inscripcion.egresado():
+                    if tabla_egresado and historico.inscripcion.egresado():
                         dato = historico.inscripcion.datos_egresado()
                         dato.notaegreso = historico.inscripcion.promedio_record()
                         dato.save()
@@ -663,7 +670,7 @@ def view(request):
                     historico.actualizar()
                     historico.inscripcion.actualizar_nivel()
                     historico.inscripcion.actualiza_matriculas(historico.asignatura)
-                    if historico.inscripcion.egresado():
+                    if tabla_egresado and historico.inscripcion.egresado():
                         dato = historico.inscripcion.datos_egresado()
                         dato.notaegreso = historico.inscripcion.promedio_record()
                         dato.save()
@@ -693,7 +700,7 @@ def view(request):
                 inscripcion.actualizar_nivel()
                 inscripcion.actualiza_matriculas(asignatura)
                 inscripcion.actualizar_homologacion()
-                if inscripcion.egresado():
+                if tabla_egresado and inscripcion.egresado():
                     dato = inscripcion.datos_egresado()
                     dato.notaegreso = inscripcion.promedio_record()
                     dato.save()
@@ -720,7 +727,7 @@ def view(request):
                 inscripcion.actualizar_nivel()
                 inscripcion.actualiza_matriculas(asignatura)
                 inscripcion.actualizar_homologacion()
-                if historico.inscripcion.egresado():
+                if tabla_egresado and historico.inscripcion.egresado():
                     dato = historico.inscripcion.datos_egresado()
                     dato.notaegreso = historico.inscripcion.promedio_record()
                     dato.save()
@@ -1028,7 +1035,7 @@ def view(request):
                         estudiante.save(request)
                     return ok_json({"id": inscripcion.id})
                 else:
-                    return bad_json(mensaje=u'Completar la información de facturación por favor')
+                    return bad_json(error=6, form=form)
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
@@ -1264,7 +1271,7 @@ def view(request):
                     estudiante.sangre = form.cleaned_data['sangre']
                     estudiante.save(request)
                     # DATOS DE LA INSCRIPCION
-                    if not inscripcion.matriculado() and not inscripcion.graduado() and not inscripcion.egresado():
+                    if not inscripcion.matriculado() and not inscripcion.graduado() and not (tabla_egresado and inscripcion.egresado()):
                         inscripcion.sesion = form.cleaned_data['sesion']
                     inscripcion.identificador = form.cleaned_data['identificador']
                     inscripcion.observaciones = form.cleaned_data['observaciones']
@@ -1316,13 +1323,13 @@ def view(request):
                     clientefacturacion.save()
                     # OTRAS ACCIONES
                     inscripcion.actualizar_nivel()
-                    proceso_inscripcion = inscripcion.mi_preinscripcion()
+                    proceso_inscripcion = inscripcion.mi_preinscripcion() if hasattr(inscripcion, 'mi_preinscripcion') else None
                     if proceso_inscripcion:
                         proceso_inscripcion.save(request)
                     log(u'Modifico de inscripcion: %s' % inscripcion, request, "edit")
                     return ok_json()
                 else:
-                    return bad_json(error=6)
+                    return bad_json(error=6, form=form)
             except Exception as ex:
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
@@ -3325,8 +3332,10 @@ def view(request):
                 try:
                     data['title'] = u'Cursos y Escuelas Complementarias'
                     data['inscripcion'] = inscripcion = Inscripcion.objects.get(pk=request.GET['id'])
-                    data['matriculas'] = inscripcion.matriculacursoescuelacomplementaria_set.all()
-                    data['matriculastitulacion'] = inscripcion.matriculacursounidadtitulacion_set.all()
+                    matriculas = getattr(inscripcion, 'matriculacursoescuelacomplementaria_set', None)
+                    matriculastitulacion = getattr(inscripcion, 'matriculacursounidadtitulacion_set', None)
+                    data['matriculas'] = matriculas.all() if matriculas else []
+                    data['matriculastitulacion'] = matriculastitulacion.all() if matriculastitulacion else []
                     return render(request, "inscripciones/cursos.html", data)
                 except Exception as ex:
                     pass
@@ -3453,7 +3462,6 @@ def view(request):
                                                     # "votacion": documentos.votacion,
                                                     # "cert_med": documentos.cert_med,
                                                     "eshomologacionexterna": documentos.eshomologacionexterna,
-                                                    "cohorte": inscripcion.fechascorteposgrado,
                                                     "conveniohomologacion": documentos.conveniohomologacion})
                     form.editar(inscripcion)
                     form.sin_trabajo()
@@ -4710,6 +4718,7 @@ def view(request):
                 data['admisiones'] = True if persona.en_grupo(12) else False
                 data['sistemas'] = True if persona.en_grupo(3) else False
                 data['centro'] = persona.en_grupo(47)
+                data['es_admin_academico'] = persona.id in PERSONA_ADMINS_ACADEMICO_ID
                 return render(request, "inscripciones/view.html", data)
             except Exception as ex:
                 return HttpResponseRedirect('/')

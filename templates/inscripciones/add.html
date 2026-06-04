@@ -837,13 +837,16 @@
             discapacidad = function () {
                 if ($("#id_tienediscapacidad").is(':checked')) {
                     $("#fieldset_tipodiscapacidad, #fieldset_porcientodiscapacidad, #fieldset_carnetdiscapacidad").show();
+                    $("#id_tipodiscapacidad, #id_porcientodiscapacidad, #id_carnetdiscapacidad").removeAttr("disabled");
                     $("#id_porcientodiscapacidad").blur(function () {
                         numerico($(this), 0, 100, 0);
                     });
                     $("#id_tipodiscapacidad, #id_porcientodiscapacidad, #id_carnetdiscapacidad").addClass("validate[required]");
                 } else {
                     $("#fieldset_tipodiscapacidad, #fieldset_porcientodiscapacidad, #fieldset_carnetdiscapacidad").hide();
-                    $("#id_tipodiscapacidad, #id_porcientodiscapacidad, #id_carnetdiscapacidad").removeClass("validate[required]");
+                    $("#id_tipodiscapacidad").val("").attr({"disabled": "disabled"}).removeClass("validate[required]");
+                    $("#id_porcientodiscapacidad").val("0").attr({"disabled": "disabled"}).removeClass("validate[required]");
+                    $("#id_carnetdiscapacidad").val("").attr({"disabled": "disabled"}).removeClass("validate[required]");
                 }
             };
 
@@ -940,6 +943,32 @@
                         dataType: "json"
                     });
                 }
+            });
+
+            marcar_requeridos = function () {
+                $(".campo-obligatorio").remove();
+                $("#formulario3").find("input, select, textarea").each(function () {
+                    var elemento = $(this);
+                    var clases = elemento.attr("class") || "";
+                    var requerido = clases.indexOf("validate[required]") >= 0 && !elemento.is(":disabled");
+                    var nombre = elemento.attr("name") || "";
+                    var label = $("#fieldset_" + nombre).find("label").first();
+
+                    if (requerido) {
+                        elemento.attr("required", "required");
+                        if (label.length && !label.find(".campo-obligatorio").length) {
+                            label.append(' <span class="text-danger campo-obligatorio">*</span>');
+                        }
+                    } else {
+                        elemento.removeAttr("required");
+                    }
+                });
+            };
+
+            marcar_requeridos();
+
+            $("#formulario3").on("change click keyup", "input, select, textarea", function () {
+                setTimeout(marcar_requeridos, 0);
             });
         });
     </script>

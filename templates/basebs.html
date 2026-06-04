@@ -34,6 +34,10 @@
             const toggle = document.getElementById('breadcrumb-toggle');
             const dropdown = document.getElementById('breadcrumb-dropdown');
 
+            if (!toggle || !dropdown) {
+                return;
+            }
+
             toggle.addEventListener('click', function() {
                 if (dropdown.style.display === 'block') {
                     dropdown.style.display = 'none';
