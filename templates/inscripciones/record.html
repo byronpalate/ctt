@@ -59,7 +59,6 @@
                 {% endif %}
             {% endif %}
             {#            {% endif %}#}
-            <a href="/inscripciones?action=extracurricular&id={{ inscripcion.id }}" class='btn btn-sm btn-primary btn-form'><i class="icon-certificate"></i> Otras Notas</a>
             {% if reporte_0 %}
                 <a href="javascript:;" tipos="{{ reporte_0.tiporeporte }}" nhref="/reportes?action=run&n={{ reporte_0.nombre }}&inscripcion={{ inscripcion.id }}" class="btn btn-sm reportedirecto btn-warning"><i class="icon-print"></i> Imprimir Registro</a>
             {% endif %}
@@ -185,12 +184,6 @@
                             {% elif record.materiacurso %}
                                 <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Curso">C</span>
                                 <span class="smaller">{% if record.materiacurso.curso.periodo.es_grado %} {{ record.materiacurso.curso.periodo.nombre }} - {% endif %}{{ record.materiacurso.profesor|default_if_none:"" }}</span><br>
-                            {% elif record.materiacursotitulacion %}
-                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Unidad Titulación">T</span>
-                                <span class="smaller">{% if record.materiacursotitulacion.curso.periodo.es_grado %} {{ record.materiacursotitulacion.curso.periodo.nombre }} - {% endif %}{{ record.materiacursotitulacion.profesor|default_if_none:"" }}</span><br>
-                            {% elif record.internado %}
-                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Internado">I</span>
-                                <span class="smaller">{{ record.internado.profesor|default_if_none:"" }}</span><br>
                             {% endif %}
                             <span class="smaller">{{ record.observaciones|default_if_none:"" }}</span>
                         </td>
@@ -253,7 +246,7 @@
                                 <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
                                 <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
                                     <li class="smaller"><a href="/inscripciones?action=historico&id={{ inscripcion.id }}&rec={{ record.id }}" class="dropdown-item"><i class="icon-calendar"></i> Hist&oacute;rico</a></li>
-                                    {% if not inscripcion.graduado and record.asignaturamalla and record.materiacurso or record.materiahomologacion and not PERSONA_ADMINS_ACADEMICO_ID %}
+                                    {% if not inscripcion.graduado and record.asignaturamalla and record.materiacurso and not PERSONA_ADMINS_ACADEMICO_ID %}
                                             {% if not record.validacreditos %}
                                                 <li class="smaller"><a href="javascript:;" nhref='/inscripciones?action=validar&id={{ record.id }}' class="formmodal dropdown-item"><i class="icon-plus"></i> Considerar cr&eacute;ditos</a></li>
                                             {% else %}
@@ -269,7 +262,7 @@
                                         {% if perms.ctt.puede_modificar_informacion_academica_restringida and not PERSONA_ADMINS_ACADEMICO_ID%}
                                             {% if not record.materiaregular %}
                                                 <li class="dropdown-divider"></li>
-                                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delrecord&id={{ record.id }}'><i class="icon-remove"></i> Eliminar</a></li>
+                                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delrecord&id={{ record.id }}&idi={{ inscripcion.id }}'><i class="icon-remove"></i> Eliminar</a></li>
                                             {% endif %}
                                         {% endif %}
                                     {% endif %}

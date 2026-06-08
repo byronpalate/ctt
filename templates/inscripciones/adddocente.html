@@ -1,13 +1,8 @@
-{% extends "formbs.html" %}
+{% extends "ajaxconfirmaciondinamicbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/inscripciones{% endblock %}
-{% block formdestination %}/inscripciones{% endblock %}
-{% block formextra %}
-    <input type='hidden' name='action' value='{{ request.GET.action|default:"" }}'/>
-    {% for k, v in request.GET.items %}
-        {% if k != 'action' %}
-            <input type="hidden" name="{{ k }}" value="{{ v }}"/>
-        {% endif %}
-    {% endfor %}
-{% endblock %}
-{% block formback %}/inscripciones{% endblock %}
+{% block formdestination %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block formactionvalue %}adddocente{% endblock %}
+{% block formobjectid %}{{ inscripcion.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea crear perfil de docente para el estudiante:{% endblock %}
+{% block formobjectrepr %}{{ inscripcion }}{% endblock %}

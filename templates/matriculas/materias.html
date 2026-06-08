@@ -38,7 +38,6 @@
                     <th>Asignatura</th>
                     <th style="width: 70px; text-align: center;">Nivel</th>
                     {% if perms.ctt.puede_modificar_matriculas %}
-                        <th style="width: 50px; text-align: center">Movilidad</th>
                         <th style="width: 50px; text-align: center">Sin Asist.</th>
                     {% endif %}
                     <th style="width: 50px; text-align: center;">Verif. Horario</th>
@@ -82,9 +81,6 @@
                             {% endif %}
                             {% if materia.validapromedio %}
                                 <span class='badge text-bg-success tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Válida promedio">VP</span>
-                            {% endif %}
-                            {% if materia.movilidad %}
-                                <span class='badge text-bg-dark tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Movilidad">M</span>
                             {% endif %}
                             {% if materia.convalidada or materia.homologada or materia.retirado %}
                                 {% if materia.retirado %}
@@ -131,21 +127,6 @@
                             {% endif %}
                         </td>
                         {% if perms.ctt.puede_modificar_matriculas %}
-                            <td style="text-align: center">
-                                {% if not matricula.cerrada %}
-                                    {% if materia.movilidad %}
-                                        <a class="btn btn-ssm btn-danger confirmacionmodal" href="javascript:;" nhref="/matriculas?action=sinmovilidad&id={{ materia.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Sin Movilidad"><i class="icon-globe"></i></a>
-                                    {% else %}
-                                        <a class="btn btn-ssm btn-success confirmacionmodal" href="javascript:;" nhref="/matriculas?action=conmovilidad&id={{ materia.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Con Movilidad"><i class="icon-globe"></i></a>
-                                    {% endif %}
-                                {% else %}
-                                    {% if materia.movilidad %}
-                                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Sin asistencia">Si</span>
-                                    {% else %}
-                                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="sin asistencia">No</span>
-                                    {% endif %}
-                                {% endif %}
-                            </td>
                             <td style="text-align: center">
                                 {% if not matricula.cerrada %}
                                     {% if materia.sinasistencia %}
@@ -214,20 +195,6 @@
                                         {% endif %}
                                     {% endif %}
                                     {% if perms.ctt.puede_modificar_matriculas %}
-                                        {% if materia.homologada or materia.convalidada %}
-                                            {% if materia.convalidada %}
-                                                <li class="smaller"><a href='/matriculas?action=convalidar&id={{ materia.id }}' class="dropdown-item"><i class="icon-edit"></i> Homologaci&oacute;n externa</a></li>
-                                                {% if not materia.materia.cerrado %}
-                                                    <li class="smaller"><a href='/matriculas?action=delconvalidacion&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-remove"></i> Eliminar homologaci&oacute;n</a></li>
-                                                {% endif %}
-                                            {% endif %}
-                                            {% if materia.homologada %}
-                                                <li class="smaller"><a href='/matriculas?action=homologar&id={{ materia.id }}' class="dropdown-item"><i class="icon-edit"></i> Homologaci&oacute;n interna</a></li>
-                                                {% if not materia.materia.cerrado %}
-                                                    <li class="smaller"><a href='/matriculas?action=delhomologacion&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-remove"></i> Eliminar homologaci&oacute;n</a></li>
-                                                {% endif %}
-                                            {% endif %}
-                                        {% endif %}
                                         {% if not materia.materia.cerrado %}
                                             {% if materia.esta_retirado %}
                                                 <li class="smaller"><a href='/matriculas?action=continuarmateria&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-refresh"></i> Continuar la materia</a></li>
@@ -247,23 +214,15 @@
                                             {% endif %}
                                         {% endif %}
                                         {% if not matricula.cerrada %}
-                                            {% if not materia.convalidada and not materia.homologada and materia.valida_pararecord and not materia.esta_retirado and not materia.materia.cerrado %}
-                                                <li class="smaller"><a href='/matriculas?action=convalidar&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-arrow-down"></i> Homologaci&oacute;n externa</a></li>
-                                                <li class="smaller"><a href='/matriculas?action=homologar&id={{ materia.id }}' class="btn-form dropdown-item"><i class="icon-refresh"></i> Homologaci&oacute;n interna</a></li>
-                                            {% endif %}
                                             {% if not materia.homologada and not materia.convalidada and materia.valida_pararecord and not materia.retirado %}
                                                 {% if not materia.materia.cerrado %}
                                                     <li class="smaller"><a href='/matriculas?action=movermateriasession&id={{ materia.id }}' class="dropdown-item"><i class="icon-retweet"></i> Mover de Sesión</a></li>
-                                                    <li class="smaller"><a href='/matriculas?action=fechaasignacion&id={{ materia.id }}' class="dropdown-item"><i class="icon-calendar"></i> Fecha asignación</a></li>
-                                                    {% if genera_rubro_derecho %}
-                                                        <li class="smaller"><a href='/matriculas?action=derechoexamen&id={{ materia.id }}' class="dropdown-item"><i class="icon-money"></i> Derecho</a></li>
-                                                        <li class="smaller"><a href='/matriculas?action=derechoexamenextra&id={{ materia.id }}' class="dropdown-item"><i class="icon-money"></i> Derecho Extraordinario</a></li>
-                                                    {% endif %}
+                                                    <li class="smaller"><a href="javascript:;" nhref="/matriculas?action=fechaasignacion&id={{ materia.id }}" class="formmodal dropdown-item"><i class="icon-calendar"></i> Fecha asignación</a></li>
                                                     {% if perms.ctt.puede_modificar_asistenciamateriaasignada %}
                                                         {% if materia.sinasistencia %}
-                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=conasistencia&id={{ materia.id }}'><i class="icon-plus"></i> Con asistencia</a></li>
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=conasistencia&id={{ materia.id }}'><i class="icon-ok"></i> Con asistencia</a></li>
                                                         {% else %}
-                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=sinasistencia&id={{ materia.id }}'><i class="icon-remove"></i> Sin asistencia</a></li>
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/matriculas?action=sinasistencia&id={{ materia.id }}'><i class="icon-ban-circle"></i> Sin asistencia</a></li>
                                                         {% endif %}
                                                     {% endif %}
                                                     {% if materia.puedo_eliminarla and perms.ctt.puede_modificar_matriculas and permiteagregaciones %}

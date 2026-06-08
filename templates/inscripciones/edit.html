@@ -43,6 +43,16 @@
                 }
             };
 
+            verifica_trabaja = function () {
+                if ($("#id_trabaja").is(':checked')) {
+                    $("#fieldset_empresa, #fieldset_ocupacion, #fieldset_fecha_ingreso").show();
+                    $("#id_empresa, #id_ocupacion, #id_fecha_ingreso").removeAttr("disabled").addClass("validate[required]");
+                } else {
+                    $("#fieldset_empresa, #fieldset_ocupacion, #fieldset_fecha_ingreso").hide();
+                    $("#id_empresa, #id_ocupacion, #id_fecha_ingreso").attr({"disabled": "disabled"}).removeClass("validate[required]");
+                }
+            };
+
             discapacidad = function () {
                 if ($("#id_tienediscapacidad").is(':checked')) {
                     $("#fieldset_tipodiscapacidad, #fieldset_porcientodiscapacidad, #fieldset_carnetdiscapacidad").show();
@@ -82,6 +92,7 @@
             verifica_paisresidencia();
             verificaetnia();
             discapacidad();
+            verifica_trabaja();
             marcar_requeridos();
 
             $('#id_paisnac').change(function () {
@@ -104,8 +115,161 @@
                 marcar_requeridos();
             });
 
+            $("#id_trabaja").click(function () {
+                verifica_trabaja();
+                marcar_requeridos();
+            });
+
             $("#formulario3").on("change click keyup", "input, select, textarea", function () {
                 setTimeout(marcar_requeridos, 0);
+            });
+
+            ItemsDisplay = function (item) {
+                if (item.name || item.text) {
+                    return $('<span>' + (item.name || item.text) + '</span>');
+                } else {
+                    return '---------';
+                }
+            };
+
+            $("#id_colegio_select2").select2({
+                dropdownParent: $('#formulariomodaldinamico'),
+                width: '100%',
+                placeholder: "---------",
+                allowClear: true,
+                ajax: {
+                    url: '/api',
+                    type: "POST",
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        var idpro = parseInt($('#id_provinciacole').val());
+                        var idcan = parseInt($('#id_cantoncole').val());
+                        var filtro = '';
+                        if (!isNaN(idpro) && idpro > 0) {
+                            filtro = 'provincia_id=' + idpro;
+                            if (!isNaN(idcan) && idcan > 0) {
+                                filtro += ',canton_id=' + idcan;
+                            }
+                        }
+                        return {
+                            q: params.term,
+                            page: params.page,
+                            a: 'data',
+                            model: 'Colegio:' + filtro + ':estado=False:70',
+                            p: 1,
+                            s: 10,
+                            csrfmiddlewaretoken: csrftoken
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.data,
+                            pagination: {
+                                more: (params.page * 30) < data.total_count
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                escapeMarkup: function (markup) {
+                    return markup;
+                },
+                minimumInputLength: 0,
+                templateResult: ItemsDisplay,
+                templateSelection: ItemsDisplay
+            }).on("select2:select", function (evt) {
+                $("#id_colegio").attr({"value": (evt.params.data.id)});
+            });
+
+            var colegioValue = parseInt($("#id_colegio").val());
+            var colegioNombre = "{% autoescape off %}{{ colegio_nombre|escapejs }}{% endautoescape %}";
+            if (colegioValue && colegioNombre) {
+                var $sel = $("#id_colegio_select2");
+                $sel.append(new Option(colegioNombre, colegioValue, false, false));
+                $sel.val(colegioValue).trigger('change');
+            }
+
+            $("#id_especialidad_select2").select2({
+                dropdownParent: $('#formulariomodaldinamico'),
+                width: '100%',
+                placeholder: "---------",
+                allowClear: true,
+                ajax: {
+                    url: '/api',
+                    type: "POST",
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page,
+                            a: 'data',
+                            model: 'Especialidad:::10',
+                            p: 1,
+                            s: 10,
+                            csrfmiddlewaretoken: csrftoken
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.data,
+                            pagination: {
+                                more: (params.page * 30) < data.total_count
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                escapeMarkup: function (markup) {
+                    return markup;
+                },
+                minimumInputLength: 0,
+                templateResult: ItemsDisplay,
+                templateSelection: ItemsDisplay
+            }).on("select2:select", function (evt) {
+                $("#id_especialidad").attr({"value": (evt.params.data.id)});
+            });
+
+            var especialidadValue = parseInt($("#id_especialidad").val());
+            var especialidadNombre = "{% autoescape off %}{{ especialidad_nombre|escapejs }}{% endautoescape %}";
+            if (especialidadValue && especialidadNombre) {
+                var $sel = $("#id_especialidad_select2");
+                $sel.append(new Option(especialidadNombre, especialidadValue, false, false));
+                $sel.val(especialidadValue).trigger('change');
+            }
+
+            $('#id_provinciacole').change(function () {
+                var elemento = $(this);
+                $('#id_cantoncole').empty().append('<option value="">---------</option>').val(0);
+                var id = parseInt(elemento.val());
+                if (id > 0) {
+                    bloqueointerface();
+                    $.ajax({
+                        type: "POST",
+                        url: "/api",
+                        data: {'a': 'cantones', 'id': id, 'csrfmiddlewaretoken': csrftoken},
+                        success: function (data) {
+                            desbloqueointerface();
+                            if (data.result === 'ok') {
+                                for (item in data.lista) {
+                                    $('#id_cantoncole').append('<option value="' + data.lista[item][0] + '">' + data.lista[item][1] + '</option>').val(0);
+                                }
+                            } else {
+                                elemento.val(0);
+                                NotificacionAlerta(data.icono, data.titulo, data.mensaje);
+                            }
+                        },
+                        error: function () {
+                            desbloqueointerface();
+                            elemento.val(0);
+                            NotificacionError('!!!', 'Error de conexión');
+                        },
+                        dataType: "json"
+                    });
+                }
             });
         });
     </script>

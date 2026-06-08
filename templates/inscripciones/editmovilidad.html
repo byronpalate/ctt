@@ -1,7 +1,7 @@
 {% extends "formbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/inscripciones{% endblock %}
-{% block formdestination %}/inscripciones{% endblock %}
+{% block formdestination %}/inscripciones?action=estudio&id={{ request.GET.idi|default:inscripcion.id }}{% endblock %}
 {% block formextra %}
     <input type='hidden' name='action' value='{{ request.GET.action|default:"" }}'/>
     {% for k, v in request.GET.items %}
@@ -10,4 +10,4 @@
         {% endif %}
     {% endfor %}
 {% endblock %}
-{% block formback %}/inscripciones{% endblock %}
+{% block formback %}/inscripciones?action=estudio&id={{ request.GET.idi|default:inscripcion.id }}{% endblock %}

@@ -3,7 +3,7 @@
 {% block formaction %}/inscripciones{% endblock %}
 {% block formdestination %}/inscripciones{% endblock %}
 {% block formactionvalue %}{{ request.GET.action|default:"" }}{% endblock %}
-{% block formobjectid %}{{ request.GET.id|default:request.GET.idi|default:request.GET.pk|default:"0" }}{% endblock %}
+{% block formobjectid %}{{ request.GET.id|default:request.GET.idi|default:"0" }}{% endblock %}
 {% block mensaje %}Esta seguro(a) que desea continuar con la accion:{% endblock %}
 {% block formobjectrepr %}{{ request.GET.id|default:request.GET.idi|default:"" }}{% endblock %}
 {% block fieldsextra %}

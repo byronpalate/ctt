@@ -287,7 +287,7 @@ def adduserdata(request, data):
             request.session['carreraseleccionada'] = carrera = carreras.first() if carreras else None
         data['coordinacionseleccionada'] = coordinacion
         data['carreraseleccionada'] = carrera
-    if 'periodo' not in request.session:
+    if 'periodo' not in request.session or not request.session['periodo']:
         if Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, inicio__lte=datetime.now().date(), activo=True, fin__gte=datetime.now().date()).exists():
             request.session['periodo'] = Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, activo=True, inicio__lte=datetime.now().date(), fin__gte=datetime.now().date()).first()
         elif Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, activo=True, fin__lte=datetime.now().date()).exists():
@@ -448,7 +448,7 @@ def panel(request):
                 if encuestas:
                     return HttpResponseRedirect('/com_responderencuestas?action=responder&id=' + str(encuestas.first().id))
             data['grupos'] = misgrupos
-            # LISTADO DE ESTUDIANTES Y PROFESORES QUE ESTAN DE CUMPLEAAÑOS
+            # LISTADO DE ESTUDIANTES Y PROFESORES QUE ESTAN DE CUMPLEAAï¿½OS
             data['ins_cumple'] = Inscripcion.objects.filter(persona__nacimiento__day=hoy.day, persona__nacimiento__month=hoy.month, matricula__nivel__fin__gte=hoy).distinct()
             data['prof_cumple'] = Profesor.objects.filter(persona__nacimiento__day=hoy.day, persona__nacimiento__month=hoy.month, activo=True, profesormateria__materia__nivel__fin__gte=hoy).distinct()
             data['actividades'] =  actividades = Actividad.objects.filter(inicio__lte=hoy, fin__gte=hoy)
@@ -531,7 +531,7 @@ def account(request):
                         return bad_json(error=6)
                 except Exception as ex:
                     transaction.set_rollback(True)
-                    return bad_json(mensaje=u"La imagen seleccionada no cumple los requisitos, de tamaño o formato o hubo un error al guardar fichero.")
+                    return bad_json(mensaje=u"La imagen seleccionada no cumple los requisitos, de tamaï¿½o o formato o hubo un error al guardar fichero.")
 
             if action == 'aceptar':
                 try:
@@ -896,10 +896,10 @@ def cambiocoordinacion(request):
                 return bad_json(error=6)
         except Exception as ex:
             transaction.set_rollback(True)
-            return bad_json(mensaje=u"No se puede cambiar de coordinación.")
+            return bad_json(mensaje=u"No se puede cambiar de coordinaciï¿½n.")
     else:
         try:
-            data['title'] = u'Cambio de coordinación'
+            data['title'] = u'Cambio de coordinaciï¿½n'
             form = CambioCoordinacionForm(initial={'coordinacion': request.session['coordinacionseleccionada']})
             form.mis_coordinaciones(persona)
             data['form'] = form
@@ -1505,7 +1505,7 @@ def matricular(request, estudiante=False, generarrubros=True):
         nivel = Nivel.objects.get(pk=request.POST['nivel'])
         # PERDIDA DE CARRERA POR 4TA MATRICULA
         if inscripcion.tiene_perdida_carrera():
-            return bad_json(mensaje=u"Su límite de matricula por perdida de una o mas asignaturas correspondientes a su plan de estudios, ha excedido. Por favor, acercarse a Secretaria para mas información.")
+            return bad_json(mensaje=u"Su lï¿½mite de matricula por perdida de una o mas asignaturas correspondientes a su plan de estudios, ha excedido. Por favor, acercarse a Secretaria para mas informaciï¿½n.")
         # MATRICULA FUERA DE FECHAS
         if fechamatricula > nivel.fechatopematriculaes:
             return bad_json(mensaje=u"No puede matricular fuera de fechas.")
@@ -1600,7 +1600,7 @@ def matricular(request, estudiante=False, generarrubros=True):
             return bad_json({"reload": True, "mensaje": u"Ya se encuentra matriculado."})
     except Exception as ex:
         transaction.set_rollback(True)
-        return bad_json(mensaje=u"Hubieron errores en la matriculación.")
+        return bad_json(mensaje=u"Hubieron errores en la matriculaciï¿½n.")
 
 
 def prematricular(request):
@@ -1615,7 +1615,7 @@ def prematricular(request):
         materias = Asignatura.objects.filter(id__in=seleccion)
         # PERDIDA DE CARRERA POR 4TA MATRICULA
         if inscripcion.tiene_perdida_carrera():
-            return bad_json(mensaje=u"Tiene límite de matriculas (4ta matricula).")
+            return bad_json(mensaje=u"Tiene lï¿½mite de matriculas (4ta matricula).")
         # MATRICULA
         if not inscripcion.prematricula_set.filter(periodo=periodo).exists():
             prematricula = PreMatricula(inscripcion=inscripcion,
@@ -1631,7 +1631,7 @@ def prematricular(request):
             return bad_json(mensaje=u"Ya se encuentra prematriculado.")
     except Exception as ex:
         transaction.set_rollback(True)
-        return bad_json(mensaje=u"Hubieron errores en la prematriculación.")
+        return bad_json(mensaje=u"Hubieron errores en la prematriculaciï¿½n.")
 
 
 # FUNCIONES COMUNES

@@ -706,8 +706,6 @@
 {#                                              <li class="smaller"><a href='/niveles?action=otrascarreras&id={{ materia.id }}' class="dropdown-item"><i class="icon-list"></i> En otras carreras</a></li>#}
 {#                                        {% endif %}#}
                                         <li class="smaller"><a href='/niveles?action=tomandom&id={{ materia.id }}' class="dropdown-item"><i class="icon-user"></i> Tomaron la Materia</a></li>
-                                        <li class="smaller"><a href='/adm_horarios?action=horario&id={{ materia.id }}' class="dropdown-item"><i class="icon-time"></i> Horario de la Materia</a></li>
-                                        <li class="smaller"><a href='/niveles?action=grupospracticas&id={{ materia.id }}' class="dropdown-item"><i class="icon-group"></i> Grupos de prácticas</a></li>
                                         {% if not materia.cerrado and perms.ctt.puede_modificar_aula_horario and extension.modificarcupo %}
                                             <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/niveles?action=cambiaraula&id={{ materia.id }}'><i class="icon-home"></i> Cambiar Aula</a></li>
                                         {% endif %}

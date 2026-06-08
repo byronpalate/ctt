@@ -1506,6 +1506,12 @@ class Persona(ModeloBase):
     iddigitalizada = models.FileField(upload_to='iddigitalizada/%Y/%m/%d', blank=True, null=True, verbose_name=u'Documento digitalizado')
     codigocontable = models.IntegerField(default=0, verbose_name=u'Codigo contable.')
     registrocontable = models.BooleanField(default=False, verbose_name=u'Registro en contable.')
+    otraubicacionsalesforce = models.CharField(default='', max_length=100, verbose_name=u'Otra Ubicación')
+    nombrescompletosmadre = models.CharField(default='', max_length=500, verbose_name=u'Nombre completo de la madre')
+    nombrescompletospadre = models.CharField(default='', max_length=500, verbose_name=u'Nombre completo del padre')
+    trabaja = models.BooleanField(default=False, verbose_name=u'Trabaja?')
+    titulogrado = models.CharField(default='', max_length=400, verbose_name=u'Titulo de grado')
+    universidadgrado = models.CharField(default='', max_length=400, verbose_name=u'Universidad de grado')
 
     def __str__(self):
         return u'%s %s %s %s' % (self.apellido1, self.apellido2, self.nombre1, self.nombre2)
@@ -6247,20 +6253,6 @@ class Inscripcion(ModeloBase):
         return True
 
     def puede_tomar_materia_titulacion(self, materia):
-        malla = self.mi_malla()
-        asignatura = materia.asignatura
-        curso = materia.curso
-        if malla.trabajotitulacionmalla_set.filter(asignatura=asignatura, unidadtitulacion=curso.unidadtitulacion, tipotrabajotitulacion=curso.tipotrabajotitulacion).exists():
-            materiatitulacion = malla.trabajotitulacionmalla_set.filter(asignatura=asignatura, unidadtitulacion=curso.unidadtitulacion, tipotrabajotitulacion=curso.tipotrabajotitulacion)[0]
-            for materiap in TrabajoTitulacionMallaPredecesora.objects.filter(trabajotitulacionmalla=materiatitulacion):
-                if not self.recordacademico_set.filter(asignatura=materiap.predecesora.asignatura, aprobada=True).exists():
-                    return False
-            if materiatitulacion.cantidadmatriculas:
-                if self.historicorecordacademico_set.filter(asignatura=asignatura, aprobada=False).count() >= materiatitulacion.cantidadmatriculas:
-                    return False
-            if self.recordacademico_set.filter(asignatura=asignatura, aprobada=True).exists():
-                return False
-            return True
         return False
 
 
@@ -6536,7 +6528,7 @@ class Inscripcion(ModeloBase):
         return True, ""
 
     def _tiene_record_via_prehomologacion(self) -> bool:
-        return RecordAcademico.objects.filter(materiahomologacion__prehomologacion__inscripcion=self).exists()
+        return RecordAcademico.objects.filter(inscripcion=self, homologacioninscripcion__isnull=False).exists()
 
     def paso_homologacion(self) -> int:
         """
@@ -8765,6 +8757,7 @@ class RecordAcademico(ModeloBase):
     optativa = models.BooleanField(default=False, verbose_name=u"Optativa")
     observaciones = models.TextField(default='', blank=True, null=True, verbose_name=u'Observaciones')
     materiaregular = models.ForeignKey(Materia, blank=True, null=True, verbose_name=u'Materia regular', on_delete=models.CASCADE)
+    materiacurso = models.ForeignKey('MateriaCursoEscuelaComplementaria', blank=True, null=True, verbose_name=u'Materia', on_delete=models.CASCADE)
     padre = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, verbose_name='Padre (record)', help_text='Otro registro record que actúa como padre')
 
     def __str__(self):
@@ -8816,7 +8809,6 @@ class RecordAcademico(ModeloBase):
             nuevohistorico = HistoricoRecordAcademico(recordacademico=self,
                                                       inscripcion=self.inscripcion,
                                                       asignaturamalla=self.asignaturamalla,
-                                                      trabajotitulacionmalla=self.trabajotitulacionmalla,
                                                       asignatura=self.asignatura,
                                                       nota=self.nota,
                                                       asistencia=self.asistencia,
@@ -8835,12 +8827,9 @@ class RecordAcademico(ModeloBase):
                                                       validapromedio=self.validapromedio,
                                                       materiaregular=self.materiaregular,
                                                       materiacurso=self.materiacurso,
-                                                      materiacursotitulacion=self.materiacursotitulacion,
-                                                      valoracioncalificacion=self.valoracioncalificacion,
                                                       observaciones=self.observaciones)
             nuevohistorico.save()
         seleccionada = self.historicorecordacademico_set.all().order_by('-aprobada', '-fecha')[0]
-        self.trabajotitulacionmalla = seleccionada.trabajotitulacionmalla
         self.asignaturamalla = seleccionada.asignaturamalla
         self.asignatura = seleccionada.asignatura
         self.nota = seleccionada.nota
@@ -8858,8 +8847,6 @@ class RecordAcademico(ModeloBase):
         self.validapromedio = seleccionada.validapromedio
         self.materiaregular = seleccionada.materiaregular
         self.materiacurso = seleccionada.materiacurso
-        self.materiacursotitulacion = seleccionada.materiacursotitulacion
-        self.valoracioncalificacion = seleccionada.valoracioncalificacion
         self.observaciones = seleccionada.observaciones
         self.save()
 
@@ -8900,6 +8887,10 @@ class RecordAcademico(ModeloBase):
             return self.materiacurso.profesor
         return None
 
+    @property
+    def valoracioncalificacion(self):
+        return valoracion_calificacion(self.nota)
+
     def es_nivelacion(self):
         if self.asignaturamalla:
             return self.asignaturamalla.nivelmalla.id == 0
@@ -8932,7 +8923,6 @@ class RecordAcademico(ModeloBase):
             self.horas = 0
         self.pendiente = False
         self.observaciones = null_to_text(self.observaciones)
-        self.valoracioncalificacion = valoracion_calificacion(self.nota)
         super(RecordAcademico, self).save(*args, **kwargs)
 
 
@@ -9017,20 +9007,51 @@ class MateriaAsignada(ModeloBase):
     def en_otra_carrera(self):
         return self.materia.asignatura != self.asignaturareal and self.matricula.inscripcion.existe_en_malla(self.asignaturareal)
 
+    def historico_record(self):
+        asignatura = self.asignaturareal if self.asignaturareal else self.materia.asignatura
+        historicos = self.matricula.inscripcion.historicorecordacademico_set.filter(asignatura=asignatura, materiaregular=self.materia)
+        if not historicos.exists():
+            historicos = self.matricula.inscripcion.historicorecordacademico_set.filter(asignatura=asignatura, fecha=self.materia.fin)
+        return historicos.first()
+
     def homologada(self):
-        return self.materiaasignadahomologacion_set.exists()
+        relacion = getattr(self, 'materiaasignadahomologacion_set', None)
+        if relacion:
+            return relacion.exists()
+        historico = self.historico_record()
+        if historico:
+            return historico.homologada
+        return False
 
     def convalidada(self):
-        return self.materiaasignadaconvalidacion_set.exists()
+        relacion = getattr(self, 'materiaasignadaconvalidacion_set', None)
+        if relacion:
+            return relacion.exists()
+        historico = self.historico_record()
+        if historico:
+            return historico.convalidacion
+        return False
 
     def datos_homologacion(self):
-        if self.homologada():
-            return self.materiaasignadahomologacion_set.all()[0].homologacion
+        relacion = getattr(self, 'materiaasignadahomologacion_set', None)
+        if relacion and relacion.exists():
+            return relacion.all()[0].homologacion
+        historico = self.historico_record()
+        if historico and historico.recordacademico_id:
+            relacion = getattr(historico.recordacademico, 'homologacioninscripcion_set', None)
+            if relacion and relacion.exists():
+                return relacion.all()[0]
         return None
 
     def datos_convalidacion(self):
-        if self.convalidada():
-            return self.materiaasignadaconvalidacion_set.all()[0].convalidacion
+        relacion = getattr(self, 'materiaasignadaconvalidacion_set', None)
+        if relacion and relacion.exists():
+            return relacion.all()[0].convalidacion
+        historico = self.historico_record()
+        if historico and historico.recordacademico_id:
+            relacion = getattr(historico.recordacademico, 'convalidacioninscripcion_set', None)
+            if relacion and relacion.exists():
+                return relacion.all()[0]
         return None
 
     def retirado(self):
@@ -10687,8 +10708,11 @@ class Rubro(ModeloBase):
 
     def verifica_rubro_otro(self, tipo):
         if not self.relacionado():
+            tiporubro = TipoOtroRubro.asegurar_catalogo(tipo)
+            if not tiporubro:
+                return
             rubrootro = RubroOtro(rubro=self,
-                                  tipo_id=tipo)
+                                  tipo=tiporubro)
             rubrootro.save()
 
     def cheque_mora(self):
@@ -11113,6 +11137,25 @@ class TipoOtroRubro(ModeloBase):
             return PrecioTipoOtroRubro.objects.filter(tipo=self).order_by('fecha')[0].precio
         return 0
 
+    @staticmethod
+    def asegurar_catalogo(tipo):
+        tipo = id_search(tipo)
+        if not tipo:
+            return None
+        nombres_tipos = {
+            RUBRO_OTRO_ARANCEL_ID: u'ARANCEL',
+            RUBRO_OTRO_MATRICULA_ID: u'MATRICULA',
+            RUBRO_OTRO_OTROS_EDUCATIVOS_ID: u'OTROS EDUCATIVOS',
+            RUBRO_OTRO_DERECHOS_ESPECIES_ID: u'DERECHOS Y ESPECIES',
+            RUBRO_OTRO_CURSOS_LIBRE_CONFIGURACION_ID: u'CURSOS LIBRE CONFIGURACION',
+            RUBRO_OTRO_SOLICITUD_ID: u'SOLICITUD',
+        }
+        tiporubro, created = TipoOtroRubro.objects.get_or_create(
+            pk=tipo,
+            defaults={'nombre': nombres_tipos.get(tipo, u'OTRO RUBRO %s' % tipo)}
+        )
+        return tiporubro
+
     def save(self, *args, **kwargs):
         self.nombre = null_to_text(self.nombre)
         super(TipoOtroRubro, self).save(*args, **kwargs)
@@ -11320,6 +11363,8 @@ class RubroOtro(ModeloBase):
         return str(self.rubro.valor) + ' - ' + str(self.id)
 
     def save(self, *args, **kwargs):
+        if self.tipo_id:
+            self.tipo = TipoOtroRubro.asegurar_catalogo(self.tipo_id)
         super(RubroOtro, self).save(*args, **kwargs)
 
 
@@ -12826,6 +12871,7 @@ class HistoricoRecordAcademico(ModeloBase):
     optativa = models.BooleanField(default=False, verbose_name=u"Optativa")
     observaciones = models.TextField(default='', blank=True, null=True, verbose_name=u'Observaciones')
     materiaregular = models.ForeignKey(Materia, blank=True, null=True, verbose_name=u'Materia regular', on_delete=models.CASCADE)
+    materiacurso = models.ForeignKey('MateriaCursoEscuelaComplementaria', blank=True, null=True, verbose_name=u'Materia', on_delete=models.CASCADE)
     padre = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, verbose_name='Padre (histórico)', help_text='Otro registro histórico que actúa como padre')
 
     def __str__(self):
@@ -12880,7 +12926,6 @@ class HistoricoRecordAcademico(ModeloBase):
                                      asignatura=self.asignatura,
                                      matriculas=self.matricula_actual(),
                                      asignaturamalla=self.asignaturamalla,
-                                     trabajotitulacionmalla=self.trabajotitulacionmalla,
                                      nota=self.nota,
                                      asistencia=self.asistencia,
                                      sinasistencia=self.sinasistencia,
@@ -12898,12 +12943,8 @@ class HistoricoRecordAcademico(ModeloBase):
                                      optativa=self.optativa,
                                      materiaregular=self.materiaregular,
                                      materiacurso=self.materiacurso,
-                                     materiacursotitulacion=self.materiacursotitulacion,
-                                     internado=self.internado,
-                                     valoracioncalificacion=self.valoracioncalificacion,
                                      observaciones=self.observaciones,
-                                     materiahomologacion=self.materiahomologacion,
-                                     modulovalidacion=self.modulovalidacion)
+                                     )
             record.save()
             historico = record.mi_historico()
             historico.recordacademico = record
@@ -12913,7 +12954,6 @@ class HistoricoRecordAcademico(ModeloBase):
             record = self.inscripcion.recordacademico_set.filter(asignatura=self.asignatura)[0]
             record.matriculas = self.matricula_actual()
             record.asignaturamalla = seleccionada.asignaturamalla
-            record.trabajotitulacionmalla = seleccionada.trabajotitulacionmalla
             record.nota = seleccionada.nota
             record.asistencia = seleccionada.asistencia
             record.sinasistencia = seleccionada.sinasistencia
@@ -12931,12 +12971,7 @@ class HistoricoRecordAcademico(ModeloBase):
             record.validapromedio = seleccionada.validapromedio
             record.materiaregular = seleccionada.materiaregular
             record.materiacurso = seleccionada.materiacurso
-            record.materiacursotitulacion = seleccionada.materiacursotitulacion
-            record.valoracioncalificacion = seleccionada.valoracioncalificacion
             record.observaciones = seleccionada.observaciones
-            record.materiahomologacion = seleccionada.materiahomologacion
-            record.internado = seleccionada.internado
-            record.modulovalidacion = seleccionada.modulovalidacion
             record.save()
             record.inscripcion.save()
         self.recordacademico = record
@@ -12988,6 +13023,10 @@ class HistoricoRecordAcademico(ModeloBase):
             return True
         return False
 
+    @property
+    def valoracioncalificacion(self):
+        return valoracion_calificacion(self.nota)
+
     def save(self, *args, **kwargs):
         self.asignaturamalla = self.asignatura_malla()
         if not self.aprobada:
@@ -13002,7 +13041,6 @@ class HistoricoRecordAcademico(ModeloBase):
             self.horas = 0
         self.pendiente = False
         self.observaciones = null_to_text(self.observaciones)
-        self.valoracioncalificacion = valoracion_calificacion(self.nota)
         super(HistoricoRecordAcademico, self).save(*args, **kwargs)
 
 
@@ -15967,8 +16005,8 @@ class MateriaAsignadaCurso(ModeloBase):
                 historico = None
                 if HistoricoRecordAcademico.objects.filter(inscripcion=self.matricula.inscripcion, asignatura=self.materia.asignatura, fecha=self.materia.fecha_fin).exists():
                     historico = HistoricoRecordAcademico.objects.filter(inscripcion=self.matricula.inscripcion, asignatura=self.materia.asignatura, fecha=self.materia.fecha_fin)[0]
-                elif HistoricoRecordAcademico.objects.filter(inscripcion=self.matricula.inscripcion, asignatura=self.materia.asignatura, materiacurso=self.materia).exists():
-                    historico = HistoricoRecordAcademico.objects.filter(inscripcion=self.matricula.inscripcion, asignatura=self.materia.asignatura, materiacurso=self.materia)[0]
+                elif HistoricoRecordAcademico.objects.filter(inscripcion=self.matricula.inscripcion, asignatura=self.materia.asignatura).exists():
+                    historico = HistoricoRecordAcademico.objects.filter(inscripcion=self.matricula.inscripcion, asignatura=self.materia.asignatura)[0]
                 if historico:
                     historico.asignaturamalla = self.matricula.inscripcion.asignatura_en_asignaturamalla(self.materia.asignatura)
                     historico.nota = self.notafinal
@@ -15985,6 +16023,7 @@ class MateriaAsignadaCurso(ModeloBase):
                     historico.homologada = False
                     historico.aprobada = aprobada
                     historico.pendiente = False
+                    historico.materiacurso = self.materia
                     historico.observaciones = self.materia.curso.nombre[:99]
                     historico.save()
                 else:

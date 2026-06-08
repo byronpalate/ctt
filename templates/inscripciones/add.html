@@ -551,8 +551,8 @@
             });
 
             ItemsDisplay = function (item) {
-                if (item.name) {
-                    return $('<span>' + item.name + '</span>');
+                if (item.name || item.text) {
+                    return $('<span>' + (item.name || item.text) + '</span>');
                 } else {
                     return '---------';
                 }
@@ -572,11 +572,18 @@
                         data: function (params) {
                             var idpro = parseInt($('#id_provinciacole').val());
                             var idcan = parseInt($('#id_cantoncole').val());
+                            var filtro = '';
+                            if (!isNaN(idpro) && idpro > 0) {
+                                filtro = 'provincia_id=' + idpro;
+                                if (!isNaN(idcan) && idcan > 0) {
+                                    filtro += ',canton_id=' + idcan;
+                                }
+                            }
                             return {
                                 q: params.term,
                                 page: params.page,
                                 a: 'data',
-                                model: 'Colegio:provincia_id=' + idpro + ',canton_id=' + idcan + ':estado=False:70',
+                                model: 'Colegio:' + filtro + ':estado=False:70',
                                 p: 1,
                                 s: 10,
                                 csrfmiddlewaretoken: csrftoken
@@ -596,7 +603,7 @@
                     escapeMarkup: function (markup) {
                         return markup;
                     },
-                    minimumInputLength: 1,
+                    minimumInputLength: 0,
                     templateResult: ItemsDisplay,
                     templateSelection: ItemsDisplay
                 }).on("select2:select", function (evt) {
@@ -641,7 +648,7 @@
                 escapeMarkup: function (markup) {
                     return markup;
                 },
-                minimumInputLength: 1,
+                minimumInputLength: 0,
                 templateResult: ItemsDisplay,
                 templateSelection: ItemsDisplay
             }).on("select2:select", function (evt) {

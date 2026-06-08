@@ -10,7 +10,7 @@ from django.shortcuts import render
 from django.template.loader import get_template
 
 from decorators import secure_module, last_access
-from settings import GENERAR_RUBRO_DERECHO, NOTA_ESTADO_EN_CURSO, USA_RETIRO_MATERIA, \
+from settings import NOTA_ESTADO_EN_CURSO, USA_RETIRO_MATERIA, \
     USA_RETIRO_MATRICULA, LISTA_FORMA_CALCULO, MATRICULAR_CON_CONFLICTO_HORARIO, CALCULO_ASISTENCIA_CLASE, \
     PERSONA_ADMINS_ACADEMICO_ID
 from settings import NIVEL_MALLA_CERO
@@ -24,7 +24,7 @@ from ctt.funciones import convertir_fecha, generar_nombre, valores_asignados
 from ctt.funciones import log, MiPaginador, bad_json, ok_json, url_back, empty_json
 from ctt.models import Nivel, Carrera, Matricula, MateriaAsignada, RecordAcademico, Materia, Asignatura, Inscripcion, \
     AgregacionEliminacionMaterias, MateriaAsignadaRetiro, Clase, Turno, ParaleloMateria, \
-    NivelMalla,  mi_institucion, Persona, CargoInstitucion, RetiroMatricula
+    NivelMalla,  mi_institucion, Persona, RetiroMatricula
 from ctt.tasks import send_mail
 
 
@@ -212,38 +212,6 @@ def view(request):
                     materiaasignada.sinasistencia = False
                     materiaasignada.actualiza_estado()
                     log(u'Modifico estado asistencia: %s' % materiaasignada, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'sinmovilidad':
-                try:
-                    materia = MateriaAsignada.objects.get(pk=request.POST['id'])
-                    materia.sinasistencia = False
-                    materia.verificahorario = True
-                    materia.movilidad = False
-                    materia.save(request)
-                    materia.actualiza_notafinal()
-                    if materia.materia.cerrado:
-                        materia.cierre_materia_asignada()
-                    log(u'Modifio estado movilidad: %s' % materia, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'conamovilidad':
-                try:
-                    materia = MateriaAsignada.objects.get(pk=request.POST['id'])
-                    materia.sinasistencia = True
-                    materia.verificahorario = False
-                    materia.movilidad = True
-                    materia.save(request)
-                    materia.actualiza_notafinal()
-                    if materia.materia.cerrado:
-                        materia.cierre_materia_asignada()
-                    log(u'Modifico estado movilidad: %s' % materia, request, "edit")
                     return ok_json()
                 except Exception as ex:
                     transaction.set_rollback(True)
@@ -477,77 +445,6 @@ def view(request):
                     transaction.set_rollback(True)
                     return bad_json(error=1, ex=ex)
 
-            if action == 'homologar':
-                try:
-                    materiaasignada = MateriaAsignada.objects.get(pk=request.POST['id'])
-                    form = HomologacionInscripcionForm(request.POST)
-                    if form.is_valid():
-                        if materiaasignada.materiaasignadahomologacion_set.exists():
-                            materiaasignadahomologacion = materiaasignada.materiaasignadahomologacion_set.all()[0]
-                            homologacion = materiaasignadahomologacion.homologacion
-                            homologacion.carrera = form.cleaned_data['carrera']
-                            homologacion.asignatura = form.cleaned_data['asignatura']
-                            homologacion.fecha = form.cleaned_data['fecha']
-                            homologacion.nota_ant = form.cleaned_data['nota_ant']
-                            homologacion.observaciones = form.cleaned_data['observaciones']
-                            homologacion.creditos = form.cleaned_data['creditos']
-                            homologacion.save(request)
-                        else:
-                            homologacion = HomologacionInscripcion(carrera=form.cleaned_data['carrera'],
-                                                                   asignatura=form.cleaned_data['asignatura'],
-                                                                   fecha=form.cleaned_data['fecha'],
-                                                                   nota_ant=form.cleaned_data['nota_ant'],
-                                                                   observaciones=form.cleaned_data['observaciones'],
-                                                                   creditos=form.cleaned_data['creditos'])
-                            homologacion.save(request)
-                            materiaasignadahomologacion = MateriaAsignadaHomologacion(materiaasignada=materiaasignada,
-                                                                                      homologacion=homologacion)
-                            materiaasignadahomologacion.save(request)
-                        log(u'Adicionada homologacion: %s' % homologacion, request, "add")
-                        return ok_json()
-                    else:
-                        return bad_json(error=6)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'convalidar':
-                try:
-                    materiaasignada = MateriaAsignada.objects.get(pk=request.POST['id'])
-                    form = ConvalidacionInscripcionForm(request.POST)
-                    if form.is_valid():
-                        if materiaasignada.materiaasignadaconvalidacion_set.exists():
-                            materiaasignadaconvalidacion = materiaasignada.materiaasignadaconvalidacion_set.all()[0]
-                            convalidacion = materiaasignadaconvalidacion.convalidacion
-                            convalidacion.centro = form.cleaned_data['centro']
-                            convalidacion.carrera = form.cleaned_data['carrera']
-                            convalidacion.asignatura = form.cleaned_data['asignatura']
-                            convalidacion.anno = form.cleaned_data['anno']
-                            convalidacion.nota_ant = form.cleaned_data['nota_ant']
-                            convalidacion.nota_act = form.cleaned_data['nota_act']
-                            convalidacion.observaciones = form.cleaned_data['observaciones']
-                            convalidacion.creditos = form.cleaned_data['creditos']
-                            convalidacion.save(request)
-                        else:
-                            convalidacion = ConvalidacionInscripcion(centro=form.cleaned_data['centro'],
-                                                                     carrera=form.cleaned_data['carrera'],
-                                                                     asignatura=form.cleaned_data['asignatura'],
-                                                                     anno=form.cleaned_data['anno'],
-                                                                     nota_ant=form.cleaned_data['nota_ant'],
-                                                                     nota_act=form.cleaned_data['nota_act'],
-                                                                     observaciones=form.cleaned_data['observaciones'],
-                                                                     creditos=form.cleaned_data['creditos'])
-                            convalidacion.save(request)
-                            materiaasignadaconvalidacion = MateriaAsignadaConvalidacion(materiaasignada=materiaasignada, convalidacion=convalidacion)
-                            materiaasignadaconvalidacion.save(request)
-                        log(u'Adicionada convalidacion: %s' % convalidacion, request, "add")
-                        return ok_json()
-                    else:
-                        return bad_json(error=6)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
             if action == 'fechaasignacion':
                 try:
                     materiaasignada = MateriaAsignada.objects.get(pk=request.POST['id'])
@@ -663,76 +560,16 @@ def view(request):
                     return bad_json(error=1, ex=ex)
 
             if action == 'delevidencia':
-                try:
-                    evidencia = EvidenciaMateria.objects.get(pk=request.POST['id'])
-                    log(u'Elimino evidencia de materia: %s' % evidencia, request, "del")
-                    evidencia.delete()
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=2, ex=ex)
+                return bad_json(mensaje=u"La evidencia de materia no está disponible.")
 
             if action == 'addevidencia':
-                try:
-                    ma = MateriaAsignada.objects.get(pk=request.POST['id'])
-                    form = EvidenciaMateriaForm(request.POST, request.FILES)
-                    if form.is_valid():
-                        newfile = None
-                        if 'archivo' in request.FILES:
-                            newfile = request.FILES['archivo']
-                            newfile._name = generar_nombre("materia_", newfile._name)
-                        evidencia = EvidenciaMateria(materia=ma.materia,
-                                                     descripcion=form.cleaned_data['descripcion'],
-                                                     fecha=form.cleaned_data['fecha'],
-                                                     archivo=newfile)
-                        evidencia.save(request)
-                        log(u'Adiciono evidencia de materia: %s' % ma.materia, request, "add")
-                        return ok_json()
-                    else:
-                        return bad_json(error=6)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
+                return bad_json(mensaje=u"La evidencia de materia no está disponible.")
 
             if action == 'editevidencia':
-                try:
-                    evidencia = EvidenciaMateria.objects.get(pk=request.POST['id'])
-                    form = EvidenciaMateriaForm(request.POST, request.FILES)
-                    if form.is_valid():
-                        newfile = evidencia.archivo
-                        if 'archivo' in request.FILES:
-                            newfile = request.FILES['archivo']
-                            newfile._name = generar_nombre("tutoria_", newfile._name)
-                        evidencia.descripcion = form.cleaned_data['descripcion']
-                        evidencia.fecha = form.cleaned_data['fecha']
-                        evidencia.archivo = newfile
-                        evidencia.save(request)
-                        log(u'Modificó evidencia de materia: %s' % evidencia, request, "edit")
-                        return ok_json()
-                    else:
-                        return bad_json(error=6)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
+                return bad_json(mensaje=u"La evidencia de materia no está disponible.")
 
             if action == 'addarchivoevidencia':
-                try:
-                    evidencia = EvidenciaMateria.objects.get(pk=request.POST['id'])
-                    form = EvidenciaMateriaForm(request.POST, request.FILES)
-                    if form.is_valid():
-                        newfile = evidencia.archivo
-                        if 'archivo' in request.FILES:
-                            newfile = request.FILES['archivo']
-                            newfile._name = generar_nombre("tutoria_", newfile._name)
-                        evidencia.archivo = newfile
-                        evidencia.save(request)
-                        log(u'Modificó evidencia de materia: %s' % evidencia, request, "edit")
-                        return ok_json()
-                    else:
-                        return bad_json(error=6)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
+                return bad_json(mensaje=u"La evidencia de materia no está disponible.")
 
         return bad_json(error=0)
     else:
@@ -784,20 +621,17 @@ def view(request):
                         matriculas = matriculas.filter(paraleloprincipal__id=paralelomateriaid)
                     if 's' in request.GET:
                         search = request.GET['s'].strip()
-                        ss = search.split(' ')
-                        if len(ss) == 1:
-                            matriculas = matriculas.filter(Q(inscripcion__persona__nombre1__icontains=search) |
-                                                           Q(inscripcion__persona__nombre2__icontains=search) |
-                                                           Q(inscripcion__persona__apellido1__icontains=search) |
-                                                           Q(inscripcion__persona__apellido2__icontains=search) |
-                                                           Q(inscripcion__persona__cedula__icontains=search) |
-                                                           Q(inscripcion__persona__pasaporte__icontains=search) |
-                                                           Q(inscripcion__identificador__icontains=search) |
-                                                           Q(inscripcion__carrera__nombre__icontains=search) |
-                                                           Q(inscripcion__persona__usuario__username__icontains=search), nivel=nivel).order_by('inscripcion__persona').distinct()
-                        else:
-                            matriculas = matriculas.filter(Q(inscripcion__persona__apellido1__icontains=ss[0]) &
-                                                           Q(inscripcion__persona__apellido2__icontains=ss[1]), nivel=nivel).order_by('inscripcion__persona').distinct()
+                        for term in search.split():
+                            matriculas = matriculas.filter(Q(inscripcion__persona__nombre1__icontains=term) |
+                                                           Q(inscripcion__persona__nombre2__icontains=term) |
+                                                           Q(inscripcion__persona__apellido1__icontains=term) |
+                                                           Q(inscripcion__persona__apellido2__icontains=term) |
+                                                           Q(inscripcion__persona__cedula__icontains=term) |
+                                                           Q(inscripcion__persona__pasaporte__icontains=term) |
+                                                           Q(inscripcion__identificador__icontains=term) |
+                                                           Q(inscripcion__carrera__nombre__icontains=term) |
+                                                           Q(inscripcion__persona__usuario__username__icontains=term), nivel=nivel)
+                        matriculas = matriculas.order_by('inscripcion__persona').distinct()
                     elif 'idm' in request.GET:
                         matriculas = matriculas.filter(nivel=nivel, id=request.GET['idm']).order_by('inscripcion__persona').distinct()
                     else:
@@ -883,7 +717,6 @@ def view(request):
                             data['materiasmalla'] = malla.asignaturamalla_set.filter().filter(matriculacion=True).order_by('nivelmalla', 'ejeformativo')
                         data['datosincripcion'] = inscripcion.documentosdeinscripcion_set.all()[0]
                         data['maximo_materia_online'] = malla.maximomateriasonline
-                        data['secretarias'] = CargoInstitucion.objects.filter(cargo_id=50).distinct()
                     else:
                         data['matriculado'] = False
                         data['materiasmalla'] = None
@@ -1022,54 +855,19 @@ def view(request):
                     pass
 
             if action == 'evidenciasmateria':
-                try:
-                    data['title'] = u'Evidencias de pasantía'
-                    data['materiaasignada'] = ma = MateriaAsignada.objects.get(pk=request.GET['id'])
-                    data['evidencias'] = ma.materia.evidenciamateria_set.all().order_by('-fecha')
-                    return render(request, "matriculas/evidencias.html", data)
-                except Exception as ex:
-                    pass
+                return url_back(request, ex=u"La evidencia de materia no está disponible.")
 
             if action == 'addevidenciamateria':
-                try:
-                    data['title'] = u'Adicionar evidencia'
-                    data['materiaasignada'] = ma = MateriaAsignada.objects.get(pk=request.GET['id'])
-                    data['form'] = EvidenciaMateriaForm()
-                    return render(request, "matriculas/addevidencia.html", data)
-                except Exception as ex:
-                    pass
+                return url_back(request, ex=u"La evidencia de materia no está disponible.")
 
             if action == 'addarchivoevidencia':
-                try:
-                    data['title'] = u'Adicionar evidencia'
-                    data['materiaasignada'] = ma = MateriaAsignada.objects.get(pk=request.GET['ma'])
-                    data['evidencia'] = evidencia = EvidenciaMateria.objects.get(pk=request.GET['id'])
-                    form = EvidenciaMateriaForm()
-                    form.archivo_e()
-                    data['form'] = form
-                    return render(request, "matriculas/addarchivoevidencia.html", data)
-                except Exception as ex:
-                    pass
+                return url_back(request, ex=u"La evidencia de materia no está disponible.")
 
             if action == 'editevidenciamateria':
-                try:
-                    data['title'] = u'Editar evidencia'
-                    data['materiaasignada'] = ma = MateriaAsignada.objects.get(pk=request.GET['ma'])
-                    data['evidencia'] = evidencia = EvidenciaMateria.objects.get(pk=request.GET['id'])
-                    data['form'] = EvidenciaMateriaForm(initial={'fecha': evidencia.fecha,
-                                                                 'descripcion': evidencia.descripcion})
-                    return render(request, "matriculas/editevidencia.html", data)
-                except Exception as ex:
-                    pass
+                return url_back(request, ex=u"La evidencia de materia no está disponible.")
 
             if action == 'delevidenciamateria':
-                try:
-                    data['title'] = u'Borrar evidencia'
-                    data['materiaasignada'] = ma = MateriaAsignada.objects.get(pk=request.GET['ma'])
-                    data['evidencia'] = evidencia = EvidenciaMateria.objects.get(pk=request.GET['id'])
-                    return render(request, "matriculas/delevidencia.html", data)
-                except Exception as ex:
-                    pass
+                return url_back(request, ex=u"La evidencia de materia no está disponible.")
 
             if action == 'materias':
                 try:
@@ -1088,7 +886,6 @@ def view(request):
                             ma.actualiza_estado()
                     data['esposgrado'] = True if matricula.inscripcion.carrera.posgrado else False
                     data['pendientes_malla'] = malla.asignaturamalla_set.filter().exclude(asignatura_id__in=aprobadasids).order_by('nivelmalla')
-                    data['genera_rubro_derecho'] = GENERAR_RUBRO_DERECHO
                     data['usa_retiro_materia'] = USA_RETIRO_MATERIA
                     data['permiteagregaciones'] = matricula.nivel.periodo.fecha_agregaciones()
                     data['reporte_0'] = obtener_reporte('seguimiento_silabus_estudiante')
@@ -1119,22 +916,6 @@ def view(request):
                     data['title'] = u'Tomar en cuenta asistencia'
                     data['materiaasignada'] = MateriaAsignada.objects.get(pk=request.GET['id'])
                     return render(request, "matriculas/conasistencia.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'sinmovilidad':
-                try:
-                    data['title'] = u'No tomar en cuenta la movilidad'
-                    data['materiaasignada'] = MateriaAsignada.objects.get(pk=request.GET['id'])
-                    return render(request, "matriculas/sinmovilidad.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'conmovilidad':
-                try:
-                    data['title'] = u'Tomar en cuenta movilidad'
-                    data['materiaasignada'] = MateriaAsignada.objects.get(pk=request.GET['id'])
-                    return render(request, "matriculas/conmovilidad.html", data)
                 except Exception as ex:
                     pass
 
@@ -1184,77 +965,16 @@ def view(request):
                     transaction.set_rollback(True)
                     pass
 
-            if action == 'convalidar':
-                try:
-                    data['title'] = u'Homologación de materia'
-                    data['materiaasignada'] = materiaasignada = MateriaAsignada.objects.get(pk=request.GET['id'])
-                    if materiaasignada.materiaasignadaconvalidacion_set.exists():
-                        materiaasignadaconvalidacion = materiaasignada.materiaasignadaconvalidacion_set.all()[0]
-                        data['form'] = ConvalidacionInscripcionForm(initial={'asignatura': materiaasignadaconvalidacion.convalidacion.asignatura,
-                                                                             'centro': materiaasignadaconvalidacion.convalidacion.centro,
-                                                                             'carrera': materiaasignadaconvalidacion.convalidacion.carrera,
-                                                                             'creditos': materiaasignadaconvalidacion.convalidacion.creditos,
-                                                                             'observaciones': materiaasignadaconvalidacion.convalidacion.observaciones,
-                                                                             'nota_ant': materiaasignadaconvalidacion.convalidacion.nota_ant,
-                                                                             'nota_act': materiaasignadaconvalidacion.convalidacion.nota_act,
-                                                                             'anno': materiaasignadaconvalidacion.convalidacion.anno})
-                    else:
-                        data['form'] = ConvalidacionInscripcionForm(initial={'asignatura': materiaasignada.materia.asignatura.nombre,
-                                                                             'creditos': materiaasignada.materia.creditos})
-                    return render(request, "matriculas/convalidar.html", data)
-                except Exception as ex:
-                    pass
-
             if action == 'fechaasignacion':
                 try:
                     data['title'] = u'Cambiar fecha asignacion de la materia'
                     data['materiaasignada'] = materiaasignada = MateriaAsignada.objects.get(pk=request.GET['id'])
-                    data['form'] = CambioFechaAsignacionMateriaForm(initial={'fecha': materiaasignada.matricula.fecha})
+                    fecha = materiaasignada.fechaasignacion if materiaasignada.fechaasignacion else materiaasignada.matricula.fecha
+                    data['form'] = CambioFechaAsignacionMateriaForm(initial={'fecha': fecha})
                     return render(request, "matriculas/fechaasignacion.html", data)
                 except Exception as ex:
-                    pass
-
-            if action == 'delconvalidacion':
-                try:
-                    materiaasignada = MateriaAsignada.objects.get(pk=request.GET['id'])
-                    if materiaasignada.materiaasignadaconvalidacion_set.exists():
-                        materiaasignadaconvalidacion = materiaasignada.materiaasignadaconvalidacion_set.all()[0]
-                        log(u'Elimino convalidacion de materia: %s' % materiaasignadaconvalidacion, request, "del")
-                        materiaasignadaconvalidacion.delete()
-                    return HttpResponseRedirect("matriculas?action=materias&id=" + str(materiaasignada.matricula.id))
-                except Exception as ex:
                     transaction.set_rollback(True)
-                    pass
-
-            if action == 'delhomologacion':
-                try:
-                    materiaasignada = MateriaAsignada.objects.get(pk=request.GET['id'])
-                    if materiaasignada.materiaasignadahomologacion_set.exists():
-                        materiaasignadahomologacion = materiaasignada.materiaasignadahomologacion_set.all()[0]
-                        log(u'Elimino homologacion de materia: %s' % materiaasignada, request, "del")
-                        materiaasignadahomologacion.delete()
-                    return HttpResponseRedirect("matriculas?action=materias&id=" + str(materiaasignada.matricula.id))
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    pass
-
-            if action == 'homologar':
-                try:
-                    data['title'] = u'Homologacion de materia'
-                    data['materiaasignada'] = materiaasignada = MateriaAsignada.objects.get(pk=request.GET['id'])
-                    if materiaasignada.materiaasignadahomologacion_set.exists():
-                        materiaasignadahomologacion = materiaasignada.materiaasignadahomologacion_set.all()[0]
-                        data['form'] = HomologacionInscripcionForm(initial={'carrera': materiaasignadahomologacion.homologacion.carrera,
-                                                                            'asignatura': materiaasignadahomologacion.homologacion.asignatura,
-                                                                            'fecha': materiaasignadahomologacion.homologacion.fecha,
-                                                                            'nota_ant': materiaasignadahomologacion.homologacion.nota_ant,
-                                                                            'creditos': materiaasignadahomologacion.homologacion.creditos,
-                                                                            'observaciones': materiaasignadahomologacion.homologacion.observaciones})
-                    else:
-                        data['form'] = HomologacionInscripcionForm(initial={'creditos': materiaasignada.materia.creditos})
-                    return render(request, "matriculas/homologar.html", data)
-                except Exception as ex:
-                    pass
+                    return url_back(request, ex=ex)
 
             if action == 'actualizarrecord':
                 try:

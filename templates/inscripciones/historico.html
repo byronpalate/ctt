@@ -79,9 +79,6 @@
                             {% elif historico.materiacurso %}
                                 <span class="badge text-bg-success">C</span>
                                 <span class="smaller">{% if historico.materiacurso.curso.periodo.es_grado %} {{ historico.materiacurso.curso.periodo.nombre }} - {% endif %}{{ historico.materiacurso.profesor|default_if_none:"" }}</span><br>
-                            {% elif historico.materiacursotitulacion %}
-                                <span class="badge text-bg-success">T</span>
-                                <span class="smaller">{% if historico.materiacursotitulacion.curso.periodo.es_grado %} {{ historico.materiacursotitulacion.curso.periodo.nombre }} - {% endif %}{{ historico.materiacursotitulacion.profesor|default_if_none:"" }}</span><br>
                             {% endif %}
                             <span class="smaller">{{ historico.observaciones|default_if_none:"" }}</span>
                         </td>
@@ -156,16 +153,16 @@
                                         <div class="btn-group dropdown">
                                             <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
                                             <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
-                                                {% if historico.trabajotitulacionmalla or historico.materiahomologacion or historico.materiacursotitulacion or historico.materiacurso or historico.materiaregular %}
+                                                {% if historico.homologada or historico.convalidacion or historico.materiacurso or historico.materiaregular %}
 
                                                 {% else %}
-                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=edithistorico&id={{ historico.id }}'><i class="icon-edit"></i> Editar</a></li>
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=edithistorico&id={{ historico.id }}&idi={{ inscripcion.id }}&idr={{ record.id }}'><i class="icon-edit"></i> Editar</a></li>
 {#                                                    {% if historico.materiahomologacion %}#}
-                                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=cambiorecordhomologacion&id={{ historico.id }}'><i class="icon-list"></i> Homologación</a></li>
+                                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=cambiorecordhomologacion&id={{ historico.id }}&idi={{ inscripcion.id }}&idr={{ record.id }}'><i class="icon-list"></i> Homologación</a></li>
 {#                                                    {% endif %}#}
                                                     <li class="dropdown-divider"></li>
                                                 {% endif %}
-                                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delhistorico&id={{ historico.id }}'><i class="icon-remove"></i> Eliminarrr</a></li>
+                                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delhistorico&id={{ historico.id }}&idi={{ inscripcion.id }}&idr={{ record.id }}'><i class="icon-remove"></i> Eliminar</a></li>
                                             </ul>
                                         </div>
                                     {% endif %}
@@ -173,16 +170,16 @@
                                         <div class="btn-group dropdown">
                                             <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
                                             <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
-                                                {% if historico.trabajotitulacionmalla or historico.materiahomologacion or historico.materiacursotitulacion or historico.materiacurso or historico.materiaregular %}
+                                                {% if historico.homologada or historico.convalidacion or historico.materiacurso or historico.materiaregular %}
 
                                                 {% else %}
-                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=edithistorico&id={{ historico.id }}'><i class="icon-edit"></i> Editar</a></li>
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=edithistorico&id={{ historico.id }}&idi={{ inscripcion.id }}&idr={{ record.id }}'><i class="icon-edit"></i> Editar</a></li>
                                                     {#                                                {% if historico.materiahomologacion %}#}
-                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=cambiorecordhomologacion&id={{ historico.id }}'><i class="icon-list"></i> Homologación</a></li>
+                                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=cambiorecordhomologacion&id={{ historico.id }}&idi={{ inscripcion.id }}&idr={{ record.id }}'><i class="icon-list"></i> Homologación</a></li>
                                                     {#                                                {% endif %}#}
                                                     <li class="dropdown-divider"></li>
                                                 {% endif %}
-                                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delhistorico&id={{ historico.id }}'><i class="icon-remove"></i> Eliminar</a></li>
+                                                <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/inscripciones?action=delhistorico&id={{ historico.id }}&idi={{ inscripcion.id }}&idr={{ record.id }}'><i class="icon-remove"></i> Eliminar</a></li>
                                             </ul>
                                         </div>
                                     {% endif %}

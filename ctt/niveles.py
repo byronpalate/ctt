@@ -1196,7 +1196,7 @@ def view(request):
             try:
                 carrera = Carrera.objects.get(pk=request.POST['id'])
                 lista = []
-                for asignatura in Asignatura.objects.filter(Q(asignaturamalla__malla__carrera=carrera) | Q(modulomalla__malla__carrera=carrera)).distinct():
+                for asignatura in Asignatura.objects.filter(asignaturamalla__malla__carrera=carrera).distinct():
                     lista.append([asignatura.id, asignatura.nombre])
                 return ok_json({'lista': lista})
             except Exception as ex:

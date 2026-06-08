@@ -35,12 +35,12 @@
         });
     </script>
 {% endblock %}
-{% block atras %}/niveles?action=materias&id={{ materia.niveles.id }}{% endblock %}
+{% block atras %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}
 {% block titulo %}{{ title }}{% endblock %}
-{% block formdestination %}/niveles?action=materias&id={{ materia.niveles.id }}{% endblock %}
+{% block formdestination %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}
 {% block formaction %}/niveles{% endblock %}
 {% block formextra %}
     <input type='hidden' name='action' value='editmateria'/>
     <input type='hidden' name='id' value='{{ materia.id }}'/>
 {% endblock %}
-{% block formback %}/niveles?action=materias&id={{ materia.niveles.id }}{% endblock %}
+{% block formback %}/niveles?action=materias&id={{ materia.nivel.id }}{% endblock %}

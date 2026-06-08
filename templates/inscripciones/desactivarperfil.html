@@ -1,15 +1,8 @@
 {% extends "ajaxconfirmaciondinamicbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/inscripciones{% endblock %}
-{% block formdestination %}/inscripciones{% endblock %}
-{% block formactionvalue %}{{ request.GET.action|default:"" }}{% endblock %}
-{% block formobjectid %}{{ request.GET.id|default:request.GET.idi|default:request.GET.pk|default:"0" }}{% endblock %}
-{% block mensaje %}Esta seguro(a) que desea continuar con la accion:{% endblock %}
-{% block formobjectrepr %}{{ request.GET.id|default:request.GET.idi|default:"" }}{% endblock %}
-{% block fieldsextra %}
-    {% for k, v in request.GET.items %}
-        {% if k != 'action' and k != 'id' %}
-            <input type="hidden" name="{{ k }}" value="{{ v }}"/>
-        {% endif %}
-    {% endfor %}
-{% endblock %}
+{% block formdestination %}/inscripciones?id={{ inscripcion.id }}{% endblock %}
+{% block formactionvalue %}desactivarperfil{% endblock %}
+{% block formobjectid %}{{ inscripcion.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea desactivar el perfil del estudiante:{% endblock %}
+{% block formobjectrepr %}{{ inscripcion }}{% endblock %}

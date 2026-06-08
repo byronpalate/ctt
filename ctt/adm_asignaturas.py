@@ -86,7 +86,6 @@ def view(request):
                     for prematricula in asignatura.prematricula_set.all():
                         prematricula.asignaturas.remove(asignatura)
                         prematricula.asignaturas.add(nuevaasignatura)
-                    asignatura.trabajotitulacionmalla_set.all().update(asignatura=nuevaasignatura)
                     asignatura.retirofinanciero_set.all().update(asignatura=nuevaasignatura)
                     if asignatura.en_uso():
                         return bad_json(mensaje=u'La asignatura se encuentra en uso en una tabla no definida en esta acción')

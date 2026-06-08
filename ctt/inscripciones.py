@@ -202,6 +202,7 @@ def view(request):
                 if not puede_modificar_inscripcion_post(request, inscripcion):
                     return bad_json(error=8)
                 form = CambionivelmallaForm(request.POST)
+                form.editar(inscripcion)
                 if form.is_valid():
                     nivelfinal = form.cleaned_data['nuevonivel'].id
                     malla = inscripcion.mi_malla()
@@ -380,22 +381,23 @@ def view(request):
                 if form.is_valid():
                     if inscripcion.recordacademico_set.filter(asignatura=form.cleaned_data['asignatura']).exists():
                         return bad_json(mensaje=u"Ya existe la asignatura en el record, modifíquela desde el histórico.")
-                    record = RecordAcademico(inscripcion=inscripcion,
-                                             asignatura=form.cleaned_data['asignatura'],
-                                             modulomalla=inscripcion.asignatura_en_modulomalla(form.cleaned_data['asignatura']),
-                                             asignaturamalla=inscripcion.asignatura_en_asignaturamalla(form.cleaned_data['asignatura']),
-                                             nota=form.cleaned_data['nota'],
-                                             asistencia=form.cleaned_data['asistencia'],
-                                             fecha=form.cleaned_data['fecha'],
-                                             aprobada=form.cleaned_data['aprobada'],
-                                             libreconfiguracion=form.cleaned_data['libreconfiguracion'],
-                                             optativa=form.cleaned_data['optativa'],
-                                             pendiente=False,
-                                             creditos=form.cleaned_data['creditos'],
-                                             horas=form.cleaned_data['horas'],
-                                             validacreditos=form.cleaned_data['validacreditos'],
-                                             validapromedio=form.cleaned_data['validapromedio'],
-                                             observaciones=form.cleaned_data['observaciones'])
+                    record = RecordAcademico(
+                        inscripcion=inscripcion,
+                        asignatura=form.cleaned_data['asignatura'],
+                        asignaturamalla=inscripcion.asignatura_en_asignaturamalla(form.cleaned_data['asignatura']),
+                        nota=form.cleaned_data['nota'],
+                        asistencia=form.cleaned_data['asistencia'],
+                        fecha=form.cleaned_data['fecha'],
+                        aprobada=form.cleaned_data['aprobada'],
+                        libreconfiguracion=form.cleaned_data['libreconfiguracion'],
+                        optativa=form.cleaned_data['optativa'],
+                        pendiente=False,
+                        creditos=form.cleaned_data['creditos'],
+                        horas=form.cleaned_data['horas'],
+                        validacreditos=form.cleaned_data['validacreditos'],
+                        validapromedio=form.cleaned_data['validapromedio'],
+                        observaciones=form.cleaned_data['observaciones']
+                    )
                     record.save(request)
                     record.actualizar()
                     inscripcion.actualizar_nivel()
@@ -430,21 +432,22 @@ def view(request):
                         aprueba = False
                     else:
                         aprueba = True
-                    record = HistoricoRecordAcademico(inscripcion=inscripcion,
-                                                      asignatura=form.cleaned_data['asignatura'],
-                                                      modulomalla=inscripcion.asignatura_en_modulomalla(form.cleaned_data['asignatura']),
-                                                      asignaturamalla=inscripcion.asignatura_en_asignaturamalla(form.cleaned_data['asignatura']),
-                                                      nota=form.cleaned_data['nota'],
-                                                      fecha=form.cleaned_data['fecha'],
-                                                      aprobada= aprueba,
-                                                      convalidacion=form.cleaned_data['convalidacion'],
-                                                      validacreditos=form.cleaned_data['validacreditos'],
-                                                      validapromedio=form.cleaned_data['validapromedio'],
-                                                      creditos=form.cleaned_data['creditos'],
-                                                      horas=form.cleaned_data['horas'],
-                                                      homologada=form.cleaned_data['homologada'],
-                                                      observaciones='HOMOLOGACIÓN '+str(form.cleaned_data['periodo'].nombre),
-                                                      asistencia=100)
+                    record = HistoricoRecordAcademico(
+                        inscripcion=inscripcion,
+                        asignatura=form.cleaned_data['asignatura'],
+                        asignaturamalla=inscripcion.asignatura_en_asignaturamalla(form.cleaned_data['asignatura']),
+                        nota=form.cleaned_data['nota'],
+                        fecha=form.cleaned_data['fecha'],
+                        aprobada=aprueba,
+                        convalidacion=form.cleaned_data['convalidacion'],
+                        validacreditos=form.cleaned_data['validacreditos'],
+                        validapromedio=form.cleaned_data['validapromedio'],
+                        creditos=form.cleaned_data['creditos'],
+                        horas=form.cleaned_data['horas'],
+                        homologada=form.cleaned_data['homologada'],
+                        observaciones='HOMOLOGACIÓN ' + str(form.cleaned_data['periodo'].nombre),
+                        asistencia=100
+                    )
                     record.save(request)
                     record.actualizar()
                     if form.cleaned_data['convalidacion']:
@@ -513,16 +516,17 @@ def view(request):
                         return bad_json(mensaje=u"Registro existente en esa fecha.")
                     if inscripcion.historicorecordacademico_set.filter(Q(convalidacion=True) | Q(homologada=True), asignatura=asignatura).exists():
                         return bad_json(mensaje=u"Ya existe un rgistro de homologacion para esta asignatura %s." % asignatura)
-                    historico = HistoricoRecordAcademico(inscripcion=inscripcion,
-                                                         asignatura=asignatura,
-                                                         modulomalla=inscripcion.asignatura_en_modulomalla(asignatura),
-                                                         asignaturamalla=inscripcion.asignatura_en_asignaturamalla(asignatura),
-                                                         nota=float(dato['nota']),
-                                                         fecha=convertir_fecha(dato['fecha']),
-                                                         aprobada=True,
-                                                         homologada=True if tipo == 1 else False,
-                                                         convalidacion=True if tipo == 2 else False,
-                                                         asistencia=100)
+                    historico = HistoricoRecordAcademico(
+                        inscripcion=inscripcion,
+                        asignatura=asignatura,
+                        asignaturamalla=inscripcion.asignatura_en_asignaturamalla(asignatura),
+                        nota=float(dato['nota']),
+                        fecha=convertir_fecha(dato['fecha']),
+                        aprobada=True,
+                        homologada=(tipo == 1),
+                        convalidacion=(tipo == 2),
+                        asistencia=100
+                    )
                     historico.save(request)
                     historico.actualizar()
                     record = RecordAcademico.objects.filter(inscripcion=inscripcion, asignatura=asignatura)[0]
@@ -577,22 +581,23 @@ def view(request):
                     if form.cleaned_data['aprobada']:
                         if record.historicorecordacademico_set.filter(aprobada=True).exists():
                             return bad_json(mensaje=u"Ya tiene esta materia aprobada en el Historico.")
-                    historico = HistoricoRecordAcademico(recordacademico=record,
-                                                         inscripcion=record.inscripcion,
-                                                         asignatura=record.asignatura,
-                                                         modulomalla=record.inscripcion.asignatura_en_modulomalla(form.cleaned_data['asignatura']),
-                                                         asignaturamalla=record.inscripcion.asignatura_en_asignaturamalla(form.cleaned_data['asignatura']),
-                                                         nota=form.cleaned_data['nota'],
-                                                         asistencia=form.cleaned_data['asistencia'],
-                                                         optativa=form.cleaned_data['optativa'],
-                                                         libreconfiguracion=form.cleaned_data['libreconfiguracion'],
-                                                         fecha=form.cleaned_data['fecha'],
-                                                         aprobada=form.cleaned_data['aprobada'],
-                                                         creditos=form.cleaned_data['creditos'],
-                                                         horas=form.cleaned_data['horas'],
-                                                         validacreditos=form.cleaned_data['validacreditos'],
-                                                         validapromedio=form.cleaned_data['validapromedio'],
-                                                         observaciones=form.cleaned_data['observaciones'])
+                    historico = HistoricoRecordAcademico(
+                        recordacademico=record,
+                        inscripcion=record.inscripcion,
+                        asignatura=record.asignatura,
+                        asignaturamalla=record.inscripcion.asignatura_en_asignaturamalla(form.cleaned_data['asignatura']),
+                        nota=form.cleaned_data['nota'],
+                        asistencia=form.cleaned_data['asistencia'],
+                        optativa=form.cleaned_data['optativa'],
+                        libreconfiguracion=form.cleaned_data['libreconfiguracion'],
+                        fecha=form.cleaned_data['fecha'],
+                        aprobada=form.cleaned_data['aprobada'],
+                        creditos=form.cleaned_data['creditos'],
+                        horas=form.cleaned_data['horas'],
+                        validacreditos=form.cleaned_data['validacreditos'],
+                        validapromedio=form.cleaned_data['validapromedio'],
+                        observaciones=form.cleaned_data['observaciones']
+                    )
                     historico.save(request)
                     historico.actualizar()
                     record.inscripcion.actualizar_nivel()
@@ -652,7 +657,6 @@ def view(request):
                         return bad_json('Revise la nota', error=6)
                     if HistoricoRecordAcademico.objects.filter(inscripcion=historico.inscripcion, asignatura=historico.asignatura, fecha=form.cleaned_data['fecha']).exclude(id=historico.id).exists():
                         return bad_json(mensaje=u"Registro existente en esa fecha.")
-                    historico.modulomalla = historico.inscripcion.asignatura_en_modulomalla(form.cleaned_data['asignatura'])
                     historico.asignaturamalla = historico.inscripcion.asignatura_en_asignaturamalla(form.cleaned_data['asignatura'])
                     historico.fecha = form.cleaned_data['fecha']
                     historico.nota = form.cleaned_data['nota']
@@ -689,10 +693,6 @@ def view(request):
                     return bad_json(error=8)
                 asignatura = record.asignatura
                 inscripcion = record.inscripcion
-                homologacion = record.homologacioninscripcion_set.all()
-                homologacion.delete()
-                convalidacion = record.convalidacioninscripcion_set.all()
-                convalidacion.delete()
                 historico = record.historicorecordacademico_set.all()
                 historico.delete()
                 log(u'Elimino registro academico: %s - %s' % (record, record.inscripcion.persona), request, "del")
@@ -918,8 +918,13 @@ def view(request):
                                          num_direccion=remover_tildes(form.cleaned_data['num_direccion']),
                                          telefono=remover_tildes(form.cleaned_data['telefono']),
                                          telefono_conv=remover_tildes(form.cleaned_data['telefono_conv']),
-                                         email=form.cleaned_data['email'],
-                                         sangre=form.cleaned_data['sangre'])
+                                          email=form.cleaned_data['email'],
+                                          sangre=form.cleaned_data['sangre'],
+                                          nombrescompletosmadre=form.cleaned_data['nombrescompletosmadre'],
+                                          nombrescompletospadre=form.cleaned_data['nombrescompletospadre'],
+                                          trabaja=form.cleaned_data['trabaja'],
+                                          titulogrado=form.cleaned_data['titulogrado'],
+                                          universidadgrado=form.cleaned_data['universidadgrado'])
                     estudiante.save(request)
                     generar_usuario(persona=estudiante, group_id=ALUMNOS_GROUP_ID)
                     if EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES:
@@ -940,9 +945,10 @@ def view(request):
                                               periodo=form.cleaned_data['periodo'],
                                               nivel=form.cleaned_data['nivel'] if form.cleaned_data['nivel'] else None,
                                               condicionado=form.cleaned_data['condicionado'],
-                                              observaciones=form.cleaned_data['observaciones'],
-                                              examenubicacionidiomas=form.cleaned_data['examenubicacionidiomas'],
-                                              personainscribio=request.session['persona'])
+                                               observaciones=form.cleaned_data['observaciones'],
+                                               examenubicacionidiomas=form.cleaned_data['examenubicacionidiomas'],
+                                               personainscribio=request.session['persona'],
+                                               otrofuentefinanciacion=form.cleaned_data['otrofuentefinanciacion'])
                     inscripcion.save(request)
                     if not puede_modificar_inscripcion_post(request, inscripcion):
                         transaction.set_rollback(True)
@@ -1047,9 +1053,6 @@ def view(request):
                 if malla.asignaturamalla_set.filter(asignatura__id=request.POST['id']).exists():
                     asignaturamalla = malla.asignaturamalla_set.filter(asignatura__id=request.POST['id'])[0]
                     return ok_json({'creditos': asignaturamalla.creditos, 'horas': asignaturamalla.horas})
-                elif malla.modulomalla_set.filter(asignatura__id=request.POST['id']).exists():
-                    modulomalla = malla.modulomalla_set.filter(asignatura__id=request.POST['id'])[0]
-                    return ok_json({'creditos': modulomalla.creditos, 'horas': modulomalla.horas})
                 else:
                     asignatura = Asignatura.objects.get(pk=request.POST['id'])
                     return ok_json({'creditos': 0, 'horas': 0})
@@ -1138,20 +1141,13 @@ def view(request):
                         documenton.save(request)
                     if form.cleaned_data['copiarecord']:
                         for record in inscripcion.recordacademico_set.all():
-                            asignaturamodulo = None
                             asignaturamalla = None
-                            asignaturamodulo = nuevainscripcion.asignatura_en_modulomalla(record.asignatura)
                             asignaturamalla = nuevainscripcion.asignatura_en_asignaturamalla(record.asignatura)
                             if asignaturamalla:
                                 validacreditos = asignaturamalla.validacreditos
                                 validapromedio = asignaturamalla.validapromedio
                                 creditos = asignaturamalla.creditos
                                 horas = asignaturamalla.horas
-                            elif asignaturamodulo:
-                                validacreditos = asignaturamodulo.validacreditos
-                                validapromedio = asignaturamodulo.validapromedio
-                                creditos = asignaturamodulo.creditos
-                                horas = asignaturamodulo.horas
                             else:
                                 validacreditos = record.validacreditos
                                 validapromedio = record.validapromedio
@@ -1263,18 +1259,27 @@ def view(request):
                     estudiante.sector = form.cleaned_data['sector']
                     estudiante.direccion = remover_tildes(form.cleaned_data['direccion'])
                     estudiante.direccion2 = remover_tildes(form.cleaned_data['direccion2'])
+                    estudiante.otraubicacionsalesforce = remover_tildes(form.cleaned_data['otraubicacionsalesforce'])
                     estudiante.num_direccion = remover_tildes(form.cleaned_data['num_direccion'])
                     estudiante.telefono = form.cleaned_data['telefono']
                     estudiante.telefono_conv = form.cleaned_data['telefono_conv']
                     estudiante.email = form.cleaned_data['email']
                     estudiante.emailinst = form.cleaned_data['emailinst']
                     estudiante.sangre = form.cleaned_data['sangre']
+                    estudiante.nombrescompletosmadre = form.cleaned_data['nombrescompletosmadre']
+                    estudiante.nombrescompletospadre = form.cleaned_data['nombrescompletospadre']
+                    estudiante.trabaja = form.cleaned_data['trabaja']
+                    estudiante.titulogrado = form.cleaned_data['titulogrado']
+                    estudiante.universidadgrado = form.cleaned_data['universidadgrado']
                     estudiante.save(request)
                     # DATOS DE LA INSCRIPCION
                     if not inscripcion.matriculado() and not inscripcion.graduado() and not (tabla_egresado and inscripcion.egresado()):
                         inscripcion.sesion = form.cleaned_data['sesion']
                     inscripcion.identificador = form.cleaned_data['identificador']
                     inscripcion.observaciones = form.cleaned_data['observaciones']
+                    inscripcion.condicionado = form.cleaned_data['condicionado']
+                    inscripcion.examenubicacionidiomas = form.cleaned_data['examenubicacionidiomas']
+                    inscripcion.otrofuentefinanciacion = form.cleaned_data['otrofuentefinanciacion']
                     # DATOS DE INICIO Y FIN DE CARRERA
                     malla = inscripcion.mi_malla()
                     minivel = inscripcion.mi_nivel().nivel.id
@@ -1293,6 +1298,9 @@ def view(request):
                     # documentos.fotos = form.cleaned_data['fotos']
                     # documentos.cert_med = form.cleaned_data['cert_med']
                     documentos.conveniohomologacion = form.cleaned_data['conveniohomologacion']
+                    documentos.pre = form.cleaned_data['prenivelacion']
+                    documentos.homologar = form.cleaned_data['homologar']
+                    documentos.eshomologacionexterna = form.cleaned_data['eshomologacionexterna']
                     documentos.save(request)
                     # EXAMEN DE UBICACIÓN
                     if documentos.homologar == True:
@@ -1312,6 +1320,22 @@ def view(request):
                     perfil.porcientodiscapacidad = form.cleaned_data['porcientodiscapacidad']
                     perfil.carnetdiscapacidad = form.cleaned_data['carnetdiscapacidad']
                     perfil.save(request)
+                    # ESTUDIOS BASICOS
+                    estudio_basica = inscripcion.persona.estudiopersona_set.filter(superior=False).first()
+                    if form.cleaned_data['colegio']:
+                        if estudio_basica:
+                            estudio_basica.institucioneducacionbasica_id = int(form.cleaned_data['colegio'])
+                            estudio_basica.titulocolegio = form.cleaned_data['titulocolegio']
+                            estudio_basica.especialidadeducacionbasica_id = form.cleaned_data['especialidad']
+                            estudio_basica.save(request)
+                        else:
+                            estudio = EstudioPersona(persona=inscripcion.persona,
+                                                     institucioneducacionbasica_id=int(form.cleaned_data['colegio']),
+                                                     titulocolegio=form.cleaned_data['titulocolegio'],
+                                                     especialidadeducacionbasica_id=form.cleaned_data['especialidad'])
+                            estudio.save(request)
+                    elif estudio_basica:
+                        estudio_basica.delete()
                     # DATOS DE FACTURACION
                     clientefacturacion = inscripcion.clientefacturacion(request)
                     clientefacturacion.nombre = form.cleaned_data['facturanombre']
@@ -2285,7 +2309,9 @@ def view(request):
             try:
                 inscripcion = Inscripcion.objects.get(pk=request.POST['id'])
                 if int(request.POST['tipo']) == 1:
-                    asignaturas = Asignatura.objects.filter(Q(id__in=[x.asignatura.id for x in inscripcion.mi_malla().asignaturamalla_set.all()]) | Q(id__in=[x.asignatura.id for x in inscripcion.mi_malla().modulomalla_set.all()])).distinct()
+                    asignaturas = Asignatura.objects.filter(
+                        id__in=[x.asignatura.id for x in inscripcion.mi_malla().asignaturamalla_set.all()]
+                    ).distinct()
                 else:
                     asignaturas = Asignatura.objects.all()
                 return ok_json({'listado': [(x.id, x.nombre) for x in asignaturas]})
@@ -2351,7 +2377,7 @@ def view(request):
             try:
                 carrera = Carrera.objects.get(pk=int(request.POST['id']))
                 lista = []
-                for asignatura in Asignatura.objects.filter(Q(asignaturamalla__malla__carrera=carrera) | Q(modulomalla__malla__carrera=carrera)).distinct():
+                for asignatura in Asignatura.objects.filter(asignaturamalla__malla__carrera=carrera).distinct():
                     lista.append([asignatura.id, asignatura.nombre])
                 return ok_json({'lista': lista})
             except:
@@ -3387,6 +3413,13 @@ def view(request):
                                                          'observacionespre': documentos.observaciones_pre,
                                                          'fecha': inscripcion.fecha,
                                                          'fechainiciocarrera': inscripcion.fechainiciocarrera,
+                                                         'sede': inscripcion.sede,
+                                                         'coordinacion': inscripcion.coordinacion,
+                                                         'carrera': inscripcion.carrera,
+                                                         'modalidad': inscripcion.modalidad,
+                                                         'sesion': inscripcion.sesion,
+                                                         'periodo': inscripcion.periodo,
+                                                         'malla': inscripcion.mi_malla(),
                                                          'condicionado': inscripcion.condicionado,
                                                          'reingreso': documentos.reingreso})
                     form.adicionar(persona, inscripcion.coordinacion)
@@ -3402,6 +3435,7 @@ def view(request):
                     documentos = inscripcion.documentos_entregados()
                     perfil = inscripcion.persona.mi_perfil()
                     clientefacturacion = inscripcion.clientefacturacion(request)
+                    estudio_basica = inscripcion.persona.estudiopersona_set.filter(superior=False).first()
                     form = InscripcionForm(initial={'nombre1': inscripcion.persona.nombre1,
                                                     'nombre2': inscripcion.persona.nombre2,
                                                     'apellido1': inscripcion.persona.apellido1,
@@ -3424,8 +3458,9 @@ def view(request):
                                                     'parroquia': inscripcion.persona.parroquia,
                                                     'sector': inscripcion.persona.sector,
                                                     'direccion': inscripcion.persona.direccion,
-                                                    'direccion2': inscripcion.persona.direccion2,
-                                                    'num_direccion': inscripcion.persona.num_direccion,
+                                                     'direccion2': inscripcion.persona.direccion2,
+                                                     'otraubicacionsalesforce': inscripcion.persona.otraubicacionsalesforce,
+                                                     'num_direccion': inscripcion.persona.num_direccion,
                                                     'telefono': inscripcion.persona.telefono,
                                                     'telefono_conv': inscripcion.persona.telefono_conv,
                                                     'email': inscripcion.persona.email,
@@ -3444,8 +3479,14 @@ def view(request):
                                                     'facturadireccion': clientefacturacion.direccion,
                                                     'facturatelefono': clientefacturacion.telefono,
                                                     'facturaemail': clientefacturacion.email,
-                                                    'prenivelacion': documentos.pre,
-                                                    'etnia': perfil.raza,
+                                                     'prenivelacion': documentos.pre,
+                                                     'nombrescompletosmadre': inscripcion.persona.nombrescompletosmadre,
+                                                     'nombrescompletospadre': inscripcion.persona.nombrescompletospadre,
+                                                     'trabaja': inscripcion.persona.trabaja,
+                                                     'titulogrado': inscripcion.persona.titulogrado,
+                                                     'universidadgrado': inscripcion.persona.universidadgrado,
+                                                     'otrofuentefinanciacion': inscripcion.otrofuentefinanciacion,
+                                                     'etnia': perfil.raza,
                                                     'nacionalidadindigena': perfil.nacionalidadindigena,
                                                     'condicionado': inscripcion.condicionado,
                                                     'homologar': documentos.homologar,
@@ -3461,10 +3502,14 @@ def view(request):
                                                     # "reg_cedula": documentos.cedula,
                                                     # "votacion": documentos.votacion,
                                                     # "cert_med": documentos.cert_med,
-                                                    "eshomologacionexterna": documentos.eshomologacionexterna,
-                                                    "conveniohomologacion": documentos.conveniohomologacion})
+                                                     "eshomologacionexterna": documentos.eshomologacionexterna,
+                                                     "conveniohomologacion": documentos.conveniohomologacion,
+                                                     'colegio': estudio_basica.institucioneducacionbasica_id if estudio_basica else None,
+                                                     'especialidad': estudio_basica.especialidadeducacionbasica_id if estudio_basica else None,
+                                                     'titulocolegio': estudio_basica.titulocolegio if estudio_basica else '',
+                                                     'provinciacole': estudio_basica.institucioneducacionbasica.provincia_id if estudio_basica and estudio_basica.institucioneducacionbasica else None,
+                                                     'cantoncole': estudio_basica.institucioneducacionbasica.canton_id if estudio_basica and estudio_basica.institucioneducacionbasica else None})
                     form.editar(inscripcion)
-                    form.sin_trabajo()
                     data['form'] = form
                     data['email_domain'] = EMAIL_DOMAIN
                     data['email_domain_estudiante'] = EMAIL_DOMAIN_ESTUDIANTES
@@ -3472,6 +3517,8 @@ def view(request):
                     data['email_institucional_automatico'] = EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES
                     data['nacionalidad_indigena_id'] = NACIONALIDAD_INDIGENA_ID
                     data['modalidad_distancia'] = MODALIDAD_DISTANCIA
+                    data['colegio_nombre'] = estudio_basica.institucioneducacionbasica.nombre if estudio_basica and estudio_basica.institucioneducacionbasica else ''
+                    data['especialidad_nombre'] = estudio_basica.especialidadeducacionbasica.nombre if estudio_basica and estudio_basica.especialidadeducacionbasica else ''
                     return render(request, "inscripciones/edit.html", data)
                 except Exception as ex:
                     pass
@@ -3502,7 +3549,6 @@ def view(request):
                     data['pasantias'] = inscripcion.pasantias()
                     data['talleres'] = inscripcion.talleres()
                     data['practicas'] = inscripcion.practicas()
-                    data['titulacion'] = inscripcion.titulacion()
                     data['vccs'] = inscripcion.vcc()
                     return render(request, "inscripciones/extracurricular.html", data)
                 except Exception as ex:
@@ -3575,7 +3621,8 @@ def view(request):
                     data['form'] = form
                     return render(request, "inscripciones/addrecord.html", data)
                 except Exception as ex:
-                    pass
+                    data['error'] = str(ex)
+                    return render(request, "inscripciones/addrecord.html", data)
 
             if action == 'addrecordhomologada':
                 try:
@@ -3673,11 +3720,7 @@ def view(request):
             if action == 'delhistorico':
                 try:
                     data['title'] = u'Eliminar histórico de registro acédemico'
-                    data['historico'] = historico = HistoricoRecordAcademico.objects.get(pk=request.GET['id'])
-                    if historico.inscripcion.historicorecordacademico_set.filter(asignatura=historico.asignatura).count() == 1:
-                        data['url_back'] = '/inscripciones?action=record&id=' + str(historico.inscripcion.id)
-                    else:
-                        data['url_back'] = '/inscripciones?action=historico&id=' + str(historico.inscripcion.id) + ' &rec=' + str(historico.recordacademico.id)
+                    data['historico'] = HistoricoRecordAcademico.objects.get(pk=request.GET['id'])
                     return render(request, "inscripciones/delhistorico.html", data)
                 except Exception as ex:
                     pass
@@ -4081,7 +4124,8 @@ def view(request):
                     data['malla'] = malla = inscripcion.mi_malla()
                     data['nivelesdemallas'] = NivelMalla.objects.all().order_by('id')
                     data['ejesformativos'] = EjeFormativo.objects.all().order_by('nombre')
-                    data['modulos'] = malla.modulomalla_set.all()
+                    # modulomalla fue retirado del modelo; mantener clave para no romper template.
+                    data['modulos'] = []
                     return render(request, "inscripciones/alumalla.html", data)
                 except Exception as ex:
                     transaction.set_rollback(True)
@@ -4543,6 +4587,7 @@ def view(request):
                 try:
                     data['title'] = u'Editar información de movilidad'
                     data['movilidad'] = movilidad = MovilidadInscripcion.objects.get(pk=request.GET['id'])
+                    data['inscripcion'] = movilidad.inscripcion
                     data['form'] = RegistroMovilidadForm(initial={'periodo': movilidad.periodo,
                                                                   'universidad': movilidad.instituto,
                                                                   'asignaturas': movilidad.asignaturas,
@@ -4556,8 +4601,8 @@ def view(request):
             if action == 'delmovilidad':
                 try:
                     data['title'] = u'Eliminar registro movilidad'
-                    inscripcion = Inscripcion.objects.get(pk=request.GET['id'])
-                    data['movilidad'] = inscripcion.movilidadinscripcion_set.all()[0]
+                    data['movilidad'] = movilidad = MovilidadInscripcion.objects.get(pk=request.GET['id'])
+                    data['inscripcion'] = movilidad.inscripcion
                     return render(request, "inscripciones/delmovilidad.html", data)
                 except Exception as ex:
                     pass

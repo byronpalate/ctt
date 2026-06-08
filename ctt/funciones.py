@@ -543,6 +543,26 @@ def fetch_resources(uri):
     return os.path.join(MEDIA_ROOT, uri.replace(MEDIA_URL, ""))
 
 
+def _ex_to_text(ex):
+    """
+    Convierte una excepción en texto sin lanzar otra excepción.
+    Importante: `bad_json` se usa dentro de handlers `except`, y no debe fallar
+    al serializar el detalle del error.
+    """
+    if ex is None:
+        return 'No envia excepción'
+    try:
+        args = getattr(ex, 'args', None)
+        if args and len(args) > 0:
+            return str(args[0])
+    except Exception:
+        pass
+    try:
+        return str(ex)
+    except Exception:
+        return repr(ex)
+
+
 def bad_json(mensaje=None, error=None, extradata=None, ex=None, form=None):
     data = {'result': 'bad'}
     if mensaje:
@@ -551,19 +571,19 @@ def bad_json(mensaje=None, error=None, extradata=None, ex=None, form=None):
         if error == 0:
             data.update({"icono": "warning", "titulo": "Advertencia", "mensaje": "Solicitud incorrecta."})
         elif error == 1:
-            data.update({"icono": "warning", "titulo": "Advertencia", "mensaje": "Error al guardar los datos.","excepcion":'No envia excepción' if ex == None else ex.args[0]})
+            data.update({"icono": "warning", "titulo": "Advertencia", "mensaje": "Error al guardar los datos.","excepcion": _ex_to_text(ex)})
         elif error == 2:
-            data.update({"icono": "warning", "titulo": "Advertencia", "mensaje": "Error al eliminar los datos.","excepcion":'No envia excepción' if ex == None else ex.args[0]})
+            data.update({"icono": "warning", "titulo": "Advertencia", "mensaje": "Error al eliminar los datos.","excepcion": _ex_to_text(ex)})
         elif error == 3:
-            data.update({"errors": None if form == None else _set_err_msg_bad_json(form), "icono": "warning", "titulo": "Advertencia", "mensaje": "Error al obtener los datos.","excepcion":'No envia excepción' if ex == None else ex.args[0]})
+            data.update({"errors": None if form == None else _set_err_msg_bad_json(form), "icono": "warning", "titulo": "Advertencia", "mensaje": "Error al obtener los datos.","excepcion": _ex_to_text(ex)})
         elif error == 4:
             data.update({"icono": "info", "titulo": "Advertencia", "mensaje": "No tiene permisos para realizar esta acción."})
         elif error == 5:
             data.update({"icono": "warning", "titulo": "Advertencia", "mensaje": "Error al generar la información."})
         elif error == 6:
-            data.update({"errors": None if form == None else _set_err_msg_bad_json(form),"icono": "warning", "titulo": "Advertencia", "mensaje": "Los datos no son validos, revise la información.","excepcion": ex })
+            data.update({"errors": None if form == None else _set_err_msg_bad_json(form),"icono": "warning", "titulo": "Advertencia", "mensaje": "Los datos no son validos, revise la información.","excepcion": _ex_to_text(ex)})
         elif error == 7:
-            data.update({"errors": None if form == None else _set_err_msg_bad_json(form),"icono": "info", "titulo": "Advertencia", "mensaje": "Registro duplicado.","excepcion":'No envia excepción' if ex == None else ex.args[0]})
+            data.update({"errors": None if form == None else _set_err_msg_bad_json(form),"icono": "info", "titulo": "Advertencia", "mensaje": "Registro duplicado.","excepcion": _ex_to_text(ex)})
         elif error == 8:
             data.update({"icono": "info", "titulo": "Advertencia", "mensaje": "No se puede eliminar existen registros relacionados."})
         elif error == 9:

@@ -351,11 +351,10 @@
                                                     {% endif %}
                                                 {% endif %}
                                             {% endwith %}
-                                            <li class="smaller"><a href="/dobe?id={{ inscripcion.persona.id }}&ret={{ request.get_full_path }}" class="dropdown-item"><i class="icon-folder-open"></i> Bienestar Estudiantil</a></li>
                                             {% if perms.ctt.puede_modificar_inscripciones and not control_unico_credenciales %}
                                                 <li class="smaller"><a href="javascript:;" nhref="/inscripciones?action=cargarfoto&id={{ inscripcion.id }}" class="formmodal dropdown-item"><i class="icon-camera"></i> Subir Foto</a></li>
                                             {% endif %}
-                                            <li class="smaller"><a href="/adm_entregadocumentos?id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-folder-open"></i> Documentos</a></li>
+                                            <li class="smaller"><a href="/inscripciones?action=documentos&id={{ inscripcion.id }}" class="dropdown-item"><i class="icon-folder-open"></i> Documentos</a></li>
                                             <li class="dropdown smaller dropstart">
                                                 <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-print"></i> Impresión</a>
                                                 <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
@@ -407,7 +406,6 @@
                                             {% if not retirocarrera %}
                                                 {% if  not graduado %}
                                                     {% if perms.ctt.puede_modificar_inscripciones and perms.ctt.puede_modificar_egresado %}
-                                                        <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/adm_egresados?action=egresar&id={{ inscripcion.id }}&ret={{ request.get_full_path }}"><i class="icon-plus"></i> Egresar</a></li>
                                                     {% endif %}
                                                 {% else %}
                                                     {% if graduado %}

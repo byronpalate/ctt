@@ -346,9 +346,9 @@
                             <td style="text-align: center;">{{ mov.get_homologacion_display }}</td>
                             <td style="text-align: center;">{{ mov.get_tipomovilidadacademica_display }}</td>
                             <td style="text-align: center">
-                                <a href="javascript:;" nhref='/inscripciones?action=editmovilidad&id={{ mov.id }}' class="btn btn-ssm btn-info formmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                <a href="javascript:;" nhref='/inscripciones?action=editmovilidad&id={{ mov.id }}&idi={{ inscripcion.id }}' class="btn btn-ssm btn-info formmodal tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
                                 {% if perms.ctt.puede_modificar_inscripciones %}
-                                    <a href="javascript:;" nhref='/inscripciones?action=delmovilidad&id={{ inscripcion.id }}' class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                                    <a href="javascript:;" nhref='/inscripciones?action=delmovilidad&id={{ mov.id }}&idi={{ inscripcion.id }}' class="btn btn-ssm btn-danger tu eliminacionmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
                                 {% endif %}
                             </td>
                         </tr>

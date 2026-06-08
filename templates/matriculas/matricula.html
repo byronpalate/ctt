@@ -6,12 +6,12 @@
 
             var nivel = {{ nivel.id }};
             busqueda = function(){
-                var term = $("#searchinput").val().toUpperCase();
+                var term = $("#searchinput").val().trim();
                 if (term.length>0){
                     bloqueointerface();
-                    location.href = "/matriculas?action=matricula&id={{ nivel.id }}&s="+term;
+                    location.href = "/matriculas?action=matricula&id={{ nivel.id }}&s=" + encodeURIComponent(term);
                 } else {
-                    $("#busqueda").focus();
+                    $("#searchinput").focus();
                 }
             };
 
@@ -89,7 +89,7 @@
         </div>
         <div class='col-12 col-md-3 mb-2'>
             <div class="input-group">
-                <input type="text" class="form-control form-control-sm busqueda" id="searchinput" value='{{ search }}' autocomplete="off">
+                <input placeholder="Estudiante" class="input-block-level no-marging-bottom form-control" type="text" id="searchinput" value="{{ search }}" autocomplete="off">
                 <a href="javascript:;" class="btn btn-sm btn-outline-secondary" type="button" id='search'><i class="icon-search"></i></a>
                 {% if search or ids %}
                     <a href="/matriculas?action=matricula&id={{ nivel.id }}" class="btn btn-sm btn-outline-secondary" type="button" id='allresults'><i class="icon-refresh"></i></a>
@@ -234,10 +234,6 @@
                                                     {#                                                {% if not matricula.tiene_rubros %}#}
                                                     <li class="smaller"><a href="javascript:;" nhref="/matriculas?action=generarrubros&id={{ matricula.id }}" class="confirmacionmodal dropdown-item"><i class="icon-money"></i> Generar Rubros</a></li>
                                                     {#                                                {% endif %}#}
-                                                    <!-- Aplicar beca -->
-                                                    {% if not matricula.becado %}
-                                                        <li class="smaller"><a href='/adm_becarios?action=asignarbeca&id={{ matricula.inscripcion.id }}' class="dropdown-item"><i class="icon-asterisk"></i> Aplicar Beca</a></li>
-                                                    {% endif %}
                                                 {% endif %}
                                             {% endif %}
                                             <!-- Retiro de matricula -->
@@ -339,7 +335,7 @@
                 <div>
                     <ul class='pagination'>
                         {% for pagenumber in paging.page_range %}
-                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/matriculas?action=matricula&id={{ nivel.id }}&{% if search %}idm={{ search }}&{% endif %}page={{ pagenumber }}">{{ pagenumber }}</a></li>
+                            <li {% if pagenumber == page.number %}class='active page-item'{% endif %}><a href="/matriculas?action=matricula&id={{ nivel.id }}&{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}">{{ pagenumber }}</a></li>
                         {% endfor %}
                     </ul>
                 </div>

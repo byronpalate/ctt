@@ -13,7 +13,7 @@ from decimal import Decimal
 
 from settings import FORMA_PAGO_RECIBOCAJAINSTITUCION, FORMA_PAGO_NOTA_CREDITO, FORMA_PAGO_TARJETA, MAXIMO_MATERIA_ONLINE, \
     NIVEL_MALLA_UNO, CANTIDAD_MATRICULAS_MAXIMAS, EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES, EMAIL_INSTITUCIONAL_AUTOMATICO_DOCENTES,\
-    FORMA_PAGO_CTAXCRUZAR, CAJAS_DEPOSITOS
+    FORMA_PAGO_CTAXCRUZAR, CAJAS_DEPOSITOS, MODALIDAD_DISTANCIA
 
 from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Turno, Sexo, Provincia, Carrera, \
     Modalidad, Sesion, DIAS_CHOICES, Nacionalidad, Pais, Parroquia, TipoSangre, Raza, \
@@ -73,12 +73,8 @@ class BaseForm(forms.Form):
     def form_base(self):
         return self.fields['formbase'].initial
 
-    def screenwidth_width(self):
-        return int(self.fields['screenwidth'].initial)
-
     def eliminar(self, nombre):
-        if nombre in self.fields:
-            del self.fields[nombre]
+        _pop_field(self, nombre)
 
 
 class CheckboxSelectMultipleCustom(forms.CheckboxSelectMultiple):
@@ -89,6 +85,17 @@ class CheckboxSelectMultipleCustom(forms.CheckboxSelectMultiple):
         output = output.replace('<div id="id_'+kwargs['name'], '<div class="custom-multiselect form-control-multiselect" style="max-height: 150px; overflow-y: scroll" id="id_control_'+kwargs['name'])
         output = output + '<input type="text" class="inputmultiselect" value="" id="id_' + kwargs['name'] + '_validacion" name="' + kwargs['name'] + '_validacion" basename="' + kwargs['name'] + '" style="display: none">'
         return mark_safe(output)
+
+
+def _pop_field(form, name):
+    # Elimina un campo si existe (evita KeyError con flujos que ya lo removieron).
+    form.fields.pop(name, None)
+
+
+def _pop_fields(form, *names):
+    for n in names:
+        form.fields.pop(n, None)
+
 
 
 class ExtFileField(forms.FileField):
@@ -126,9 +133,9 @@ class PersonaForm(BaseForm):
     nacimiento = forms.DateField(label=u"Fecha nacimiento", required=False, input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     nacionalidad = forms.ModelChoiceField(label=u"Nacionalidad", queryset=Nacionalidad.objects.all(), required=False, widget=forms.Select())
     paisnac = forms.ModelChoiceField(label=u"País de nacimiento", queryset=Pais.objects.all(), required=False, widget=forms.Select())
-    provincianac = forms.ModelChoiceField(label=u"Provincia de nacimiento", queryset=Provincia.objects, required=False, widget=forms.Select())
-    cantonnac = forms.ModelChoiceField(label=u"Cantón de nacimiento", queryset=Canton.objects, required=False, widget=forms.Select())
-    parroquianac = forms.ModelChoiceField(label=u"Parroquia de nacimiento", queryset=Parroquia.objects, required=False, widget=forms.Select())
+    provincianac = forms.ModelChoiceField(label=u"Provincia de nacimiento", queryset=Provincia.objects.all(), required=False, widget=forms.Select())
+    cantonnac = forms.ModelChoiceField(label=u"Cantón de nacimiento", queryset=Canton.objects.all(), required=False, widget=forms.Select())
+    parroquianac = forms.ModelChoiceField(label=u"Parroquia de nacimiento", queryset=Parroquia.objects.all(), required=False, widget=forms.Select())
     sexo = forms.ModelChoiceField(label=u"Género", queryset=Sexo.objects.all(), widget=forms.Select())
     pais = forms.ModelChoiceField(label=u"País de residencia", queryset=Pais.objects.all(), required=False, widget=forms.Select())
     provincia = forms.ModelChoiceField(label=u"Provincia de residencia", queryset=Provincia.objects.all().order_by('nombre'), required=False, widget=forms.Select())
@@ -146,10 +153,10 @@ class PersonaForm(BaseForm):
     twitter = forms.CharField(label=u"Twitter", max_length=200, required=False, widget=forms.TextInput())
     emailinst = forms.CharField(label=u"Correo institucional", max_length=200, required=False, widget=forms.TextInput())
     sangre = forms.ModelChoiceField(label=u"Tipo de sangre", queryset=TipoSangre.objects.all().order_by('sangre'), required=False, widget=forms.Select())
-    etnia = forms.ModelChoiceField(label=u'Etnia', queryset=Raza.objects, required=False, widget=forms.Select())
-    nacionalidadindigena = forms.ModelChoiceField(label=u'Nacionalidad Indígena', queryset=NacionalidadIndigena.objects, required=False, widget=forms.Select())
-    estadocivil = forms.ModelChoiceField(label=u'Estado civil', queryset=PersonaEstadoCivil.objects, required=False, widget=forms.Select())
-    # tipolicencia = forms.ModelChoiceField(label=u'Tipo de licencia de conducción (Si la tiene)', queryset=TipoLicencia.objects, required=False, widget=forms.Select())
+    etnia = forms.ModelChoiceField(label=u'Etnia', queryset=Raza.objects.all(), required=False, widget=forms.Select())
+    nacionalidadindigena = forms.ModelChoiceField(label=u'Nacionalidad Indígena', queryset=NacionalidadIndigena.objects.all(), required=False, widget=forms.Select())
+    estadocivil = forms.ModelChoiceField(label=u'Estado civil', queryset=PersonaEstadoCivil.objects.all(), required=False, widget=forms.Select())
+    # tipolicencia = forms.ModelChoiceField(label=u'Tipo de licencia de conducción (Si la tiene)', queryset=TipoLicencia.objects.all(), required=False, widget=forms.Select())
     # libretamilitar = forms.CharField(label=u"Libreta militar", max_length=30, required=False, widget=forms.TextInput())
     contactoemergencia = forms.CharField(label=u'En caso de emergencia contactarse con ', max_length=200, required=False, widget=forms.TextInput())
     telefonoemergencia = forms.CharField(label=u'Teléfono de contacto de emergencia', max_length=50, required=False, widget=forms.TextInput())
@@ -175,21 +182,13 @@ class PersonaForm(BaseForm):
         self.fields['parroquianac'].queryset = Parroquia.objects.filter(canton=persona.cantonnac)
 
     def del_campos_docente(self):
-        del self.fields['nivelescalafon']
-        del self.fields['dedicacion']
-        del self.fields['orcid']
-        del self.fields['perfilgs']
-        del self.fields['perfilacademia']
-        del self.fields['perfilscopus']
-        del self.fields['perfilmendeley']
-        del self.fields['perfilresearchgate']
-        del self.fields['indicehautor']
-        del self.fields['nivel_ingles']
-        del self.fields['tienediscapacidad']
-        del self.fields['tipodiscapacidad']
-        del self.fields['porcientodiscapacidad']
-        del self.fields['carnetdiscapacidad']
-        del self.fields['documentoidentificacion']
+        _pop_fields(
+            self,
+            'nivelescalafon', 'dedicacion', 'orcid', 'perfilgs', 'perfilacademia', 'perfilscopus',
+            'perfilmendeley', 'perfilresearchgate', 'indicehautor', 'nivel_ingles',
+            'tienediscapacidad', 'tipodiscapacidad', 'porcientodiscapacidad',
+            'carnetdiscapacidad', 'documentoidentificacion'
+        )
 
     def sin_pasaporte(self):
         deshabilitar_campo(self, 'pasaporte')
@@ -220,15 +219,7 @@ class PersonaForm(BaseForm):
         # deshabilitar_campo(self, 'dedicacion')
 
     def solo_estudiante(self, perfil):
-        if not perfil.es_estudiante():
-            # del self.fields['proyectodevida']
-            del self.fields['centroinformacion']
-        else:
-            # self.fields['proyectodevida'].initial = perfil.inscripcion.proyectodevida
-            if perfil.inscripcion.modalidad_id == MODALIDAD_DISTANCIA:
-                self.fields['centroinformacion'].initial = perfil.inscripcion.centroinformacion
-            else:
-                del self.fields['centroinformacion']
+        pass
 
 class MallaForm(BaseForm):
     resolucion = forms.CharField(label=u"Resolución", max_length=100, required=False, widget=forms.TextInput())
@@ -566,13 +557,13 @@ class AdministrativosForm(BaseForm):
     apellido2 = forms.CharField(label=u"2do Apellido", max_length=50, required=False, widget=forms.TextInput())
     nacionalidad = forms.ModelChoiceField(label=u"Nacionalidad", queryset=Nacionalidad.objects.all(), required=False, widget=forms.Select())
     paisnac = forms.ModelChoiceField(label=u"País de nacimiento", queryset=Pais.objects.all(), required=False, widget=forms.Select())
-    provincianac = forms.ModelChoiceField(label=u"Provincia de nacimiento", queryset=Provincia.objects, required=False, widget=forms.Select())
-    cantonnac = forms.ModelChoiceField(label=u"Cantón de nacimiento", queryset=Canton.objects, required=False, widget=forms.Select())
-    parroquianac = forms.ModelChoiceField(label=u"Parroquia de nacimiento", queryset=Parroquia.objects, required=False, widget=forms.Select())
+    provincianac = forms.ModelChoiceField(label=u"Provincia de nacimiento", queryset=Provincia.objects.all(), required=False, widget=forms.Select())
+    cantonnac = forms.ModelChoiceField(label=u"Cantón de nacimiento", queryset=Canton.objects.all(), required=False, widget=forms.Select())
+    parroquianac = forms.ModelChoiceField(label=u"Parroquia de nacimiento", queryset=Parroquia.objects.all(), required=False, widget=forms.Select())
     nacimiento = forms.DateField(label=u"Fecha Nacimiento", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
     sexo = forms.ModelChoiceField(label=u"Género", queryset=Sexo.objects.all(), widget=forms.Select())
-    etnia = forms.ModelChoiceField(label=u'Etnia', queryset=Raza.objects, required=False, widget=forms.Select())
-    nacionalidadindigena = forms.ModelChoiceField(label=u'Nacionalidad Indígena', queryset=NacionalidadIndigena.objects, required=False, widget=forms.Select())
+    etnia = forms.ModelChoiceField(label=u'Etnia', queryset=Raza.objects.all(), required=False, widget=forms.Select())
+    nacionalidadindigena = forms.ModelChoiceField(label=u'Nacionalidad Indígena', queryset=NacionalidadIndigena.objects.all(), required=False, widget=forms.Select())
     sangre = forms.ModelChoiceField(label=u"Tipo de Sangre", queryset=TipoSangre.objects.all(), required=False, widget=forms.Select())
     pais = forms.ModelChoiceField(label=u"País residencia", queryset=Pais.objects.all(), required=False, widget=forms.Select())
     provincia = forms.ModelChoiceField(label=u"Provincia de residencia", queryset=Provincia.objects.all(), required=False, widget=forms.Select())
@@ -593,7 +584,7 @@ class AdministrativosForm(BaseForm):
 
     def adicionar(self):
         if EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES:
-            del self.fields['emailinst']
+            _pop_field(self, 'emailinst')
 
     def adicionar_provincia(self):
         self.fields['canton'].queryset = Canton.objects.filter(id=0)
@@ -649,7 +640,7 @@ class NuevaInscripcionForm(BaseForm):
     modalidad = forms.ModelChoiceField(label=u"Modalidad", queryset=Modalidad.objects.all(), required=False, widget=forms.Select())
     sesion = forms.ModelChoiceField(label=u"Sesión", queryset=Sesion.objects.all(), required=False, widget=forms.Select())
     malla = forms.ModelChoiceField(Malla.objects.all(), required=False, widget=forms.Select())
-    periodo = forms.ModelChoiceField(label=u"Período", queryset=Periodo.objects, required=False, widget=forms.Select())
+    periodo = forms.ModelChoiceField(label=u"Período", queryset=Periodo.objects.all(), required=False, widget=forms.Select())
     copiarecord = forms.BooleanField(label=u"Copiar record académico?", required=False)
     fechainiciocarrera = forms.DateField(label=u"Comenzó la carrera", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], required=False, widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     prenivelacion = forms.BooleanField(label=u"Homologa nivelación", required=False)
@@ -669,15 +660,24 @@ class NuevaInscripcionForm(BaseForm):
 
     def adicionar(self, persona, coordinacion):
         self.fields['sede'].queryset = persona.lista_sedes(persona.lista_coordinaciones())
-        self.fields['coordinacion'].queryset = Coordinacion.objects.filter(id=0)
-        self.fields['carrera'].queryset = Carrera.objects.filter(id=0)
-        self.fields['malla'].queryset = Malla.objects.filter(aprobado=True)
-        self.fields['sesion'].queryset = Sesion.objects.filter(id=0)
-        self.fields['periodo'].queryset = Periodo.objects.filter(id=0)
-        del self.fields['alumnoantiguo']
+        if coordinacion:
+            self.fields['coordinacion'].queryset = persona.lista_coordinaciones().filter(sede=coordinacion.sede).distinct().order_by('nombre')
+            self.fields['carrera'].queryset = coordinacion.carrera.all().order_by('nombre')
+            self.fields['modalidad'].queryset = persona.mis_modalidades(coordinacion)
+            self.fields['sesion'].queryset = Sesion.objects.filter(sede=coordinacion.sede)
+            self.fields['periodo'].queryset = Periodo.objects.all().order_by('-inicio')
+            self.fields['malla'].queryset = Malla.objects.filter(carrera__in=coordinacion.carrera.all(), aprobado=True).distinct().order_by('-id')
+        else:
+            self.fields['coordinacion'].queryset = Coordinacion.objects.filter(id=0)
+            self.fields['carrera'].queryset = Carrera.objects.filter(id=0)
+            self.fields['modalidad'].queryset = Modalidad.objects.filter(id=0)
+            self.fields['sesion'].queryset = Sesion.objects.filter(id=0)
+            self.fields['periodo'].queryset = Periodo.objects.filter(id=0)
+            self.fields['malla'].queryset = Malla.objects.filter(aprobado=True)
+        _pop_field(self, 'alumnoantiguo')
 
     def sin_record(self):
-        del self.fields['copiarecord']
+        _pop_field(self, 'copiarecord')
 
 
 class SedeAdministrativoForm(BaseForm):
@@ -700,13 +700,13 @@ class ProfesorForm(BaseForm):
     nivelescalafon = forms.ModelChoiceField(label=u'Nivel escalafón', queryset=NivelEscalafonDocente.objects.all(), required=False, widget=forms.Select())
     nacionalidad = forms.ModelChoiceField(label=u"Nacionalidad", queryset=Nacionalidad.objects.all(), required=False, widget=forms.Select())
     paisnac = forms.ModelChoiceField(label=u"País de Nacimiento", queryset=Pais.objects.all(), required=False, widget=forms.Select())
-    provincianac = forms.ModelChoiceField(label=u"Provincia de nacimiento", queryset=Provincia.objects, required=False, widget=forms.Select())
-    cantonnac = forms.ModelChoiceField(label=u"Cantón de nacimiento", queryset=Canton.objects, required=False, widget=forms.Select())
-    parroquianac = forms.ModelChoiceField(label=u"Parroquia de nacimiento", queryset=Parroquia.objects, required=False, widget=forms.Select())
+    provincianac = forms.ModelChoiceField(label=u"Provincia de nacimiento", queryset=Provincia.objects.all(), required=False, widget=forms.Select())
+    cantonnac = forms.ModelChoiceField(label=u"Cantón de nacimiento", queryset=Canton.objects.all(), required=False, widget=forms.Select())
+    parroquianac = forms.ModelChoiceField(label=u"Parroquia de nacimiento", queryset=Parroquia.objects.all(), required=False, widget=forms.Select())
     nacimiento = forms.DateField(label=u"Fecha de Nacimiento", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
     sexo = forms.ModelChoiceField(label=u"Género", queryset=Sexo.objects.all(), widget=forms.Select())
-    etnia = forms.ModelChoiceField(label=u'Etnia', queryset=Raza.objects, required=False, widget=forms.Select())
-    nacionalidadindigena = forms.ModelChoiceField(label=u'Nacionalidad Indígena', queryset=NacionalidadIndigena.objects, required=False, widget=forms.Select())
+    etnia = forms.ModelChoiceField(label=u'Etnia', queryset=Raza.objects.all(), required=False, widget=forms.Select())
+    nacionalidadindigena = forms.ModelChoiceField(label=u'Nacionalidad Indígena', queryset=NacionalidadIndigena.objects.all(), required=False, widget=forms.Select())
     sangre = forms.ModelChoiceField(label=u"Tipo de Sangre", queryset=TipoSangre.objects.all(), required=False, widget=forms.Select())
     pais = forms.ModelChoiceField(label=u"País de Residencia", queryset=Pais.objects.all(), required=False, widget=forms.Select())
     provincia = forms.ModelChoiceField(label=u"Provincia de Residencia", queryset=Provincia.objects.all(), required=False, widget=forms.Select())
@@ -730,13 +730,13 @@ class ProfesorForm(BaseForm):
         self.fields['parroquia'].queryset = Parroquia.objects.filter(canton=0)
         self.fields['cantonnac'].queryset = Canton.objects.filter(provincia=0)
         self.fields['parroquianac'].queryset = Parroquia.objects.filter(canton=0)
-        del self.fields['coordinacion']
+        _pop_field(self, 'coordinacion')
         if EMAIL_INSTITUCIONAL_AUTOMATICO_DOCENTES:
-            del self.fields['emailinst']
+            _pop_field(self, 'emailinst')
 
     def editar(self, profesor):
         # deshabilitar_campo(self, 'dedicacion')
-        del self.fields['dedicacion']
+        _pop_field(self, 'dedicacion')
         self.fields['documentoidentificacion'].required = False
         self.fields['canton'].queryset = Canton.objects.filter(provincia=profesor.persona.provincia)
         self.fields['parroquia'].queryset = Parroquia.objects.filter(canton=profesor.persona.canton)
@@ -802,9 +802,9 @@ class EstudioEducacionSuperiorForm(BaseForm):
     aliastitulo = forms.ChoiceField(label=u"Alias título (Dr. Lic.)", required=False, choices=TipoAlias.choices, widget=forms.Select())
     niveltitulacion = forms.ModelChoiceField(label=u'Nivel Titulación', queryset=NivelTitulacion.objects.all(), required=False, widget=forms.Select())
     detalleniveltitulacion = forms.ModelChoiceField(label=u'Detalle Nivel Titulación', queryset=DetalleNivelTitulacion.objects.all(), required=False, widget=forms.Select())
-    campoamplio = forms.ModelChoiceField(label=u'Campo amplio de conocimiento', required=False,  queryset=CampoAmplioConocimiento.objects, widget=forms.Select())
-    campoespecifico = forms.ModelChoiceField(label=u'Campo específico de conocimiento', required=False,  queryset=CampoEspecificoConocimiento.objects, widget=forms.Select())
-    campodetallado = forms.ModelChoiceField(label=u'Campo detallado de conocimiento', required=False, queryset=CampoDetalladoConocimiento.objects, widget=forms.Select())
+    campoamplio = forms.ModelChoiceField(label=u'Campo amplio de conocimiento', required=False,  queryset=CampoAmplioConocimiento.objects.all(), widget=forms.Select())
+    campoespecifico = forms.ModelChoiceField(label=u'Campo específico de conocimiento', required=False,  queryset=CampoEspecificoConocimiento.objects.all(), widget=forms.Select())
+    campodetallado = forms.ModelChoiceField(label=u'Campo detallado de conocimiento', required=False, queryset=CampoDetalladoConocimiento.objects.all(), widget=forms.Select())
     fechagraduacion = forms.DateField(label=u"Fecha de graduación", initial=datetime.now().date(), required=False, input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     fecharegistro = forms.DateField(label=u"Fecha de registro", initial=datetime.now().date(), required=False, input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     registro = forms.CharField(label=u'Registro SENESCYT', required=False, widget=forms.TextInput())
@@ -833,45 +833,45 @@ class InscripcionForm(BaseForm):
     pasaporte = forms.CharField(label=u"Pasaporte", max_length=15, required=False, widget=forms.TextInput())
     paisnac = forms.ModelChoiceField(label=u"País de nacimiento", queryset=Pais.objects.all(), required=False, widget=forms.Select())
     nacionalidad = forms.ModelChoiceField(label=u"Nacionalidad", queryset=Nacionalidad.objects.all(), required=False, widget=forms.Select())
-    provincianac = forms.ModelChoiceField(label=u"Provincia de nacimiento", queryset=Provincia.objects, required=False, widget=forms.Select())
-    cantonnac = forms.ModelChoiceField(label=u"Cantón de nacimiento", queryset=Canton.objects, required=False, widget=forms.Select())
-    parroquianac = forms.ModelChoiceField(label=u"Parroquia de nacimiento", queryset=Parroquia.objects, required=False, widget=forms.Select())
+    provincianac = forms.ModelChoiceField(label=u"Provincia de nacimiento", queryset=Provincia.objects.all(), required=False, widget=forms.Select())
+    cantonnac = forms.ModelChoiceField(label=u"Cantón de nacimiento", queryset=Canton.objects.all(), required=False, widget=forms.Select())
+    parroquianac = forms.ModelChoiceField(label=u"Parroquia de nacimiento", queryset=Parroquia.objects.all(), required=False, widget=forms.Select())
     nacimiento = forms.DateField(label=u"Fecha de nacimiento", input_formats=['%d-%m-%Y'], required=False, widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
-    sexo = forms.ModelChoiceField(label=u"Género", queryset=Sexo.objects, widget=forms.Select())
-    etnia = forms.ModelChoiceField(label=u'Etnia', queryset=Raza.objects, required=False, widget=forms.Select())
-    nacionalidadindigena = forms.ModelChoiceField(label=u'Nacionalidad Indígena', queryset=NacionalidadIndigena.objects, required=False, widget=forms.Select())
-    sangre = forms.ModelChoiceField(label=u"Tipo de sangre", queryset=TipoSangre.objects, required=False, widget=forms.Select())
+    sexo = forms.ModelChoiceField(label=u"Género", queryset=Sexo.objects.all(), widget=forms.Select())
+    etnia = forms.ModelChoiceField(label=u'Etnia', queryset=Raza.objects.all(), required=False, widget=forms.Select())
+    nacionalidadindigena = forms.ModelChoiceField(label=u'Nacionalidad Indígena', queryset=NacionalidadIndigena.objects.all(), required=False, widget=forms.Select())
+    sangre = forms.ModelChoiceField(label=u"Tipo de sangre", queryset=TipoSangre.objects.all(), required=False, widget=forms.Select())
     tienediscapacidad = forms.BooleanField(label=u"Tiene Discapacidad?", required=False)
     tipodiscapacidad = forms.ModelChoiceField(label=u"Tipo de Discapacidad", queryset=Discapacidad.objects.all(), required=False, widget=forms.Select())
     porcientodiscapacidad = forms.FloatField(label=u'% de Discapacidad', initial='0', required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center'}))
     carnetdiscapacidad = forms.CharField(label=u'No. Carnet Discapacitado', required=False, widget=forms.TextInput())
     pais = forms.ModelChoiceField(label=u"País de residencia", queryset=Pais.objects.all(), required=False, widget=forms.Select())
-    provincia = forms.ModelChoiceField(label=u"Provincia de residencia", queryset=Provincia.objects, required=False, widget=forms.Select())
-    canton = forms.ModelChoiceField(label=u"Cantón de residencia", queryset=Canton.objects, required=False, widget=forms.Select())
-    parroquia = forms.ModelChoiceField(label=u"Parroquia de residencia", queryset=Parroquia.objects, required=False, widget=forms.Select())
+    provincia = forms.ModelChoiceField(label=u"Provincia de residencia", queryset=Provincia.objects.all(), required=False, widget=forms.Select())
+    canton = forms.ModelChoiceField(label=u"Cantón de residencia", queryset=Canton.objects.all(), required=False, widget=forms.Select())
+    parroquia = forms.ModelChoiceField(label=u"Parroquia de residencia", queryset=Parroquia.objects.all(), required=False, widget=forms.Select())
     sector = forms.CharField(label=u"Sector de residencia", max_length=100, required=False, widget=forms.TextInput())
-    otraubicacionsalesforce = forms.CharField(label=u"Otra Ubicación", max_length=100, required=False, widget=forms.TextInput())
     direccion = forms.CharField(label=u"Calle principal", max_length=100, required=False, widget=forms.TextInput())
     num_direccion = forms.CharField(label=u"Número residencia", max_length=15, required=False, widget=forms.TextInput())
     direccion2 = forms.CharField(label=u"Calle secundaria", max_length=100, required=False, widget=forms.TextInput())
+    otraubicacionsalesforce = forms.CharField(label=u"Otra Ubicación", max_length=100, required=False, widget=forms.TextInput())
     telefono = forms.CharField(label=u"Teléfono movil", max_length=10, required=False, widget=forms.TextInput())
     telefono_conv = forms.CharField(label=u"Teléfono Fijo", max_length=10, required=False, widget=forms.TextInput())
     email = forms.CharField(label=u"Correo Electrónico", max_length=240, required=False, widget=forms.TextInput())
     emailinst = forms.CharField(label=u"Correo Institucional", max_length=200, required=False, widget=forms.TextInput())
-    provinciacole = forms.ModelChoiceField(label=u"Provincia del Colegio", queryset=Provincia.objects, required=False, widget=forms.Select())
-    cantoncole = forms.ModelChoiceField(label=u"Cantón del Colegio", queryset=Canton.objects, required=False, widget=forms.Select())
+    provinciacole = forms.ModelChoiceField(label=u"Provincia del Colegio", queryset=Provincia.objects.all(), required=False, widget=forms.Select())
+    cantoncole = forms.ModelChoiceField(label=u"Cantón del Colegio", queryset=Canton.objects.all(), required=False, widget=forms.Select())
     colegio = forms.IntegerField(initial='', required=False, label=u'Colegio', widget=forms.TextInput(attrs={'select2search': 'true', 'class': 'select2advance'}))
     titulocolegio = forms.CharField(label=u"Título colegio", max_length=240, required=False, widget=forms.TextInput())
     especialidad = forms.IntegerField(initial='', required=False, label=u'Especialidad', widget=forms.TextInput(attrs={'select2search': 'true', 'class': 'select2advance'}))
     fechainiciocarrera = forms.DateField(label=u"Inicio carrera", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], required=False, widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
-    sede = forms.ModelChoiceField(label=u"Sede", queryset=Sede.objects, required=False, widget=forms.Select())
-    coordinacion = forms.ModelChoiceField(label=u"Coordinación", queryset=Coordinacion.objects, required=False, widget=forms.Select())
+    sede = forms.ModelChoiceField(label=u"Sede", queryset=Sede.objects.all(), required=False, widget=forms.Select())
+    coordinacion = forms.ModelChoiceField(label=u"Coordinación", queryset=Coordinacion.objects.all(), required=False, widget=forms.Select())
     mocs = forms.BooleanField(label=u"MOC's", required=False, initial=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
-    carrera = forms.ModelChoiceField(label=u"Carrera", queryset=Carrera.objects, required=False)
-    modalidad = forms.ModelChoiceField(label=u"Modalidad", queryset=Modalidad.objects, required=False, widget=forms.Select())
-    periodo = forms.ModelChoiceField(label=u"Período", queryset=Periodo.objects, required=False, widget=forms.Select())
-    nivel = forms.ModelChoiceField(label=u"Nivel", queryset=Nivel.objects, required=False, widget=forms.Select())
-    sesion = forms.ModelChoiceField(label=u"Sesión", queryset=Sesion.objects, required=False, widget=forms.Select())
+    carrera = forms.ModelChoiceField(label=u"Carrera", queryset=Carrera.objects.all(), required=False)
+    modalidad = forms.ModelChoiceField(label=u"Modalidad", queryset=Modalidad.objects.all(), required=False, widget=forms.Select())
+    periodo = forms.ModelChoiceField(label=u"Período", queryset=Periodo.objects.all(), required=False, widget=forms.Select())
+    nivel = forms.ModelChoiceField(label=u"Nivel", queryset=Nivel.objects.all(), required=False, widget=forms.Select())
+    sesion = forms.ModelChoiceField(label=u"Sesión", queryset=Sesion.objects.all(), required=False, widget=forms.Select())
     malla = forms.ModelChoiceField(Malla.objects.all(), required=False, widget=forms.Select())
     identificador = forms.CharField(label=u'Archivador', required=False, widget=forms.TextInput())
     nombrescompletosmadre = forms.CharField(max_length=500, label=u"Nombre completo de la madre", widget=forms.TextInput(),required=False)
@@ -895,8 +895,10 @@ class InscripcionForm(BaseForm):
     fechaexamensnna = forms.DateField(label=u"Fecha examen SNNA", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], required=False, widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     puntajesnna = forms.FloatField(label=u'Puntaje SNNA', initial='0', required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center'}))
     conveniohomologacion = forms.BooleanField(label=u'Convenio por homologación', required=False)
+    prenivelacion = forms.BooleanField(label=u'Pre nivelación', required=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
     condicionado = forms.BooleanField(label=u'Condicionado', required=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
     homologar = forms.BooleanField(label=u'Homologo materias', required=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
+    eshomologacionexterna = forms.BooleanField(label=u'Homologación Externa', required=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
     examenubicacionidiomas = forms.BooleanField(label=u'Rinde examen ubicación inglés', required=False, widget=forms.CheckboxInput(attrs={'formwidth': 200}))
     observaciones = forms.CharField(label=u'Observaciones', widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), required=False)
 
@@ -917,21 +919,13 @@ class InscripcionForm(BaseForm):
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.eliminar('practicas')
 
     def sin_trabajo(self):
-        del self.fields['trabaja']
-        del self.fields['empresa']
-        del self.fields['ocupacion']
-        # del self.fields['telefono_trabajo']
-        del self.fields['fecha_ingreso']
-        del self.fields['colegio']
-        del self.fields['especialidad']
-        del self.fields['titulocolegio']
-        del self.fields['universidadgrado']
-        del self.fields['titulogrado']
+        _pop_fields(self, 'universidadgrado', 'titulogrado')
 
     def adicionar(self, persona):
-        del self.fields['fechainiciocarrera']
+        _pop_field(self, 'fechainiciocarrera')
         self.fields['sede'].queryset = persona.lista_sedes(persona.lista_coordinaciones())
         self.fields['coordinacion'].queryset = Coordinacion.objects.filter(id=0)
         self.fields['carrera'].queryset = Carrera.objects.filter(id=0)
@@ -944,7 +938,7 @@ class InscripcionForm(BaseForm):
         self.fields['malla'].queryset = Malla.objects.filter(id=0)
         self.fields['sesion'].queryset = Sesion.objects.filter(id=0)
         if EMAIL_INSTITUCIONAL_AUTOMATICO_ESTUDIANTES:
-            del self.fields['emailinst']
+            _pop_field(self, 'emailinst')
 
     def editar(self, inscripcion):
         deshabilitar_campo(self, 'sede')
@@ -954,7 +948,7 @@ class InscripcionForm(BaseForm):
         deshabilitar_campo(self, 'modalidad')
         deshabilitar_campo(self, 'periodo')
         deshabilitar_campo(self, 'nivel')
-        for campo in ('homologar', 'orientacion', 'intercambio', 'alumnoantiguo', 'reconocimientointerno'):
+        for campo in ('orientacion', 'intercambio', 'alumnoantiguo', 'reconocimientointerno'):
             if campo in self.fields:
                 del self.fields[campo]
         self.fields['canton'].queryset = Canton.objects.filter(provincia=inscripcion.persona.provincia)
@@ -974,13 +968,13 @@ class InscripcionForm(BaseForm):
         mallaniveles = malla.nivelesregulares
         if minivel == 0:
             if 'fechainiciocarrera' in self.fields:
-                del self.fields['fechainiciocarrera']
+                _pop_field(self, 'fechainiciocarrera')
             if 'fechafincarrera' in self.fields:
-                del self.fields['fechafincarrera']
+                _pop_field(self, 'fechafincarrera')
         else:
             if inscripcion.matricula_set.filter(nivelmalla__id=NIVEL_MALLA_UNO) or inscripcion.tiene_homologaciones():
                 if 'fechainiciocarrera' in self.fields:
-                    del self.fields['fechainiciocarrera']
+                    _pop_field(self, 'fechainiciocarrera')
 
 
 
@@ -1008,42 +1002,33 @@ class RecordAcademicoForm(BaseForm):
 
     def adicionar(self, inscripcion):
         malla = inscripcion.mi_malla()
-        self.fields['asignatura'].queryset = Asignatura.objects.filter(Q(asignaturamalla__malla=malla) | Q(modulomalla__malla=malla) | Q(trabajotitulacionmalla__malla=malla)).distinct()
+        q = Q(asignaturamalla__malla=malla)
+        self.fields['asignatura'].queryset = Asignatura.objects.filter(q).distinct()
         self.fields['periodo'].queryset = Periodo.objects.filter(nivel__materia__carrera=inscripcion.carrera).distinct()
 
     def record_normal(self):
-        del self.fields['convalidacion']
-        del self.fields['homologada']
-        del self.fields['institucion']
-        del self.fields['tiporeconocimiento']
-        del self.fields['tiemporeconocimiento']
-        del self.fields['carrera_he']
-        del self.fields['asignatura_he']
-        del self.fields['anno_he']
-        del self.fields['nota_ant_he']
-        del self.fields['creditos_he']
-        del self.fields['carrera_hi']
-        del self.fields['modalidad_hi']
-        del self.fields['asignatura_hi']
-        del self.fields['fecha_hi']
-        del self.fields['nota_ant_hi']
-        del self.fields['creditos_hi']
-        del self.fields['observaciones_hi']
-        del self.fields['observaciones_he']
-        del self.fields['archivo']
-        del self.fields['tipohomologacion']
+        for campo in ('convalidacion', 'homologada', 'institucion', 'tiporeconocimiento',
+                      'tiemporeconocimiento', 'carrera_he', 'asignatura_he', 'anno_he',
+                      'nota_ant_he', 'creditos_he', 'carrera_hi', 'modalidad_hi',
+                      'asignatura_hi', 'fecha_hi', 'nota_ant_hi', 'creditos_hi',
+                      'observaciones_hi', 'observaciones_he', 'archivo', 'tipohomologacion'):
+            if campo in self.fields:
+                del self.fields[campo]
 
     def homologacion(self, inscripcion):
         malla = inscripcion.mi_malla()
-        del self.fields['observaciones']
-        del self.fields['aprobada']
-        del self.fields['asistencia']
-        del self.fields['tipo']
+        _pop_fields(self, 'observaciones', 'aprobada', 'asistencia', 'tipo')
         if inscripcion.carrera.tipogrado.id == CUARTO_NIVEL_TITULACION_ID:
             self.fields['periodo'].queryset = Periodo.objects.filter(tipo__id=TIPO_PERIODO_POSGRADO)
         else:
             self.fields['periodo'].queryset = Periodo.objects.filter(tipo__id=TIPO_PERIODO_GRADO)
-        self.fields['asignatura'].queryset = Asignatura.objects.filter(Q(asignaturamalla__malla=malla) | Q(modulomalla__malla=malla)).exclude(id__in=Asignatura.objects.filter(recordacademico__inscripcion=inscripcion, recordacademico__aprobada=True).values_list('id', flat=True)).distinct()
+        q = Q(asignaturamalla__malla=malla)
+        self.fields['asignatura'].queryset = Asignatura.objects.filter(q).exclude(
+            id__in=Asignatura.objects.filter(
+                recordacademico__inscripcion=inscripcion,
+                recordacademico__aprobada=True
+            ).values_list('id', flat=True)
+        ).distinct()
 
 
 
@@ -1075,8 +1060,8 @@ class HistoricoRecordAcademicoForm(BaseForm):
 
 
 class EstudioEducacionBasicaForm(BaseForm):
-    provinciacole = forms.ModelChoiceField(label=u"Provincia del Colegio", queryset=Provincia.objects, required=False,widget=forms.Select())
-    cantoncole = forms.ModelChoiceField(label=u"Cantón del Colegio", queryset=Canton.objects, required=False,widget=forms.Select())
+    provinciacole = forms.ModelChoiceField(label=u"Provincia del Colegio", queryset=Provincia.objects.all(), required=False,widget=forms.Select())
+    cantoncole = forms.ModelChoiceField(label=u"Cantón del Colegio", queryset=Canton.objects.all(), required=False,widget=forms.Select())
     colegio = forms.IntegerField(initial='', required=False, label=u'Colegio', widget=forms.TextInput(attrs={'select2search': 'true', 'class': 'select2advance'}))
     especialidad = forms.IntegerField(initial='', required=False, label=u'Especialidad', widget=forms.TextInput(attrs={'select2search': 'true', 'class': 'select2advance'}))
     titulocolegio = forms.CharField(label=u"Título colegio", max_length=200, required=False)
@@ -1091,12 +1076,12 @@ class EstudioEducacionBasicaForm(BaseForm):
 
 
 class CambiaDatosCarreraForm(BaseForm):
-    sede = forms.ModelChoiceField(label=u"Sede", queryset=Sede.objects, required=False, widget=forms.Select())
-    coordinacion = forms.ModelChoiceField(label=u"Coordinación", queryset=Coordinacion.objects, required=False, widget=forms.Select())
-    carrera = forms.ModelChoiceField(label=u"Carrera", queryset=Carrera.objects, required=False)
-    modalidad = forms.ModelChoiceField(label=u"Modalidad", queryset=Modalidad.objects, required=False, widget=forms.Select())
-    sesion = forms.ModelChoiceField(label=u"Sesión", queryset=Sesion.objects, required=False, widget=forms.Select())
-    periodo = forms.ModelChoiceField(label=u"Período", queryset=Periodo.objects, required=False, widget=forms.Select())
+    sede = forms.ModelChoiceField(label=u"Sede", queryset=Sede.objects.all(), required=False, widget=forms.Select())
+    coordinacion = forms.ModelChoiceField(label=u"Coordinación", queryset=Coordinacion.objects.all(), required=False, widget=forms.Select())
+    carrera = forms.ModelChoiceField(label=u"Carrera", queryset=Carrera.objects.all(), required=False)
+    modalidad = forms.ModelChoiceField(label=u"Modalidad", queryset=Modalidad.objects.all(), required=False, widget=forms.Select())
+    sesion = forms.ModelChoiceField(label=u"Sesión", queryset=Sesion.objects.all(), required=False, widget=forms.Select())
+    periodo = forms.ModelChoiceField(label=u"Período", queryset=Periodo.objects.all(), required=False, widget=forms.Select())
     malla = forms.ModelChoiceField(Malla.objects.all(), required=False, widget=forms.Select())
 
     def extra_paramaters(self):
@@ -1154,8 +1139,9 @@ class RubroForm(BaseForm):
 
 
 class MoverPagoRubroForm(BaseForm):
-    inscripcionorigen = forms.ModelChoiceField(label="Desde", queryset=Inscripcion.objects.all(), empty_label="Seleccione la ficha origen", to_field_name="id", widget=forms.Select(),)
-    inscripciondestino = forms.ModelChoiceField(label="Hacia", queryset=Inscripcion.objects.all(), empty_label="Seleccione la ficha destino", to_field_name="id", widget=forms.Select(),)
+    # Por defecto no exponer todas las inscripciones; el caller debe filtrar con `adicionar(...)`.
+    inscripcionorigen = forms.ModelChoiceField(label="Desde", queryset=Inscripcion.objects.none(), empty_label="Seleccione la ficha origen", to_field_name="id", widget=forms.Select(),)
+    inscripciondestino = forms.ModelChoiceField(label="Hacia", queryset=Inscripcion.objects.none(), empty_label="Seleccione la ficha destino", to_field_name="id", widget=forms.Select(),)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1214,11 +1200,11 @@ class FormaPagoForm(BaseForm):
             id__in=[FORMA_PAGO_CTAXCRUZAR, FORMA_PAGO_TARJETA, FORMA_PAGO_NOTA_CREDITO]
         ).order_by("id")
         self.fields['diferido'].queryset = DiferidoTarjeta.objects.filter(id=0)
-        del self.fields['notacredito']
+        _pop_field(self, 'notacredito')
         if inscripcion.tiene_recibo_caja():
             self.fields['recibocaja'].queryset = ReciboCajaInstitucion.objects.filter(inscripcion=inscripcion, saldo__gt=0)
         else:
-            del self.fields['recibocaja']
+            _pop_field(self, 'recibocaja')
             formaspago = formaspago.exclude(id=FORMA_PAGO_RECIBOCAJAINSTITUCION)
         self.fields['formadepago'].queryset = formaspago
         deshabilitar_campo(self, 'totaldescuento')
@@ -1295,6 +1281,7 @@ class CambioFechaAsignacionMateriaForm(BaseForm):
     fecha = forms.DateField(label=u"Fecha", input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
 
     def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
         self.fields['formwidth'].initial = 'md'
 
 class RetiradoMateriaForm(BaseForm):
@@ -1370,9 +1357,9 @@ class PlanificacionForm(BaseForm):
     horasasistidasporeldocente = forms.FloatField(label=u"Horas del aprendizaje en contacto con el docente", widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
     horasautonomas = forms.FloatField(label=u"Horas autónomas", widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
     horaspracticas = forms.FloatField(label=u"Horas de aprendizaje práctico experimental", widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
-    competenciaespecificaperfildeegreso = ModelChoiceField(label=u'Competencia específica del perfil de egreso con la cual se relaciona este proyecto', queryset=CompetenciaEspecifica.objects, required=False, widget=forms.Select())
+    competenciaespecificaperfildeegreso = ModelChoiceField(label=u'Competencia específica del perfil de egreso con la cual se relaciona este proyecto', queryset=CompetenciaEspecifica.objects.all(), required=False, widget=forms.Select())
     competenciaespecificaproyectoformativo = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), label=u'Competencia específica del proyecto formativo')
-    competenciagenericainstitucion = ModelChoiceField(label=u'Competencia generica que se contribuye a desarrollar', queryset=CompetenciaGenerica.objects, required=False, widget=forms.Select())
+    competenciagenericainstitucion = ModelChoiceField(label=u'Competencia generica que se contribuye a desarrollar', queryset=CompetenciaGenerica.objects.all(), required=False, widget=forms.Select())
     contribucioncarrera = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), label=u'Contribución al perfil de egreso')
     problemaabordadometodosdeensenanza = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), label=u'Reto o problema del contexto a ser abordado')
     proyectofinal = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), label=u'Producto central a lograr')
@@ -1452,7 +1439,7 @@ class RubricaTallerPlanificacionForm(BaseForm):
             deshabilitar_campo(self, 'evidencia')
 
     def planificacion(self):
-        del self.fields['resultadoaprendizaje']
+        _pop_field(self, 'resultadoaprendizaje')
 
     def extra_paramaters(self):
         self.fields['formwidth'].initial = 'xl'
@@ -1474,8 +1461,8 @@ class ContenidoTallerForm(BaseForm):
 class ClaseTallerNuevaForm(BaseForm):
     fecha = forms.DateField(label=u"Fecha", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
     fechafin = forms.DateField(label=u"Fecha fin actividad", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
-    fasesactividadesarticulacion = ModelChoiceField(label=u'Tipo de actividad a realizar en el taller', required=False, queryset=FasesActividadesArticulacion.objects, widget=forms.Select())
-    contenido = ModelChoiceField(label=u'Contenido', required=False, queryset=ContenidosTallerPlanificacionMateria.objects, widget=forms.Select())
+    fasesactividadesarticulacion = ModelChoiceField(label=u'Tipo de actividad a realizar en el taller', required=False, queryset=FasesActividadesArticulacion.objects.all(), widget=forms.Select())
+    contenido = ModelChoiceField(label=u'Contenido', required=False, queryset=ContenidosTallerPlanificacionMateria.objects.all(), widget=forms.Select())
     actcondoc1 = forms.CharField(widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}), label=u'Actividad en contacto con el docente',  required=False)
     horas1 = forms.FloatField(label=u'Horas', initial='0', required=False, widget=forms.TextInput(attrs={'class': 'imp-numbermed-center', 'decimales': '1'}))
     actcondoc2 = forms.CharField(widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}),label=u'Otra actividad en contacto con el docente', required=False)
@@ -1487,7 +1474,7 @@ class ClaseTallerNuevaForm(BaseForm):
     actcolaborativas = forms.CharField(widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}),  label=u'Actividad de aprendizaje colaborativo', required=False)
 
     def quitar_campos(self):
-        del self.fields['actcolaborativas']
+        _pop_field(self, 'actcolaborativas')
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
@@ -1661,28 +1648,26 @@ class ActividadInscripcionForm(BaseForm):
 
     def adicionar(self, curso):
         if not curso.costodiferenciado:
-            del self.fields['tipo']
+            _pop_field(self, 'tipo')
         else:
             self.fields['tipo'].queryset = TipoEstudianteCurso.objects.filter(Q(costodiferenciadocursoperiodo__costomatricula__gt=0) | Q(costodiferenciadocursoperiodo__costocuota__gt=0), costodiferenciadocursoperiodo__tipocostocursoperiodo__tipocostocurso__cursoescuelacomplementaria=curso).distinct()
         if curso.locacionescurso_set.count() > 1:
             self.fields['locacion'].queryset = LocacionesCurso.objects.filter(curso=curso, activo=True)
         else:
-            del self.fields['locacion']
+            _pop_field(self, 'locacion')
 
     def adicionar_unidad_tit(self):
-        del self.fields['locacion']
-        del self.fields['tipo']
+        _pop_fields(self, 'locacion', 'tipo')
 
     def autoregistro(self, curso):
-        del self.fields['tipo']
-        del self.fields['inscripcion']
+        _pop_fields(self, 'tipo', 'inscripcion')
         self.fields['locacion'].queryset = LocacionesCurso.objects.filter(curso=curso, activo=True)
 
 
 
 
 class SesionCajaForm(BaseForm):
-    caja = forms.ModelChoiceField(label=u"Caja", queryset=LugarRecaudacion.objects, widget=forms.Select())
+    caja = forms.ModelChoiceField(label=u"Caja", queryset=LugarRecaudacion.objects.all(), widget=forms.Select())
     fondo = forms.FloatField(label=u"Fondo Inicial", initial='0.00', widget=forms.TextInput(attrs={'class': 'imp-moneda', 'decimales': '2'}))
 
     def adicionar(self, miscajas):
@@ -1775,7 +1760,7 @@ class NotaCreditoForm(BaseForm):
 
     def editar(self, notacredito):
         self.fields['inscripcion'].widget.attrs['descripcion'] = notacredito.inscripcion.flexbox_repr()
-        del self.fields['puntoemision']
+        _pop_field(self, 'puntoemision')
         deshabilitar_campo(self, 'numero')
 
 
@@ -1870,10 +1855,10 @@ class DepositoInscripcionForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
     def editar(self):
-        del self.fields['archivo']
+        _pop_field(self, 'archivo')
 
     def estudiante(self):
-        del self.fields['motivo']
+        _pop_field(self, 'motivo')
 
 
 class DepositoClienteForm(DepositoInscripcionForm):
@@ -1891,7 +1876,8 @@ class DepositoInscripcionMotivoForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
     def editar(self):
-        del self.fields['archivo']
+        # Este form no tiene campo `archivo`; mantener por compatibilidad sin romper.
+        _pop_field(self, 'archivo')
 
 
 class RecaudacionAnticipadaForm(BaseForm):
@@ -2281,7 +2267,7 @@ class ReferenciaWebForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
     def referencia(self):
-        del self.fields['descripcion']
+        _pop_field(self, 'descripcion')
 
 
 class CompetenciaGenericaForm(BaseForm):
@@ -2434,10 +2420,7 @@ class CursoEscuelaForm(BaseForm):
     def adicionar_con(self, coordinacion, periodo):
         self.fields['sesion'].queryset = Sesion.objects.filter(sede=coordinacion.sede)
         self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(actualizacionconocimiento=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=periodo, tipocostocursoperiodo__sede=coordinacion.sede).distinct()
-        del self.fields['mallacurso']
-        del self.fields['libreconfiguracion']
-        del self.fields['optativa']
-        del self.fields['costodiferenciado']
+        _pop_fields(self, 'mallacurso', 'libreconfiguracion', 'optativa', 'costodiferenciado')
 
     def editar(self, coordinacion, actividad):
         self.fields['sesion'].queryset = self.sesiones_por_sede(actividad.coordinacion.sede)
@@ -2465,8 +2448,7 @@ class CursoEscuelaForm(BaseForm):
         self.fields['solicitante'].widget.attrs['descripcion'] = actividad.solicitante.flexbox_repr() if actividad.solicitante else ""
         self.fields['solicitante'].widget.attrs['va'] = actividad.solicitante_id if actividad.solicitante else ""
         if Clase.objects.filter(materiacurso__curso=actividad).exists():
-            del self.fields['sesion']
-            del self.fields['modalidad']
+            _pop_fields(self, 'sesion', 'modalidad')
 
     def editar_ac(self, actividad):
         deshabilitar_campo(self, 'costodiferenciado')
@@ -2482,14 +2464,10 @@ class CursoEscuelaForm(BaseForm):
         else:
             self.fields['tipocurso'].queryset = TipoCostoCurso.objects.filter(actualizacionconocimiento=True, tipocostocursoperiodo__activo=True, tipocostocursoperiodo__periodo=actividad.periodo, tipocostocursoperiodo__sede=actividad.coordinacion.sede).distinct()
 
-        del self.fields['libreconfiguracion']
-        del self.fields['optativa']
-        del self.fields['nivelacion']
-        del self.fields['costodiferenciado']
+        _pop_fields(self, 'libreconfiguracion', 'optativa', 'nivelacion', 'costodiferenciado')
         self.fields['solicitante'].widget.attrs['descripcion'] = actividad.solicitante.flexbox_repr() if actividad.solicitante else ""
         if Clase.objects.filter(materiacurso__curso=actividad).exists():
-            del self.fields['sesion']
-            del self.fields['modalidad']
+            _pop_fields(self, 'sesion', 'modalidad')
 
 
 class CostoCursoEscuelaForm(BaseForm):
@@ -2522,13 +2500,11 @@ class MateriasCursoEscuelaForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
     def adicionar(self, curso):
-        self.fields['asignatura'].queryset = Asignatura.objects.filter(trabajotitulacionmalla__malla=curso.malla, trabajotitulacionmalla__tipotrabajotitulacion=curso.tipotrabajotitulacion, trabajotitulacionmalla__unidadtitulacion=curso.unidadtitulacion).distinct()
+        self.fields['asignatura'].queryset = Asignatura.objects.filter(asignaturamalla__malla=curso.malla).distinct()
 
     def adicionar_curso(self, curso):
         if curso.usamodeloevaluativo:
-            del self.fields['califmaxima']
-            del self.fields['califminima']
-            del self.fields['asistminima']
+            _pop_fields(self, 'califmaxima', 'califminima', 'asistminima')
 
     def editar(self):
         deshabilitar_campo(self, 'asignatura')
@@ -2586,17 +2562,6 @@ class CambiarTipoRegistroForm(BaseForm):
     def extra_paramaters(self):
         self.fields['formwidth'].initial = 'md'
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
-
-
-class CambiarFichaInscripcionForm(BaseForm):
-    malla = forms.ModelChoiceField(label=u"Ficha", queryset=Malla.objects.filter(aprobado=True))
-
-    def extra_paramaters(self):
-        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
-
-    def adicionar(self, persona):
-        self.fields['malla'].queryset = Malla.objects.filter(inscripcionmalla__inscripcion__persona=persona, aprobado=True)
-
 
 class CambiarAulaForm(BaseForm):
     aula = forms.ModelChoiceField(label=u"Aula", queryset=Aula.objects.all())
@@ -2667,13 +2632,11 @@ class MateriasCursoEscuelaForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
     def adicionar(self, curso):
-        self.fields['asignatura'].queryset = Asignatura.objects.filter(trabajotitulacionmalla__malla=curso.malla, trabajotitulacionmalla__tipotrabajotitulacion=curso.tipotrabajotitulacion, trabajotitulacionmalla__unidadtitulacion=curso.unidadtitulacion).distinct()
+        self.fields['asignatura'].queryset = Asignatura.objects.filter(asignaturamalla__malla=curso.malla).distinct()
 
     def adicionar_curso(self, curso):
         if curso.usamodeloevaluativo:
-            del self.fields['califmaxima']
-            del self.fields['califminima']
-            del self.fields['asistminima']
+            _pop_fields(self, 'califmaxima', 'califminima', 'asistminima')
 
     def editar(self):
         deshabilitar_campo(self, 'asignatura')
@@ -2719,9 +2682,9 @@ class NuevaInscripcionExternaForm(BaseForm):
     nacimiento = forms.DateField(label=u"Fecha nacimiento", required=False, input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     sexo = forms.ModelChoiceField(Sexo.objects.all(), required=False, label=u"Sexo", widget=forms.Select())
     pais = forms.ModelChoiceField(label=u'País', required=False, queryset=Pais.objects.all(), widget=forms.Select())
-    provincia = forms.ModelChoiceField(label=u"Provincia de residencia", queryset=Provincia.objects, required=False, widget=forms.Select())
-    canton = forms.ModelChoiceField(label=u"Cantón de residencia", queryset=Canton.objects, required=False, widget=forms.Select())
-    parroquia = forms.ModelChoiceField(label=u"Parroquia de residencia", queryset=Parroquia.objects, required=False, widget=forms.Select())
+    provincia = forms.ModelChoiceField(label=u"Provincia de residencia", queryset=Provincia.objects.all(), required=False, widget=forms.Select())
+    canton = forms.ModelChoiceField(label=u"Cantón de residencia", queryset=Canton.objects.all(), required=False, widget=forms.Select())
+    parroquia = forms.ModelChoiceField(label=u"Parroquia de residencia", queryset=Parroquia.objects.all(), required=False, widget=forms.Select())
     direccion = forms.CharField(label=u'Dirección', max_length=100)
     telefono = forms.CharField(label=u"Teléfono móvil", max_length=50, required=False, widget=forms.TextInput())
     telefono_conv = forms.CharField(label=u"Teléfono fijo", max_length=50, required=False, widget=forms.TextInput())
@@ -2734,13 +2697,13 @@ class NuevaInscripcionExternaForm(BaseForm):
 
     def adicionar(self, curso):
         if not curso.costodiferenciado:
-            del self.fields['tipo']
+            _pop_field(self, 'tipo')
         else:
             self.fields['tipo'].queryset = TipoEstudianteCurso.objects.filter(Q(costodiferenciadocursoperiodo__costomatricula__gt=0) | Q(costodiferenciadocursoperiodo__costocuota__gt=0), costodiferenciadocursoperiodo__tipocostocursoperiodo__tipocostocurso__cursoescuelacomplementaria=curso)
         if curso.locacionescurso_set.count() > 1:
             self.fields['locacion'].queryset = LocacionesCurso.objects.filter(curso=curso, activo=True)
         else:
-            del self.fields['locacion']
+            _pop_field(self, 'locacion')
 
 
 
@@ -2808,7 +2771,7 @@ class ProfesorMateriaForm(BaseForm):
         deshabilitar_campo(self, "profesor")
 
     def nuevo(self):
-        del self.fields['motivo']
+        _pop_field(self, 'motivo')
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
@@ -2931,7 +2894,7 @@ class EvidenciaMallaForm(BaseForm):
 
 
 class InfoMallasedeForm(BaseForm):
-    sede = forms.ModelChoiceField(label=u"Sede", queryset=Sede.objects, required=False, widget=forms.Select())
+    sede = forms.ModelChoiceField(label=u"Sede", queryset=Sede.objects.all(), required=False, widget=forms.Select())
     codigo = forms.CharField(label=u"Código", max_length=200, widget=forms.TextInput())
     lugar = forms.CharField(label=u"Lugar Ejecución", max_length=200, widget=forms.TextInput())
 
@@ -3019,7 +2982,7 @@ class ModeloEvaluativoForm(BaseForm):
 
 class DetalleModeloEvaluativoForm(BaseForm):
     nombre = forms.CharField(label=u"Nombre", max_length=10, required=False, widget=forms.TextInput())
-    alternativa = forms.ModelChoiceField(label=u"Alternativas", queryset=CodigoEvaluacion.objects, widget=forms.Select())
+    alternativa = forms.ModelChoiceField(label=u"Alternativas", queryset=CodigoEvaluacion.objects.all(), widget=forms.Select())
     orden = forms.IntegerField(label=u"Orden en Acta", required=False, initial='0', widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '0'}))
     notaminima = forms.FloatField(label=u"Nota Mínima", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '2'}))
     notamaxima = forms.FloatField(label=u"Nota Máxima", required=False, initial="0.00", widget=forms.TextInput(attrs={'class': 'imp-numbersmall', 'decimales': '2'}))
@@ -3062,12 +3025,7 @@ class TipoCostoCursoForm(BaseForm):
 
     def edit(self, tipo):
         if tipo.tiene_uso():
-            del self.fields['cursos']
-            del self.fields['titulacion']
-            del self.fields['actualizacionconocimiento']
-            del self.fields['costodiferenciado']
-            del self.fields['costolibre']
-            del self.fields['validapromedio']
+            _pop_fields(self, 'cursos', 'titulacion', 'actualizacionconocimiento', 'costodiferenciado', 'costolibre', 'validapromedio')
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
@@ -3168,7 +3126,7 @@ class RequerimientoServicioForm(BaseForm):
 
 
 class ProformaDetalleForm(BaseForm):
-    servicio = forms.ModelChoiceField(label=u"Servicio", queryset=ServicioCatalogo.objects, widget=forms.Select())
+    servicio = forms.ModelChoiceField(label=u"Servicio", queryset=ServicioCatalogo.objects.all(), widget=forms.Select())
     fecha = forms.DateField(label=u"Fecha", input_formats=['%d-%m-%Y'], initial=datetime.now().date(), widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
     horainicio = forms.CharField(label='Hora Inicio',widget=forms.Select(), required=False)
     horafin = forms.CharField(label='Hora Fin',widget=forms.Select(), required=False)

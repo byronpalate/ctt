@@ -255,13 +255,10 @@
                 var listafinal = generar_lista_final();
                 var fechamat = $("#fechamatricula").val();
                 var resolucion = $("#resolucion").val();
-                var chkprorroga = $("#chkprorroga").is(':checked');
-                var selprorroga = $("#selprorroga").val();
-                var comprorroga = $("#comprorroga").val();
                 $.ajax({
                     type: "POST",
                     url: "/matriculas",
-                    data: { 'action': 'matricular', 'id': '{{ inscripcion.id }}', 'nivel': '{{ nivel.id }}', 'materias':JSON.stringify(listafinal), 'fechamat': fechamat, 'resolucion': resolucion, 'chkprorroga': chkprorroga, 'selprorroga': selprorroga, 'comprorroga': comprorroga, 'csrfmiddlewaretoken': csrftoken },
+                    data: { 'action': 'matricular', 'id': '{{ inscripcion.id }}', 'nivel': '{{ nivel.id }}', 'materias':JSON.stringify(listafinal), 'fechamat': fechamat, 'resolucion': resolucion, 'csrfmiddlewaretoken': csrftoken },
                     success: function(data) {
                         if (data.result === 'ok') {
                             $("#matricularmensajespanel").find("#confmattxt").html('').append("<p>Se ha matriculado correctamente.</p>");
@@ -437,40 +434,6 @@
                         <td colspan="20">NO EXISTEN DATOS</td>
                     </tr>
                 {% endfor %}
-            </table>
-        </div>
-    </div>
-    <div class="row mb-2">
-        <div class="col-12">
-            <table>
-                <tr>
-                    <td style="width: 20px; text-align: center">
-                        <label for="chkprorroga">Prorroga?</label>
-                    </td>
-                    <td style="width: 500px; text-align: left">
-                        <input type="checkbox" class="btn btn-success todos_gruposelectormensaje" name="chkprorroga" id="chkprorroga">
-                    </td>
-                </tr>
-                <tr>
-                    <td style="width: 20px; text-align: center">
-                        <label for="selprorroga">Asesor</label>
-                    </td>
-                    <td style="width: 20px; text-align: center">
-                        <select id="selprorroga" readonly="" name="selprorroga" class="form-select form-select-sm" style="width: 500px">
-                            {% for secretaria in secretarias %}
-                                <option value='{{ secretaria.id }}'>{{ secretaria.persona }}</option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="width: 20px; text-align: center">
-                        <label for="comprorroga">Comentario</label>
-                    </td>
-                    <td style="width: 600px; text-align: left">
-                        <textarea rows="2" style="margin-top: 5px" id="comprorroga" class="form-control"></textarea>
-                    </td>
-                </tr>
             </table>
         </div>
     </div>

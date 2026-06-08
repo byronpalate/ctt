@@ -233,5 +233,23 @@ from ctt.models import TipoServicio, ServicioCatalogo
 # seed_servicios_externos()
 
 
-matricula = Matricula.objects.get(pk=4)
-matricula.delete()
+from ctt.models import Persona, Cliente
+from django.contrib.auth.models import Group
+from settings import CLIENTES_GROUP_ID
+
+persona = Persona.objects.get(usuario__username='emoyolema')
+
+cliente, creado = Cliente.objects.get_or_create(
+    persona=persona,
+    defaults={
+        'activo': True
+    }
+)
+
+cliente.activo = True
+cliente.save()
+
+persona.crear_perfil(cliente=cliente)
+
+grupo = Group.objects.get(id=CLIENTES_GROUP_ID)
+persona.usuario.groups.add(grupo)
