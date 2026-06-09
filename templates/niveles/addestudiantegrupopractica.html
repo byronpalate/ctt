@@ -47,7 +47,7 @@
                     data: {'action': 'addestudiantegrupopractica', 'lista': JSON.stringify(lista_items1), 'grupo': {{grupo.id}}, 'csrfmiddlewaretoken': csrftoken},
                     success: function(data) {
                         if (data.result === 'ok') {
-                            location.href = "/niveles?action=tomandompracticas&id="+{{grupo.id}}
+                            location.href = "/pro_planificacion?action=tomandompracticas&id="+{{grupo.id}}
                         } else {
                             desbloqueointerface();
                             NotificacionAlerta(data.icono, data.titulo, data.mensaje);
@@ -65,7 +65,7 @@
         });
     </script>
 {% endblock %}
-{% block atras %}/niveles?action=tomandompracticas&id={{ grupo.id }}{% endblock %}
+{% block atras %}/pro_planificacion?action=tomandompracticas&id={{ grupo.id }}{% endblock %}
 {% block headcanvas %}
     <div class="row mb-2">
         <div class="col-12">

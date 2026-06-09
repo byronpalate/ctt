@@ -240,7 +240,7 @@
                     <i class="icon-print"></i> Detalle de pagos y abonos
                 </a>
             {% endif %}
-            {% if perms.sga.puede_modificar_descuentos %}
+            {% if perms.ctt.puede_modificar_descuentos %}
                 <a href="javascript:;" class="btn btn-sm btn-warning" id="descuentos" style="visibility: hidden;">
                     <i class="icon-minus"></i> Descuento
                 </a>
@@ -262,7 +262,7 @@
             <table class="table table-bordered table-hover table-sm">
                 <thead class="table-light">
                     <tr>
-                        {% if perms.sga.puede_activar_rubro_pasivo %}
+                        {% if perms.ctt.puede_activar_rubro_pasivo %}
                             <th style="width: 32px; text-align:center;">P</th>
                         {% endif %}
                         <th style="width: 32px; text-align:center;">
@@ -290,7 +290,7 @@
                 <tbody>
                     {% for rubro in rubros %}
                         <tr class="{% if rubro.cancelado %}pagados{% endif %} {% if rubro.validoprontopago %}prontopago{% endif %}">
-                            {% if perms.sga.puede_activar_rubro_pasivo %}
+                            {% if perms.ctt.puede_activar_rubro_pasivo %}
                                 <td style="text-align:center;">
                                     {% if rubro.pasivo %}
                                         <span class="badge text-bg-danger" title="{{ rubro.motivopasivo|default_if_none:'' }}">Pasivo</span>
@@ -378,7 +378,7 @@
                                     <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" href="javascript:;">Acciones</a>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="/finanzas?action=pagos&id={{ rubro.id }}"><i class="icon-list"></i> Ver pagos</a></li>
-                                        {% if perms.sga.puede_modificar_rubros %}
+                                        {% if perms.ctt.puede_modificar_rubros %}
                                             <li><a class="dropdown-item formmodal" href="javascript:;" nhref="/finanzas?action=editrubro&id={{ rubro.id }}"><i class="icon-edit"></i> Editar</a></li>
                                         {% endif %}
                                     </ul>
@@ -539,7 +539,7 @@
                         <th style="width:90px; text-align:right;">Valor</th>
                         <th style="width:90px; text-align:right;">Saldo</th>
                         <th style="width:90px; text-align:center;">Procesado</th>
-                        {% if perms.sga.puede_modificar_rubros %}
+                        {% if perms.ctt.puede_modificar_rubros %}
                             <th style="width:70px; text-align:center;">Editar</th>
                         {% endif %}
                     </tr>
@@ -592,7 +592,7 @@
                                 {% endif %}
                             </td>
 
-                            {% if perms.sga.puede_modificar_rubros %}
+                            {% if perms.ctt.puede_modificar_rubros %}
                                 <td style="text-align:center;">
                                     <a href="javascript:;" nhref="/finanzas?action=editdeposito&id={{ di.id }}&pid={{ personarubro.id }}" class="btn btn-ssm btn-info formmodal" title="Editar">
                                         <i class="icon-edit"></i>
@@ -602,7 +602,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="{% if perms.sga.puede_modificar_rubros %}11{% else %}10{% endif %}">NO EXISTEN DATOS</td>
+                            <td colspan="{% if perms.ctt.puede_modificar_rubros %}11{% else %}10{% endif %}">NO EXISTEN DATOS</td>
                         </tr>
                     {% endfor %}
                 </tbody>

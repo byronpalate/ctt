@@ -1,0 +1,8 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_certificacionb1ingles{% endblock %}
+{% block formdestination %}/adm_certificacionb1ingles?action=detalles&id={{ detalle.convocatoriaconsultorio.id }}{% endblock %}
+{% block formactionvalue %}deldetalle{% endblock %}
+{% block formobjectid %}{{ detalle.id }}{% endblock %}
+{% block formobjectname %}el cronograma{% endblock %}
+{% block formobjectrepr %}{{ detalle.descripcion }}{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% block atras %}/adm_certificacionb1ingles?action=registrados&id={{ proceso.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+            <h4>{{ registro.inscripcion.persona }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <table class="table table-bordered table-striped">
+                <tbody>
+                <tr>
+                    <td style="width: 180px"><b>Estudiante</b></td>
+                    <td>{{ registro.inscripcion.persona }} - {{ registro.inscripcion.persona.cedula }}</td>
+                </tr>
+                <tr>
+                    <td><b>Carrera</b></td>
+                    <td>{{ registro.inscripcion.carrera.nombre }} / {{ registro.inscripcion.modalidad }} / {{ registro.inscripcion.sede }}</td>
+                </tr>
+                <tr>
+                    <td><b>Convocatoria</b></td>
+                    <td>{{ proceso }}</td>
+                </tr>
+                <tr>
+                    <td><b>Costo examen</b></td>
+                    <td>$ {{ costob1|floatformat:2|intcomma }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <div class="col-12 col-md-2 mb-2">
+            <div class="card"><div class="card-body py-2"><b>Promedio Ingles</b><br><span class="fs-5">{{ calculo.datosniveles.promedio|floatformat:2 }}</span></div></div>
+        </div>
+        <div class="col-12 col-md-2 mb-2">
+            <div class="card"><div class="card-body py-2"><b>Aporte 60%</b><br><span class="fs-5">{{ calculo.aporte_niveles|floatformat:2 }}</span></div></div>
+        </div>
+        <div class="col-12 col-md-2 mb-2">
+            <div class="card"><div class="card-body py-2"><b>Nota examen</b><br><span class="fs-5">{{ registro.notaexamenconocimientos|floatformat:2 }}</span></div></div>
+        </div>
+        <div class="col-12 col-md-2 mb-2">
+            <div class="card"><div class="card-body py-2"><b>Aporte 40%</b><br><span class="fs-5">{{ calculo.aporte_examen|floatformat:2 }}</span></div></div>
+        </div>
+        <div class="col-12 col-md-2 mb-2">
+            <div class="card"><div class="card-body py-2"><b>Nota final</b><br><span class="fs-5">{{ calculo.notafinal|floatformat:2 }}</span></div></div>
+        </div>
+        <div class="col-12 col-md-2 mb-2">
+            <div class="card">
+                <div class="card-body py-2">
+                    <b>Estado</b><br>
+                    {% if registro.cerrada %}
+                        {% if registro.aprobado %}
+                            <span class="badge text-bg-success">Aprobado</span>
+                        {% else %}
+                            <span class="badge text-bg-danger">No aprobado</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge text-bg-warning">Pendiente</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include "certificacionb1ingles/detalle_calculo.html" with datos=calculo.datosniveles calculo=calculo %}
+
+{% endblock %}

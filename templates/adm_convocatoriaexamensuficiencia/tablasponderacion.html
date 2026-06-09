@@ -1,0 +1,112 @@
+{% extends "basebs.html" %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function () {
+
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+
+
+{% endblock %}
+{% block canvas %}
+    <div class="row">
+        <div class="col-6 center">
+            <div class="row">
+                <div class='col-12'>
+                    <a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref="adm_convocatoriaexamensuficiencia?action=addrangoubicacion"><i class="icon-plus"></i> Añadir Rangos Examen Ubicación</a>
+                </div>
+            </div>
+            <table class="table table-bordered center align-center" style="width: 100%; margin-top: 15px">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 100px; text-align: center;">Puntaje Inicial</th>
+                    <th style="width: 100px; text-align: center;">Puntaje Final</th>
+                    <th style="width: 100px; text-align: center;">Nivel que Aprueba</th>
+                    <th style="width: 100px;">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for record in rangosubicacion %}
+                    <tr>
+                        <td align="center">{{ record.inicio}}</td>
+                        <td align="center">{{ record.fin }}</td>
+                        <td align="center">{{ record.nivel }}</td>
+                        <td>
+                            <div class="btn-sm dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" href="javascript:46;">Acciones<span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/adm_convocatoriaexamensuficiencia?action=editrangonota&id={{ record.id }}'><i class="icon-edit"></i> Editar</a></li>
+                                    <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/adm_convocatoriaexamensuficiencia?action=delrango&id={{ record.id }}'><i class="icon-remove"></i> Eliminar</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">NO EXISTEN REGISTROS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-6">
+            <div class="row">
+                <div class='col-12'>
+                    <a class="btn btn-sm btn-success formmodal" href="javascript:;" nhref="adm_convocatoriaexamensuficiencia?action=addrangovalidacion"><i class="icon-plus"></i> Añadir Rangos de Notas Validación</a>
+                </div>
+            </div>
+            <table class="table table-bordered center align-center" style="width: 100%; margin-top: 15px">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 100px; text-align: center;">Puntaje Inicial</th>
+                    <th style="width: 100px; text-align: center;">Puntaje Final</th>
+                    <th style="width: 100px; text-align: center;">Aprueba</th>
+                    <th style="width: 100px; text-align: center;">Nota</th>
+                    <th style="width: 100px;">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for record in rangosvalidacion %}
+                    <tr>
+                        <td align="center">{{ record.inicio}}</td>
+                        <td align="center">{{ record.fin }}</td>
+                        <td align="center">
+                            {% if  record.aprueba  %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Aprueba niveles pendientes">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Aprueba niveles pendientes">No</span>
+                                {% endif %}
+                        </td>
+                        <td align="center">{{ record.nota }}</td>
+                        <td >
+                            <div class="btn-sm dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" href="javascript:46;">Acciones<span class="caret"></span></a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
+                                    <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref='/adm_convocatoriaexamensuficiencia?action=editrangonotaval&id={{ record.id }}'><i class="icon-edit"></i> Editar</a></li>
+                                    <li class="smaller"><a class="eliminacionmodal dropdown-item" href="javascript:;" nhref='/adm_convocatoriaexamensuficiencia?action=delrangoval&id={{ record.id }}'><i class="icon-remove"></i> Eliminar</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">NO EXISTEN REGISTROS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+{% endblock %}
+

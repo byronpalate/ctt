@@ -24,17 +24,44 @@ from ctt.models import *
 from django.contrib.admin.models import LogEntry
 from settings import *
 from ctt.funciones import *
+from django.db import models
+from django.contrib.auth.models import Group
+from django.conf import settings
 
-# MI ID PERSONA: 46868
-# # MI INSCRIPCION: 58710
+
+class TipoSolicitudSecretariaDocente(models.Model):
+    nombre = models.CharField(max_length=250)
+    descripcion = models.TextField(blank=True, null=True)
+    activo = models.BooleanField(default=True)
+
+    grupos = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name='tipos_solicitud_secretaria_docente'
+    )
+
+    class Meta:
+        verbose_name = 'Tipo de Solicitud Secretaría Docente'
+        verbose_name_plural = 'Tipos de Solicitud Secretaría Docente'
+
+    def __str__(self):
+        return self.nombre
 
 
-cliente=Cliente.objects.get(pk=36)
+class SolicitudSecretariaDocente(models.Model):
+    tipo = models.ForeignKey(
+        TipoSolicitudSecretariaDocente,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name='solicitudes_secretaria_docente'
+    )
 
-send_mail(subject='Registro completo CTT Indoamerica.',
-          html_template='emails/registrook.html',
-          data={'cliente': cliente},
-          recipient_list=[cliente.persona],
-          correos=cliente.correo_de_envio())
+    # tus demás campos aquí...
 
-print('ok')
+    class Meta:
+        verbose_name = 'Solicitud Secretaría Docente'
+        verbose_name_plural = 'Solicitudes Secretaría Docente'
+
+    def __str__(self):
+        return f'Solicitud #{self.id}'

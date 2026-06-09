@@ -1,0 +1,41 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_archivo").addClass("validate[required]");
+
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formdestination %}/alu_postulacionexamensuficiencia?action=registro&id={{ proceso.id }}{% endblock %}
+{% block formaction %}/alu_postulacionexamensuficiencia{% endblock %}
+{% block formactionvalue %}registrarse{% endblock %}
+{% block formobjectid %}{{ proceso.id }}{% endblock %}
+{% block mensaje %}
+    <h5>Cronograma:</h5>
+    <table>
+        <tr>
+            <th>Actividad</th>
+            <th>Fechas</th>
+        </tr>
+    {% for d in detalles %}
+        <tr>
+            <td>{{ d.descripcion }}</td>
+            {% if d.inicio == d.fin %}
+                <td style="text-align: center">{{ d.inicio|date:"Y-m-d" }}</td>
+            {% else %}
+                <td style="text-align: center">{{ d.inicio|date:"Y-m-d" }} al {{ d.fin|date:"Y-m-d" }}</td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+    </table>
+    <br>
+    Lea detenidamente el cronograma, y todas las instrucciones dentro del proceso:
+{% endblock %}
+{% block formobjectrepr %}{{ proceso }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='registrarse'/>
+    <input type="hidden" name='id' value='{{ proceso.id }}'/>
+{% endblock %}
+

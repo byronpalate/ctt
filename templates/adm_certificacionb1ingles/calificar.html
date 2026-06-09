@@ -1,0 +1,10 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}<script type="text/javascript">$(function(){ $("#id_notaexamen").addClass("validate[required]"); });</script>{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_certificacionb1ingles{% endblock %}
+{% block formdestination %}/adm_certificacionb1ingles?action=registrados&id={{ registro.convocatoria.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='calificar'/>
+    <input type='hidden' name='id' value='{{ registro.id }}'/>
+{% endblock %}
+{% block formback %}/adm_certificacionb1ingles{% endblock %}

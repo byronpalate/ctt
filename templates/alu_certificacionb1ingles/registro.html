@@ -1,0 +1,24 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% load humanize %}
+{% block atras %}/alu_certificacionb1ingles{% endblock %}
+{% block headcanvas %}<div class="row mb-2"><div class="col-12"><h4>{{ title }}</h4></div></div>{% endblock %}
+{% block canvas %}
+    {% if proceso.mensaje %}<div class='row-fluid'><div class='col-12'><div class="alert alert-info">{{ proceso.mensaje }}</div></div></div>{% endif %}
+    {% if proceso.cerrado %}<div class="alert alert-warning">Convocatoria cerrada.</div>{% endif %}
+    <div class="row mb-2">
+        <div class="col-12 col-md-3"><div class="card"><div class="card-body"><b>Promedio niveles</b><br><span class="fs-5">{{ calculo.datosniveles.promedio|floatformat:2 }}</span><br><small>Aporte 60%: {{ calculo.aporte_niveles|floatformat:2 }}</small></div></div></div>
+        <div class="col-12 col-md-3"><div class="card"><div class="card-body"><b>Examen B1</b><br><span class="fs-5">{{ registro.notaexamenconocimientos|floatformat:2 }}</span><br><small>Aporte 40%: {{ calculo.aporte_examen|floatformat:2 }}</small></div></div></div>
+        <div class="col-12 col-md-3"><div class="card"><div class="card-body"><b>Nota final</b><br><span class="fs-5">{{ calculo.notafinal|floatformat:2 }}</span></div></div></div>
+        <div class="col-12 col-md-3"><div class="card"><div class="card-body"><b>Estado</b><br>{% if registro.cerrada %}{% if registro.aprobado %}<span class="badge text-bg-success">Aprobado</span>{% else %}<span class="badge text-bg-danger">No aprobado</span>{% endif %}{% else %}<span class="badge text-bg-warning">Pendiente</span>{% endif %}</div></div></div>
+    </div>
+    {% include "certificacionb1ingles/detalle_calculo.html" with datos=datosniveles calculo=calculo %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <div class="alert alert-secondary">
+                Pago: {% if registro.rubropagar %}<b>$ {{ registro.valor|floatformat:2|intcomma }}</b> - {% if registro.pagada %}<span class="badge text-bg-success">Pagado</span>{% else %}<span class="badge text-bg-danger">Pendiente</span>{% endif %}{% else %}<span class="badge text-bg-secondary">Sin rubro</span>{% endif %}
+                {% if registro.aprobado and registro.archivo %}<a class="btn btn-sm btn-success float-end" href="{{ registro.archivo.url }}" target="_blank"><i class="icon-download-alt"></i> Descargar certificado</a>{% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

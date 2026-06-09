@@ -254,7 +254,6 @@
                                                             {% if not nivel.cerrado and not materia.cerrado and extension.modificardocente and not profesormateria.tiene_contrato or cond_modif %}
                                                                 <div style="height: 40px; float: left; margin-left: 2px; text-align: center">
                                                                     <a style="margin-top: 10px" href="javascript:;" nhref="/niveles?action=delprofesorpracticaficticio&id={{ profesormateria.id }}" class='btn btn-ssm btn-danger eliminacionmodal tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
-{#                                                                    <a style="margin-top: 10px" href="javascript:;" nhref="/niveles?action=editprofesorficticiopractica&id={{ profesormateria.id }}" class='formmodal btn btn-ssm btn-success tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>#}
                                                                 </div>
                                                             {% endif %}
                                                         {% endif %}
@@ -306,8 +305,7 @@
                             <div class="btn-group dropdown">
                                 <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
                                 <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
-                                    <li class="smaller"><a href='/niveles?action=tomandompracticas&id={{ grupo.id }}' class="dropdown-item"><i class="icon-user"></i> Tomaron la Practica</a></li>
-                                    <li class="smaller"><a href='/adm_horariospracticas?action=horario&id={{ grupo.id }}' class="dropdown-item"><i class="icon-time"></i> Horario de la practica</a></li>
+                                    <li class="smaller"><a href='/pro_planificacion?action=tomandompracticas&id={{ grupo.id }}' class="dropdown-item"><i class="icon-user"></i> Tomaron la Practica</a></li>
                                     <li class="smaller"><a href="javascript:;" nhref='/niveles?action=editgrupopractica&id={{ grupo.id }}' class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
                                     {% with cond_modif=grupo.materia.puede_editar_distributivo %}
                                     {% if perms.ctt.puede_modificar_materias and extension.modificardocente or cond_modif  %}

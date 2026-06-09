@@ -1,0 +1,33 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_fechainicio, #id_fechafin").datepicker({format:"dd-mm-yyyy"});
+            $("#id_nombre, #id_modalidad").addClass("validate[required]");
+            $("#id_tipoconvocatoria").addClass("validate[required]");
+            $("#fieldset_fechainicioautoregistro,#fieldset_fechafinautoregistro").hide();
+
+            verificar = function(){
+                var valor = $("#id_autoregistro").is(':checked');
+                if (valor) {
+                    $("#fieldset_fechainicioautoregistro,#fieldset_fechafinautoregistro").show();
+                }else{
+                    $("#fieldset_fechainicioautoregistro,#fieldset_fechafinautoregistro").hide();
+                }
+            };
+
+            $("#id_autoregistro").click(function(){
+                verificar()
+            });
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block formdestination %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='add'/>
+{% endblock %}
+{% block formback %}/adm_convocatoriaexamensuficiencia{% endblock %}

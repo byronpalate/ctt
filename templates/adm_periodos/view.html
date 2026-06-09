@@ -37,12 +37,12 @@
     </div>
     <div class="row">
         <div class='col-2'>
-            {% if perms.sga.puede_modificar_periodo %}
+            {% if perms.ctt.puede_modificar_periodo %}
                 <a href="javascript:;" nhref="/adm_periodos?action=add" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
             {% endif %}
         </div>
         <div class='col-2'>
-{#            {% if perms.sga.puede_modificar_periodo %}#}
+{#            {% if perms.ctt.puede_modificar_periodo %}#}
 {#                <a href="/adm_periodos?action=periodosolicitud" class='btn btn-sm btn-info'><i class="icon-calendar"></i> Período Solicitud</a>#}
 {#            {% endif %}#}
         </div>
@@ -152,7 +152,7 @@
                             <div class="btn-group dropdown">
                                 <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
                                 <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
-                                    {% if perms.sga.puede_modificar_periodo %}
+                                    {% if perms.ctt.puede_modificar_periodo %}
                                         <li class="smaller"><a class="formmodal dropdown-item" href="javascript:;" nhref="/adm_periodos?action=edit&id={{ periodo.id }}"><i class="icon-edit"></i> Editar</a></li>
                                         {% if not PERM_DIRECTOR_SIS %}
                                             {% if not periodo.esta_aprobadoevaluacion %}
@@ -165,14 +165,14 @@
 
                                     {% if not periodo.cerrado %}
                                         <li class="smaller"><a href="/adm_periodos?action=croprematriculacion&id={{ periodo.id }}" class="dropdown-item"><i class="icon-time"></i> Cronograma prematr&iacute;culas</a></li>
-                                        {% if perms.sga.puede_modificar_periodoprematriculacion %}
+                                        {% if perms.ctt.puede_modificar_periodoprematriculacion %}
                                             {% if periodo.prematriculacionactiva %}
                                                 <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=deshabprematricula&id={{ periodo.id }}"><i class="icon-lock"></i> Deshabilitar prematr&iacute;culas</a></li>
                                             {% else %}
                                                 <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=habprematricula&id={{ periodo.id }}"><i class="icon-unlock"></i> Habilitar prematr&iacute;culas</a></li>
                                             {% endif %}
                                         {% endif %}
-                                        {% if perms.sga.puede_modificar_periodomatriculacion %}
+                                        {% if perms.ctt.puede_modificar_periodomatriculacion %}
                                             <li class="smaller"><a href="/adm_periodos?action=cromatriculacion&id={{ periodo.id }}" class="dropdown-item"><i class="icon-time"></i> Cronograma matr&iacute;culas</a></li>
                                             {% if periodo.matriculacionactiva %}
                                                 <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=deshabmatricula&id={{ periodo.id }}"><i class="icon-lock"></i> Deshabilitar matr&iacute;culas</a></li>
@@ -183,7 +183,7 @@
                                         <li class="smaller"><a href="/adm_periodos?action=matriculasmora&id={{ periodo.id }}" class="btn-form dropdown-item"><i class="icon-money"></i> Matr&iacute;culas en mora</a></li>
                                         <li class="smaller"><a href="javascript:;" nhref="/adm_periodos?action=editperiodosolicitudperiodo&id={{ periodo.id }}" class="formmodal dropdown-item"><i class="icon-calendar"></i> Período Solicitud</a></li>
                                     {% endif %}
-                                {% if perms.sga.puede_modificar_periodo %}
+                                {% if perms.ctt.puede_modificar_periodo %}
                                     {% if not periodo.cerrado %}
                                         <li class="smaller"><a href="javascript:;" class="confirmacionmodal dropdown-item" nhref="/adm_periodos?action=cerrarperiodo&id={{ periodo.id }}"><i class="icon-lock"></i> Cerrar período</a></li>
                                     {% else %}
@@ -191,7 +191,7 @@
                                     {% endif %}
                                 {% endif %}
                                     {% if not periodo.cerrado %}
-                                        {% if periodo.puede_eliminarse and perms.sga.puede_modificar_periodo %}
+                                        {% if periodo.puede_eliminarse and perms.ctt.puede_modificar_periodo %}
                                             <li class="dropdown-divider"></li>
                                             <li class="smaller"><a href="javascript:;" class="eliminacionmodal dropdown-item" nhref="/adm_periodos?action=delperiodo&id={{ periodo.id }}"><i class="icon-remove"></i> Eliminar</a></li>
                                         {% endif %}

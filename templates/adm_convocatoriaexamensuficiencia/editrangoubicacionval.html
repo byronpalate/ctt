@@ -1,0 +1,29 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function () {
+            $('#id_nivel').blur(function () {
+                numerico($(this), 0, 6);
+            });
+
+            $('#id_inicio,#id_fin').blur(function () {
+                numerico($(this), 0, 100);
+            });
+
+            $('#id_nota').blur(function () {
+                numerico($(this), 0, 10);
+            });
+
+            $("#fieldset_nivel").hide();
+
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block formdestination %}/adm_convocatoriaexamensuficiencia?action=tablasponderacion{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editrangonotaval'/>
+    <input type='hidden' name='id' value='{{ rango.id }}'/>
+{% endblock %}
+{% block formback %}/adm_convocatoriaexamensuficiencia?action=tablasponderacion{% endblock %}

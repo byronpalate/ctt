@@ -1,0 +1,11 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}<script type="text/javascript">$(function(){ $("#id_archivo").addClass("validate[required]"); verifica_archivo(document.getElementById('id_archivo')); });</script>{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/alu_certificacionb1ingles{% endblock %}
+{% block formdestination %}/alu_certificacionb1ingles?action=registro&id={{ requisito.detalleproceso.convocatoriaconsultorio.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='subir'/>
+    <input type='hidden' name='id' value='{{ requisito.id }}'/>
+    <input type='hidden' name='aplicante' value='{{ aplicante.id }}'/>
+{% endblock %}
+{% block formback %}/alu_certificacionb1ingles{% endblock %}

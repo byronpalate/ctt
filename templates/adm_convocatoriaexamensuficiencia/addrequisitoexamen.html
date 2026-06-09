@@ -1,0 +1,16 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+
+        });
+    </script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_convocatoriaexamensuficiencia?action=requisitosexamensuficiencia&id={{ detalle.id }}{% endblock %}
+{% block formdestination %}/adm_convocatoriaexamensuficiencia?action=requisitosexamensuficiencia&id={{ detalle.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='addrequisitoexamen'/>
+    <input type='hidden' name='id' value='{{ detalle.id }}'/>
+{% endblock %}
+{% block formback %}/adm_convocatoriaexamensuficiencia?action=requisitosexamensuficiencia&id={{ detalle.id }}{% endblock %}

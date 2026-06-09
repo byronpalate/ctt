@@ -1,0 +1,96 @@
+{% extends "basebs.html" %}
+{% load ctt_extras %}
+{% load humanize %}
+{% block heading %}
+{% endblock %}
+{% block atras %}/alu_postulacionexamensuficiencia{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <div class="alert alert-danger">
+                {{ proceso.mensaje }}
+            </div>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Cronograma</th>
+                    <th style="width: 80px; text-align: center">Inicio</th>
+                    <th style="width: 80px; text-align: center">Fin</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for detalle in detalles %}
+                    <tr>
+                        <td>{{ detalle.descripcion }}
+                            {% if detalle.evaluacion %}
+                                <br><span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Evaluacion">Evaluación</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">{{ detalle.inicio|date:"Y-m-d"}}</td>
+                        <td style="text-align: center">{{ detalle.fin|date:"Y-m-d"}}</td>
+                        {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-12'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Requisito</th>
+                    <th style="width: 40px; text-align: center">Oblig.</th>
+                    <th style="width: 120px; text-align: center">Archivo</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% if requisitos %}
+                    {% for p in requisitos %}
+                        <tr>
+                            <td>{{ p.tipo }}</td>
+                            <td style="text-align: center">
+                                {% if p.obligatorio %}
+                                    <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Obligatorio">Si</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Obligatorio">No</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                <a href="javascript:;" nhref="alu_postulacionexamensuficiencia?action=subir&id={{ p.id }}" class="btn btn-ssm btn-info tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Subir"><i class="icon-arrow-up"></i></a>
+                                {% with archivo=p|args:registro|call:'verificar_archivo_requerimiento_ingles' %}
+                                    {% if archivo and archivo.archivo.url %}
+                                        {% if archivo %}
+                                            <a class="btn btn-ssm btn-success tu" href="{{ archivo.archivo.url }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar" target="_blank"><i class="icon-download-alt"></i></a>
+                                        {% endif %} 
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="20">NO EXISTEN DATOS</td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+                <tfoot>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+{% endblock %}

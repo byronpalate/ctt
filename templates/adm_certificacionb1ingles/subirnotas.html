@@ -1,0 +1,24 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+<script type="text/javascript">
+    $(function(){
+        $("#id_archivo").addClass("validate[required]");
+        verifica_archivo(document.getElementById('id_archivo'));
+        $("#fieldset_periodo").hide();
+    });
+</script>
+{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_certificacionb1ingles{% endblock %}
+{% block formdestination %}/adm_certificacionb1ingles?action=registrados&id={{ convocatoria.id }}{% endblock %}
+{% block formextra %}<input type='hidden' name='action' value='subirnotas'/><input type='hidden' name='id' value='{{ convocatoria.id }}'/>{% endblock %}
+{% block formsuffix %}
+    <div class="alert alert-info mt-2">
+        Descargue la plantilla con todos los registrados, coloque la nota del examen en la columna D y suba el archivo.
+        Los estudiantes sin pago seran omitidos.
+    </div>
+    <a class="btn btn-sm btn-success" href="/adm_certificacionb1ingles?action=descargarregistrados&id={{ convocatoria.id }}" target="_blank">
+        <i class="icon-download-alt"></i> Descargar registrados
+    </a>
+{% endblock %}
+{% block formback %}/adm_certificacionb1ingles{% endblock %}

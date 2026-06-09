@@ -24,7 +24,7 @@ from ctt.forms import CoordinacionForm, \
 from ctt.funciones import log, bad_json, ok_json, url_back, generar_nombre, MiPaginador
 from ctt.models import Sede, Coordinacion, CargoInstitucion, PuntoVenta, LugarRecaudacion, \
     IvaAplicado, Aula, Turno, Sesion, CuentaBanco, CompetenciaGenerica, Cargo, \
-    Api, AulaCoordinacion, mi_institucion, Modulo, Reporte, GruposModulos, Archivo, Persona, null_to_text, ModeloEvaluativo
+    Api, AulaCoordinacion, mi_institucion, Modulo, Reporte, GruposModulos, Archivo, Persona, null_to_text, ModeloEvaluativo, TipoSolicitudSecretariaDocente
 
 
 @login_required(login_url='/login')
@@ -854,128 +854,7 @@ def view(request):
                     transaction.set_rollback(True)
                     return bad_json(error=2, ex=ex)
 
-            if action == 'addreferenciaweb':
-                try:
-                    form = ReferenciaWebForm(request.POST, request.FILES)
-                    if form.is_valid():
-                        from bib.models import ReferenciaWeb
-                        newfile = None
-                        if 'logo' in request.FILES:
-                            newfile = request.FILES['logo']
-                            newfile._name = generar_nombre("logo", newfile._name)
-                        rf = ReferenciaWeb(url=form.cleaned_data['url'],
-                                           nombre=form.cleaned_data['nombre'],
-                                           logo=newfile)
-                        rf.save(request)
-                        log(u'Adiciono referencia web: %s' % rf, request, "add")
-                        return ok_json()
-                    else:
-                        return bad_json(error=6)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
 
-            if action == 'editreferenciaweb':
-                try:
-                    form = ReferenciaWebForm(request.POST, request.FILES)
-                    if form.is_valid():
-                        from bib.models import ReferenciaWeb
-                        rf = ReferenciaWeb.objects.get(pk=int(request.POST['id']))
-                        newfile = rf.logo
-                        if 'logo' in request.FILES:
-                            newfile = request.FILES['logo']
-                            newfile._name = generar_nombre("logo", newfile._name)
-                        rf.url=form.cleaned_data['url']
-                        rf.nombre=form.cleaned_data['nombre']
-                        rf.logo=newfile
-                        rf.save(request)
-                        log(u'Modifico referencia web: %s' % rf, request, "edit")
-                        return ok_json()
-                    else:
-                        return bad_json(error=6)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'delreferenciaweb':
-                try:
-                    from bib.models import ReferenciaWeb
-                    rf = ReferenciaWeb.objects.get(pk=request.POST['id'])
-                    log(u'Elimino Referencia Web: %s' % rf, request, "del")
-                    rf.delete()
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=2, ex=ex)
-
-            if action == 'tipourl':
-                try:
-                    form = ReferenciaWebForm(request.POST, request.FILES)
-                    if form.is_valid():
-                        from bib.models import OtraBibliotecaVirtual
-                        otrabibliotecavirtual = OtraBibliotecaVirtual.objects.filter(id=request.POST['id'])[0]
-                        otrabibliotecavirtual.externa = True if request.POST['valor'] == 'true' else False
-                        otrabibliotecavirtual.save()
-                        log(u'Modifico estado Tipo de URL: %s' % otrabibliotecavirtual, request, "edit")
-                        return ok_json()
-                except Exception as ex:
-                    return bad_json(error=3)
-
-            if action == 'addbibvirtual':
-                try:
-                    form = ReferenciaWebForm(request.POST, request.FILES)
-                    if form.is_valid():
-                        from bib.models import OtraBibliotecaVirtual
-                        newfile = None
-                        if 'logo' in request.FILES:
-                            newfile = request.FILES['logo']
-                            newfile._name = generar_nombre("logo", newfile._name)
-                        rf = OtraBibliotecaVirtual(url=form.cleaned_data['url'],
-                                                   nombre=form.cleaned_data['nombre'],
-                                                   descripcion=form.cleaned_data['descripcion'],
-                                                   logo=newfile)
-                        rf.save(request)
-                        log(u'Adiciono biblioteca virtual: %s' % rf, request, "add")
-                        return ok_json()
-                    else:
-                        return bad_json(error=6)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'editbibvirtual':
-                try:
-                    form = ReferenciaWebForm(request.POST, request.FILES)
-                    if form.is_valid():
-                        from bib.models import OtraBibliotecaVirtual
-                        rf = OtraBibliotecaVirtual.objects.get(pk=int(request.POST['id']))
-                        newfile = rf.logo
-                        if 'logo' in request.FILES:
-                            newfile = request.FILES['logo']
-                            newfile._name = generar_nombre("logo", newfile._name)
-                        rf.url = form.cleaned_data['url']
-                        rf.nombre = form.cleaned_data['nombre']
-                        rf.descripcion = form.cleaned_data['descripcion']
-                        rf.logo = newfile
-                        rf.save(request)
-                        log(u'Modifico biblioteca virtual: %s' % rf, request, "edit")
-                        return ok_json()
-                    else:
-                        return bad_json(error=6)
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'delbibvirtual':
-                try:
-                    from bib.models import OtraBibliotecaVirtual
-                    rf = OtraBibliotecaVirtual.objects.get(pk=request.POST['id'])
-                    log(u'Elimino Biblioteca virtual: %s' % rf, request, "del")
-                    rf.delete()
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=2, ex=ex)
 
             if action == 'addcompetenciagenerica':
                 try:
@@ -1874,56 +1753,7 @@ def view(request):
                 except Exception as ex:
                     pass
 
-            if action == 'editreferenciaweb':
-                try:
-                    data['title'] = u'Editar Referencia web'
-                    from bib.models import ReferenciaWeb
-                    data['rf'] = rf = ReferenciaWeb.objects.get(id=int(request.GET['id']))
-                    form = ReferenciaWebForm(initial={'nombre': rf.nombre,
-                                                      'url': rf.url})
-                    form.referencia()
-                    data['form'] = form
-                    return render(request, "adm_institucion/editreferenciaweb.html", data)
-                except Exception as ex:
-                    pass
 
-            if action == 'delreferenciaweb':
-                try:
-                    data['title'] = u'Eliminar Referencia'
-                    from bib.models import ReferenciaWeb
-                    data['rf'] = ReferenciaWeb.objects.get(id=int(request.GET['id']))
-                    return render(request, "adm_institucion/delreferencia.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'addbibvirtual':
-                try:
-                    data['title'] = u'Adicionar Biblioteca virtual'
-                    data['form'] = ReferenciaWebForm()
-                    return render(request, "adm_institucion/addbibvirtual.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'editbibvirtual':
-                try:
-                    data['title'] = u'Editar biblioteca virtual'
-                    from bib.models import OtraBibliotecaVirtual
-                    data['rf'] = rf = OtraBibliotecaVirtual.objects.get(id=int(request.GET['id']))
-                    data['form'] = ReferenciaWebForm(initial={'nombre': rf.nombre,
-                                                              'descripcion': rf.descripcion,
-                                                              'url': rf.url})
-                    return render(request, "adm_institucion/editbibvirtual.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'delbibvirtual':
-                try:
-                    data['title'] = u'Eliminar biblioteca virtual'
-                    from bib.models import OtraBibliotecaVirtual
-                    data['rf'] = OtraBibliotecaVirtual.objects.get(id=int(request.GET['id']))
-                    return render(request, "adm_institucion/delbibvirtual.html", data)
-                except Exception as ex:
-                    pass
 
             if action == 'addcompetenciagenerica':
                 try:
@@ -2214,11 +2044,12 @@ def view(request):
                         return render(request, "adm_institucion/2_4.html", data)
 
                 if seccion == 3:
-                    if subseccion == 0:
-                        from bib.models import ReferenciaWeb, OtraBibliotecaVirtual
-                        data['referenciasweb'] = ReferenciaWeb.objects.all()
-                        data['otrasbib'] = OtraBibliotecaVirtual.objects.all()
-                        return render(request, "adm_institucion/3_0.html", data)
+                    pass
+                    # if subseccion == 0:
+                    #     from bib.models import ReferenciaWeb, OtraBibliotecaVirtual
+                    #     data['referenciasweb'] = ReferenciaWeb.objects.all()
+                    #     data['otrasbib'] = OtraBibliotecaVirtual.objects.all()
+                    #     return render(request, "adm_institucion/3_0.html", data)
                     if subseccion == 1:
                         data['sedes'] = sedes = Sede.objects.all()
                         return render(request, "adm_institucion/3_1.html", data)

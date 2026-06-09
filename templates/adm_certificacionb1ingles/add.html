@@ -1,0 +1,19 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+<script type="text/javascript">
+    $(function(){
+        $("#id_fechainicio, #id_fechafin").datepicker({format:"dd-mm-yyyy"});
+        $("#id_nombre, #id_modalidad, #id_coordinacion").addClass("validate[required]");
+        $("#fieldset_fechainicioautoregistro,#fieldset_fechafinautoregistro").hide();
+        verificar = function(){ if ($("#id_autoregistro").is(':checked')) { $("#fieldset_fechainicioautoregistro,#fieldset_fechafinautoregistro").show(); } else { $("#fieldset_fechainicioautoregistro,#fieldset_fechafinautoregistro").hide(); } };
+        $("#id_autoregistro").click(function(){ verificar(); });
+        verificar();
+    });
+</script>
+{% endblock %}
+{% block atras %}/adm_certificacionb1ingles{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_certificacionb1ingles{% endblock %}
+{% block formdestination %}/adm_certificacionb1ingles{% endblock %}
+{% block formextra %}<input type='hidden' name='action' value='add'/>{% endblock %}
+{% block formback %}/adm_certificacionb1ingles{% endblock %}

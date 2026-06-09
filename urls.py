@@ -32,7 +32,9 @@ from ctt import commonviews, inscripciones, matriculas, fecha_evaluaciones, adm_
     adm_institucion, adm_colegios, adm_cursoscomplementarios, adm_evaluaciones, niveles, administrativos, \
     adm_asignaturas, adm_modelosevaluativos, docentes, \
     adm_calculofinanzas, adm_pagosnivel, servicios, gestion_servicios, registroexterno, ver_servicios, \
-    adm_ordenestrabajo, cli_finanzas, adm_cliente, adm_plantillacertificados, adm_emisioncertificados
+    adm_ordenestrabajo, cli_finanzas, adm_cliente, adm_plantillacertificados, adm_emisioncertificados, \
+    adm_convocatoriaexamensuficiencia, adm_certificacionb1ingles, alu_certificacionb1ingles, \
+    alu_postulacionexamensuficiencia
 
 import django.views.static
 
@@ -168,7 +170,10 @@ urlpatterns = [
     # INVESTIGACION MEDICINA
 
     # LABORATORIOS
-
+    path('adm_convocatoriaexamensuficiencia', adm_convocatoriaexamensuficiencia.view),
+    path('adm_certificacionb1ingles', adm_certificacionb1ingles.view),
+    path('alu_certificacionb1ingles', alu_certificacionb1ingles.view),
+    path('alu_postulacionexamensuficiencia', alu_postulacionexamensuficiencia.view),
 
 ]
 

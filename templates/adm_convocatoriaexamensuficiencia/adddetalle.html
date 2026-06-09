@@ -1,0 +1,10 @@
+{% extends "formbs.html" %}
+{% block atras %}/adm_convocatoriaexamensuficiencia?action=detalles&id={{ proceso.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block formdestination %}/adm_convocatoriaexamensuficiencia?action=detalles&id={{ proceso.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='adddetalle'/>
+    <input type='hidden' name='id' value='{{ proceso.id }}'/>
+{% endblock %}
+{% block formback %}/adm_convocatoriaexamensuficiencia?action=detalles&id={{ proceso.id }}{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "ajaxconfirmaciondinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block formdestination %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block formactionvalue %}autoregistrar{% endblock %}
+{% block formobjectid %}{{ convocatoria.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea auto registrar a los estudiantes de la sede, facultad y modalidad de la convocatoria:{% endblock %}
+{% block formobjectrepr %}{{ convocatoria }}{% endblock %}

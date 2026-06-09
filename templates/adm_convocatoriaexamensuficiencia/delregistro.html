@@ -1,0 +1,9 @@
+{% extends "ajaxdeletedinamicbs.html" %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block formdestination %}/adm_convocatoriaexamensuficiencia?action=registrados&id={{ registro.convocatoria.id }}{% endblock %}
+{% block formactionvalue %}delregistro{% endblock %}
+{% block formobjectid %}{{ registro.id }}{% endblock %}
+{% block formobjectname %}el registro{% endblock %}
+{% block formobjectrepr %}{{ registro.inscripcion }}{% endblock %}
+

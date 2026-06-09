@@ -1,0 +1,10 @@
+{% extends "formbs.html" %}
+{% block atras %}/adm_convocatoriaexamensuficiencia?action=detalles&id={{ detalle.convocatoriaconsultorio.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block formdestination %}/adm_convocatoriaexamensuficiencia?action=detalles&id={{ detalle.convocatoriaconsultorio.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editdetalle'/>
+    <input type='hidden' name='id' value='{{ detalle.id }}'/>
+{% endblock %}
+{% block formback %}/adm_convocatoriaexamensuficiencia?action=detalles&id={{ detalle.convocatoria.id }}{% endblock %}

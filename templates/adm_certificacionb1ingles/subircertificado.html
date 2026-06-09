@@ -1,0 +1,8 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}<script type="text/javascript">$(function(){ $("#id_archivo").addClass("validate[required]"); verifica_archivo(document.getElementById('id_archivo')); });</script>{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_certificacionb1ingles{% endblock %}
+{% block formdestination %}/adm_certificacionb1ingles?action=registrados&id={{ registro.convocatoria.id }}{% endblock %}
+{% block formextra %}<input type='hidden' name='action' value='subircertificado'/><input type='hidden' name='id' value='{{ registro.id }}'/>{% endblock %}
+{% block formsuffix %}<div class="alert alert-success mt-2 mb-0">Se habilita la descarga al estudiante despues de guardar el certificado.</div>{% endblock %}
+{% block formback %}/adm_certificacionb1ingles{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% block atras %}/adm_convocatoriaexamensuficiencia?action={% if p == 1 %}registradosubi{% else %}registrados{% endif %}&id={{ proceso.convocatoria.id }}{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Requisitos</th>
+                    <th style="width: 80px; text-align: center">Obligatorio</th>
+                    <th style="width: 80px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for requisito in requisitos %}
+                    {% if requisito.archivo %}
+                    <tr>
+                        <td>{{ requisito.requisito.tipo }}</td>
+                        <td style="text-align: center">
+                            {% if requisito.requisitosdetalleconvocatoriaconsultorio.obligatorio %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Obligatorio">Si</span>
+                            {% else %}
+                                <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Obligatorio">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            <a class="btn btn-ssm btn-success tu" href="{{ requisito.archivo.url }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar" target="_blank"><i class="icon-download-alt"></i></a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

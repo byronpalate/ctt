@@ -1,0 +1,17 @@
+{% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+            $("#id_fecha").datepicker({format:"dd-mm-yyyy"});
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block formdestination %}/adm_convocatoriaexamensuficiencia?action=detalles&id={{ proceso.id }}{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='editfechaexamen'/>
+    <input type='hidden' name='id' value='{{ proceso.id }}'/>
+{% endblock %}
+{% block formback %}/adm_convocatoriaexamensuficiencia{% endblock %}

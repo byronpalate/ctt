@@ -1,0 +1,158 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript">
+        $(function() {
+            busqueda = function(){
+                var term = $("#busqueda").val().toUpperCase().trim();
+                if (term.length > 0){ location.href = "/adm_certificacionb1ingles?action=registrados&id={{ proceso.id }}&s=" + term; }
+                else { $("#busqueda").focus(); }
+            };
+            $("#search").click(function(){ busqueda(); });
+            $('#busqueda').keyup(function(e) { if(e.keyCode === 13) { busqueda(); } }).focus().select();
+
+            $('.notaexamenb1').change(function () {
+                var elemento = $(this);
+                var id = parseInt(elemento.attr('rid'));
+                var nota = parseFloat((elemento.val() || '0').replace(',', '.'));
+                if (isNaN(nota) || nota < 0 || nota > 10) {
+                    elemento.val(elemento.attr('valor-original'));
+                    NotificacionAlerta('Alerta', 'Nota invalida', 'La nota del examen debe estar entre 0 y 10.');
+                    return false;
+                }
+                bloqueointerface();
+                $.ajax({
+                    type: "POST",
+                    url: "/adm_certificacionb1ingles",
+                    data: {
+                        'action': 'calificar',
+                        'id': id,
+                        'notaexamen': nota,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function (data) {
+                        desbloqueointerface();
+                        if (data.result === 'ok') {
+                            location.href = "/adm_certificacionb1ingles?action=registrados&id={{ proceso.id }}{% if search %}&s={{ search }}{% endif %}&page={{ page.number }}";
+                        } else {
+                            elemento.val(elemento.attr('valor-original'));
+                            NotificacionAlerta('Alerta', 'No se pudo guardar', data.mensaje || 'Revise la nota ingresada.');
+                        }
+                    },
+                    error: function () {
+                        desbloqueointerface();
+                        elemento.val(elemento.attr('valor-original'));
+                        NotificacionError('Error', 'Error de conexion');
+                    },
+                    dataType: "json"
+                });
+            });
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_certificacionb1ingles{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2"><div class="col-12"><h4>{{ title }}</h4><h4>{{ proceso }}</h4></div></div>
+    <div class="row mb-2">
+        <div class="col-12 col-md-7 mb-2">
+            <a href="/adm_certificacionb1ingles?action=descargarregistrados&id={{ proceso.id }}" target="_blank" class='btn btn-sm btn-warning'><i class="icon-download-alt"></i> Descargar</a>
+            {% if not proceso.cerrado %}
+                <a href="javascript:;" nhref="/adm_certificacionb1ingles?action=subirnotas&id={{ proceso.id }}" class='btn btn-sm btn-info formmodal'><i class="icon-upload"></i> Subir archivo</a>
+                <a href="javascript:;" nhref="/adm_certificacionb1ingles?action=addregistro&id={{ proceso.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Añadir estudiante</a>
+            {% else %}
+                <span class="badge text-bg-danger">Convocatoria cerrada</span>
+            {% endif %}
+            <span class="badge text-bg-secondary">Formula: niveles 60% + examen 40%</span>
+            <span class="badge text-bg-warning">Minimo {{ 7|floatformat:2 }}/10</span>
+        </div>
+        <div class='col-12 col-md-3 mb-2'>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm" id="busqueda" value='{{ search }}' autocomplete="off">
+                <a href="javascript:;" class="btn btn-sm btn-outline-secondary" id='search'><i class="icon-search"></i></a>
+                {% if search %}<a href="/adm_certificacionb1ingles?action=registrados&id={{ proceso.id }}" class="btn btn-sm btn-outline-secondary"><i class="icon-refresh"></i></a>{% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Estudiante</th>
+                    <th style="width: 230px">Carrera</th>
+                    <th style="width: 80px; text-align: center">Valor</th>
+                    <th style="width: 80px; text-align: center">Pagado</th>
+                    <th style="width: 90px; text-align: center">Prom. niveles</th>
+                    <th style="width: 90px; text-align: center">Aporte 60%</th>
+                    <th style="width: 90px; text-align: center">Examen</th>
+                    <th style="width: 90px; text-align: center">Aporte 40%</th>
+                    <th style="width: 90px; text-align: center">Final</th>
+                    <th style="width: 80px; text-align: center">Estado</th>
+                    <th style="width: 80px; text-align: center">Certificado</th>
+                    <th style="width: 60px; text-align: center">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for r in registrados %}
+                    {% with calculo=transparencia|get_item:r.id %}
+                    <tr>
+                        <td>{{ r.inscripcion.persona }}<br><span class="badge text-bg-info">{{ r.inscripcion.persona.cedula }}</span></td>
+                        <td>{{ r.inscripcion.carrera.nombre }}<br>{{ r.inscripcion.modalidad }} - {{ r.inscripcion.sede }}</td>
+                        <td style="text-align: right">{% if r.rubropagar %}$ {{ r.valor|floatformat:2|intcomma }}{% endif %}</td>
+                        <td style="text-align: center">{% if r.rubropagar %}{% if r.pagada %}<span class="badge text-bg-success">Si</span>{% else %}<span class="badge text-bg-danger">No</span>{% endif %}{% endif %}</td>
+                        <td style="text-align: center">{{ calculo.datosniveles.promedio|floatformat:2 }}</td>
+                        <td style="text-align: center">{{ calculo.aporte_niveles|floatformat:2 }}</td>
+                        <td style="text-align: center">
+                            {% if proceso.cerrado or not r.pagada %}
+                                {{ r.notaexamenconocimientos|floatformat:2 }}
+                                {% if not r.pagada %}<br><span class="badge text-bg-warning">Sin pago</span>{% endif %}
+                            {% else %}
+                                <input type="text"
+                                       class="notaexamenb1 input-mini form-control-sm"
+                                       rid="{{ r.id }}"
+                                       valor-original="{{ r.notaexamenconocimientos|default_if_none:'0' }}"
+                                       value="{{ r.notaexamenconocimientos|default_if_none:'0' }}"
+                                       style="font-size: 11px; margin: 0; width: 50px; padding: 4px 0; text-align: center"/>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">{{ calculo.aporte_examen|floatformat:2 }}</td>
+                        <td style="text-align: center"><b>{{ calculo.notafinal|floatformat:2 }}</b></td>
+                        <td style="text-align: center">{% if r.cerrada %}{% if r.aprobado %}<span class="badge text-bg-success">Aprobado</span>{% else %}<span class="badge text-bg-danger">No aprobado</span>{% endif %}{% else %}<span class="badge text-bg-warning">Pendiente</span>{% endif %}</td>
+                        <td style="text-align: center">
+                            {% if r.archivo %}
+                                <a class="btn btn-ssm btn-success" href="{{ r.archivo.url }}" target="_blank"><i class="icon-download-alt"></i></a>
+                            {% else %}
+                                <span class="badge text-bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            <div class="btn-group dropdown">
+                                <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" href="javascript:;">Acciones <span class="caret"></span></a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="/adm_certificacionb1ingles?action=transparencia&id={{ r.id }}" class="btn btn-sm dropdown-item"><i class="icon-eye-open"></i> Ver calculo 60%</a></li>
+                                    {% if r.archivo %}<li><a href="{{ r.archivo.url }}" target="_blank" class="dropdown-item"><i class="icon-download-alt"></i> Descargar certificado</a></li>{% endif %}
+                                    {% if not proceso.cerrado and r.archivo %}<li><a href="javascript:;" nhref="/adm_certificacionb1ingles?action=delcertificado&id={{ r.id }}" class="btn btn-sm confirmacionmodal dropdown-item"><i class="icon-remove"></i> Eliminar certificado</a></li>{% endif %}
+                                    {% if not proceso.cerrado and r.aprobado and not r.archivo %}<li><a href="javascript:;" nhref="/adm_certificacionb1ingles?action=subircertificado&id={{ r.id }}" class="btn btn-sm formmodal dropdown-item"><i class="icon-upload"></i> Subir certificado</a></li>{% endif %}
+                                    {% if not proceso.cerrado %}
+                                        <li class="dropdown-divider"></li>
+                                        <li><a class="btn btn-sm eliminacionmodal dropdown-item" href="javascript:;" nhref="/adm_certificacionb1ingles?action=delregistro&id={{ r.id }}"><i class="icon-remove"></i> Eliminar registro</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                {% empty %}
+                    <tr><td colspan="20">NO EXISTEN DATOS</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class='row'><div class="col-12"><ul class='pagination'>
+        {% for pagenumber in paging.page_range %}<li {% if pagenumber == page.number %}class='active page-item'{% else %}class='page-item'{% endif %}><a href="/adm_certificacionb1ingles?action=registrados&id={{ proceso.id }}&{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}" class="page-link">{{ pagenumber }}</a></li>{% endfor %}
+    </ul></div></div>
+{% endblock %}

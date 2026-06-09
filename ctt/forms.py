@@ -40,7 +40,7 @@ from ctt.models import Persona, Canton, Malla, Nivel, Periodo, Materia, Turno, S
     Clase, \
     TipoIntegracion, CodigoEvaluacion, IvaAplicado, Cliente, Factura, EspacioFisico, ServicioCatalogo, TipoServicio, \
     Proforma, PlantillaCertificadosEnLinea, CampoPlantillaCertificado, APROBADO_ASISTENCIA, TIPO_PROGRAMA_CERTIFICADO, \
-    TIPOS_PERSONA_PROGRAMAS, MODALIDADES_PROGRAMA_CERTIFICADO
+    TIPOS_PERSONA_PROGRAMAS, MODALIDADES_PROGRAMA_CERTIFICADO, TipoConvocatoriaExamenSuficiencia
 
 
 # Servicio,
@@ -3350,3 +3350,83 @@ class ConfiguracionCertificadoProgramaForm(BaseForm):
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
         self.fields['formwidth'].initial = 'lg'
+
+
+
+class ProcesoExamenSuficienciaForm(BaseForm):
+    nombre = forms.CharField(label=u"Nombre", max_length=200)
+    tipoconvocatoria = forms.ModelChoiceField(label=u'Tipo Convocatoria', queryset=TipoConvocatoriaExamenSuficiencia.objects.all(), required=False, widget=forms.Select())
+    coordinacion = forms.ModelMultipleChoiceField(label=u"Coordinación", queryset=Coordinacion.objects, required=False, widget=CheckboxSelectMultipleCustom())
+    modalidad = forms.ModelMultipleChoiceField(label=u"Modalidad", queryset=Modalidad.objects, required=False, widget=CheckboxSelectMultipleCustom())
+    fechainicio = forms.DateField(label=u"Inicio", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    fechafin = forms.DateField(label=u"Fin", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    mensaje = forms.CharField(label=u'Mensaje', required=False, widget=forms.Textarea(attrs={'rows': '7 ','class':'form-control', 'placeholder': 'Mensaje inicial'}))
+    autoregistro = forms.BooleanField(label=u'Auto Registro', required=False, initial=False)
+    fechainicioautoregistro = forms.DateField(label=u"Inicio Autoregistro", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    fechafinautoregistro = forms.DateField(label=u"Fin Autoregistro", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y',  attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class FechaExamenSuficienciaForm(BaseForm):
+    fecha = forms.DateField(label=u"Fecha de Rendición ", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+
+    def extra_paramaters(self):
+        self.fields['formwidth'].initial = 'md'
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class DetalleConvocatoriaExamenSuficienciaForm(BaseForm):
+    descripcion = forms.CharField(widget=forms.Textarea(attrs={'rows': '2', 'maxlength': '1000', 'class': 'form-control'}), required=False, label=u"Descripción")
+    inicio = forms.DateField(label=u"Inicio", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    fin = forms.DateField(label=u"Fin", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
+    informativo = forms.BooleanField(initial=False, required=False, label=u'Informativo')
+
+    def editar(self, actividad):
+        if actividad.convocatoriaconsultorio.activo:
+            del self.fields['inicio']
+            del self.fields['fin']
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class RequisitosDetalleFechaProcesoExamenSuficienciaForm(BaseForm):
+    tipo = forms.CharField(label=u'Tipo de requisito', required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}))
+    obligatorio = forms.BooleanField(initial=True, required=False, label=u'Obligatorio')
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+class RangosNotasExamenInglesForm(BaseForm):
+    inicio = forms.FloatField(label=u'De', required=False, initial=0, widget=forms.TextInput(attrs={'class': 'imp-numbersmall'}))
+    fin = forms.FloatField(label=u'A', required=False, initial=0, widget=forms.TextInput(attrs={'class': 'imp-numbersmall'}))
+    nivel = forms.IntegerField(label=u'Aprueba hasta', required=False, initial=0, widget=forms.TextInput(attrs={'class': 'imp-numbersmall'}))
+    aprueba = forms.BooleanField(label=u"Aprueba?", required=False, initial=True)
+    nota = forms.IntegerField(label=u'Nota', required=False, initial=0, widget=forms.TextInput(attrs={'class': 'imp-numbersmall'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formwidth'].initial = 'md'
+
+
+
+class ArchivoListadoAprobadosExamenComplexivoForm(BaseForm):
+    archivo = ExtFileField(label=u'Seleccione archivo', required=False, help_text=u'Tamaño máximo permitido 4Mb, en formato doc, docx, pdf, jpg, png',ext_whitelist=(".doc", ".docx", ".pdf", ".jpg", ".png"), max_upload_size=4194304)
+
+    def extra_paramaters(self):
+        self.fields['formwidth'].initial = 'md'
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+
+class RequisitosDetalleFechaProcesoExamenSuficienciaForm(BaseForm):
+    tipo = forms.CharField(label=u'Tipo de requisito', required=False, widget=forms.Textarea(attrs={'rows': '3', 'class': 'form-control'}))
+    obligatorio = forms.BooleanField(initial=True, required=False, label=u'Obligatorio')
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+
+class RegistroEstudianteExamenInglesForm(BaseForm):
+    inscripcion = forms.IntegerField(initial='', label=u'Estudiante', widget=forms.TextInput(attrs={'select2search': 'true', 'class': 'select2advance'}))
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'

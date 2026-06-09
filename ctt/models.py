@@ -357,6 +357,13 @@ TIPOS_APROBACION_PROTOCOLO = (
     (2, u'Comité de Ética asistencial'),
     (3, u'Otro')
 )
+
+ESTADOS_HOMOLOGACION = (
+    (1, u'APROBADO'),
+    (2, u'PRUEBA CONOCIMIENTO'),
+    (3, u'POR APROBAR'),
+)
+
 class Perms(models.Model):
     class Meta:
         permissions = (
@@ -18767,3 +18774,317 @@ class Certificados(ModeloBase):
         self.ciudad = null_to_text(self.ciudad)
         self.nombres = null_to_text(self.nombres)
         super(Certificados, self).save(*args, **kwargs)
+
+
+
+class TipoConvocatoriaExamenSuficiencia(ModeloBase):
+    nombre = models.CharField(default='', max_length=500)
+    nombrerubro = models.CharField(default='', max_length=200)
+
+    def __str__(self):
+        return u'%s' % self.nombre
+
+    def save(self, *args, **kwargs):
+        self.nombre = null_to_text(self.nombre)
+        self.nombrerubro = null_to_text(self.nombrerubro)
+        super(TipoConvocatoriaExamenSuficiencia, self).save(*args, **kwargs)
+
+
+class ConvocatoriaExamenSuficiencia(ModeloBase):
+    periodo = models.ForeignKey(Periodo, verbose_name=u'Periodo', on_delete=models.CASCADE)
+    sede = models.ForeignKey(Sede, verbose_name=u'Sede', on_delete=models.CASCADE)
+    coordinacion = models.ManyToManyField(Coordinacion, verbose_name=u"Coordinacion")
+    modalidad = models.ManyToManyField(Modalidad, verbose_name=u"Modalidad")
+    fechainicio = models.DateField(verbose_name=u"Fecha inicio")
+    fechafin = models.DateField(verbose_name=u"Fecha fin")
+    nombre = models.CharField(default='', max_length=200)
+    tipoconvocatoria = models.ForeignKey(TipoConvocatoriaExamenSuficiencia, null=True, verbose_name=u'Periodo', on_delete=models.CASCADE)
+    activo = models.BooleanField(default=False)
+    listadoaprobados = models.FileField(upload_to='aprobados/%Y/%m/%d', blank=True, null=True, verbose_name=u'Listado aprobados')
+    mensaje = models.TextField(default='', verbose_name=u'Mensaje')
+    fechaexamen = models.DateField(blank=True, null=True, verbose_name=u"Fecha de examen")
+    autoregistro = models.BooleanField(default=False, verbose_name=u"Auto Registro")
+    fechainicioautoregistro = models.DateField(blank=True, null=True, verbose_name=u"Fecha inicio autoregistro")
+    fechafinautoregistro = models.DateField(blank=True, null=True, verbose_name=u"Fecha fin autoregistro")
+    activo = models.BooleanField(default=False, verbose_name=u"Activo")
+    cerrado = models.BooleanField(default=False, verbose_name=u"Cerrado")
+
+    def __str__(self):
+        return u'%s' % self.nombre
+
+    class Meta:
+        verbose_name_plural = u"Convocatoria Consultorio Jurídico"
+        ordering = ('-fechainicio',)
+
+    @staticmethod
+    def flexbox_query(q, filtro=None, exclude=None, cantidad=None):
+        return eval(("ConvocatoriaExamenSuficiencia.objects.filter(Q(nombre__contains='%s') | Q(id=id_search('%s')))" % (q, q)) + (".filter(%s)" % filtro if filtro else "") + (".exclude(%s)" % exclude if exclude else "") + (".distinct()") + ("[:%s]" % cantidad if cantidad else ""))
+
+    def flexbox_repr(self):
+        return self.nombre + ' - ' + str(self.id)
+
+    def registro(self, inscripcion):
+        if ProcesoAplicanteExamenSuficiencia.objects.filter(inscripcion=inscripcion, convocatoria=self).exists():
+            return ProcesoAplicanteExamenSuficiencia.objects.filter(inscripcion=inscripcion, convocatoria=self)[0]
+        return None
+
+    def registro_habilitado(self):
+        return ConvocatoriaExamenSuficiencia.objects.filter(pk=self.id, fechafin__gte=date.today(), activo=True, cerrado=False).exists()
+
+    def cantidad_registros(self):
+        return ProcesoAplicanteExamenSuficiencia.objects.filter(convocatoria=self).count()
+
+    def save(self, *args, **kwargs):
+        self.nombre = null_to_text(self.nombre)
+        super(ConvocatoriaExamenSuficiencia, self).save(*args, **kwargs)
+
+class DetalleConvocatoriaExamenSuficiencia(ModeloBase):
+    convocatoriaconsultorio = models.ForeignKey(ConvocatoriaExamenSuficiencia, verbose_name=u'Convocatoria Consultorio Jurídico', on_delete=models.CASCADE)
+    descripcion = models.TextField(blank=True, null=True, verbose_name=u'Descripción')
+    inicio = models.DateField(verbose_name=u'Fecha inicio')
+    fin = models.DateField(verbose_name=u'Fecha fin')
+    informativo = models.BooleanField(default=False, verbose_name=u'Informativo')
+
+    def __str__(self):
+        return u'%s - %s' % (self.convocatoriaconsultorio, self.descripcion)
+
+    def cantidad_requisitos(self):
+        return self.requisitosdetalleconvocatoriaexamensuficiencia_set.all().count()
+
+    def habilitado(self):
+        return DetalleConvocatoriaExamenSuficiencia.objects.filter(pk=self.id, fin__gte=date.today()).exists()
+
+    def save(self, *args, **kwargs):
+        self.descripcion = null_to_text(self.descripcion)
+        super(DetalleConvocatoriaExamenSuficiencia, self).save(*args, **kwargs)
+
+class RequisitosDetalleConvocatoriaExamenSuficiencia(ModeloBase):
+    detalleproceso = models.ForeignKey(DetalleConvocatoriaExamenSuficiencia, verbose_name=u'Requisito Proceso Convocatoria', on_delete=models.CASCADE)
+    tipo = models.TextField(default='')
+    obligatorio = models.BooleanField(default=True)
+
+    def __str__(self):
+        return u'%s' % self.tipo
+
+    def detalle_en_fechas(self):
+        if DetalleConvocatoriaExamenSuficiencia.objects.filter(pk=self.detalleproceso.id, activo=True).exists():
+            d = DetalleConvocatoriaExamenSuficiencia.objects.filter(pk=self.detalleproceso.id, activo=True)[0]
+            if d.fin < date.today():
+                return u'Expirado'
+            elif d.inicio > date.today():
+                return u'Pendiente'
+            elif DetalleConvocatoriaExamenSuficiencia.objects.filter(pk=self.detalleproceso.id, inicio__lte=date.today(), fin__gte=date.today(), activo=True).exists():
+                return 0
+            else:
+                return u'Pendiente'
+        else:
+            return u'Pendiente'
+
+    def verificar_archivo_requerimiento_ingles(self,aplicante):
+        return RequisitosProcesoAplicanteSuficiencia.objects.filter(requisito=self, proceso=aplicante).first()
+
+    def save(self, *args, **kwargs):
+        self.tipo = null_to_text(self.tipo)
+        super(RequisitosDetalleConvocatoriaExamenSuficiencia, self).save(*args, **kwargs)
+
+class ProcesoAplicanteExamenSuficiencia(ModeloBase):
+    convocatoria = models.ForeignKey(ConvocatoriaExamenSuficiencia, verbose_name=u'Convocatoria', on_delete=models.CASCADE)
+    detalleconvocatoria = models.ForeignKey(DetalleConvocatoriaExamenSuficiencia, blank=True, null=True, verbose_name=u'Detalle Fecha Proceso beca', on_delete=models.CASCADE)
+    fechaaplicacion = models.DateField(blank=True, null=True)
+    inscripcion = models.ForeignKey(Inscripcion, verbose_name=u'Inscripcion', on_delete=models.CASCADE)
+    aproboexamenconocimientos = models.BooleanField(default=False, verbose_name=u'Aprobó examen de conocimientos')
+    notaexamenconocimientos = models.FloatField(default=0, verbose_name=u'Nota examen de conocimientos')
+    promedionotas = models.FloatField(default=0, verbose_name=u'Promedio notas')
+    notafinal = models.FloatField(default=0, verbose_name=u'Nota final')
+    cerrada = models.BooleanField(default=False, verbose_name=u'Cerrada')
+    aprobado = models.BooleanField(default=False, verbose_name=u'Aprobado')
+    registrodeposito = models.BooleanField(default=False, verbose_name=u'Registro deposito')
+    puederegistrarse = models.BooleanField(default=False, verbose_name=u'Autorizar para registro')
+    archivo = models.FileField(upload_to='certificadoingles/%Y/%m/%d', blank=True, null=True, verbose_name=u'Archivo')
+    fechatope = models.DateField(null=True, blank=True, verbose_name=u"Fecha límite de cancelación")
+    formalizada = models.BooleanField(default=False, verbose_name=u"Formalizada")
+    pasorecord = models.BooleanField(default=False, verbose_name=u"Paso a Record")
+    fecha_pasarecord = models.DateField(blank=True, null=True)
+    generorubros = models.BooleanField(default=False, verbose_name=u"Genero Rubros")
+
+    def __str__(self):
+        try:
+            persona = self.inscripcion.persona
+        except Exception:
+            persona = u'Sin alumno'
+
+        return u'Postulación id: %s - Alumno: %s - Inscripción id: %s - Convocatoria: %s' % (self.id, persona, self.inscripcion_id, self.convocatoria)
+
+    def esta_pendiente(self):
+        return self.cerrada
+
+    def examen_conocimientos(self):
+        inscripcion = self.inscripcion
+        if inscripcion.exameninscripcion_set.filter(examenadmision__examenareabancopreguntas__areabancopregunta_id=25).exists():
+            examen = inscripcion.exameninscripcion_set.filter(examenadmision__examenareabancopreguntas__areabancopregunta_id=25)[0]
+            if examen.respuestaexamenadmision_set.exists():
+                return examen.respuestaexamenadmision_set.all()[0]
+        return False
+
+    def examen_conocimientos_generado(self, convocatoria):
+        inscripcion = self.inscripcion
+        return inscripcion.exameninscripcion_set.filter(convocatoriaconsultoriojuridico=convocatoria).exists()
+
+    def rubropagar(self):
+        if self.inscripcion.rubro_set.filter(nombre__icontains='EXAMEN DE ' + self.convocatoria.tipoconvocatoria.nombrerubro + ' DE INGLES').exists():
+            return self.inscripcion.rubro_set.filter(nombre__icontains='EXAMEN DE ' + self.convocatoria.tipoconvocatoria.nombrerubro + ' DE INGLES')[0]
+
+    def valor(self):
+        rubro = self.rubropagar()
+        return rubro.valor if rubro else 0
+
+    def pagada(self):
+        rubro = self.rubropagar()
+        return rubro.cancelado if rubro else True
+
+    def tiene_rubros_pagados(self):
+        return Pago.objects.filter(rubro__rubrootro__tipo_id=23, rubro__inscripcion__rubro__inscripcion__procesoaplicanteexamensuficiencia=self).exists()
+
+    def eliminar_rubros_examen_total(self):
+        for rubro in RubroOtro.objects.filter(rubro__rubrootro__tipo_id=23, rubro__inscripcion__procesoaplicanteexamensuficiencia=self):
+            r = rubro.rubro
+            r.delete()
+
+    def nivelesaprobados(self):
+        return PreValidacionIngles.objects.filter(proceso=self)
+
+    def pasa_record(self):
+        return self.pagada() and self.generorubros and PreValidacionIngles.objects.filter(proceso=self, estadofin=1).exists()
+
+    def verifica_pasa_record_ubicacion(self):
+        return PreValidacionIngles.objects.filter(proceso=self, estadofin=1).exists()
+
+    def nivelesaprobadostexto(self):
+        modulos = PreValidacionIngles.objects.filter(proceso=self, estadofin=1).values_list('asignatura__nombre', flat=True)
+        if modulos:
+            return ', '.join(modulos)
+        return 'Ninguno'
+
+    def save(self, *args, **kwargs):
+        super(ProcesoAplicanteExamenSuficiencia, self).save(*args, **kwargs)
+
+class RequisitosProcesoAplicanteSuficiencia(ModeloBase):
+    proceso = models.ForeignKey(ProcesoAplicanteExamenSuficiencia, verbose_name=u'Proceso Aplicante Consultorio', on_delete=models.CASCADE)
+    requisito = models.ForeignKey(RequisitosDetalleConvocatoriaExamenSuficiencia, verbose_name=u'Requisitos Detalle Convocatoria Consultorio', on_delete=models.CASCADE)
+    archivo = models.FileField(upload_to='requisitosconsultorio/%Y/%m/%d', blank=True, null=True, verbose_name=u'Archivo')
+
+    def save(self, *args, **kwargs):
+        super(RequisitosProcesoAplicanteSuficiencia, self).save(*args, **kwargs)
+
+
+class RangosNotasExamenUbicacionIngles(ModeloBase):
+    inicio = models.FloatField(default=0, verbose_name=u"De")
+    fin = models.FloatField(default=0, verbose_name=u"A")
+    nivel = models.IntegerField(default=0, verbose_name=u"Nivel aprueba")
+
+
+
+class RangosNotasExamenValidacionIngles(ModeloBase):
+    inicio = models.FloatField(default=0, verbose_name=u"De")
+    fin = models.FloatField(default=0, verbose_name=u"A")
+    aprueba = models.BooleanField(default=True, verbose_name=u'Aprueba')
+    nota = models.IntegerField(default=0, verbose_name=u"nota que aprueba")
+
+
+
+class PreValidacionIngles(ModeloBase):
+    proceso = models.ForeignKey(ProcesoAplicanteExamenSuficiencia, blank=True, null=True, verbose_name=u'Pre Homologacion', on_delete=models.CASCADE)
+    asignatura = models.ForeignKey(Asignatura, blank=True, null=True, verbose_name=u'Asignatura UTI', on_delete=models.CASCADE)
+    asignaturamalla = models.ForeignKey(AsignaturaMalla, blank=True, null=True, verbose_name=u'Modulo malla', on_delete=models.CASCADE)
+    fecha = models.DateField(blank=True, null=True, verbose_name=u'Fecha')
+    horas = models.FloatField(default=0, blank=True, verbose_name=u'Horas')
+    creditos = models.FloatField(default=0, blank=True, verbose_name=u'Creditos')
+    periodo = models.ForeignKey(Periodo, blank=True, null=True, verbose_name=u'Periodo', on_delete=models.CASCADE)
+    nota = models.FloatField(default=0, blank=True, verbose_name=u'Calificación')
+    horasext = models.FloatField(default=0, blank=True, verbose_name=u'Horas Ext.')
+    creditosext = models.FloatField(default=0, blank=True, verbose_name=u'creditos Ext.')
+    contenido = models.FloatField(default=0, verbose_name=u'Contenido')
+    observaciones = models.CharField(default='', max_length=300, verbose_name=u'Observaciones')
+    estadocon = models.IntegerField(choices=ESTADOS_HOMOLOGACION, default=1, verbose_name=u"Estado de con homo")
+    nota_conocimiento = models.FloatField(default=0, blank=True, verbose_name=u'Calificación Conocimiento')
+    nota_final = models.FloatField(default=0, blank=True, verbose_name=u'Calificación Final')
+    estadofin = models.IntegerField(choices=ESTADOS_HOMOLOGACION, default=1, verbose_name=u"Estado de con homo")
+
+    def __str__(self):
+        return u'%s [Nota:%s]' % (self.asignatura, str(self.nota))
+
+    class Meta:
+        verbose_name_plural = u"Pre validacion modulos ingles"
+        unique_together = ('proceso', 'asignatura',)
+
+    def pasar_record_modulo(self):
+        self.save()
+        asignatura = self.asignatura
+        asignaturamalla = self.asignaturamalla
+        validacreditos = asignaturamalla.validacreditos
+        validapromedio = asignaturamalla.validapromedio
+        creditos = asignaturamalla.creditos
+        horas = asignaturamalla.horas
+        asistenciafinal = 100
+        aprobada = True
+        convalidada = False
+        homologada = False
+
+        existente = None
+        if HistoricoRecordAcademico.objects.filter(inscripcion=self.proceso.inscripcion, asignatura=asignatura,
+                                                   modulovalidacion=self).exists():
+            existente = \
+                HistoricoRecordAcademico.objects.filter(inscripcion=self.proceso.inscripcion, asignatura=asignatura,
+                                                        modulovalidacion=self)[0]
+        if existente:
+            existente.nota = self.nota_final
+            existente.asignaturamalla = self.proceso.inscripcion.asignatura_en_asignaturamalla(asignatura)
+            existente.horas = horas
+            existente.creditos = creditos
+            existente.validacreditos = validacreditos
+            existente.validapromedio = validapromedio
+            existente.asistencia = asistenciafinal
+            existente.sinasistencia = False
+            existente.fecha = self.fecha
+            existente.convalidacion = convalidada
+            existente.homologada = homologada
+            existente.aprobada = aprobada
+            existente.pendiente = False
+            if self.proceso.convocatoria.tipoconvocatoria.id == 1:
+                existente.observaciones = (self.periodo.nombre[:99] + " - " + "APRUEBA EXAMEN DE VALIDACION")
+            if self.proceso.convocatoria.tipoconvocatoria.id == 2:
+                existente.observaciones = (self.periodo.nombre[:99] + " - " + "APRUEBA EXAMEN DE UBICACION")
+
+            existente.save()
+            existente.actualizar()
+        else:
+            if self.proceso.convocatoria.tipoconvocatoria.id == 1:
+                texto = "APRUEBA EXAMEN DE VALIDACION"
+            if self.proceso.convocatoria.tipoconvocatoria.id == 2:
+                texto = "APRUEBA EXAMEN DE UBICACION"
+
+            historico = HistoricoRecordAcademico(inscripcion=self.proceso.inscripcion,
+                                                 asignatura=asignatura,
+                                                 asignaturamalla=self.proceso.inscripcion.asignatura_en_asignaturamalla(
+                                                     asignatura),
+                                                 nota=self.nota_final,
+                                                 creditos=creditos,
+                                                 horas=horas,
+                                                 validacreditos=validacreditos,
+                                                 validapromedio=validapromedio,
+                                                 asistencia=asistenciafinal,
+                                                 sinasistencia=False,
+                                                 fecha=self.fecha,
+                                                 convalidacion=convalidada,
+                                                 homologada=homologada,
+                                                 aprobada=aprobada,
+                                                 pendiente=False,
+                                                 observaciones=(self.periodo.nombre[:99] + " - " + texto),
+                                                 modulovalidacion=self)
+            historico.save()
+            if self.proceso.inscripcion.recordacademico_set.filter(asignatura=historico.asignatura).exists():
+                historico.recordacademico = \
+                    self.proceso.inscripcion.recordacademico_set.filter(asignatura=historico.asignatura)[0]
+                historico.save()
+            historico.actualizar()
+        self.proceso.inscripcion.actualizar_nivel()

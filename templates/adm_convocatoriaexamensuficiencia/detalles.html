@@ -1,0 +1,116 @@
+{% extends "basebs.html" %}
+{% load humanize %}
+{% load ctt_extras %}
+{% block heading %}
+    <script type="text/javascript" src="/static/js/jquery.fancybox.pack.js?v={{ institucion.versionstaticsjs }}"></script>
+    <link rel="stylesheet" href="/static/css/jquery.fancybox.css?v={{ institucion.versionstaticscss }}" type="text/css" media="screen" />
+    <script type="text/javascript">
+        $(document).ready(function() {
+            if ($.fn.fancybox) { $(".fancybox").fancybox(); }
+        });
+
+        $(function() {
+            busqueda = function(){
+                var term = $("#busqueda").val().toUpperCase().trim();
+                if (term.length>0){
+                    location.href = "/adm_convocatoriaexamensuficiencia?s="+term;
+                } else {
+                    $("#busqueda").focus();
+                }
+            };
+
+            $("#search").click(function(){
+                busqueda();
+            });
+
+            $('#busqueda').keyup(function(e) {
+                if(e.keyCode === 13) {
+                    busqueda();
+                }
+            }).focus().select();
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/adm_convocatoriaexamensuficiencia{% endblock %}
+{% block headcanvas %}
+    <div class="row mb-2">
+        <div class="col-12">
+            <h4>{{ title }}</h4>
+        </div>
+    </div>
+
+{% endblock %}
+{% block canvas %}
+    <div class='row-fluid'>
+        <div class='col-12'>
+            <table class='table table-striped table-bordered'>
+                <tbody>
+                    <tr>
+                        <td><b>FECHA DE EVALUACIÓN IN SITU</b> </td>
+                        <td style="text-align: center; width: 260px">{{ proceso.fechaexamen|date:"Y-m-d"}}</td>
+                        <td style="text-align: center; width: 80px">
+                            <a class="btn btn-sm btn-success tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_convocatoriaexamensuficiencia?action=editfechaexamen&id={{ proceso.id }}"><i class="icon-edit"></i></a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if not proceso.activo %}
+        <div class='row mb-2'>
+            <div class="col-6">
+                <a href="javascript:;" nhref="/adm_convocatoriaexamensuficiencia?action=adddetalle&id={{ proceso.id }}" class='btn btn-sm btn-success formmodal'><i class="icon-plus"></i> Adicionar</a>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class='row-fluid'>
+        <div class='col-12 responsive'>
+            <table class='table table-striped table-bordered'>
+                <thead class="table-light">
+                <tr>
+                    <th>Descripción</th>
+                    <th style="width: 80px; text-align: center">Inicio</th>
+                    <th style="width: 80px; text-align: center">Fin</th>
+                    <th style="width: 100px"></th>
+                    <th style="width: 80px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for detalle in detalles %}
+                    <tr>
+                        <td>{{ detalle.descripcion }}
+                            {% if detalle.evaluacion %}
+                                <br><span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Evaluacion">Evaluación</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">{{ detalle.inicio|date:"Y-m-d"}}</td>
+                        <td style="text-align: center">{{ detalle.fin|date:"Y-m-d"}}</td>
+                        <td style="text-align: center">
+                            {% if detalle.informativo %}
+                                <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Informativo">Informativo</span>
+                            {% else %}
+                                {% with requisitos=detalle|call:"cantidad_requisitos" %}
+                                <a class="btn btn-sm btn-info" href="/adm_convocatoriaexamensuficiencia?action=requisitosexamensuficiencia&id={{ detalle.id }}"><i class="icon-list"></i> {{ requisitos }} Requisitos</a>
+                                {% endwith %}
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center">
+                            {% if not proceso.activo %}
+                                <a class="btn btn-sm btn-success tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar" href="javascript:;" nhref="/adm_convocatoriaexamensuficiencia?action=editdetalle&id={{ detalle.id }}"><i class="icon-edit"></i></a>
+                                <a class="btn btn-sm btn-danger tu eliminacionmodal" href="javascript:;" nhref="/adm_convocatoriaexamensuficiencia?action=deldetalle&id={{ detalle.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="20">NO EXISTEN DATOS</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
