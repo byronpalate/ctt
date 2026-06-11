@@ -12,7 +12,7 @@ from settings import TIPO_ESTUDIANTE_CURSO_UTI_ID, NOTA_ESTADO_EN_CURSO
 from ctt.commonviews import adduserdata
 from ctt.forms import ActividadInscripcionForm
 from ctt.funciones import url_back, bad_json, ok_json, MiPaginador, log, fechatope_cursos
-from ctt.models import CursoEscuelaComplementaria, MatriculaCursoEscuelaComplementaria
+from ctt.models import CursoEscuelaComplementaria, MatriculaCursoEscuelaComplementaria, MateriaAsignadaCurso
 
 
 @login_required(login_url='/login')

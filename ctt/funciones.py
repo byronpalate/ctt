@@ -13,7 +13,7 @@ from django.contrib.auth.models import User, Group
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect, JsonResponse
 from django.utils.encoding import smart_str
-
+import fitz
 from settings import MEDIA_ROOT, MEDIA_URL, EMAIL_DOMAIN, EMAIL_DOMAIN_ESTUDIANTES, \
     MODALIDAD_DISTANCIA, DIAS_MATRICULA_EXPIRA_CURSOS_ESCUELAS, VENCE_MATRICULA_POR_DIAS_CURSOS_ESCUELAS, \
     FECHA_EXPIRA_MATRICULA_CURSOS_ESCUELAS, DIAS_MATRICULA_EXPIRA_EXAMEN_UBICACION, \
@@ -1610,10 +1610,10 @@ def _crear_documento_base(plantilla):
 
 def generar_pdf_certificado_ctt(certificado):
     programa = certificado.programa
-    plantilla = programa.plantillacertificadosga
+    plantilla = programa.plantillacertificadoctt
 
     if not plantilla:
-        raise Exception('El programa no tiene una plantilla de certificado SGA configurada.')
+        raise Exception('El programa no tiene una plantilla de certificado CTT configurada.')
 
     if not plantilla.listo_para_emitir():
         raise Exception('La plantilla no está activa o no tiene campos parametrizados.')

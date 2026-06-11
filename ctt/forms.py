@@ -3343,7 +3343,7 @@ class CargaMasivaCertificadosForm(BaseForm):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
 
 class ConfiguracionCertificadoProgramaForm(BaseForm):
-    plantillacertificadosctt = forms.ModelChoiceField(
+    plantillacertificadoctt = forms.ModelChoiceField(
         label=u"Plantilla",
         queryset=PlantillaCertificadosEnLinea.objects.filter(activo=True).order_by('nombre'),
         required=True,
