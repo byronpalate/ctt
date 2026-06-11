@@ -1,13 +1,18 @@
 {% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function(){
+             $("#id_locacion").addClass("validate[required]");
+
+        });
+    </script>
+{% endblock %}
+{% block atras %}/alu_cursoscomplementarios{% endblock %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/alu_cursoscomplementarios{% endblock %}
 {% block formdestination %}/alu_cursoscomplementarios{% endblock %}
 {% block formextra %}
-    <input type='hidden' name='action' value='{{ request.GET.action|default:"" }}'/>
-    {% for k, v in request.GET.items %}
-        {% if k != 'action' %}
-            <input type="hidden" name="{{ k }}" value="{{ v }}"/>
-        {% endif %}
-    {% endfor %}
+    <input type='hidden' name='action' value='registrarlocaciones'/>
+    <input type='hidden' name='id' value='{{ actividad.id }}'/>
 {% endblock %}
 {% block formback %}/alu_cursoscomplementarios{% endblock %}

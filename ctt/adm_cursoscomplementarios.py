@@ -110,7 +110,7 @@ def view(request):
                         except Exception as ex:
                             pass
                     else:
-                        return bad_json(error=6)
+                        return bad_json(error=6, form=form)
                 except Exception as ex:
                     transaction.set_rollback(True)
                     return bad_json(error=1, ex=ex)

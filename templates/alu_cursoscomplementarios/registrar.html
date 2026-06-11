@@ -1,13 +1,8 @@
-{% extends "formbs.html" %}
+{% extends "ajaxconfirmaciondinamicbs.html" %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/alu_cursoscomplementarios{% endblock %}
 {% block formdestination %}/alu_cursoscomplementarios{% endblock %}
-{% block formextra %}
-    <input type='hidden' name='action' value='{{ request.GET.action|default:"" }}'/>
-    {% for k, v in request.GET.items %}
-        {% if k != 'action' %}
-            <input type="hidden" name="{{ k }}" value="{{ v }}"/>
-        {% endif %}
-    {% endfor %}
-{% endblock %}
-{% block formback %}/alu_cursoscomplementarios{% endblock %}
+{% block formactionvalue %}registrar{% endblock %}
+{% block formobjectid %}{{ curso.id }}{% endblock %}
+{% block mensaje %}Esta seguro(a) que desea Registrarse en el curso:{% endblock %}
+{% block formobjectrepr %}{{ curso }}{% endblock %}

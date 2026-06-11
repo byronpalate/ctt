@@ -15489,8 +15489,6 @@ class MateriaCursoEscuelaComplementaria(ModeloBase):
         super(MateriaCursoEscuelaComplementaria, self).save(*args, **kwargs)
 
 
-
-
 class Clase(ModeloBase):
     materia = models.ForeignKey(Materia, blank=True, null=True, verbose_name=u'Materia', on_delete=models.CASCADE)
     materiacurso = models.ForeignKey(MateriaCursoEscuelaComplementaria, blank=True, null=True, verbose_name=u'Materia', on_delete=models.CASCADE)
@@ -15506,8 +15504,6 @@ class Clase(ModeloBase):
             materia = self.materia
         elif self.materiacurso:
             materia = self.materiacurso
-        else:
-            materia = self.materiatitulacion
         return u'%s %s %s' % (materia, self.turno, self.aula)
 
     class Meta:
@@ -15519,8 +15515,6 @@ class Clase(ModeloBase):
             materia = self.materia.asignatura.nombre
         elif self.materiacurso:
             materia = self.materiacurso.asignatura.nombre
-        else:
-            materia = self.materiatitulacion.asignatura.nombre
         return materia
 
     def dia_semana(self):
@@ -15576,8 +15570,7 @@ class Clase(ModeloBase):
 
     def conflicto_aula(self):
         clasesexistentes = Clase.objects.filter(Q(materia__cerrado=False) |
-                                                Q(materiacurso__cerrada=False) |
-                                                Q(materiatitulacion__cerrada=False)).filter(Q(activo=True) &
+                                                Q(materiacurso__cerrada=False)&
                                                                                             Q(aula=self.aula) &
                                                                                             Q(dia=self.dia) &
                                                                                             (Q(inicio__lte=self.inicio, fin__gte=self.inicio) |

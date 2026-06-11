@@ -2385,6 +2385,10 @@ class CursoEscuelaForm(BaseForm):
     departamento = forms.CharField(label=u'Departamento', required=False, max_length=250)
     codigo = forms.CharField(label=u'Código', max_length=15, required=False, widget=forms.TextInput())
     record = forms.BooleanField(label=u'Pasar al record', initial=False, required=False)
+    examencomplexivo = forms.BooleanField(label=u'Examen Complexivo', initial=False, required=False)
+    libreconfiguracion = forms.BooleanField(label=u'Libre configuración', initial=False, required=False)
+    optativa = forms.BooleanField(label=u'Optativa', initial=False, required=False)
+    nivelacion = forms.BooleanField(label=u'Nivelación', initial=False, required=False)
     fechainicio = forms.DateField(label=u"Fecha Inicio", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), )
     fechafin = forms.DateField(label=u"Fecha Fin", initial=datetime.now().date(), input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), )
     sesion = forms.ModelChoiceField(label=u"Sesión", queryset=Sesion.objects.all(), required=False, widget=forms.Select())
@@ -2423,7 +2427,6 @@ class CursoEscuelaForm(BaseForm):
         _pop_fields(self, 'mallacurso', 'libreconfiguracion', 'optativa', 'costodiferenciado')
 
     def editar(self, coordinacion, actividad):
-        self.fields['sesion'].queryset = self.sesiones_por_sede(actividad.coordinacion.sede)
         filtro_tipocurso = Q(cursos=True,
                              tipocostocursoperiodo__activo=True,
                              tipocostocursoperiodo__periodo=actividad.periodo,

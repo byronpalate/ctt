@@ -1,17 +1,402 @@
 {% extends "basebs.html" %}
-{% block headcanvas %}
-    <div class="row mb-2">
-        <div class="col-12">
-            <h4>{{ title|default:"" }}</h4>
-        </div>
-    </div>
+{% load ctt_extras %}
+
+{% block heading %}
+<script type="text/javascript">
+  $(function () {
+
+    // Bootstrap 5 tooltips (si ya lo hacen global, esto no estorba)
+    try {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.forEach(function (el) { new bootstrap.Tooltip(el); });
+    } catch (e) {}
+
+    function busqueda() {
+      var term = ($("#searchinput").val() || "").trim().toUpperCase();
+      if (term.length > 0) {
+        location.href = "/alu_cursoscomplementarios?s=" + encodeURIComponent(term);
+      } else {
+        // Si está vacío, mejor vuelve al listado completo
+        location.href = "/alu_cursoscomplementarios";
+      }
+    }
+
+    $("#search").on("click", function () {
+      busqueda();
+    });
+
+    $("#searchinput").on("keyup", function (e) {
+      if (e.keyCode === 13) {
+        busqueda();
+      }
+    }).focus().select();
+
+  });
+</script>
 {% endblock %}
-{% block canvas %}
-    <div class="row">
-        <div class="col-12">
-            <div class="alert alert-warning">
-                Plantilla pendiente: <b>alu_cursoscomplementarios/view.html</b>
-            </div>
-        </div>
+
+{% block headcanvas %}
+  <div class="row mb-2">
+    <div class="col-12">
+      <h1>{{ title }}</h1>
     </div>
+  </div>
+
+  <div class="row align-items-center mb-2">
+    <div class="col-12 col-md-9"></div>
+
+    <div class="col-12 col-md-3">
+      <div class="input-group">
+        <input type="text"
+               class="form-control form-control-sm"
+               id="searchinput"
+               value="{{ search }}"
+               autocomplete="off"
+               placeholder="Buscar...">
+        <a role="button" href="javascript:;" class="btn btn-sm btn-outline-secondary" id="search" aria-label="Buscar">
+          <i class="icon-search" aria-hidden="true"></i>
+        </a>
+        {% if search or ids %}
+          <a role="button" href="/alu_cursoscomplementarios" class="btn btn-sm btn-outline-secondary" id="allresults" aria-label="Ver todo">
+            <i class="icon-refresh" aria-hidden="true"></i>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block canvas %}
+
+  {# ===================== REGISTRADOS ===================== #}
+  <div class="row mb-2">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light">
+          <b>Mis cursos registrados</b>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle mb-0"
+                   aria-label="Cursos complementarios registrados">
+              <caption class="visually-hidden">Listado de cursos complementarios registrados</caption>
+
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">Curso / Sesión / Modalidad</th>
+                  <th scope="col" style="width: 90px;" class="text-center">Inicio</th>
+                  <th scope="col" style="width: 90px;" class="text-center">Fin</th>
+                  <th scope="col" style="width: 110px;">Paralelo</th>
+                  <th scope="col" style="width: 60px;" class="text-center">Dif.</th>
+                  <th scope="col" style="width: 110px;" class="text-end">Matrícula</th>
+                  <th scope="col" style="width: 110px;" class="text-end">Cuota</th>
+                  <th scope="col" style="width: 70px;" class="text-center">#</th>
+                  <th scope="col" style="width: 110px;" class="text-end">Total</th>
+                  <th scope="col" style="width: 90px;" class="text-center">Cupo</th>
+                  <th scope="col" style="width: 90px;" class="text-center">Reg.</th>
+                  <th scope="col" style="width: 60px;" class="text-center">L.Conf.</th>
+                  <th scope="col" style="width: 60px;" class="text-center">Opt.</th>
+                  <th scope="col" style="width: 60px;" class="text-center">Act.</th>
+                  <th scope="col" style="width: 60px;" class="text-center">Rec.</th>
+                  <th scope="col" style="width: 70px;" class="text-center">Fin.</th>
+                  <th scope="col" style="width: 110px;" class="text-center">Estado</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for actividad in registrados %}
+                  <tr>
+                    <td>
+                      {{ actividad.nombre }}<br>
+                      <span class="smaller">{{ actividad.sesion.nombre }} - {{ actividad.modalidad }} - {{ actividad.tipo }}</span>
+                      {% if actividad.cerrado %}
+                        <br><span class="badge text-bg-danger">CERRADA</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">{{ actividad.fecha_inicio|date:"Y-m-d" }}</td>
+                    <td class="text-center">{{ actividad.fecha_fin|date:"Y-m-d" }}</td>
+                    <td>{{ actividad.paralelo }}</td>
+
+                    <td class="text-center">
+                      {% if actividad.costodiferenciado %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Costo diferenciado">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Costo diferenciado">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-end">$ {{ actividad.costomatricula|floatformat:2 }}</td>
+                    <td class="text-end">$ {{ actividad.costocuota|floatformat:2 }}</td>
+                    <td class="text-center">{{ actividad.cuotas|floatformat:0 }}</td>
+                    <td class="text-end">$ {{ actividad.costo|floatformat:2 }}</td>
+
+                    <td class="text-center">
+                      {% if actividad.cupo %}
+                        {{ actividad.cupo }}
+                      {% else %}
+                        <span class="badge text-bg-info">ILIMITADO</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">{{ actividad.registros_validos }}</td>
+
+                    <td class="text-center">
+                      {% if actividad.libreconfiguracion %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Libre configuración">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Libre configuración">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                      {% if actividad.optativa %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Optativa">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Optativa">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                      {% if actividad.activo %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Activo">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Activo">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                      {% if actividad.record %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Pasa al récord">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Pasa al récord">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                      {% if actividad.aprobacionfinanciero %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Aprobado por financiero">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Aprobado por financiero">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                      {% with registrado=inscripcion|args:actividad|call:"esta_registrado_curso" %}
+                        {% if registrado %}
+                          <span class="badge text-bg-info">REGISTRADO</span>
+                        {% else %}
+                          <span class="badge text-bg-secondary">—</span>
+                        {% endif %}
+                      {% endwith %}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="20" class="text-center text-muted">NO EXISTEN DATOS</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  {# ===================== DISPONIBLES ===================== #}
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light">
+          <b>Cursos disponibles</b>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle mb-0"
+                   aria-label="Cursos complementarios disponibles">
+              <caption class="visually-hidden">Listado de cursos complementarios disponibles</caption>
+
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">Curso / Sesión / Modalidad</th>
+                  <th scope="col" style="width: 90px;" class="text-center">Inicio</th>
+                  <th scope="col" style="width: 90px;" class="text-center">Fin</th>
+                  <th scope="col" style="width: 110px;">Paralelo</th>
+                  <th scope="col" style="width: 60px;" class="text-center">Dif.</th>
+                  <th scope="col" style="width: 110px;" class="text-end">Matrícula</th>
+                  <th scope="col" style="width: 110px;" class="text-end">Cuota</th>
+                  <th scope="col" style="width: 70px;" class="text-center">#</th>
+                  <th scope="col" style="width: 110px;" class="text-end">Total</th>
+                  <th scope="col" style="width: 90px;" class="text-center">Cupo</th>
+                  <th scope="col" style="width: 90px;" class="text-center">Reg.</th>
+                  <th scope="col" style="width: 60px;" class="text-center">L.Conf.</th>
+                  <th scope="col" style="width: 60px;" class="text-center">Opt.</th>
+                  <th scope="col" style="width: 60px;" class="text-center">Act.</th>
+                  <th scope="col" style="width: 60px;" class="text-center">Rec.</th>
+                  <th scope="col" style="width: 70px;" class="text-center">Fin.</th>
+                  <th scope="col" style="width: 140px;" class="text-center">Acción</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for actividad in actividades %}
+                  <tr>
+                    <td>
+                      {{ actividad.nombre }}<br>
+                      <span class="smaller">{{ actividad.sesion.nombre }} - {{ actividad.modalidad }} - {{ actividad.tipo }}</span>
+                      {% if actividad.cerrado %}
+                        <br><span class="badge text-bg-danger">CERRADA</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">{{ actividad.fecha_inicio|date:"Y-m-d" }}</td>
+                    <td class="text-center">{{ actividad.fecha_fin|date:"Y-m-d" }}</td>
+                    <td>{{ actividad.paralelo }}</td>
+
+                    <td class="text-center">
+                      {% if actividad.costodiferenciado %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Costo diferenciado">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Costo diferenciado">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-end">$ {{ actividad.costomatricula|floatformat:2 }}</td>
+                    <td class="text-end">$ {{ actividad.costocuota|floatformat:2 }}</td>
+                    <td class="text-center">{{ actividad.cuotas|floatformat:0 }}</td>
+                    <td class="text-end">$ {{ actividad.costo|floatformat:2 }}</td>
+
+                    <td class="text-center">
+                      {% if actividad.cupo %}
+                        {{ actividad.cupo }}
+                      {% else %}
+                        <span class="badge text-bg-info">ILIMITADO</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">{{ actividad.registros_validos }}</td>
+
+                    <td class="text-center">
+                      {% if actividad.libreconfiguracion %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Libre configuración">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Libre configuración">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                      {% if actividad.optativa %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Optativa">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Optativa">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                      {% if actividad.activo %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Activo">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Activo">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                      {% if actividad.record %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Pasa al récord">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Pasa al récord">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                      {% if actividad.aprobacionfinanciero %}
+                        <span class="badge text-bg-success tu" data-bs-toggle="tooltip" title="Aprobado por financiero">Sí</span>
+                      {% else %}
+                        <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" title="Aprobado por financiero">No</span>
+                      {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                      {% with registrado=inscripcion|args:actividad|call:"esta_registrado_curso" %}
+                        {% if not registrado %}
+                          {% if actividad.locaciones_distintas %}
+                            <a class="btn btn-sm btn-success"
+                               href="/alu_cursoscomplementarios?action=registrarlocaciones&id={{ actividad.id }}">
+                              <i class="icon-check" aria-hidden="true"></i> Registrar
+                            </a>
+                          {% else %}
+                            <a class="btn btn-sm btn-success confirmacionmodal"
+                               href="javascript:;"
+                               nhref="/alu_cursoscomplementarios?action=registrar&id={{ actividad.id }}">
+                              <i class="icon-check" aria-hidden="true"></i> Registrar
+                            </a>
+                          {% endif %}
+                        {% else %}
+                          <span class="badge text-bg-info">REGISTRADO</span>
+                        {% endif %}
+                      {% endwith %}
+                    </td>
+
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="20" class="text-center text-muted">NO EXISTEN DATOS</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  {# ===================== PAGINACIÓN ===================== #}
+  <div class="row">
+    <div class="col-12">
+      {% if paging.num_pages > 1 %}
+        {% if paging.num_pages > 20 %}
+          <ul class="pagination">
+            {% if paging.primera_pagina %}
+              <li class="page-item">
+                <a class="page-link" href="/alu_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page=1">1</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="/alu_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_izquierda }}">...</a>
+              </li>
+            {% endif %}
+
+            {% for pagenumber in paging.paginas %}
+              <li class="page-item {% if pagenumber == page.number %}active{% endif %}">
+                <a class="page-link" href="/alu_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}">{{ pagenumber }}</a>
+              </li>
+            {% endfor %}
+
+            {% if paging.ultima_pagina %}
+              <li class="page-item">
+                <a class="page-link" href="/alu_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page={{ paging.ellipsis_derecha }}">...</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="/alu_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page={{ paging.num_pages }}">{{ paging.num_pages }}</a>
+              </li>
+            {% endif %}
+          </ul>
+        {% else %}
+          <ul class="pagination">
+            {% for pagenumber in paging.page_range %}
+              <li class="page-item {% if pagenumber == page.number %}active{% endif %}">
+                <a class="page-link" href="/alu_cursoscomplementarios?{% if search %}s={{ search }}&{% endif %}page={{ pagenumber }}">{{ pagenumber }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
 {% endblock %}
