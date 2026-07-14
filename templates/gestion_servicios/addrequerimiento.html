@@ -1,5 +1,41 @@
 {% extends "formbs.html" %}
-{% block extrajavascript %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $(function() {
+            var $tipoServicio = $("#id_tiposervicio");
+            var $espacioFisico = $("#id_espacio_fisico");
+            var opcionesEspacio = $espacioFisico.find("option").clone();
+
+            var filtrarEspaciosFisicos = function() {
+                var tipoServicioId = $tipoServicio.val();
+                var espacioSeleccionado = $espacioFisico.val();
+
+                $espacioFisico.empty();
+                opcionesEspacio.each(function() {
+                    var $opcion = $(this);
+                    var tipoOpcion = $opcion.attr("data-tipo-servicio") || "";
+                    if (!$opcion.val() || (tipoServicioId && tipoOpcion === tipoServicioId)) {
+                        $espacioFisico.append($opcion.clone());
+                    }
+                });
+
+                if (espacioSeleccionado && $espacioFisico.find("option").filter(function() {
+                    return $(this).val() === espacioSeleccionado;
+                }).length) {
+                    $espacioFisico.val(espacioSeleccionado);
+                } else {
+                    $espacioFisico.val("");
+                }
+                $espacioFisico.prop("disabled", !tipoServicioId);
+            };
+
+            $tipoServicio.change(function() {
+                filtrarEspaciosFisicos();
+            });
+            filtrarEspaciosFisicos();
+        });
+    </script>
 {% endblock %}
 {% block atras %}/gestion_servicios?action=competenciase&id={{ malla.id }}{% endblock %}
 {% block formdestination %}/gestion_servicios?action=competenciase&id={{ malla.id }}{% endblock %}

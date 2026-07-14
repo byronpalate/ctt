@@ -45,8 +45,45 @@ def view(request):
                         fecha_recepcion=timezone.now(),
                     )
                     req.save()
-                    log(u'Cliente editó requerimiento: %s' % req, request, "edit")
-                    return ok_json()
+                    requerimiento = req
+                    form = ProformaForm(request.POST)
+                    if not form.is_valid():
+                        return bad_json(error=6)
+
+                    # Si el requerimiento ya tiene cliente, usamos ese por defecto
+                    cliente = form.cleaned_data.get('cliente') or requerimiento.cliente
+
+                    proforma = Proforma(
+                        cliente=cliente,
+                        requerimiento=requerimiento,
+                        observaciones=remover_tildes(form.cleaned_data.get('observaciones') or ""),
+                        descuento=form.cleaned_data.get('descuento') or Decimal('0.00'),
+                        iva=form.cleaned_data.get('iva'),
+                        creado_por=persona,
+                        numero="PF-%s" % timezone.now().strftime("%Y%m%d%H%M%S"),
+                        estado=Proforma.Estado.BORRADOR,
+                    )
+                    proforma.save(request)
+
+                    # Cambiamos estado del requerimiento si recién estaba RECIBIDO
+                    if requerimiento.estado == RequerimientoServicio.Estado.RECIBIDO:
+                        requerimiento.estado = RequerimientoServicio.Estado.EN_PROFORMA
+                        requerimiento.save()
+
+                    # Historial de proforma
+                    ProformaHistorial.objects.create(
+                        proforma=proforma,
+                        tipo=ProformaHistorial.TipoEvento.CREACION,
+                        mensaje=u"Proforma creada desde el requerimiento #%s." % requerimiento.id,
+                        actor_persona=persona,
+                        estado_anterior=None,
+                        estado_nuevo=proforma.estado,
+                    )
+
+                    log(u'Creó proforma %s desde requerimiento %s' % (proforma.numero, requerimiento.id), request,
+                        "add")
+                    return ok_json({"id": proforma.id})
+
                 else:
                     return bad_json(error=6)
             except Exception as ex:

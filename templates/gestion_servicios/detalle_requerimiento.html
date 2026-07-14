@@ -51,13 +51,13 @@
 
 <div class="row mb-2">
     <div class="col-12">
-        {% if not sololectura %}
-            <a href="javascript:;"
-               nhref="/gestion_servicios?action=add_proforma&requerimiento_id={{ requerimiento.id }}"
-               class="btn btn-sm btn-success formmodal">
-                <i class="icon-plus"></i> Generar nueva proforma
-            </a>
-        {% endif %}
+{#        {% if not sololectura %}#}
+{#            <a href="javascript:;"#}
+{#               nhref="/gestion_servicios?action=add_proforma&requerimiento_id={{ requerimiento.id }}"#}
+{#               class="btn btn-sm btn-success formmodal">#}
+{#                <i class="icon-plus"></i> Generar nueva proforma#}
+{#            </a>#}
+{#        {% endif %}#}
     </div>
 </div>
 {% endblock %}
@@ -70,8 +70,8 @@
             <tr>
                 <th style="width: 150px;">Tipo de servicio</th>
                 <td>
-                    {% if requerimiento.tipo_servicio %}
-                        {{ requerimiento.tipo_servicio.nombre }}
+                    {% if requerimiento.espacio_fisico.tipo_servicio %}
+                        {{ requerimiento.espacio_fisico.tipo_servicio.nombre }}
                     {% else %}
                         <span class="text-muted">No especificado</span>
                     {% endif %}

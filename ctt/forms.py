@@ -3116,12 +3116,46 @@ class GenerarTrabajoForm(BaseForm):
         self.fields['formtype'].initial = 'vertical'
 
 
+class EspacioFisicoSelect(forms.Select):
+
+    def __init__(self, *args, **kwargs):
+        self.tipo_servicio_por_espacio = kwargs.pop('tipo_servicio_por_espacio', {})
+        super(EspacioFisicoSelect, self).__init__(*args, **kwargs)
+
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super(EspacioFisicoSelect, self).create_option(name, value, label, selected, index, subindex, attrs)
+        if value:
+            valor = getattr(value, 'value', value)
+            tipo_servicio_id = self.tipo_servicio_por_espacio.get(str(valor))
+            if tipo_servicio_id:
+                option['attrs']['data-tipo-servicio'] = str(tipo_servicio_id)
+        return option
+
+
 class RequerimientoServicioForm(BaseForm):
     tiposervicio = forms.ModelChoiceField(label=u"Tipo de Requerimiento", queryset=TipoServicio.objects.all(), widget=forms.Select())
-    espacio_fisico = forms.ModelChoiceField(label=u"Laboratorio / área", queryset=EspacioFisico.objects.all(), widget=forms.Select())
+    espacio_fisico = forms.ModelChoiceField(label=u"Laboratorio / área", queryset=EspacioFisico.objects.all(), widget=EspacioFisicoSelect())
     cliente = forms.ModelChoiceField(label=u"Cliente", queryset=Cliente.objects.all(), widget=forms.Select())
     descripcion = forms.CharField(label=u"Descripción del requerimiento",widget=forms.Textarea(attrs={'rows': '4', 'class': 'form-control'}))
     archivo = forms.FileField(label=u"Archivo adjunto (opcional)",required=False,widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))
+
+    def __init__(self, *args, **kwargs):
+        super(RequerimientoServicioForm, self).__init__(*args, **kwargs)
+        espacios = EspacioFisico.objects.select_related('tipo_servicio').all().order_by('nombre')
+        self.fields['tiposervicio'].queryset = TipoServicio.objects.all().order_by('nombre')
+        self.fields['espacio_fisico'].queryset = espacios
+        self.fields['espacio_fisico'].widget.tipo_servicio_por_espacio = {
+            str(e.id): e.tipo_servicio_id for e in espacios if e.tipo_servicio_id
+        }
+
+        tipo_servicio_id = self.data.get(self.add_prefix('tiposervicio')) or self.initial.get('tiposervicio')
+        tipo_servicio_id = getattr(tipo_servicio_id, 'pk', tipo_servicio_id)
+        if tipo_servicio_id:
+            try:
+                tipo_servicio_id = int(tipo_servicio_id)
+                self.fields['espacio_fisico'].queryset = espacios.filter(tipo_servicio_id=tipo_servicio_id)
+            except (TypeError, ValueError):
+                self.fields['espacio_fisico'].queryset = EspacioFisico.objects.none()
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
