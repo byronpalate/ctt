@@ -214,22 +214,6 @@ def view(request):
                 except Exception as ex:
                     pass
 
-            # ========= DETAIL =========
-            # if action == 'detail':
-            #     try:
-            #         data['title'] = u'Detalle de requerimiento'
-            #         data['requerimiento'] = req = get_object_or_404(
-            #             RequerimientoServicio,
-            #             pk=request.GET.get('id'),
-            #             cliente=cliente
-            #         )
-            #         # si más adelante quieres mostrar proformas ligadas, podrías aquí:
-            #         # data['proformas'] = req.proformas.all()
-            #         return render(request, "servicios/requerimiento_detail.html", data)
-            #     except Exception as ex:
-            #         pass
-
-
 
             if action == 'detail':
                 try:

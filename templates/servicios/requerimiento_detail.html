@@ -23,8 +23,8 @@
             <tr>
                 <th style="width: 160px;">Laboratorio / área</th>
                 <td>
-                    {% if requerimiento.tipo_servicio %}
-                        {{ requerimiento.tipo_servicio.nombre }}
+                    {% if requerimiento.espacio_fisico %}
+                        {{ requerimiento.espacio_fisico }}
                     {% else %}
                         <span class="text-muted">Sin tipo de servicio</span>
                     {% endif %}

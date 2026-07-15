@@ -18140,10 +18140,10 @@ class Proforma(ModeloBase):
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="proformas")
     estado = models.PositiveSmallIntegerField(choices=Estado.choices, default=Estado.BORRADOR)
     iva = models.ForeignKey(IvaAplicado, verbose_name="IVA", on_delete=models.PROTECT, null=True, blank=True,)
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
-    descuento = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
-    impuestos = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    subtotal = models.FloatField(  default=Decimal('0.00'))
+    descuento = models.FloatField(  default=Decimal('0.00'))
+    impuestos = models.FloatField(  default=Decimal('0.00'))
+    total = models.FloatField(  default=Decimal('0.00'))
     observaciones = models.TextField(blank=True)
     fecha_envio = models.DateTimeField(null=True, blank=True)
     fecha_respuesta = models.DateTimeField(null=True, blank=True)
@@ -18217,6 +18217,25 @@ class Proforma(ModeloBase):
             estado_anterior=estado_anterior,
             estado_nuevo=self.estado,
         )
+
+    def generar_rubro_proforma(self):
+        hoy = datetime.now().date()
+        valorproforma =self.total
+        if valorproforma > 0:
+            rubro = Rubro(fecha=hoy,
+                          valor=valorproforma,
+                          cliente=self.cliente,
+                          iva_id=TIPO_IVA_0_ID,
+                          fechavence=hoy)
+            rubro.save()
+            tiporubro = TipoOtroRubro.objects.get(pk=4)
+            rubrootro = RubroOtro(rubro=rubro,
+                                  tipo=tiporubro)
+            rubrootro.save()
+            rubro.actulizar_nombre('RUBRO GENERADO POR PROFORMA Nª: '+self.numero)
+            return True
+        else:
+            return False
 
     def registrar_evento(self, tipo, mensaje="", actor_persona=None, actor_externo="", estado_anterior=None,
                          estado_nuevo=None):

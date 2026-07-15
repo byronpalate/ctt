@@ -593,6 +593,7 @@ def view(request):
                     estado_nuevo=proforma.estado,
                 )
 
+                proforma.generar_rubro_proforma()
                 log(u'Administrador aprobó proforma: %s' % proforma, request, "edit")
                 return ok_json()
             except Exception as ex:
