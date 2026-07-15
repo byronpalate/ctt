@@ -1,0 +1,15 @@
+{% extends "formbs.html" %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+    </script>
+{% endblock %}
+{% block atras %}/gestion_servicios{% endblock %}
+{% block formdestination %}/gestion_servicios?action=detalle_requerimiento&id={{ requerimiento.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/gestion_servicios{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='edit_requerimiento'/>
+    <input type='hidden' name='id' value='{{ requerimiento.id }}'/>
+{% endblock %}
+{% block formback %}/gestion_servicios{% endblock %}

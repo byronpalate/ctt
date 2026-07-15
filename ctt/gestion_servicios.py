@@ -632,6 +632,49 @@ def view(request):
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
+        if action == 'edit_requerimiento':
+            try:
+                proforma = get_object_or_404(Proforma, pk=request.POST.get('id'))
+                requerimiento = proforma.requerimiento
+
+                form = RequerimientoServicioForm(request.POST, request.FILES)
+                if form.is_valid():
+                    cd = form.cleaned_data
+
+                    # Actualizar los campos del requerimiento
+                    requerimiento.espacio_fisico = cd['espacio_fisico']
+                    requerimiento.descripcion = remover_tildes(cd.get('descripcion') or "")
+                    requerimiento.cliente = cd['cliente']
+
+                    # Actualizar contacto (si el formulario tiene estos campos)
+                    # Si tu formulario tiene nombre_contacto, email_contacto, telefono_contacto
+                    if 'nombre_contacto' in cd:
+                        requerimiento.nombre_contacto = cd['nombre_contacto']
+                    if 'email_contacto' in cd:
+                        requerimiento.email_contacto = cd['email_contacto']
+                    if 'telefono_contacto' in cd:
+                        requerimiento.telefono_contacto = cd['telefono_contacto']
+
+                    # Si se subió un nuevo archivo
+                    if cd.get('archivo'):
+                        # Eliminar archivo anterior si existe
+                        if requerimiento.archivo:
+                            try:
+                                requerimiento.archivo.delete(save=False)
+                            except:
+                                pass
+                        requerimiento.archivo = cd['archivo']
+
+                    requerimiento.save()
+
+                    log(u'Editó requerimiento #%s de la proforma %s' % (requerimiento.id, proforma.numero), request, "edit")
+                    return ok_json()
+                else:
+                    return bad_json(error=6, mensaje=form.errors)
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
+
 
         return bad_json(error=0)
 
@@ -763,6 +806,20 @@ def view(request):
                 data['solicitud'] = get_object_or_404(SolicitudTrabajo, pk=request.GET.get('id'))
                 data['form'] = GenerarTrabajoForm()
                 return render(request, 'gestion_servicios/generar_trabajo.html', data)
+            except Exception as ex:
+                return url_back(request, ex=ex)
+
+        if action == 'edit_requerimiento':
+            try:
+                data['title'] = u'Editar proforma requerimiento'
+                data['proforma'] = proforma = get_object_or_404(Proforma, pk=request.GET.get('id'))
+                requerimiento = proforma.requerimiento
+
+                # Pasar los datos del requerimiento como initial
+                data['form'] = RequerimientoServicioForm(initial={'tiposervicio': requerimiento.espacio_fisico.tipo_servicio_id if requerimiento.espacio_fisico else None, 'espacio_fisico': requerimiento.espacio_fisico_id, 'cliente': requerimiento.cliente_id, 'descripcion': requerimiento.descripcion, # 'archivo': requerimiento.archivo,  # Los FileField no se pasan en initial
+                })
+                data['requerimiento'] = requerimiento
+                return render(request, 'gestion_servicios/edit_requerimiento.html', data)
             except Exception as ex:
                 return url_back(request, ex=ex)
 
