@@ -130,7 +130,6 @@ def view(request):
                         profesor.documentoidentificacion = newfile
                     profesor.save(request)
                     personaprofesor.crear_perfil(profesor=profesor)
-                    personaprofesor.mi_ficha()
                     perfil = personaprofesor.mi_perfil()
                     perfil.raza = form.cleaned_data['etnia']
                     perfil.nacionalidadindigena = form.cleaned_data['nacionalidadindigena']
