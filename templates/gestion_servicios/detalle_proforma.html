@@ -3,65 +3,144 @@
 
 {% block heading %}
     <script type="text/javascript">
-        function enviarProforma(id) {
-            if (!confirm("¿Enviar esta proforma al cliente?")) return;
-            $.post("/gestion_servicios", {
-                action: "send",
-                id: id,
-                csrfmiddlewaretoken: '{{ csrf_token }}'
-            }, function (data) {
-                if (data.result === 'ok') {
-                    location.reload();
-                } else {
-                    alert(data.mensaje || 'Ocurrió un error al enviar la proforma');
+        function ejecutarAccionProforma(id, opciones) {
+            Swal.fire({
+                title: opciones.tituloConfirmacion,
+                text: opciones.textoConfirmacion,
+                icon: opciones.iconoConfirmacion || 'question',
+                showCancelButton: true,
+                confirmButtonText: opciones.textoConfirmar || 'Sí, continuar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then(function (result) {
+                if (!result.isConfirmed) {
+                    return;
                 }
-            }, "json");
+
+                $.post("/gestion_servicios", {
+                    action: opciones.action,
+                    id: id,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                }, function (data) {
+                    if (data.result === 'ok') {
+                        Swal.fire({
+                            title: opciones.tituloExito || 'Acción completada',
+                            text: data.mensaje || opciones.mensajeExito || '',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar'
+                        }).then(function () {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: opciones.tituloError || 'No se pudo completar la acción',
+                            text: data.mensaje || opciones.mensajeError,
+                            icon: 'error',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }
+                }, "json").fail(function () {
+                    Swal.fire({
+                        title: 'Error de conexión',
+                        text: opciones.mensajeError || 'No se pudo completar la acción',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                });
+            });
+        }
+
+        function enviarProforma(id) {
+            ejecutarAccionProforma(id, {
+                action: 'send',
+                tituloConfirmacion: 'Enviar proforma',
+                textoConfirmacion: '¿Enviar esta proforma al cliente?',
+                textoConfirmar: 'Sí, enviar',
+                tituloExito: 'Proforma enviada',
+                mensajeError: 'Ocurrió un error al enviar la proforma'
+            });
         }
 
         function generarRubro(id) {
-            if (!confirm("¿Generar rubro para esta proforma?")) return;
-            $.post("/gestion_servicios", {
-                action: "generar_rubro",
-                id: id,
-                csrfmiddlewaretoken: '{{ csrf_token }}'
-            }, function (data) {
-                if (data.result === 'ok') {
-                    alert(data.mensaje || 'Rubro generado correctamente');
-                    location.reload();
-                } else {
-                    alert(data.mensaje || 'Ocurrió un error al generar el rubro');
-                }
-            }, "json");
+            ejecutarAccionProforma(id, {
+                action: 'generar_rubro',
+                tituloConfirmacion: 'Generar rubro',
+                textoConfirmacion: '¿Generar rubro para esta proforma?',
+                textoConfirmar: 'Sí, generar',
+                tituloExito: 'Rubro generado',
+                mensajeExito: 'Rubro generado correctamente',
+                mensajeError: 'Ocurrió un error al generar el rubro'
+            });
         }
 
         function aprobarProforma(id) {
-            if (!confirm("¿Confirmas que apruebas esta proforma?")) return;
-            $.post("/gestion_servicios", {
-                action: "approve",
-                id: id,
-                csrfmiddlewaretoken: '{{ csrf_token }}'
-            }, function (data) {
-                if (data.result === 'ok') {
-                    location.reload();
-                } else {
-                    alert(data.mensaje || 'Ocurrió un error al aprobar la proforma');
-                }
-            }, "json");
+            ejecutarAccionProforma(id, {
+                action: 'approve',
+                tituloConfirmacion: 'Aprobar proforma',
+                textoConfirmacion: '¿Confirmas que apruebas esta proforma?',
+                textoConfirmar: 'Sí, aprobar',
+                tituloExito: 'Proforma aprobada',
+                mensajeError: 'Ocurrió un error al aprobar la proforma'
+            });
         }
 
         function rechazarProforma(id) {
-            if (!confirm("¿Seguro que deseas rechazar esta proforma?")) return;
-            $.post("/gestion_servicios", {
-                action: "reject",
-                id: id,
-                csrfmiddlewaretoken: '{{ csrf_token }}'
-            }, function (data) {
-                if (data.result === 'ok') {
-                    location.reload();
-                } else {
-                    alert(data.mensaje || 'Ocurrió un error al rechazar la proforma');
+            ejecutarAccionProforma(id, {
+                action: 'reject',
+                tituloConfirmacion: 'Rechazar proforma',
+                textoConfirmacion: '¿Seguro que deseas rechazar esta proforma?',
+                iconoConfirmacion: 'warning',
+                textoConfirmar: 'Sí, rechazar',
+                tituloExito: 'Proforma rechazada',
+                mensajeError: 'Ocurrió un error al rechazar la proforma'
+            });
+        }
+
+        function eliminarDetalle(id) {
+            Swal.fire({
+                title: 'Eliminar detalle',
+                text: '¿Seguro que deseas eliminar este detalle?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then(function (result) {
+                if (!result.isConfirmed) {
+                    return;
                 }
-            }, "json");
+
+                $.post("/gestion_servicios", {
+                    action: "eliminar_detalle",
+                    id: id,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                }, function (data) {
+                    if (data.result === 'ok') {
+                        Swal.fire({
+                            title: 'Detalle eliminado',
+                            text: data.mensaje || '',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar'
+                        }).then(function () {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'No se pudo eliminar',
+                            text: data.mensaje || 'Ocurrió un error al eliminar el detalle',
+                            icon: 'error',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }
+                }, "json").fail(function () {
+                    Swal.fire({
+                        title: 'Error de conexión',
+                        text: 'Ocurrió un error al eliminar el detalle',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
+                });
+            });
         }
 
     </script>
@@ -126,18 +205,25 @@
 
             {# Acciones sobre la proforma #}
             {% if proforma.estado == 1 %}
-                <a href="javascript:;" nhref="/gestion_servicios?action=agregar_detalle&id={{ proforma.id }}"
-                   class='btn btn-sm btn-success formmodal'>
-                    <i class="icon-plus"></i> Agregar servicio
-                </a>
+                {% if proforma.requerimiento.espacio_fisico.tipo_servicio.id == 1 %}
+                    <a href="javascript:;" nhref="/gestion_servicios?action=agregar_detalle&id={{ proforma.id }}"
+                       class='btn btn-sm btn-success formmodal'>
+                        <i class="icon-plus"></i> Agregar servicio
+                    </a>
+                {% else %}
+                    <a href="javascript:;" nhref="/gestion_servicios?action=agregar_detalle_servicio&id={{ proforma.id }}"
+                       class='btn btn-sm btn-warning formmodal'>
+                        <i class="icon-plus"></i> Agregar servicio
+                    </a>
+                {% endif %}
             {% endif %}
 
             <div class="btn-group ms-2">
-                <a href="javascript:;"
-                   nhref="/servicios?action=edit&id={{ proforma.id }}"
-                   class="btn btn-sm btn-outline-primary formmodal">
-                    <i class="icon-edit"></i> Editar
-                </a>
+{#                <a href="javascript:;"#}
+{#                   nhref="/servicios?action=edit&id={{ proforma.id }}"#}
+{#                   class="btn btn-sm btn-outline-primary formmodal">#}
+{#                    <i class="icon-edit"></i> Editar#}
+{#                </a>#}
 
                 {# Botones de aprobar / rechazar solo cuando está ENVIADA #}
                 {% if proforma.estado == 1 %}
@@ -245,6 +331,10 @@
                     </td>
                 </tr>
                 <tr>
+                    <th>Espacio Físico</th>
+                    <td>{{ proforma.requerimiento.espacio_fisico }}</td>
+                </tr>
+                <tr>
                     <th>Observaciones</th>
                     <td>{{ proforma.observaciones|default:"(Sin observaciones)" }}</td>
                 </tr>
@@ -291,11 +381,14 @@
                     <th>#</th>
                     <th>Servicio / Descripción</th>
                     <th style="width: 90px; text-align:right;">Cant.</th>
-                    <th style="width: 90px; text-align:right;">Fecha.</th>
+                    <th style="width: 90px; text-align:right;">Fecha</th>
                     <th style="width: 90px; text-align:right;">Inicio</th>
                     <th style="width: 90px; text-align:right;">Fin</th>
                     <th style="width: 110px; text-align:right;">P. Unitario</th>
                     <th style="width: 110px; text-align:right;">Total</th>
+                    {% if proforma.estado == 1 %}
+                        <th style="width: 115px; text-align:center;">Acciones</th>
+                    {% endif %}
 
                 </tr>
                 </thead>
@@ -310,15 +403,37 @@
                             {{ it.descripcion }}
                         </td>
                         <td style="text-align:right;">{{ it.cantidad }}</td>
-                        <td style="text-align:right;">{{ it.fecha }}</td>
-                        <td style="text-align:right;">{{ it.horainicio }}</td>
-                        <td style="text-align:right;">{{ it.horafin }}</td>
+                        <td style="text-align:right;">{% if it.fecha %} {{ it.fecha }}{% else %}<span class="badge text-bg-secondary">No Aplica</span>{% endif %}</td>
+                        <td style="text-align:right;">{% if it.horainicio %} {{ it.horainicio }}{% else %}<span class="badge text-bg-secondary">No Aplica</span>{% endif %}</td>
+                        <td style="text-align:right;">{% if it.horafin %} {{ it.horafin }}{% else %}<span class="badge text-bg-secondary">No Aplica</span>{% endif %}</td>
                         <td style="text-align:right;">$ {{ it.precio_unitario|floatformat:2|intcomma }}</td>
                         <td style="text-align:right;">$ {{ it.subtotal|floatformat:2|intcomma }}</td>
+                        {% if proforma.estado == 1 %}
+                            <td style="text-align:center;">
+                                {% if it.fecha or it.horainicio or it.horafin %}
+                                    <a href="javascript:;"
+                                       nhref="/gestion_servicios?action=editar_detalle&id={{ it.id }}"
+                                       class="btn btn-sm btn-outline-primary formmodal">
+                                        <i class="icon-edit"></i>
+                                    </a>
+                                {% else %}
+                                    <a href="javascript:;"
+                                       nhref="/gestion_servicios?action=editar_detalle_servicio&id={{ it.id }}"
+                                       class="btn btn-sm btn-outline-primary formmodal">
+                                        <i class="icon-edit"></i>
+                                    </a>
+                                {% endif %}
+                                <a href="javascript:;"
+                                   onclick="eliminarDetalle({{ it.id }});"
+                                   class="btn btn-sm btn-outline-danger">
+                                    <i class="icon-trash"></i>
+                                </a>
+                            </td>
+                        {% endif %}
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5">La proforma no tiene ítems registrados.</td>
+                        <td colspan="{% if proforma.estado == 1 %}9{% else %}8{% endif %}">La proforma no tiene ítems registrados.</td>
                     </tr>
                 {% endfor %}
                 </tbody>

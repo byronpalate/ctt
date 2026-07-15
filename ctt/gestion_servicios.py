@@ -13,10 +13,34 @@ from ctt.funciones import log, MiPaginador, ok_json, bad_json, url_back, remover
 from ctt.models import (Proforma, RevisionProforma, SolicitudTrabajo, Trabajo, Group,
                         RequerimientoServicio, ProformaHistorial, ServicioCatalogo, ProformaDetalle, RubroServicio,
                         Rubro)
-from ctt.forms import (RevisionProformaForm, VincularFacturaForm, GenerarTrabajoForm, ProformaForm,ProformaDetalleForm,RequerimientoServicioForm)
+from ctt.forms import (RevisionProformaForm, VincularFacturaForm, GenerarTrabajoForm, ProformaForm, ProformaDetalleForm,
+                       RequerimientoServicioForm, ProformaDetalleServicioForm)
 from datetime import datetime, timedelta, time
 from django.utils import timezone
 from settings import  TIPO_IVA_0_ID
+
+
+def servicios_queryset_por_proforma(proforma):
+    espacio_fisico = proforma.requerimiento.espacio_fisico if proforma.requerimiento else None
+    if espacio_fisico and espacio_fisico.tipo_servicio_id:
+        return ServicioCatalogo.objects.filter(espacio_fisico__tipo_servicio_id=espacio_fisico.tipo_servicio_id)
+    return ServicioCatalogo.objects.all()
+
+
+def configurar_servicios_form(form, proforma):
+    servicios = servicios_queryset_por_proforma(proforma)
+    if hasattr(form, 'set_servicios'):
+        form.set_servicios(servicios)
+    else:
+        form.fields['servicio'].queryset = servicios
+
+
+def recomputar_y_guardar_proforma(proforma, request):
+    if hasattr(proforma, "recomputar_totales"):
+        proforma.recomputar_totales()
+        proforma.save(request)
+
+
 @login_required(login_url='/login')
 @secure_module
 @last_access
@@ -212,6 +236,7 @@ def view(request):
             try:
                 proforma = get_object_or_404(Proforma, pk=request.POST.get('id'))
                 form = ProformaDetalleForm(request.POST)
+                configurar_servicios_form(form, proforma)
                 if not form.is_valid():
                     return bad_json(error=6)
 
@@ -242,6 +267,131 @@ def view(request):
                     proforma.save(request)
 
                 log(u'Agregó servicio %s a la proforma %s' % (servicio, proforma), request, "add")
+                return ok_json()
+
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
+
+        # ======= AGREGAR DETALLE (SERVICIO SIN HORARIO) A UNA PROFORMA =======
+        if action == 'agregar_detalle_servicio':
+            try:
+                proforma = get_object_or_404(Proforma, pk=request.POST.get('id'))
+                form = ProformaDetalleServicioForm(request.POST)
+
+                configurar_servicios_form(form, proforma)
+
+                if not form.is_valid():
+                    return bad_json(error=6)
+
+                servicio = form.cleaned_data['servicio']
+                descripcion = remover_tildes(form.cleaned_data['descripcion'] or "")
+                cantidad = form.cleaned_data['cantidad']
+                precio_base = form.cleaned_data['precio_base']
+                if precio_base is None:
+                    precio_base = servicio.precio_base
+
+                ProformaDetalle.objects.create(
+                    proforma=proforma,
+                    servicio=servicio,
+                    descripcion=descripcion,
+                    cantidad=cantidad,
+                    precio_unitario=precio_base,
+                )
+
+                if hasattr(proforma, "recomputar_totales"):
+                    proforma.recomputar_totales()
+                    proforma.save(request)
+
+                log(u'Agregó servicio %s a la proforma %s' % (servicio, proforma), request, "add")
+                return ok_json()
+
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
+
+        # ======= EDITAR DETALLE CON HORARIO =======
+        if action == 'editar_detalle':
+            try:
+                detalle = get_object_or_404(ProformaDetalle, pk=request.POST.get('id'))
+                proforma = detalle.proforma
+                if proforma.estado != Proforma.Estado.BORRADOR:
+                    return bad_json(mensaje=u'Solo se pueden editar detalles de una proforma en borrador.')
+
+                form = ProformaDetalleForm(request.POST)
+                configurar_servicios_form(form, proforma)
+                if not form.is_valid():
+                    return bad_json(error=6)
+
+                servicio = form.cleaned_data['servicio']
+                horainicio = form.cleaned_data['horainicio']
+                horafin = form.cleaned_data['horafin']
+
+                detalle.servicio = servicio
+                detalle.descripcion = remover_tildes(form.cleaned_data['descripcion'] or "")
+                detalle.fecha = form.cleaned_data['fecha']
+                detalle.horainicio = datetime.strptime(horainicio, '%H:%M').time() if horainicio else None
+                detalle.horafin = datetime.strptime(horafin, '%H:%M').time() if horafin else None
+                detalle.cantidad = form.cleaned_data['cantidad']
+                detalle.precio_unitario = form.cleaned_data['precio_unitario'] or servicio.precio_base
+                detalle.save(request)
+
+                recomputar_y_guardar_proforma(proforma, request)
+                log(u'Editó detalle %s de la proforma %s' % (detalle.id, proforma), request, "edit")
+                return ok_json()
+
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
+
+        # ======= EDITAR DETALLE SIN HORARIO =======
+        if action == 'editar_detalle_servicio':
+            try:
+                detalle = get_object_or_404(ProformaDetalle, pk=request.POST.get('id'))
+                proforma = detalle.proforma
+                if proforma.estado != Proforma.Estado.BORRADOR:
+                    return bad_json(mensaje=u'Solo se pueden editar detalles de una proforma en borrador.')
+
+                form = ProformaDetalleServicioForm(request.POST)
+                configurar_servicios_form(form, proforma)
+                if not form.is_valid():
+                    return bad_json(error=6)
+
+                servicio = form.cleaned_data['servicio']
+                precio_base = form.cleaned_data['precio_base']
+                if precio_base is None:
+                    precio_base = servicio.precio_base
+
+                detalle.servicio = servicio
+                detalle.descripcion = remover_tildes(form.cleaned_data['descripcion'] or "")
+                detalle.cantidad = form.cleaned_data['cantidad']
+                detalle.precio_unitario = precio_base
+                detalle.fecha = None
+                detalle.horainicio = None
+                detalle.horafin = None
+                detalle.save(request)
+
+                recomputar_y_guardar_proforma(proforma, request)
+                log(u'Editó detalle %s de la proforma %s' % (detalle.id, proforma), request, "edit")
+                return ok_json()
+
+            except Exception as ex:
+                transaction.set_rollback(True)
+                return bad_json(error=1, ex=ex)
+
+        # ======= ELIMINAR DETALLE =======
+        if action == 'eliminar_detalle':
+            try:
+                detalle = get_object_or_404(ProformaDetalle, pk=request.POST.get('id'))
+                proforma = detalle.proforma
+                if proforma.estado != Proforma.Estado.BORRADOR:
+                    return bad_json(mensaje=u'Solo se pueden eliminar detalles de una proforma en borrador.')
+
+                detalle_id = detalle.id
+                detalle.delete()
+                recomputar_y_guardar_proforma(proforma, request)
+
+                log(u'Eliminó detalle %s de la proforma %s' % (detalle_id, proforma), request, "del")
                 return ok_json()
 
             except Exception as ex:
@@ -500,15 +650,82 @@ def view(request):
                 form = ProformaDetalleForm()
 
                 # Filtrar lista de servicios según el tipo del requerimiento (si aplica)
-                if proforma.requerimiento and proforma.requerimiento.espacio_fisico.tipo_servicio_id:
-                    form.fields['servicio'].queryset = ServicioCatalogo.objects.filter(
-                        espacio_fisico__tipo_servicio_id=proforma.requerimiento.espacio_fisico.tipo_servicio.id
-                    )
+                configurar_servicios_form(form, proforma)
 
                 data['form'] = form
                 data['proforma'] = proforma
 
                 return render(request, 'gestion_servicios/agregar_detalle.html', data)
+            except Exception as ex:
+                return url_back(request, ex=ex)
+
+        # ======= MODAL: AGREGAR DETALLE A PROFORMA =======
+        if action == 'agregar_detalle_servicio':
+            try:
+                proforma = get_object_or_404(Proforma, pk=request.GET.get('id'))
+                data['title'] = u'Agregar servicio a proforma %s' % proforma.numero
+                form = ProformaDetalleServicioForm()
+
+                # Filtrar lista de servicios según el tipo del requerimiento (si aplica)
+                configurar_servicios_form(form, proforma)
+
+                data['form'] = form
+                data['proforma'] = proforma
+
+                return render(request, 'gestion_servicios/agregar_detalle_servicio.html', data)
+            except Exception as ex:
+                return url_back(request, ex=ex)
+
+        # ======= MODAL: EDITAR DETALLE CON HORARIO =======
+        if action == 'editar_detalle':
+            try:
+                detalle = get_object_or_404(ProformaDetalle, pk=request.GET.get('id'))
+                proforma = detalle.proforma
+                data['title'] = u'Editar detalle de proforma %s' % proforma.numero
+                initial = {
+                    'servicio': detalle.servicio_id,
+                    'fecha': detalle.fecha,
+                    'horainicio': detalle.horainicio.strftime('%H:%M') if detalle.horainicio else '',
+                    'horafin': detalle.horafin.strftime('%H:%M') if detalle.horafin else '',
+                    'descripcion': detalle.descripcion,
+                    'cantidad': detalle.cantidad,
+                    'precio_unitario': detalle.precio_unitario,
+                    'total': detalle.subtotal,
+                }
+                form = ProformaDetalleForm(initial=initial)
+                configurar_servicios_form(form, proforma)
+
+                data['form'] = form
+                data['detalle'] = detalle
+                data['proforma'] = proforma
+                data['horainicio_actual'] = initial['horainicio']
+                data['horafin_actual'] = initial['horafin']
+
+                return render(request, 'gestion_servicios/editar_detalle.html', data)
+            except Exception as ex:
+                return url_back(request, ex=ex)
+
+        # ======= MODAL: EDITAR DETALLE SIN HORARIO =======
+        if action == 'editar_detalle_servicio':
+            try:
+                detalle = get_object_or_404(ProformaDetalle, pk=request.GET.get('id'))
+                proforma = detalle.proforma
+                data['title'] = u'Editar detalle de proforma %s' % proforma.numero
+                initial = {
+                    'servicio': detalle.servicio_id,
+                    'descripcion': detalle.descripcion,
+                    'cantidad': detalle.cantidad,
+                    'precio_base': detalle.precio_unitario,
+                    'total': detalle.subtotal,
+                }
+                form = ProformaDetalleServicioForm(initial=initial)
+                configurar_servicios_form(form, proforma)
+
+                data['form'] = form
+                data['detalle'] = detalle
+                data['proforma'] = proforma
+
+                return render(request, 'gestion_servicios/editar_detalle_servicio.html', data)
             except Exception as ex:
                 return url_back(request, ex=ex)
 
