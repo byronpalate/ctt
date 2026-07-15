@@ -20,14 +20,14 @@
         </div>
         <div class='row mb-2'>
             <div class='col-6'>
-                <a href="javascript:;" nhref="/adm_pagosnivel?action=addfechaproceso&mid={{ modalidad.id }}" class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar fecha proceso</a>
+                
             </div>
         </div>
         {% if procesos %}
             <div class='row'>
                 <div class='col-12'>
                     <h6>Archivo de autorización
-                        <a href="javascript:;" nhref="adm_pagosnivel?action=subir&id={{ procesos.id }}&mid={{ modalidad.id }}" class="btn btn-ssm btn-info tu formmodal" data-bs-toggle="tooltip" data-bs-placement="top" title="Subir"><i class="icon-arrow-up"></i></a>
+                        
                         {% if procesos.archivo %}
                             <a class="btn btn-ssm btn-success tu" href="{{ procesos.archivo.url }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Descargar" target="_blank"><i class="icon-download-alt"></i></a>
                         {% endif %}
@@ -51,7 +51,7 @@
                             <td>{{ f.orden }}</td>
                             <td>{{ f.fechalimite|date:"Y-m-d"  }}</td>
                             <td style="text-align: center">
-                                <a href="javascript:;" nhref="/adm_pagosnivel?action=editfechaproceso&id={{ f.id }}" class='formmodal btn btn-success btn-ssm tu' data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
+                                
                             </td>
                         </tr>
                         {% empty %}
