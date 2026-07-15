@@ -19,7 +19,9 @@ from settings import ALUMNOS_GROUP_ID, SEXO_FEMENINO, SEXO_MASCULINO, CONTACTO_E
     PIE_PAGINA_CREATIVE_COMMON_LICENCE, CHEQUEAR_CORREO, PROFESORES_GROUP_ID, EMPLEADORES_GRUPO_ID, TIPO_PERIODO_GRADO, \
     NOTIFICACION_DEUDA, ACTUALIZAR_FOTO_PROFESOR, ACTUALIZAR_FOTO_ADMINISTRATIVOS, ARCHIVO_TIPO_PUBLICO, \
     ACTUALIZAR_FOTO_ALUMNOS, \
-    NIVEL_MALLA_CERO, CHEQUEAR_CONFLICTO_HORARIO, NOTA_ESTADO_EN_CURSO, CLIENTES_GROUP_ID
+    NIVEL_MALLA_CERO, CHEQUEAR_CONFLICTO_HORARIO, NOTA_ESTADO_EN_CURSO, CLIENTES_GROUP_ID, DATOS_INTEGRADORES, \
+    NACIONALIDAD_INDIGENA_ID, EMAIL_DOMAIN, EMAIL_DOMAIN_ESTUDIANTES, PAIS_ECUADOR_ID, \
+    TIEMPO_DEDICACION_TIEMPO_COMPLETO_ID, TIEMPO_DEDICACION_MEDIO_TIEMPO_ID, TIEMPO_DEDICACION_PARCIAL_ID
 from ctt.forms import PersonaForm, CambioClaveForm, CargarFotoForm, CambioPerfilForm, CambioCoordinacionForm, \
     CambioPeriodoForm, CambioClaveSimpleForm,FormTerminos
 from ctt.funciones import generar_nombre, log, fechatope, ok_json, bad_json, url_back, generar_clave, \
@@ -28,7 +30,8 @@ from ctt.models import Periodo, FotoPersona, Noticia, Profesor, Inscripcion, Arc
     mi_institucion, \
     Persona, PerfilUsuario, Modulo, Encuesta, Matricula, DatoTransferenciaDeposito, years_ago, Materia, \
     Actividad, \
-    InscripcionFlags, Reporte, Clase, Nivel, Asignatura, MateriaAsignada
+    InscripcionFlags, Reporte, Clase, Nivel, Asignatura, MateriaAsignada, TipoTerminosAcuerdos, \
+    AceptacionTerminosAcuerdos, CierreSesionCaja, SesionCaja
 
 from ctt.tasks import send_mail
 
@@ -171,12 +174,13 @@ def logout_user(request):
 def adduserdata(request, data):
     # ADICIONA EL USUARIO A LA SESSION
     if 'persona' not in request.session:
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             raise Exception('Usuario no autentificado en el sistema')
         request.session['persona'] = Persona.objects.get(usuario=request.user)
     else:
         request.session['persona'] = Persona.objects.get(pk=request.session['persona'].id)
     data['persona'] = request.session['persona']
+
     data['session_key'] = request.session.session_key
     data['check_session'] = True
     persona = data['persona']
@@ -288,12 +292,17 @@ def adduserdata(request, data):
         data['coordinacionseleccionada'] = coordinacion
         data['carreraseleccionada'] = carrera
     if 'periodo' not in request.session or not request.session['periodo']:
-        if Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, inicio__lte=datetime.now().date(), activo=True, fin__gte=datetime.now().date()).exists():
-            request.session['periodo'] = Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, activo=True, inicio__lte=datetime.now().date(), fin__gte=datetime.now().date()).first()
-        elif Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, activo=True, fin__lte=datetime.now().date()).exists():
-            request.session['periodo'] = Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, activo=True, fin__lte=datetime.now().date()).first()
-        else:
-            request.session['periodo'] = Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, activo=True).order_by('-fin').first()
+        hoy = datetime.now().date()
+        # Se prefiere el periodo del tipo configurado (TIPO_PERIODO_GRADO): vigente, luego el ultimo ya
+        # finalizado, luego el mas reciente activo. Si no existe ninguno de ese tipo, se toma cualquier
+        # periodo activo (vigente o el mas reciente) para que la sesion nunca quede sin periodo.
+        request.session['periodo'] = (
+            Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, activo=True, inicio__lte=hoy, fin__gte=hoy).order_by('-fin').first()
+            or Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, activo=True, fin__lte=hoy).order_by('-fin').first()
+            or Periodo.objects.filter(tipo=TIPO_PERIODO_GRADO, activo=True).order_by('-fin').first()
+            or Periodo.objects.filter(activo=True, inicio__lte=hoy, fin__gte=hoy).order_by('-fin').first()
+            or Periodo.objects.filter(activo=True).order_by('-fin').first()
+        )
     else:
         if request.session['periodo']:
             request.session['periodo'] = Periodo.objects.get(pk=request.session['periodo'].id)
@@ -612,15 +621,11 @@ def account(request):
                             profesor.indicehautor = form.cleaned_data['indicehautor']
                             profesor.nivel_ingles = form.cleaned_data['nivel_ingles']
                             profesor.save(request)
-                            cedula = persona.cedula_doc()
-                            newfile = request.FILES["documentoidentificacion"]
-                            newfile._name = generar_nombre("documentoidentificacion", newfile._name)
-                            if cedula:
-                                cedula.cedula = newfile
-                                cedula.save(request)
-                            else:
-                                cedula = CedulaPersona(persona=persona, cedula=newfile)
-                                cedula.save(request)
+                            if form.cleaned_data.get('documentoidentificacion'):
+                                newfile = form.cleaned_data['documentoidentificacion']
+                                newfile._name = generar_nombre("documentoidentificacion", newfile._name)
+                                profesor.documentoidentificacion = newfile
+                                profesor.save(request)
                             perfil = profesor.persona.mi_perfil_docente()
                             perfil.raza = form.cleaned_data['etnia']
                             perfil.nacionalidadindigena = form.cleaned_data['nacionalidadindigena']
@@ -637,7 +642,7 @@ def account(request):
                                 periodoactualizaciondatos.confirmar_datos_administrativo(administrativo, personales=True)
                         return ok_json()
                     else:
-                        return bad_json(error=6)
+                        return bad_json(error=6, form=form)
                 except Exception as ex:
                     transaction.set_rollback(True)
                     return bad_json(error=1, ex=ex)
@@ -711,8 +716,7 @@ def account(request):
                                             "contactoemergencia": personaextension.contactoemergencia,
                                             "relacioncontactoemergencia": personaextension.relacioncontactoemergencia,
                                             "emailcontactoemergencia": personaextension.emailcontactoemergencia,
-                                            "telefonoemergencia": personaextension.telefonoemergencia,
-                                            "tipolicencia": persona.tipolicencia})
+                                            "telefonoemergencia": personaextension.telefonoemergencia})
                 form.editar(persona)
                 if not perfilprincipal.profesor:
                     form.sin_emailinst()
@@ -1002,19 +1006,19 @@ def total_cheques_rango(inicio, fin):
 
 
 def cantidad_tarjetas_dia(fecha):
-    return DatoTarjeta.objects.filter(fecha=fecha, pagotarjeta__pagos__valido=True).distinct().count()
+    return 0
 
 
 def cantidad_tarjetas_rango(inicio, fin):
-    return DatoTarjeta.objects.filter(fecha__gte=inicio, fecha__lte=fin, pagotarjeta__pagos__valido=True).distinct().count()
+    return 0
 
 
 def total_tarjetas_dia(fecha):
-    return null_to_numeric(Pago.objects.filter(pagotarjeta__isnull=False, fecha=fecha, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
+    return 0
 
 
 def total_tarjetas_rango(inicio, fin):
-    return null_to_numeric(Pago.objects.filter(pagotarjeta__isnull=False, fecha__gte=inicio, fecha__lte=fin, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
+    return 0
 
 
 def cantidad_depositos_dia(fecha):
@@ -1050,7 +1054,7 @@ def total_transferencias_rango(inicio, fin):
 
 
 def cantidad_notasdecredito_dia(fecha):
-    return PagoNotaCredito.objects.filter(pagos__fecha=fecha).distinct().count()
+    return 0
 
 
 def total_recibocaja_dia(fecha):
@@ -1070,7 +1074,7 @@ def cantidad_recibocaja_rango(inicio, fin):
 
 
 def total_notadecredito_dia(fecha):
-    return null_to_numeric(Pago.objects.filter(fecha=fecha, pagonotacredito__isnull=False, valido=True).aggregate(valor=Sum('valor'))['valor'], 2)
+    return 0
 
 
 def total_dia(fecha):
@@ -1380,19 +1384,10 @@ def materias_abiertas_secretaria(request):
                 materiasabiertas = Materia.objects.filter(asignaturamalla__in=am, fin__gte=hoy, nivel__sede=nivel.sede, nivel__cerrado=False, asignatura=asignatura, nivel__periodo=nivel.periodo).distinct().order_by('paralelomateria')
                 if not materiasabiertas:
                     materiasabiertas = Materia.objects.filter(rectora=True, carrerascomunes__id__in=[inscripcion.carrera.id], fin__gte=hoy, nivel__sede=nivel.sede, nivel__cerrado=False, asignatura=asignatura, nivel__periodo=nivel.periodo).distinct().order_by('paralelomateria')
-                if not materiasabiertas:
-                    materiasabiertas = Materia.objects.filter(rectora=True, materiaotracarreramodalidadsede__carrera__id=inscripcion.carrera.id, materiaotracarreramodalidadsede__asignatura=asignatura, fin__gte=hoy, nivel__sede=nivel.sede, nivel__cerrado=False, nivel__periodo=nivel.periodo).distinct().order_by('paralelomateria')
-            if malla.modulomalla_set.filter(asignatura=asignatura).exists():
-                mm = malla.modulomalla_set.filter(asignatura=asignatura)
-                materiasabiertas = Materia.objects.filter(modulomalla__in=mm, fin__gte=hoy, nivel__sede=nivel.sede, nivel__cerrado=False, asignatura=asignatura, nivel__periodo=nivel.periodo).distinct().order_by('paralelomateria')
-                if not materiasabiertas:
-                    materiasabiertas = Materia.objects.filter(rectora=True, carrerascomunes__id__in=[inscripcion.carrera.id], fin__gte=hoy, nivel__sede=nivel.sede, nivel__cerrado=False, asignatura=asignatura, nivel__periodo=nivel.periodo).distinct().order_by('paralelomateria')
         materias = {}
         for materia in materiasabiertas:
             if materia.asignaturamalla:
                 carrera = materia.asignaturamalla.malla.carrera.alias
-            elif materia.modulomalla:
-                carrera = materia.modulomalla.malla.carrera.alias
             else:
                 carrera = materia.nivel.carrera.alias
             coordinacion = materia.nivel.nivellibrecoordinacion_set.all().first().coordinacion.alias
@@ -2018,8 +2013,8 @@ def cierre_cajas_automaticas(fecha):
             ultimopago = sc.pago_set.all().order_by('-fecha').first()
             hora = ultimopago.fecha_creacion.time()
         cierre = CierreSesionCaja(sesion=sc,
-                                  tarjeta=null_to_numeric(Pago.objects.filter(pagotarjeta__isnull=False, sesion=sc, valido=True).aggregate(valor=Sum('valor'))['valor'], 2),
-                                  total=null_to_numeric(Pago.objects.filter(pagotarjeta__isnull=False, sesion=sc, valido=True).aggregate(valor=Sum('valor'))['valor'], 2),
+                                  tarjeta=0,
+                                  total=null_to_numeric(Pago.objects.filter(sesion=sc, valido=True).aggregate(valor=Sum('valor'))['valor'], 2),
                                   fecha=fecha,
                                   hora=hora)
         cierre.save()

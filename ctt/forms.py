@@ -3396,7 +3396,7 @@ class ProgramaCertificadoForm(BaseForm):
     fin = forms.DateField(label=u'Fecha fin', required=False, input_formats=['%d-%m-%Y'], widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}))
     modalidad = forms.ChoiceField(label=u'Modalidad', choices=MODALIDADES_PROGRAMA_CERTIFICADO, required=False, widget=forms.Select())
     facilitador = forms.CharField(label=u'Nombre del Facilitador', required=False, max_length=290)
-    plantilla = forms.CharField(label=u'Plantilla', required=False)
+    plantilla = forms.ModelChoiceField( label=u"Plantilla", queryset=PlantillaCertificadosEnLinea.objects.filter(activo=True).order_by('nombre'), required=False,widget=forms.Select(attrs={'class': 'form-select'}))
     debepagar = forms.BooleanField(label=u'Debe validar financiero?', required=False)
     aprobadofinanciero = forms.BooleanField(label=u'Válidado por financiero', required=False)
 

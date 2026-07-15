@@ -16,7 +16,6 @@ from ctt.models import Sede, PreciosPeriodo, null_to_numeric, PreciosPeriodoModu
     TipoCostoCurso, CostodiferenciadoCursoPeriodo, TipoEspecieValorada, \
     HistoricoTipoEspecieValorada, Carrera, Modalidad, Malla, Periodo,  IvaAplicado, DescuentoFormaPago, ValoresMinimosPeriodoBecaMatricula, FormaDePago
 
-
 @login_required(login_url='/login')
 @secure_module
 @last_access
@@ -38,89 +37,6 @@ def view(request):
                     pp.costomatricula = float(request.POST['valor'])
                     pp.save(request)
                     log(u'Modifico precio curso: %s' % pp, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'act_preciotipotribunal_pago':
-                try:
-                    pp = PreciosTipoTribunal.objects.get(pk=int(request.POST['id']))
-                    pp.pago = float(request.POST['valor'])
-                    pp.save(request)
-                    log(u'Modifico precio pago pregrado: %s' % pp, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'act_preciotipotribunal_pagoposgrados':
-                try:
-                    pp = PreciosTipoTribunal.objects.get(pk=int(request.POST['id']))
-                    periodos = int(request.POST['periodos'])
-                    if periodos == 2:
-                        pp.pagoposgrados2 = float(request.POST['valor'])
-                    elif periodos == 3:
-                        pp.pagoposgrados3 = float(request.POST['valor'])
-                    else:
-                        pp.pagoposgrados = float(request.POST['valor'])
-                    pp.save(request)
-                    log(u'Modifico precio pago posgrado: %s' % pp, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'act_preciotipotribunal_examencomplexivo':
-                try:
-                    pp = PreciosTipoTribunal.objects.get(pk=int(request.POST['id']))
-                    pp.examencomplexivo = float(request.POST['valor'])
-                    pp.save(request)
-                    log(u'Modifico precio examen complexivo: %s' % pp, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'act_preciotipotribunal_tp':
-                try:
-                    pp = PreciosTipoTribunal.objects.get(pk=int(request.POST['id']))
-                    pp.tienepago = bool(request.POST['valor'])
-                    pp.save(request)
-                    log(u'Activo precio tipo tribunal: %s' % pp, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'act_preciotipotribunal_tc':
-                try:
-                    pp = PreciosTipoTribunal.objects.get(pk=int(request.POST['id']))
-                    pp.tiempocompleto = bool(request.POST['valor'])
-                    pp.save(request)
-                    log(u'Activo/desactivo precio tipo tribunal: %s' % pp, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'act_preciotipotribunal_mt':
-                try:
-                    pp = PreciosTipoTribunal.objects.get(pk=int(request.POST['id']))
-                    pp.mediotiempo = bool(request.POST['valor'])
-                    pp.save(request)
-                    log(u'Activo/desactivo precio tipo tribunal: %s' % pp, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'act_preciotipotribunal_ta':
-                try:
-                    pp = PreciosTipoTribunal.objects.get(pk=int(request.POST['id']))
-                    pp.tiempoparcial = bool(request.POST['valor'])
-                    pp.save(request)
-                    log(u'Activo/desactivo precio tipo tribunal: %s' % pp, request, "edit")
                     return ok_json()
                 except Exception as ex:
                     transaction.set_rollback(True)
@@ -442,83 +358,15 @@ def view(request):
                     transaction.set_rollback(True)
                     return bad_json(error=1, ex=ex)
 
-            if action == 'addcostoconvenio':
-                try:
-                    form = PreciosConvenioHomologacionForm(request.POST)
-                    if form.is_valid():
-                        precioconvenio = PreciosConvenioHomologacion(periodo=periodo,
-                                                                     nombre=form.cleaned_data['nombre'],
-                                                                     costoconvenio=form.cleaned_data['costo'])
-                        precioconvenio.save()
-                        log(u'Adiciono costo convenio homologacion: %s' % precioconvenio, request, "add")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'addcostoparqueadero':
-                try:
-                    form = PreciosServicioParqueaderoForm(request.POST)
-                    if form.is_valid():
-                        if not PreciosServicioParqueadero.objects.filter(nombre='SERVICIO DE PARQUEADERO', sede=form.cleaned_data['sede'], periodo=periodo, modalidad=form.cleaned_data['modalidad'], tiempo=form.cleaned_data['tiempo'], tipovehiculo=form.cleaned_data['tipovehiculo'], posgrado=form.cleaned_data['posgrado']).exists():
-                            porcientoiva = IvaAplicado.objects.get(pk=TIPO_IVA_15_ID).porcientoiva
-                            costototal = float(form.cleaned_data['costototal'])
-                            costosubtotal = round((costototal / (porcientoiva + 1)), 2)
-                            iva = costototal - costosubtotal
-                            costoadicionalperdida = float(form.cleaned_data['costoadicionalperdida']) - (float(form.cleaned_data['costoadicionalperdida']) - round((float(form.cleaned_data['costoadicionalperdida']) / (porcientoiva + 1)),2))
-                            precioservicioparqueadero = PreciosServicioParqueadero(periodo=periodo,
-                                                                                   sede=form.cleaned_data['sede'],
-                                                                                   modalidad=form.cleaned_data['modalidad'],
-                                                                                   nombre='SERVICIO DE PARQUEADERO',
-                                                                                   costototal=costototal,
-                                                                                   costosubtotal=costosubtotal,
-                                                                                   iva=iva,
-                                                                                   costoadicionalperdida=costoadicionalperdida,
-                                                                                   posgrado=form.cleaned_data['posgrado'],
-                                                                                   tiempo=form.cleaned_data['tiempo'],
-                                                                                   tipovehiculo=form.cleaned_data['tipovehiculo'])
-                            precioservicioparqueadero.save()
-                            log(u'Adiciono costo servicio parqueadero: %s' % precioservicioparqueadero, request, "add")
-                        else:
-                            return bad_json('Los parámetros de ingreso ya existen.')
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'editcostoparqueadero':
-                try:
-                    form = PreciosServicioParqueaderoForm(request.POST)
-                    if form.is_valid():
-                        porcientoiva = IvaAplicado.objects.get(pk=TIPO_IVA_15_ID).porcientoiva
-                        costototal = float(form.cleaned_data['costototal'])
-                        costosubtotal = round((costototal / (porcientoiva + 1)), 2)
-                        iva = round(costototal - costosubtotal, 2)
-                        costoadicionalperdida = float(form.cleaned_data['costoadicionalperdida']) - (float(form.cleaned_data['costoadicionalperdida']) - round((float(form.cleaned_data['costoadicionalperdida']) / (porcientoiva + 1)), 2))
-                        costoparqueo = PreciosServicioParqueadero.objects.get(pk=request.POST['id'])
-                        costoparqueo.nombre = 'SERVICIO DE PARQUEADERO'
-                        costoparqueo.sede = form.cleaned_data['sede']
-                        costoparqueo.modalidad = form.cleaned_data['modalidad']
-                        costoparqueo.costototal = costototal
-                        costoparqueo.costosubtotal = costosubtotal
-                        costoparqueo.iva = iva
-                        costoparqueo.costoadicionalperdida = costoadicionalperdida
-                        costoparqueo.posgrado = form.cleaned_data['posgrado']
-                        costoparqueo.tiempo = form.cleaned_data['tiempo']
-                        costoparqueo.tipovehiculo = form.cleaned_data['tipovehiculo']
-                        costoparqueo.save()
-                        log(u'Edito costo servicio parqueadero: %s' % costoparqueo, request, "edit")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
             if action == 'addcostoscursos':
                 try:
                     form = TipoCostoCursoForm(request.POST)
                     if form.is_valid():
                         tipo = TipoCostoCurso(nombre=form.cleaned_data['nombre'],
                                               cursos=form.cleaned_data['cursos'],
+                                              costolibre=form.cleaned_data['costolibre'],
+                                              titulacion=form.cleaned_data['titulacion'],
+                                              actualizacionconocimiento=form.cleaned_data['actualizacionconocimiento'],
                                               costodiferenciado=form.cleaned_data['costodiferenciado'],
                                               validapromedio=form.cleaned_data['validapromedio'])
                         tipo.save()
@@ -543,21 +391,6 @@ def view(request):
                             tipo.validapromedio = form.cleaned_data['validapromedio']
                         tipo.save()
                         log(u'Adiciono tipo de costo curso: %s' % tipo, request, "add")
-                    return ok_json()
-                except Exception as ex:
-                    transaction.set_rollback(True)
-                    return bad_json(error=1, ex=ex)
-
-            if action == 'editcostoconvenio':
-                try:
-                    form = PreciosConvenioHomologacionForm(request.POST)
-                    if form.is_valid():
-                        costoconvenio = PreciosConvenioHomologacion.objects.get(pk=request.POST['id'])
-                        costoconvenio.nombre = form.cleaned_data['nombre']
-                        # if not costoconvenio.tiene_uso():
-                        costoconvenio.costoconvenio = form.cleaned_data['costo']
-                        costoconvenio.save()
-                        log(u'Edito costo convenio: %s' % costoconvenio, request, "edit")
                     return ok_json()
                 except Exception as ex:
                     transaction.set_rollback(True)
@@ -733,87 +566,6 @@ def view(request):
                     transaction.set_rollback(True)
                     return bad_json(error=1, ex=ex)
 
-        if action == 'clonarvaloresparqueo':
-            try:
-                form = ClonarPreciosPeriodoForm(request.POST)
-                periodoactual = Periodo.objects.get(pk=periodo.id)
-                periodoseleccionado = Periodo.objects.get(pk=int(request.POST['periodo']))
-                if form.is_valid():
-                    if periodoactual.preciosservicioparqueadero_set.filter(clonado=True).exists():
-                        return bad_json(mensaje='No se puede copiar valores a este periodo %s porque ya fueron clonados anteriormente' % periodoactual.nombre)
-                    else:
-                        if periodoactual == periodoseleccionado:
-                            return bad_json(mensaje='No se pude clonar valores del mismo periodo')
-                    for valoranterior in periodoseleccionado.preciosservicioparqueadero_set.all():
-                        valoractual = PreciosServicioParqueadero(periodo=periodo,
-                                                                 nombre=valoranterior.nombre,
-                                                                 sede=valoranterior.sede,
-                                                                 modalidad=valoranterior.modalidad,
-                                                                 costosubtotal=valoranterior.costosubtotal,
-                                                                 costoadicionalperdida=valoranterior.costoadicionalperdida,
-                                                                 posgrado=valoranterior.posgrado,
-                                                                 tipovehiculo=valoranterior.tipovehiculo,
-                                                                 tiempo_id=valoranterior.tiempo_id,
-                                                                 costototal=valoranterior.costototal,
-                                                                 iva=valoranterior.iva,
-                                                                 clonado=True)
-                        valoractual.save(request)
-                    log(u'Clono valores del periodo %s al periodo %s' % (periodoseleccionado.nombre, periodoactual.nombre), request, "edit")
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
-
-        if action == 'addfechaproceso':
-            try:
-                form = FechaSolicitudProrrogaSecretariaForm(request.POST)
-                if form.is_valid():
-                    if ProcesoSolicitudProrrogasSecretaria.objects.filter(periodo=periodo, modalidad_id=request.POST['mid']).exists():
-                        proceso = ProcesoSolicitudProrrogasSecretaria.objects.filter(periodo=periodo, modalidad_id=request.POST['mid'])[0]
-                    else:
-                        proceso = ProcesoSolicitudProrrogasSecretaria(periodo=periodo, modalidad_id=request.POST['mid'],)
-                        proceso.save()
-                    fecha = FechasPeriodoSolicitudProrrogas(orden=request.POST['orden'], fechalimite=convertir_fecha(request.POST['fecha']))
-                    fecha.save()
-                    fecha.proceso.add(proceso.id)
-                    log(u'Adiciono fecha: %s' % proceso, request, "add")
-                return ok_json()
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
-
-        if action == 'editfechaproceso':
-            try:
-                form = FechaSolicitudProrrogaSecretariaForm(request.POST)
-                if form.is_valid():
-                    fecha = FechasPeriodoSolicitudProrrogas(pk=request.POST['id'])
-                    fecha.orden = request.POST['orden']
-                    fecha.fechalimite = convertir_fecha(request.POST['fecha'])
-                    fecha.save()
-                    log(u'Modifico fecha: %s' % fecha, request, "add")
-                return ok_json()
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
-
-        if action == 'subir':
-            try:
-                form = DocProcesoProrrogasSecretariaForm(request.POST, request.FILES)
-                if form.is_valid():
-                    pr = ProcesoSolicitudProrrogasSecretaria.objects.get(pk=request.POST['id'])
-                    newfile = request.FILES['archivo']
-                    newfile._name = generar_nombre("docaprobado_", newfile._name)
-                    pr.archivo = newfile
-                    pr.save(request)
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
-
         if action == 'delformapago':
             try:
                 forma = DescuentoFormaPago.objects.get(pk=request.POST['id'])
@@ -865,72 +617,11 @@ def view(request):
                 transaction.set_rollback(True)
                 return bad_json(error=1, ex=ex)
 
-        if action == 'addvalorperiodobeca':
-            try:
-                form = ValorPeriodoBecaFormalizarForm(request.POST)
-                if form.is_valid():
-                    valor = ValoresMinimosPeriodoBecaMatricula(
-                        periodo = form.cleaned_data['periodo'],
-                        valormatricula = form.cleaned_data['valormatricula'],
-                        activavalormatricula = form.cleaned_data['activavalormatricula'],
-                        porcentajematricula = form.cleaned_data['porcentajematricula'],
-                        activaporcentajematricula = form.cleaned_data['activaporcentajematricula'],
-                        valorbeca=form.cleaned_data['valorbeca'],
-                        activavalorbeca=form.cleaned_data['activavalorbeca'],
-                        porcentajebeca=form.cleaned_data['porcentajebeca'],
-                        activaporcentajebeca=form.cleaned_data['activaporcentajebeca']
-                    )
-                    valor.save()
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
-
-        if action == 'editvalorperiodobeca':
-            try:
-                form = ValorPeriodoBecaFormalizarForm(request.POST)
-                if form.is_valid():
-                    valor = ValoresMinimosPeriodoBecaMatricula.objects.get(pk=int(request.POST['valor']))
-                    valor.periodo = form.cleaned_data['periodo']
-                    valor.valormatricula = int(form.cleaned_data['valormatricula'])
-                    valor.activavalormatricula = form.cleaned_data['activavalormatricula']
-                    valor.porcentajematricula = form.cleaned_data['porcentajematricula']
-                    valor.activaporcentajematricula = form.cleaned_data['activaporcentajematricula']
-                    valor.valorbeca = form.cleaned_data['valorbeca']
-                    valor.activavalorbeca = form.cleaned_data['activavalorbeca']
-                    valor.porcentajebeca = form.cleaned_data['porcentajebeca']
-                    valor.activaporcentajebeca = form.cleaned_data['activaporcentajebeca']
-                    valor.save()
-                    log(u'Edito valores minimos para beca y formalizacion: %s' % valor, request, "edit")
-                    return ok_json()
-                else:
-                    return bad_json(error=6)
-            except Exception as ex:
-                transaction.set_rollback(True)
-                return bad_json(error=1, ex=ex)
-
         return bad_json(error=0)
     else:
         data['title'] = u'Precios del periodo'
         if 'action' in request.GET:
             action = request.GET['action']
-            if action == 'addcostoconvenio':
-                try:
-                    data['title'] = u'Adicionar Costos Convenio Homologación'
-                    data['form'] = PreciosConvenioHomologacionForm()
-                    return render(request, "adm_pagosnivel/addcostoconvenio.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'addcostoparqueadero':
-                try:
-                    data['title'] = u'Adicionar Costos de servicio de parqueadero'
-                    data['form'] = PreciosServicioParqueaderoForm()
-                    return render(request, "adm_pagosnivel/addcostoservicioparqueadero.html", data)
-                except Exception as ex:
-                    pass
 
             if action == 'addcostoscursos':
                 try:
@@ -954,36 +645,6 @@ def view(request):
                     form.edit(tipo)
                     data['form'] = form
                     return render(request, "adm_pagosnivel/editcostoscursos.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'editcostoconvenio':
-                try:
-                    data['title'] = u'Editar costo convenio homologación'
-                    data['precioconvenio'] = precioconvenio = PreciosConvenioHomologacion.objects.get(pk=request.GET['id'])
-                    form = PreciosConvenioHomologacionForm(initial={'nombre': precioconvenio.nombre,
-                                                                    'costo': precioconvenio.costoconvenio})
-                    data['form'] = form
-                    return render(request, "adm_pagosnivel/editcostoconvenio.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'editcostoparqueadero':
-                try:
-                    data['title'] = u'Editar costo servicio parqueadero'
-                    data['precioparqueo'] = precioparqueo = PreciosServicioParqueadero.objects.get(pk=request.GET['id'])
-                    form = PreciosServicioParqueaderoForm(initial={'nombre': precioparqueo.nombre,
-                                                                   'sede': precioparqueo.sede,
-                                                                   'modalidad': precioparqueo.modalidad,
-                                                                   'costosubtotal': precioparqueo.costosubtotal,
-                                                                   'costototal': precioparqueo.costototal,
-                                                                   'iva': precioparqueo.iva,
-                                                                   'costoadicionalperdida': precioparqueo.costoadicionalperdida,
-                                                                   'posgrado': precioparqueo.posgrado,
-                                                                   'tiempo': precioparqueo.tiempo,
-                                                                   'tipovehiculo': precioparqueo.tipovehiculo})
-                    data['form'] = form
-                    return render(request, "adm_pagosnivel/editcostoparqueadero.html", data)
                 except Exception as ex:
                     pass
 
@@ -1089,44 +750,6 @@ def view(request):
                 except Exception as ex:
                     pass
 
-            if action == 'clonarvaloresparqueo':
-                try:
-                    data['title'] = u'Clonar valores desde el período:'
-                    form = ClonarPreciosPeriodoForm()
-                    data['form'] = form
-                    return render(request, "adm_pagosnivel/preciosparqueo.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'addfechaproceso':
-                try:
-                    data['title'] = u'Adicionar Fecha'
-                    data['modalidad'] = Modalidad.objects.get(pk=request.GET['mid'])
-                    data['form'] = FechaSolicitudProrrogaSecretariaForm()
-                    return render(request, "adm_pagosnivel/addfecha.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'editfechaproceso':
-                try:
-                    data['title'] = u'Editar Fecha'
-                    data['fecha'] = fecha = FechasPeriodoSolicitudProrrogas.objects.get(pk=request.GET['id'])
-                    data['form'] = FechaSolicitudProrrogaSecretariaForm(initial={'orden': fecha.orden,
-                                                                                 'fechalimite': fecha.fechalimite})
-                    return render(request, "adm_pagosnivel/editfechaproceso.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'subir':
-                try:
-                    data['title'] = u'Subir archivo'
-                    data['proceso'] = ProcesoSolicitudProrrogasSecretaria.objects.get(pk=request.GET['id'])
-                    data['modalidad'] = Modalidad.objects.get(pk=request.GET['mid'])
-                    data['form'] = DocProcesoProrrogasSecretariaForm()
-                    return render(request, "adm_pagosnivel/subir.html", data)
-                except Exception as ex:
-                    pass
-
             if action == 'descuentoformapago':
                 try:
                     data['title'] = u'Descuentos forma de pago'
@@ -1150,31 +773,6 @@ def view(request):
                     data['title'] = u'Eliminar Froma de pago'
                     data['formapago'] = DescuentoFormaPago.objects.get(pk=request.GET['id'])
                     return render(request, "adm_pagosnivel/delformapago.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'addvalorperiodobeca':
-                try:
-                    data['title'] = u'Adicionar Valores abonados minimos para Formalizar y Postular a la Beca'
-                    data['form'] = ValorPeriodoBecaFormalizarForm()
-                    return render(request, "adm_pagosnivel/addvalorperiodobeca.html", data)
-                except Exception as ex:
-                    pass
-
-            if action == 'editvalorperiodobeca':
-                try:
-                    data['title'] = u'Adicionar Valores abonados minimos para Formalizar y Postular a la Beca'
-                    data['valor'] = valor = ValoresMinimosPeriodoBecaMatricula.objects.get(pk=request.GET['valor'])
-                    data['form'] = ValorPeriodoBecaFormalizarForm(initial={'periodo': valor.periodo,
-                                                                           'valormatricula': valor.valormatricula,
-                                                                           'activavalormatricula': valor.activavalormatricula,
-                                                                           'porcentajematricula': valor.porcentajematricula,
-                                                                           'activaporcentajematricula': valor.activaporcentajematricula,
-                                                                           'valorbeca': valor.valorbeca,
-                                                                           'activavalorbeca': valor.activavalorbeca,
-                                                                           'porcentajebeca': valor.porcentajebeca,
-                                                                           'activaporcentajebeca': valor.activaporcentajebeca})
-                    return render(request, "adm_pagosnivel/editvalorperiodobeca.html", data)
                 except Exception as ex:
                     pass
 
@@ -1263,10 +861,6 @@ def view(request):
                     data['fechasprocesos'] = ""
                     data['modalidad'] = modalidad
                     return render(request, "adm_pagosnivel/3.html", data)
-                if seccion == 4:
-                    data['costosconvenio'] = None
-                    data['costosparqueadero'] = None
-                    return render(request, "adm_pagosnivel/4.html", data)
                 if seccion == 5:
                     data['valores'] = ValoresMinimosPeriodoBecaMatricula.objects.all()
                     return render(request, "adm_pagosnivel/5.html", data)

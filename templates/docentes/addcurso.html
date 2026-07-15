@@ -3,12 +3,8 @@
 {% block formaction %}/docentes{% endblock %}
 {% block formdestination %}/docentes?action=titulacion&id={{ profesor.id }}{% endblock %}
 {% block formextra %}
-    <input type='hidden' name='action' value='{{ request.GET.action|default:"" }}'/>
-    {% for k, v in request.GET.items %}
-        {% if k != 'action' %}
-            <input type="hidden" name="{{ k }}" value="{{ v }}"/>
-        {% endif %}
-    {% endfor %}
+    <input type='hidden' name='action' value='addcurso'/>
+    <input type='hidden' name='id' value="{{ profesor.id }}"/>
 {% endblock %}
 {% block formback %}/docentes?action=titulacion&id={{ profesor.id }}{% endblock %}
 {% block extrajavascript %}

@@ -130,7 +130,6 @@ def view(request):
                         profesor.documentoidentificacion = newfile
                     profesor.save(request)
                     personaprofesor.crear_perfil(profesor=profesor)
-                    personaprofesor.mi_ficha()
                     perfil = personaprofesor.mi_perfil()
                     perfil.raza = form.cleaned_data['etnia']
                     perfil.nacionalidadindigena = form.cleaned_data['nacionalidadindigena']
@@ -742,7 +741,7 @@ def view(request):
                                                      "apolloinstitucion": curso.apolloinstitucion,
                                                      "fecha_inicio": curso.fecha_inicio,
                                                      "fecha_fin": curso.fecha_fin,
-                                                     "horas": curso.horas})
+                                                     "horas": curso.horas}) 
                     form.editar(curso)
                     data['form'] = form
                     return render(request, "docentes/editcurso.html", data)

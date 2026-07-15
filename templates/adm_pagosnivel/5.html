@@ -1,9 +1,10 @@
 {% extends "adm_pagosnivel/view.html" %}
 {% load ctt_extras %}
 {% block heading %}
+    {{ block.super }}
     <script type="text/javascript">
         $(function() {
-        }
+        });
     </script>
 {% endblock %}
 {% block contenidotab %}
@@ -11,7 +12,7 @@
          aria-labelledby="tab5">
         <div class='row mb-2'>
             <div class='col-6'>
-                <a href="javascript:;" nhref="/adm_pagosnivel?action=addvalorperiodobeca" class='formmodal btn btn-sm btn-success'><i class="icon-plus"></i> Adicionar</a>
+                
             </div>
         </div>
         <div class='row'>
@@ -64,11 +65,8 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a class="btn btn-sm btn-success formmodal tu" href="javascript:;" nhref="/adm_pagosnivel?action=editvalorperiodobeca&valor={{ valor.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar"><i class="icon-edit"></i></a>
-                                        <a class="btn btn-sm btn-danger eliminacionmodal tu" href="javascript:;" nhref="/adm_pagosnivel?action=delvalorperiodobeca&id={{ valor.id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar"><i class="icon-remove"></i></a>
+
                             </td>
-
-
 
                             </td>
                         </tr>

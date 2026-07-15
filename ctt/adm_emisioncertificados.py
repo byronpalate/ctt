@@ -74,6 +74,7 @@ def view(request):
                                                      modalidad=form.cleaned_data['modalidad'],
                                                      facilitador=form.cleaned_data['facilitador'],
                                                      plantilla=form.cleaned_data['plantilla'],
+                                                     plantillacertificadoctt=form.cleaned_data['plantilla'],
                                                      debepagar=form.cleaned_data['debepagar'],
                                                      tipopersona=form.cleaned_data['tipopersona'])
                     programa.save()
@@ -98,6 +99,7 @@ def view(request):
                     programa.modalidad = form.cleaned_data['modalidad']
                     programa.facilitador = form.cleaned_data['facilitador']
                     programa.plantilla = form.cleaned_data['plantilla']
+                    programa.plantillacertificadoctt = form.cleaned_data['plantilla']
                     programa.debepagar = form.cleaned_data['debepagar']
                     programa.tipopersona = form.cleaned_data['tipopersona']
                     programa.aprobadofinanciero = form.cleaned_data['aprobadofinanciero']
@@ -383,7 +385,7 @@ def view(request):
                                                                     'fin': programa.fin,
                                                                     'modalidad': programa.modalidad,
                                                                     'facilitador': programa.facilitador,
-                                                                    'plantilla': programa.plantilla,
+                                                                    'plantilla': programa.plantillacertificadoctt,
                                                                     'debepagar': programa.debepagar})
                     return render(request, "adm_emisioncertificados/editprograma.html", data)
                 except Exception as ex:
