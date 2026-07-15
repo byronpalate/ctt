@@ -1,4 +1,23 @@
 {% extends "formbs.html" %}
+{% block extrajavascript %}
+    <script type="text/javascript">
+        $(function () {
+            empresa = function () {
+                if ($("#id_empresa").is(':checked')) {
+                    $("#fieldset_ruc,#fieldset_nombreempresa,#fieldset_emailempresa,#fieldset_direccionempresa,#fieldset_telefonoempresa").show();
+                } else {
+                    $("#fieldset_ruc,#fieldset_nombreempresa,#fieldset_emailempresa,#fieldset_direccionempresa,#fieldset_telefonoempresa").hide();
+                }
+            };
+
+            empresa();
+
+            $("#id_empresa").click(function () {
+                empresa();
+            });
+        });
+    </script>
+{% endblock %}
 {% block titulo %}{{ title }}{% endblock %}
 {% block formaction %}/adm_cliente{% endblock %}
 {% block formdestination %}/adm_cliente{% endblock %}

@@ -3,9 +3,9 @@
 {% block formaction %}/adm_cliente{% endblock %}
 {% block formdestination %}/adm_cliente{% endblock %}
 {% block formactionvalue %}{{ request.GET.action|default:"" }}{% endblock %}
-{% block formobjectid %}{{ request.GET.id|default:request.GET.idi|default:request.GET.pk|default:"0" }}{% endblock %}
+{% block formobjectid %}{{ request.GET.id|default:"0" }}{% endblock %}
 {% block mensaje %}Esta seguro(a) que desea continuar con la accion:{% endblock %}
-{% block formobjectrepr %}{{ request.GET.id|default:request.GET.idi|default:"" }}{% endblock %}
+{% block formobjectrepr %}{{ cliente|default:request.GET.id|default:"" }}{% endblock %}
 {% block fieldsextra %}
     {% for k, v in request.GET.items %}
         {% if k != 'action' and k != 'id' %}

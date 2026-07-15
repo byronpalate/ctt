@@ -18,6 +18,29 @@ from ctt.funciones import MiPaginador, log, generar_usuario, resetear_clave, url
 from ctt.models import Persona, Profesor, Administrativo, Inscripcion, Carrera, Periodo, Cliente, EmpresaEmpleadora
 
 
+def actualizar_empresa_cliente(cliente, form, request):
+    if not form.cleaned_data.get('empresa'):
+        cliente.empresa = None
+        cliente.save(request)
+        return None
+
+    ruc = form.cleaned_data['ruc'].strip()
+    nombreempresa = form.cleaned_data['nombreempresa'].strip()
+    if not ruc or not nombreempresa:
+        return u"Debe ingresar RUC y nombre de la empresa."
+
+    empresa, _ = EmpresaEmpleadora.objects.get_or_create(ruc=ruc)
+    empresa.nombre = remover_tildes(nombreempresa)
+    empresa.direccion = remover_tildes(form.cleaned_data['direccionempresa'].strip())
+    empresa.celular = remover_tildes(form.cleaned_data['telefonoempresa'].strip())
+    empresa.telefonos = empresa.celular
+    empresa.save(request)
+
+    cliente.empresa = empresa
+    cliente.save(request)
+    return None
+
+
 @login_required(login_url='/login')
 @secure_module
 @last_access
@@ -44,6 +67,8 @@ def view(request):
                     if pasaporte:
                         if Persona.objects.filter(Q(cedula=pasaporte) | Q(pasaporte=pasaporte)).exists():
                             return bad_json(mensaje=u"Existe una persona registrada con esta identificación.")
+                    if form.cleaned_data['empresa'] and (not form.cleaned_data['ruc'].strip() or not form.cleaned_data['nombreempresa'].strip()):
+                        return bad_json(mensaje=u"Debe ingresar RUC y nombre de la empresa.")
                     personacliente = Persona(nombre1=remover_tildes(form.cleaned_data['nombre1']),
                                            nombre2=remover_tildes(form.cleaned_data['nombre2']),
                                            apellido1=remover_tildes(form.cleaned_data['apellido1']),
@@ -60,23 +85,9 @@ def view(request):
                     cliente.save(request)
                     generar_usuario(persona=personacliente, group_id=CLIENTES_GROUP_ID)
                     personacliente.crear_perfil(cliente=cliente)
-                    if form.cleaned_data['empresa']:
-                        ruc = form.cleaned_data['ruc'].strip()
-                        nombreempresa = form.cleaned_data['nombreempresa'].strip()
-                        if not EmpresaEmpleadora.objects.filter(ruc=ruc).exists():
-                            empresa=EmpresaEmpleadora(nombre=nombreempresa,
-                                                      ruc=ruc,
-                                                      direccion=form.cleaned_data['direccionempresa'].strip(),
-                                                      celular=form.cleaned_data['telefonoempresa'].strip()
-                                                      )
-                            empresa.save()
-                            log(u'Adiciono una nueva empresa : %s' % cliente, request, "add")
-                            cliente.empresa=empresa
-                            cliente.save()
-                        else:
-                            empresaexiste=EmpresaEmpleadora.objects.get(ruc=ruc)
-                            cliente.empresa=empresaexiste
-                            cliente.save()
+                    error_empresa = actualizar_empresa_cliente(cliente, form, request)
+                    if error_empresa:
+                        return bad_json(mensaje=error_empresa)
                     log(u'Adiciono un nuevo cliente : %s' % cliente, request, "add")
                     return ok_json({"id": cliente.id})
                 else:
@@ -87,54 +98,39 @@ def view(request):
 
         if action == 'edit':
             try:
-                administrativo = Administrativo.objects.get(pk=request.POST['id'])
-                personaadmin = administrativo.persona
-                form = AdministrativosForm(request.POST)
+                cliente = Cliente.objects.get(pk=request.POST['id'])
+                personacliente = cliente.persona
+                form = ClientesForm(request.POST)
                 if form.is_valid():
                     cedula = remover_tildes(form.cleaned_data['cedula'].strip())
                     pasaporte = form.cleaned_data['pasaporte'].strip()
                     if not cedula and not pasaporte:
                         return bad_json(mensaje=u"Debe ingresar una identificación.")
                     if cedula:
-                        if Persona.objects.filter(cedula=cedula).exclude(id=personaadmin.id).exists():
+                        if Persona.objects.filter(Q(cedula=cedula) | Q(pasaporte=cedula)).exclude(id=personacliente.id).exists():
                             return bad_json(mensaje=u"Existe una persona registrada con esta identificación.")
                     if pasaporte:
-                        if Persona.objects.filter(pasaporte=pasaporte).exclude(id=personaadmin.id).exists():
+                        if Persona.objects.filter(Q(cedula=pasaporte) | Q(pasaporte=pasaporte)).exclude(id=personacliente.id).exists():
                             return bad_json(mensaje=u"Existe una persona registrada con esta identificación.")
-                    perfil = personaadmin.mi_perfil()
-                    personaadmin.nombre1 = remover_tildes(form.cleaned_data['nombre1'])
-                    personaadmin.nombre2 = remover_tildes(form.cleaned_data['nombre2'])
-                    personaadmin.apellido1 = remover_tildes(form.cleaned_data['apellido1'])
-                    personaadmin.apellido2 = remover_tildes(form.cleaned_data['apellido2'])
-                    personaadmin.cedula = remover_tildes(form.cleaned_data['cedula'])
-                    personaadmin.pasaporte = form.cleaned_data['pasaporte']
-                    personaadmin.nacimiento = form.cleaned_data['nacimiento']
-                    personaadmin.sexo = form.cleaned_data['sexo']
-                    personaadmin.nacionalidad = form.cleaned_data['nacionalidad']
-                    personaadmin.paisnac = form.cleaned_data['paisnac']
-                    personaadmin.provincianac = form.cleaned_data['provincianac']
-                    personaadmin.cantonnac = form.cleaned_data['cantonnac']
-                    personaadmin.parroquianac = form.cleaned_data['parroquianac']
-                    personaadmin.pais = form.cleaned_data['pais']
-                    personaadmin.provincia = form.cleaned_data['provincia']
-                    personaadmin.canton = form.cleaned_data['canton']
-                    personaadmin.parroquia = form.cleaned_data['parroquia']
-                    personaadmin.sector = remover_tildes(form.cleaned_data['sector'])
-                    personaadmin.direccion = remover_tildes(form.cleaned_data['direccion'])
-                    personaadmin.direccion2 = remover_tildes(form.cleaned_data['direccion2'])
-                    personaadmin.num_direccion = remover_tildes(form.cleaned_data['num_direccion'])
-                    personaadmin.telefono = remover_tildes(form.cleaned_data['telefono'])
-                    personaadmin.telefono_conv = remover_tildes(form.cleaned_data['telefono_conv'])
-                    personaadmin.email = form.cleaned_data['email']
-                    personaadmin.emailinst = form.cleaned_data['emailinst']
-                    personaadmin.sangre = form.cleaned_data['sangre']
-                    personaadmin.save(request)
-                    administrativo.sede = form.cleaned_data['sede']
-                    administrativo.save()
-                    perfil.raza = form.cleaned_data['etnia']
-                    perfil.nacionalidadindigena = form.cleaned_data['nacionalidadindigena']
-                    perfil.save(request)
-                    log(u'Modifico administrativo: %s' % administrativo, request, "edit")
+                    if form.cleaned_data['empresa'] and (not form.cleaned_data['ruc'].strip() or not form.cleaned_data['nombreempresa'].strip()):
+                        return bad_json(mensaje=u"Debe ingresar RUC y nombre de la empresa.")
+                    personacliente.nombre1 = remover_tildes(form.cleaned_data['nombre1'])
+                    personacliente.nombre2 = remover_tildes(form.cleaned_data['nombre2'])
+                    personacliente.apellido1 = remover_tildes(form.cleaned_data['apellido1'])
+                    personacliente.apellido2 = remover_tildes(form.cleaned_data['apellido2'])
+                    personacliente.cedula = cedula
+                    personacliente.pasaporte = pasaporte
+                    personacliente.sexo = form.cleaned_data['sexo']
+                    personacliente.direccion = remover_tildes(form.cleaned_data['direccion'])
+                    personacliente.telefono = remover_tildes(form.cleaned_data['telefono'])
+                    personacliente.email = form.cleaned_data['email']
+                    personacliente.save(request)
+
+                    error_empresa = actualizar_empresa_cliente(cliente, form, request)
+                    if error_empresa:
+                        return bad_json(mensaje=error_empresa)
+
+                    log(u'Modifico cliente: %s' % cliente, request, "edit")
                     return ok_json()
                 else:
                     return bad_json(error=6)
@@ -144,10 +140,12 @@ def view(request):
 
         if action == 'resetear':
             try:
-                administrativo = Administrativo.objects.get(pk=request.POST['id'])
-                resetear_clave(administrativo.persona)
-                administrativo.persona.cambiar_clave()
-                log(u'Reseteo clave de usuario: %s' % administrativo, request, "edit")
+                cliente = Cliente.objects.get(pk=request.POST['id'])
+                if not cliente.persona.usuario:
+                    return bad_json(mensaje=u"El cliente no tiene usuario.")
+                resetear_clave(cliente.persona)
+                cliente.persona.cambiar_clave()
+                log(u'Reseteo clave de usuario cliente: %s' % cliente, request, "edit")
                 return ok_json()
             except Exception as ex:
                 transaction.set_rollback(True)
@@ -241,11 +239,13 @@ def view(request):
 
         if action == 'activar':
             try:
-                administrativo = Administrativo.objects.get(pk=request.POST['id'])
-                usuario = administrativo.persona.usuario
+                cliente = Cliente.objects.get(pk=request.POST['id'])
+                usuario = cliente.persona.usuario
+                if not usuario:
+                    return bad_json(mensaje=u"El cliente no tiene usuario.")
                 usuario.is_active = True
                 usuario.save()
-                log(u'Activo usuario: %s' % administrativo, request, "edit")
+                log(u'Activo usuario cliente: %s' % cliente, request, "edit")
                 return ok_json()
             except Exception as ex:
                 transaction.set_rollback(True)
@@ -253,10 +253,10 @@ def view(request):
 
         if action == 'activarperfil':
             try:
-                administrativo = Administrativo.objects.get(pk=request.POST['id'])
-                administrativo.activo = True
-                administrativo.save(request)
-                log(u'Activo perfil de usuario: %s' % administrativo, request, "edit")
+                cliente = Cliente.objects.get(pk=request.POST['id'])
+                cliente.activo = True
+                cliente.save(request)
+                log(u'Activo perfil de cliente: %s' % cliente, request, "edit")
                 return ok_json()
             except Exception as ex:
                 transaction.set_rollback(True)
@@ -264,11 +264,13 @@ def view(request):
 
         if action == 'desactivar':
             try:
-                administrativo = Administrativo.objects.get(pk=request.POST['id'])
-                ui = administrativo.persona.usuario
+                cliente = Cliente.objects.get(pk=request.POST['id'])
+                ui = cliente.persona.usuario
+                if not ui:
+                    return bad_json(mensaje=u"El cliente no tiene usuario.")
                 ui.is_active = False
                 ui.save()
-                log(u'Desactivo usuario: %s' % administrativo, request, "edit")
+                log(u'Desactivo usuario cliente: %s' % cliente, request, "edit")
                 return ok_json()
             except Exception as ex:
                 transaction.set_rollback(True)
@@ -276,10 +278,10 @@ def view(request):
 
         if action == 'desactivarperfil':
             try:
-                administrativo = Administrativo.objects.get(pk=request.POST['id'])
-                administrativo.activo = False
-                administrativo.save(request)
-                log(u'Desactivo perfil de usuario: %s' % administrativo, request, "edit")
+                cliente = Cliente.objects.get(pk=request.POST['id'])
+                cliente.activo = False
+                cliente.save(request)
+                log(u'Desactivo perfil de cliente: %s' % cliente, request, "edit")
                 return ok_json()
             except Exception as ex:
                 transaction.set_rollback(True)
@@ -349,15 +351,15 @@ def view(request):
             if action == 'desactivar':
                 try:
                     data['title'] = u'Desactivar usuario'
-                    data['administrativo'] = Administrativo.objects.get(pk=request.GET['id'])
+                    data['cliente'] = Cliente.objects.get(pk=request.GET['id'])
                     return render(request, "adm_cliente/desactivar.html", data)
                 except Exception as ex:
                     pass
 
             if action == 'desactivarperfil':
                 try:
-                    data['title'] = u'Desactivar perfil de usuario'
-                    data['administrativo'] = Administrativo.objects.get(pk=request.GET['id'])
+                    data['title'] = u'Desactivar perfil de cliente'
+                    data['cliente'] = Cliente.objects.get(pk=request.GET['id'])
                     return render(request, "adm_cliente/desactivarperfil.html", data)
                 except Exception as ex:
                     pass
@@ -365,59 +367,41 @@ def view(request):
             if action == 'activar':
                 try:
                     data['title'] = u'Activar usuario'
-                    data['administrativo'] = Administrativo.objects.get(pk=request.GET['id'])
+                    data['cliente'] = Cliente.objects.get(pk=request.GET['id'])
                     return render(request, "adm_cliente/activar.html", data)
                 except Exception as ex:
                     pass
 
             if action == 'activarperfil':
                 try:
-                    data['title'] = u'Activar perfil de usuario'
-                    data['administrativo'] = Administrativo.objects.get(pk=request.GET['id'])
+                    data['title'] = u'Activar perfil de cliente'
+                    data['cliente'] = Cliente.objects.get(pk=request.GET['id'])
                     return render(request, "adm_cliente/activarperfil.html", data)
                 except Exception as ex:
                     pass
 
             if action == 'edit':
                 try:
-                    data['title'] = u'Editar personal administrativo'
-                    data['administrativo'] = administrativo = Administrativo.objects.get(pk=request.GET['id'])
-                    personaadmin = administrativo.persona
-                    perfil = personaadmin.mi_perfil()
-                    form = AdministrativosForm(initial={'nombre1': personaadmin.nombre1,
-                                                        'nombre2': personaadmin.nombre2,
-                                                        'apellido1': personaadmin.apellido1,
-                                                        'apellido2': personaadmin.apellido2,
-                                                        'cedula': personaadmin.cedula,
-                                                        'pasaporte': personaadmin.pasaporte,
-                                                        'nacionalidad': personaadmin.nacionalidad,
-                                                        'paisnac': personaadmin.paisnac,
-                                                        'provincianac': personaadmin.provincianac,
-                                                        'cantonnac': personaadmin.cantonnac,
-                                                        'parroquianac': personaadmin.parroquianac,
-                                                        'nacimiento': personaadmin.nacimiento,
-                                                        'etnia': perfil.raza,
-                                                        'nacionalidadindigena': perfil.nacionalidadindigena,
-                                                        'sexo': personaadmin.sexo,
-                                                        'pais': personaadmin.pais,
-                                                        'provincia': personaadmin.provincia,
-                                                        'canton': personaadmin.canton,
-                                                        'parroquia': personaadmin.parroquia,
-                                                        'sector': personaadmin.sector,
-                                                        'direccion': personaadmin.direccion,
-                                                        'direccion2': personaadmin.direccion2,
-                                                        'sede': administrativo.sede,
-                                                        'num_direccion': personaadmin.num_direccion,
-                                                        'telefono': personaadmin.telefono,
-                                                        'telefono_conv': personaadmin.telefono_conv,
-                                                        'email': personaadmin.email,
-                                                        'emailinst': personaadmin.emailinst},)
-                    form.editar(administrativo)
+                    data['title'] = u'Editar cliente'
+                    data['cliente'] = cliente = Cliente.objects.select_related('persona', 'empresa').get(pk=request.GET['id'])
+                    personacliente = cliente.persona
+                    empresa = cliente.empresa
+                    form = ClientesForm(initial={'nombre1': personacliente.nombre1,
+                                                 'nombre2': personacliente.nombre2,
+                                                 'apellido1': personacliente.apellido1,
+                                                 'apellido2': personacliente.apellido2,
+                                                 'cedula': personacliente.cedula,
+                                                 'pasaporte': personacliente.pasaporte,
+                                                 'sexo': personacliente.sexo,
+                                                 'direccion': personacliente.direccion,
+                                                 'telefono': personacliente.telefono,
+                                                 'email': personacliente.email,
+                                                 'empresa': bool(empresa),
+                                                 'ruc': empresa.ruc if empresa else '',
+                                                 'nombreempresa': empresa.nombre if empresa else '',
+                                                 'direccionempresa': empresa.direccion if empresa else '',
+                                                 'telefonoempresa': empresa.celular if empresa else ''},)
                     data['form'] = form
-                    data['email_domain'] = EMAIL_DOMAIN
-                    data['email_domain_estudiante'] = EMAIL_DOMAIN_ESTUDIANTES
-                    data['pais_ecuador_id'] = PAIS_ECUADOR_ID
-                    data['nacionalidad_indigena_id'] = NACIONALIDAD_INDIGENA_ID
                     return render(request, "adm_cliente/edit.html", data)
                 except Exception as ex:
                     pass
@@ -445,7 +429,7 @@ def view(request):
             if action == 'resetear':
                 try:
                     data['title'] = u'Resetear clave del usuario'
-                    data['administrativo'] = Administrativo.objects.get(pk=request.GET['id'])
+                    data['cliente'] = Cliente.objects.get(pk=request.GET['id'])
                     return render(request, "adm_cliente/resetear.html", data)
                 except Exception as ex:
                     pass
@@ -469,27 +453,29 @@ def view(request):
                     search = request.GET['s'].strip()
                     ss = search.split(' ')
                     if len(ss) == 1:
-                        administrativos = Cliente.objects.filter(Q(persona__nombre1__icontains=search) |
-                                                                        Q(persona__nombre2__icontains=search) |
-                                                                        Q(persona__apellido1__icontains=search) |
-                                                                        Q(persona__apellido2__icontains=search) |
-                                                                        Q(persona__cedula__icontains=search) |
-                                                                        Q(persona__usuario__groups__name__icontains=search) |
-                                                                        Q(persona__pasaporte__icontains=search)).distinct()
+                        clientes = Cliente.objects.filter(Q(persona__nombre1__icontains=search) |
+                                                          Q(persona__nombre2__icontains=search) |
+                                                          Q(persona__apellido1__icontains=search) |
+                                                          Q(persona__apellido2__icontains=search) |
+                                                          Q(persona__cedula__icontains=search) |
+                                                          Q(persona__pasaporte__icontains=search) |
+                                                          Q(empresa__nombre__icontains=search) |
+                                                          Q(empresa__ruc__icontains=search)).distinct()
                     else:
-                        administrativos = Cliente.objects.filter(Q(persona__apellido1__icontains=ss[0]) &
-                                                                        Q(persona__apellido2__icontains=ss[1])).distinct()
+                        clientes = Cliente.objects.filter(Q(persona__apellido1__icontains=ss[0]) &
+                                                          Q(persona__apellido2__icontains=ss[1])).distinct()
                 elif 'id' in request.GET:
                     ids = request.GET['id']
-                    administrativos = Cliente.objects.filter(id=ids).distinct()
+                    clientes = Cliente.objects.filter(id=ids).distinct()
                 else:
-                    administrativos = Cliente.objects.all()
-                paging = MiPaginador(administrativos, 25)
+                    clientes = Cliente.objects.all()
+                clientes = clientes.select_related('persona', 'persona__usuario', 'empresa').order_by('persona__apellido1', 'persona__apellido2', 'persona__nombre1')
+                paging = MiPaginador(clientes, 25)
                 p = 1
                 try:
                     paginasesion = 1
                     if 'paginador' in request.session and 'paginador_url' in request.session:
-                        if request.session['paginador_url'] == 'administrativos':
+                        if request.session['paginador_url'] == 'clientes':
                             paginasesion = int(request.session['paginador'])
                     if 'page' in request.GET:
                         p = int(request.GET['page'])
@@ -500,17 +486,13 @@ def view(request):
                     p = 1
                     page = paging.page(p)
                 request.session['paginador'] = p
-                request.session['paginador_url'] = 'administrativos'
+                request.session['paginador_url'] = 'clientes'
                 data['paging'] = paging
                 data['rangospaging'] = paging.rangos_paginado(p)
                 data['page'] = page
                 data['search'] = search if search else ""
                 data['ids'] = ids if ids else ""
-                data['administrativos'] = page.object_list
-                data['grupo_docentes'] = PROFESORES_GROUP_ID
-                data['grupo_empleadores'] = EMPLEADORES_GRUPO_ID
-                data['grupo_administrativo'] = ADMINISTRATIVOS_GROUP_ID
-                data['grupo_estudiantes'] = ALUMNOS_GROUP_ID
+                data['clientes'] = page.object_list
 
                 data['entrar_como_usuario']=True
                 return render(request, "adm_cliente/view.html", data)

@@ -59,72 +59,86 @@
             <table class='table table-bordered table-striped'>
                 <thead class="table-light">
                 <tr class="autoheight">
-                    <th style="width: 300px;">Nombre</th>
-                    <th style="width: 80px;">Usuario</th>
-                    <th style="width: 80px;">Identificaci&oacute;n</th>
-                    <th>Grupos</th>
-                    <th style="width: 100px;">Sede</th>
-                    <th style="width: 250px;">Email/Tel&eacute;fono</th>
+                    <th style="width: 260px;">Cliente</th>
+                    <th style="width: 120px;">Usuario</th>
+                    <th style="width: 120px;">Identificaci&oacute;n</th>
+                    <th style="width: 220px;">Empresa</th>
+                    <th>Direcci&oacute;n</th>
+                    <th style="width: 220px;">Email/Tel&eacute;fono</th>
+                    <th style="width: 220px;">Contacto</th>
                     <th style="width: 30px; text-align: center;">
-                        <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" badge-height="90" style="white-space: nowrap;">Perfil de usuario</span></div>
+                        <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" badge-height="90" style="white-space: nowrap;">Perfil</span></div>
                     </th>
                     <th style="width: 30px; text-align: center;">
                         <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" style="white-space: nowrap;">User</span></div>
-                    </th>
-                    <th style="width: 30px; text-align: center;">
-                        <div class="rotate" style="margin: 5px; "><span class="badge text-bg-secondary" style="white-space: nowrap;">Foto</span></div>
                     </th>
                     <th style="width: 60px;"></th>
                 </tr>
                 </thead>
                 <tbody>
-                {% for administrativo in administrativos %}
+                {% for cliente in clientes %}
                     <tr>
-                        <td>{{ administrativo.persona }}</td>
-                        <td>{{ administrativo.persona.usuario }}</td>
+                        <td>{{ cliente.persona }}</td>
                         <td>
-                            {% for identificacion in administrativo.persona.lista_identificaciones %}
+                            {% if cliente.persona.usuario %}
+                                {{ cliente.persona.usuario }}
+                            {% else %}
+                                <span class="text-muted">Sin usuario</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for identificacion in cliente.persona.lista_identificaciones %}
                                 {{ identificacion }}{% if not forloop.last %}<br/>{% endif %}
                             {% endfor %}
                         </td>
                         <td>
-                            {% for grupo in administrativo.persona.grupos %}
-                                <div class="btn-group" style="margin-right: 3px; margin-bottom: 2px; margin-left: 0; float: left">
-                                    <a class="btn btn-usm btn-outline-secondary">{{ grupo }}</a>
-                                    {% if perms.ctt.puede_modificar_administrativos %}
-                                        {% if not grupo.id == grupo_docentes and not grupo.id == grupo_estudiantes and not grupo.id == grupo_empleadores  and not grupo.id == grupo_administrativo %}
-                                            <a href="javascript:;" nhref="/adm_cliente?action=delgrupo&id={{ administrativo.id }}&idg={{ grupo.id }}" class="btn confirmacionmodal btn-usm btn-danger"><i class="icon-minus"></i></a>
-                                        {% endif%}
-                                    {% endif %}
-                                </div>
+                            {% if cliente.empresa %}
+                                <strong>{{ cliente.empresa.nombre }}</strong><br>
+                                {% if cliente.empresa.ruc %}
+                                    <small class="text-muted">RUC: {{ cliente.empresa.ruc }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Sin empresa</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cliente.persona.direccion %}
+                                {{ cliente.persona.direccion }}
+                            {% else %}
+                                <span class="text-muted">Sin dirección</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cliente.persona.emails %}
+                                <a href="mailto:{{ cliente.persona.emails }}">{{ cliente.persona.emails }}</a><br>
+                            {% endif %}
+                            {% for telefono in cliente.persona.telefonos %}
+                                {{ telefono }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                <span class="text-muted">Sin teléfono</span>
                             {% endfor %}
                         </td>
-                        <td>{{ administrativo.sede|default_if_none:'' }}</td>
                         <td>
-                            {% if administrativo.persona.emails %}
-                                <a href="mailto:{{ administrativo.persona.emails }}">{{ administrativo.persona.emails }}</a><br>
+                            {% if cliente.personacontacto or cliente.telefonocontacto or cliente.emailcontacto %}
+                                {% if cliente.personacontacto %}{{ cliente.personacontacto }}<br>{% endif %}
+                                {% if cliente.telefonocontacto %}<small>{{ cliente.telefonocontacto }}</small><br>{% endif %}
+                                {% if cliente.emailcontacto %}<a href="mailto:{{ cliente.emailcontacto }}">{{ cliente.emailcontacto }}</a>{% endif %}
+                            {% else %}
+                                <span class="text-muted">Sin contacto</span>
                             {% endif %}
-                            {% for telefono in administrativo.persona.telefonos %}
-                                {{ telefono }}{% if not forloop.last %}, {% endif %}
-                            {% endfor %}
                         </td>
                         <td style="text-align: center;">
-                            {% if administrativo.activo %}
+                            {% if cliente.activo %}
                                 <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Perfil">Si</span>
                             {% else %}
                                 <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Perfil">No</span>
                             {% endif %}
                         </td>
                         <td style="text-align: center;">
-                            {% if administrativo.persona.activo %}
+                            {% if cliente.persona.usuario and cliente.persona.usuario.is_active %}
                                 <span class="badge text-bg-success tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Usuario">Si</span>
                             {% else %}
                                 <span class="badge text-bg-danger tu" data-bs-toggle="tooltip" data-bs-placement="top" title="Usuario">No</span>
-                            {% endif %}
-                        </td>
-                        <td style="text-align: center">
-                            {% if administrativo.persona.tiene_foto %}
-                                <a href="{{ administrativo.persona.foto.foto.url }}" class="fancybox"><i class="icon-camera"></i></a>
                             {% endif %}
                         </td>
                         <td>
@@ -132,37 +146,31 @@
                                 <div class="btn-group dropdown">
                                     <a class="btn btn-ssm btn-outline-secondary dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="javascript:;">Acciones <span class="caret"></span></a>
                                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                        <li class="smaller"><a href="javascript:;" nhref='/adm_cliente?action=edit&id={{ administrativo.id }}' class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
-
-                                        <li class="smaller"><a href="javascript:;" nhref='/adm_cliente?action=addgrupo&id={{ administrativo.id }}' class="formmodal dropdown-item"><i class="icon-group"></i> Adicionar a grupo</a></li>
-
-                                        <li class="smaller"><a href="javascript:;" nhref='/adm_cliente?action=asignarsede&id={{ administrativo.id }}' class="formmodal dropdown-item"><i class="icon-home"></i> Asignar sede</a></li>
+                                        <li class="smaller"><a href="javascript:;" nhref='/adm_cliente?action=edit&id={{ cliente.id }}' class="formmodal dropdown-item"><i class="icon-edit"></i> Editar</a></li>
 
                                             <li class="dropdown smaller dropstart">
                                                 <a href="javascript:;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="icon-wrench"></i> Acceso al sistema</a>
                                                 <ul class="dropdown-menu" aria-labelledby="dropdown-layouts">
-                                                    {% if not administrativo.persona.es_profesor %}
-                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref='/adm_cliente?action=addprofesor&id={{ administrativo.id }}'><i class="icon-user"></i> Crear profesor</a></li>
+                                                    {% if cliente.persona.usuario %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cliente?action=resetear&id={{ cliente.id }}"><i class="icon-key"></i> Resetear clave usuario</a></li>
                                                     {% endif %}
-                                                    {% if not administrativo.persona.es_estudiante %}
-                                                        <li class="smaller"><a href="javascript:;" nhref='/adm_cliente?action=addestudiante&id={{ administrativo.id }}' class="formmodal dropdown-item"><i class="icon-user"></i> Crear estudiante</a></li>
-                                                    {% endif %}
-                                                    <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cliente?action=resetear&id={{ administrativo.id }}"><i class="icon-key"></i> Resetear clave usuario</a></li>
-                                                    {% if administrativo.activo %}
-                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cliente?action=desactivarperfil&id={{ administrativo.id }}"><i class="icon-remove"></i> Desactivar perfil</a></li>
+                                                    {% if cliente.activo %}
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cliente?action=desactivarperfil&id={{ cliente.id }}"><i class="icon-remove"></i> Desactivar perfil</a></li>
                                                     {% else %}
-                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cliente?action=activarperfil&id={{ administrativo.id }}"><i class="icon-ok"></i> Activar perfil</a></li>
+                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cliente?action=activarperfil&id={{ cliente.id }}"><i class="icon-ok"></i> Activar perfil</a></li>
                                                     {% endif %}
-                                                    {% if administrativo.persona.usuario.is_active %}
-                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cliente?action=desactivar&id={{ administrativo.id }}"><i class="icon-remove"></i> Desactivar usuario</a></li>
-                                                    {% else %}
-                                                        <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cliente?action=activar&id={{ administrativo.id }}"><i class="icon-ok"></i> Activar usuario</a></li>
+                                                    {% if cliente.persona.usuario %}
+                                                        {% if cliente.persona.usuario.is_active %}
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cliente?action=desactivar&id={{ cliente.id }}"><i class="icon-remove"></i> Desactivar usuario</a></li>
+                                                        {% else %}
+                                                            <li class="smaller"><a class="confirmacionmodal dropdown-item" href="javascript:;" nhref="/adm_cliente?action=activar&id={{ cliente.id }}"><i class="icon-ok"></i> Activar usuario</a></li>
+                                                        {% endif %}
                                                     {% endif %}
                                                 </ul>
                                             </li>
 
-                                        {% if entrar_como_usuario and not administrativo.persona.usuario.is_superuser %}
-                                            <li class="smaller"><a class="changeuser dropdown-item" href="javascript:;" idu="{{ administrativo.persona.usuario.id }}"><i class='icon-user'></i> Entrar como este usuario</a></li>
+                                        {% if entrar_como_usuario and cliente.persona.usuario and not cliente.persona.usuario.is_superuser %}
+                                            <li class="smaller"><a class="changeuser dropdown-item" href="javascript:;" idu="{{ cliente.persona.usuario.id }}"><i class='icon-user'></i> Entrar como este usuario</a></li>
                                         {% endif %}
                                     </ul>
                                 </div>
@@ -171,7 +179,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="20">NO EXISTEN DATOS</td>
+                        <td colspan="10">NO EXISTEN DATOS</td>
                     </tr>
                 {% endfor %}
                 </tbody>
