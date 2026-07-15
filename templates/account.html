@@ -251,11 +251,11 @@
     <label class="form-check-label" for="aceptaterminos">
         Declaro que he leído, comprendo y acepto el tratamiento de mis datos personales en los términos expuestos.
         {% if personasession.es_administrativo %}
-            <a target="_blank" href="https://sga.uti.edu.ec/terminos_condiciones?action=lpdadministrativos">Declaración y aceptación de tratamiento de datos</a>.
+            <a target="_blank" href="/terminos_condiciones?action=politicas">Declaración y aceptación de tratamiento de datos</a>.
         {% elif personasession.es_profesor %}
-            <a target="_blank" href="https://sga.uti.edu.ec/terminos_condiciones?action=lpddocentes">Declaración y aceptación de tratamiento de datos</a>.
+            <a target="_blank" href="/terminos_condiciones?action=politicas">Declaración y aceptación de tratamiento de datos</a>.
         {% elif personasession.es_estudiante %}
-            <a target="_blank" href="https://sga.uti.edu.ec/terminos_condiciones?action=lpdestudiantes">Declaración y aceptación de tratamiento de datos</a>.
+            <a target="_blank" href="/terminos_condiciones?action=politicas">Declaración y aceptación de tratamiento de datos</a>.
         {% endif %}
     </label>
 </div>
