@@ -25,7 +25,7 @@ from settings import ALUMNOS_GROUP_ID, SEXO_FEMENINO, SEXO_MASCULINO, CONTACTO_E
 from ctt.forms import PersonaForm, CambioClaveForm, CargarFotoForm, CambioPerfilForm, CambioCoordinacionForm, \
     CambioPeriodoForm, CambioClaveSimpleForm,FormTerminos
 from ctt.funciones import generar_nombre, log, fechatope, ok_json, bad_json, url_back, generar_clave, \
-    convertir_fecha, acciones_legacy_no_disponibles
+    convertir_fecha
 from ctt.models import Periodo, FotoPersona, Noticia, Profesor, Inscripcion, Archivo, GruposModulos, \
     mi_institucion, \
     Persona, PerfilUsuario, Modulo, Encuesta, Matricula, DatoTransferenciaDeposito, years_ago, Materia, \
@@ -180,9 +180,7 @@ def adduserdata(request, data):
     else:
         request.session['persona'] = Persona.objects.get(pk=request.session['persona'].id)
     data['persona'] = request.session['persona']
-    data['acciones_no_disponibles_json'] = json.dumps(
-        acciones_legacy_no_disponibles(request.path)
-    )
+
     data['session_key'] = request.session.session_key
     data['check_session'] = True
     persona = data['persona']
