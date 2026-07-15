@@ -1,0 +1,67 @@
+{% extends "formbs.html" %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $(function() {
+            var $servicio = $("#id_servicio");
+            var $cantidad = $("#id_cantidad");
+            var $precioBase = $("#id_precio_base");
+            var $total = $("#id_total");
+
+            var parseDecimal = function(value) {
+                value = (value || "").toString().replace(",", ".");
+                var number = parseFloat(value);
+                return isNaN(number) ? 0 : number;
+            };
+
+            var formatDecimal = function(value) {
+                return parseDecimal(value).toFixed(2);
+            };
+
+            var calcularTotal = function() {
+                var cantidad = parseDecimal($cantidad.val());
+                var precioBase = parseDecimal($precioBase.val());
+                $total.val(formatDecimal(cantidad * precioBase));
+            };
+
+            var cargarPrecioServicio = function() {
+                var precioBase = $servicio.find("option:selected").attr("data-precio-base");
+                if (precioBase) {
+                    $precioBase.val(formatDecimal(precioBase));
+                } else {
+                    $precioBase.val("");
+                }
+                calcularTotal();
+            };
+
+            $servicio.change(function() {
+                cargarPrecioServicio();
+            });
+
+            $cantidad.add($precioBase).on("keyup change", function() {
+                calcularTotal();
+            });
+
+            if ($servicio.val()) {
+                cargarPrecioServicio();
+            } else {
+                calcularTotal();
+            }
+        });
+    </script>
+{% endblock %}
+{% block atras %}/gestion_servicios?action=competenciase&id={{ malla.id }}{% endblock %}
+{% block formdestination %}/gestion_servicios?action=detalle_proforma&id={{ proforma.id }}{% endblock %}
+{% block titulo %}{{ title }}{% endblock %}
+{% block formaction %}/gestion_servicios{% endblock %}
+{% block formextra %}
+    <input type='hidden' name='action' value='agregar_detalle_servicio'/>
+    <input type='hidden' name='id' value='{{ proforma.id }}'/>
+    <table>
+    <tr>
+        <th>Espacio Físico</th>
+        <td>{{ proforma.requerimiento.espacio_fisico }}</td>
+    </tr>
+    </table>
+{% endblock %}
+{% block formback %}/gestion_servicios?action=competenciase&id={{ requerimiento.id }}{% endblock %}
