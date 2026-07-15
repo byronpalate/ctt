@@ -1,60 +1,81 @@
 {% extends "formbs.html" %}
-{% block extrajavascript %}
-    <script>
-        function llenarHorai() {
-            const selectHora = document.querySelector('#id_horainicio');
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $(function() {
+            var $servicio = $("#id_servicio");
+            var $cantidad = $("#id_cantidad");
+            var $precio = $("#id_precio_unitario");
+            var $total = $("#id_total");
 
-            // Limpiar opciones existentes
-            selectHora.innerHTML = '';
+            var llenarHora = function(selector) {
+                var selectHora = document.querySelector(selector);
+                if (!selectHora) {
+                    return;
+                }
 
-            // Agregar opción vacía inicial
-            const optionVacia = document.createElement('option');
-            optionVacia.value = '';
-            optionVacia.textContent = '---------';
-            selectHora.appendChild(optionVacia);
+                selectHora.innerHTML = '';
 
-            // Generar horas desde 7:00 AM hasta 9:00 PM
-            for (let hora = 7; hora <= 21; hora++) {
-                const option = document.createElement('option');
-                const horaFormato12 = hora <= 12 ? hora : hora - 12;
-                const amPm = hora < 12 ? 'AM' : 'PM';
-                const valor = `${hora.toString().padStart(2, '0')}:00`;
-                const texto = `${horaFormato12}:00 ${amPm}`;
+                var optionVacia = document.createElement('option');
+                optionVacia.value = '';
+                optionVacia.textContent = '---------';
+                selectHora.appendChild(optionVacia);
 
-                option.value = valor;
-                option.textContent = texto;
-                selectHora.appendChild(option);
+                for (var hora = 7; hora <= 21; hora++) {
+                    var option = document.createElement('option');
+                    var horaFormato12 = hora <= 12 ? hora : hora - 12;
+                    var amPm = hora < 12 ? 'AM' : 'PM';
+                    var valor = hora.toString().padStart(2, '0') + ':00';
+
+                    option.value = valor;
+                    option.textContent = horaFormato12 + ':00 ' + amPm;
+                    selectHora.appendChild(option);
+                }
+            };
+
+            var parseDecimal = function(value) {
+                value = (value || "").toString().replace(",", ".");
+                var number = parseFloat(value);
+                return isNaN(number) ? 0 : number;
+            };
+
+            var formatDecimal = function(value) {
+                return parseDecimal(value).toFixed(2);
+            };
+
+            var calcularTotal = function() {
+                var cantidad = parseDecimal($cantidad.val());
+                var precio = parseDecimal($precio.val());
+                $total.val(formatDecimal(cantidad * precio));
+            };
+
+            var cargarPrecioServicio = function() {
+                var precioBase = $servicio.find("option:selected").attr("data-precio-base");
+                if (precioBase) {
+                    $precio.val(formatDecimal(precioBase));
+                } else {
+                    $precio.val("");
+                }
+                calcularTotal();
+            };
+
+            llenarHora('#id_horainicio');
+            llenarHora('#id_horafin');
+
+            $servicio.change(function() {
+                cargarPrecioServicio();
+            });
+
+            $cantidad.add($precio).on("keyup change", function() {
+                calcularTotal();
+            });
+
+            if ($servicio.val()) {
+                cargarPrecioServicio();
+            } else {
+                calcularTotal();
             }
-        }
-        function llenarHoraf() {
-            const selectHora = document.querySelector('#id_horafin');
-
-            // Limpiar opciones existentes
-            selectHora.innerHTML = '';
-
-            // Agregar opción vacía inicial
-            const optionVacia = document.createElement('option');
-            optionVacia.value = '';
-            optionVacia.textContent = '---------';
-            selectHora.appendChild(optionVacia);
-
-            // Generar horas desde 7:00 AM hasta 9:00 PM
-            for (let hora = 7; hora <= 21; hora++) {
-                const option = document.createElement('option');
-                const horaFormato12 = hora <= 12 ? hora : hora - 12;
-                const amPm = hora < 12 ? 'AM' : 'PM';
-                const valor = `${hora.toString().padStart(2, '0')}:00`;
-                const texto = `${horaFormato12}:00 ${amPm}`;
-
-                option.value = valor;
-                option.textContent = texto;
-                selectHora.appendChild(option);
-            }
-        }
-
-        // Ejecutar cuando se cargue la página
-        llenarHorai();
-        llenarHoraf();
+        });
     </script>
 {% endblock %}
 {% block atras %}/gestion_servicios?action=competenciase&id={{ malla.id }}{% endblock %}

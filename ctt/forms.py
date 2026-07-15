@@ -3162,17 +3162,71 @@ class RequerimientoServicioForm(BaseForm):
         self.fields['formtype'].initial = 'vertical'
 
 
+class ServicioCatalogoSelect(forms.Select):
+
+    def __init__(self, *args, **kwargs):
+        self.precio_base_por_servicio = kwargs.pop('precio_base_por_servicio', {})
+        super(ServicioCatalogoSelect, self).__init__(*args, **kwargs)
+
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super(ServicioCatalogoSelect, self).create_option(name, value, label, selected, index, subindex, attrs)
+        if value:
+            valor = getattr(value, 'value', value)
+            precio_base = self.precio_base_por_servicio.get(str(valor))
+            if precio_base is not None:
+                option['attrs']['data-precio-base'] = str(precio_base)
+        return option
+
+
 class ProformaDetalleForm(BaseForm):
-    servicio = forms.ModelChoiceField(label=u"Servicio", queryset=ServicioCatalogo.objects.all(), widget=forms.Select())
+    servicio = forms.ModelChoiceField(label=u"Servicio", queryset=ServicioCatalogo.objects.all(), widget=ServicioCatalogoSelect())
     fecha = forms.DateField(label=u"Fecha", input_formats=['%d-%m-%Y'], initial=datetime.now().date(), widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
     horainicio = forms.CharField(label='Hora Inicio',widget=forms.Select(), required=False)
     horafin = forms.CharField(label='Hora Fin',widget=forms.Select(), required=False)
     descripcion = forms.CharField(label=u"Descripción", required=False, widget=forms.Textarea(attrs={'rows': '2', 'class': 'form-control'}))
     cantidad = forms.DecimalField(label=u"Cantidad", max_digits=8, decimal_places=2, initial=Decimal('1.00'))
-    precio_unitario = forms.DecimalField(label=u"Precio unitario", max_digits=10, decimal_places=2, required=False, help_text=u"Si lo dejas vacío, se tomará el precio base del servicio.")
+    precio_unitario = forms.DecimalField(label=u"Precio base", max_digits=10, decimal_places=2, required=False, widget=forms.TextInput())
+    total = forms.DecimalField(label=u"Total", max_digits=12, decimal_places=2, required=False, initial=Decimal('0.00'), disabled=True, widget=forms.TextInput(attrs={'readonly': 'readonly', 'disabled': 'disabled'}))
+
+    def __init__(self, *args, **kwargs):
+        super(ProformaDetalleForm, self).__init__(*args, **kwargs)
+        self.set_servicios(ServicioCatalogo.objects.all())
 
     def add(self, espaciofisico):
-        self.fields['servicio'].queryset = ServicioCatalogo.objects.filter(espacio_fisico=espaciofisico)
+        self.set_servicios(ServicioCatalogo.objects.filter(espacio_fisico=espaciofisico))
+
+    def set_servicios(self, servicios):
+        self.fields['servicio'].queryset = servicios
+        self.fields['servicio'].widget.precio_base_por_servicio = {
+            str(s.id): s.precio_base for s in servicios
+        }
+
+    def extra_paramaters(self):
+        self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
+        self.fields['formtype'].initial = 'vertical'
+
+class ProformaDetalleServicioForm(BaseForm):
+    servicio = forms.ModelChoiceField(label=u"Servicio", queryset=ServicioCatalogo.objects.all(), widget=ServicioCatalogoSelect())
+    # fecha = forms.DateField(label=u"Fecha", input_formats=['%d-%m-%Y'], initial=datetime.now().date(), widget=DateTimeInput(format='%d-%m-%Y', attrs={'class': 'selectorfecha', 'onkeydown': 'return false;'}), required=False)
+    # horainicio = forms.CharField(label='Hora Inicio',widget=forms.Select(), required=False)
+    # horafin = forms.CharField(label='Hora Fin',widget=forms.Select(), required=False)
+    descripcion = forms.CharField(label=u"Descripción", required=False, widget=forms.Textarea(attrs={'rows': '2', 'class': 'form-control'}))
+    cantidad = forms.DecimalField(label=u"Cantidad", max_digits=8, decimal_places=2, initial=Decimal('1.00'),widget=forms.TextInput())
+    precio_base = forms.DecimalField(label=u"Precio base", max_digits=10, decimal_places=2, required=False, widget=forms.TextInput())
+    total = forms.DecimalField(label=u"Total", max_digits=12, decimal_places=2, required=False, initial=Decimal('0.00'), disabled=True, widget=forms.TextInput(attrs={'readonly': 'readonly', 'disabled': 'disabled'}))
+
+    def __init__(self, *args, **kwargs):
+        super(ProformaDetalleServicioForm, self).__init__(*args, **kwargs)
+        self.set_servicios(ServicioCatalogo.objects.all())
+
+    def add(self, espaciofisico):
+        self.set_servicios(ServicioCatalogo.objects.filter(espacio_fisico=espaciofisico))
+
+    def set_servicios(self, servicios):
+        self.fields['servicio'].queryset = servicios
+        self.fields['servicio'].widget.precio_base_por_servicio = {
+            str(s.id): s.precio_base for s in servicios
+        }
 
     def extra_paramaters(self):
         self.fields['formbase'].initial = 'ajaxformdinamicbs.html'
