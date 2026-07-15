@@ -741,7 +741,7 @@ def view(request):
                                                      "apolloinstitucion": curso.apolloinstitucion,
                                                      "fecha_inicio": curso.fecha_inicio,
                                                      "fecha_fin": curso.fecha_fin,
-                                                     "horas": curso.horas})
+                                                     "horas": curso.horas}) 
                     form.editar(curso)
                     data['form'] = form
                     return render(request, "docentes/editcurso.html", data)
